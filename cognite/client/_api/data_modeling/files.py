@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, NoReturn, overload
 
 from cognite.client._api_client import APIClient
@@ -44,17 +45,119 @@ class DataModelingFilesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._files_api = cognite_client.files
 
-    async def retrieve_download_urls(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+    async def retrieve_download_urls(
+        self,
+        node_ids: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        *,
+        extended_expiration: bool = False,
+    ) -> dict[NodeId, str]:
+        """`Get download URLs for one or more files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
 
-    async def download(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+        Args:
+            node_ids (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
+            extended_expiration (bool): Extend expiration time of download URL to 1 hour. Defaults to False.
 
-    async def download_to_path(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+        Returns:
+            dict[NodeId, str]: Dictionary mapping each instance ID to its download URL.
 
-    async def download_bytes(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+        Examples:
+
+            Get a download URL for a single file:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> urls = client.data_modeling.files.retrieve_download_urls(
+                ...     NodeId("my-space", "my-file")
+                ... )
+
+            Get download URLs for multiple files:
+
+                >>> urls = client.data_modeling.files.retrieve_download_urls(
+                ...     [("my-space", "file-1"), ("my-space", "file-2")]
+                ... )
+        """
+        return await self._files_api.retrieve_download_urls(
+            instance_id=node_ids,
+            extended_expiration=extended_expiration,
+        )
+
+    async def download(
+        self,
+        directory: Path,
+        node_ids: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        keep_directory_structure: bool = False,
+        resolve_duplicate_file_names: bool = False,
+    ) -> None:
+        """`Download files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
+
+        Streams all files to disk, never keeping more than 2MB in memory per worker.
+
+        Args:
+            directory (Path): Directory to download the file(s) to.
+            node_ids (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
+            keep_directory_structure (bool): Whether to keep the directory hierarchy from CDF, creating subdirectories as needed.
+            resolve_duplicate_file_names (bool): Whether to resolve duplicate file names by appending a number.
+
+        Examples:
+
+            Download files by instance ID into directory 'my_directory':
+
+                >>> from pathlib import Path
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> client.data_modeling.files.download(
+                ...     directory=Path("my_directory"),
+                ...     node_ids=[NodeId("my-space", "file-1"), NodeId("my-space", "file-2")],
+                ... )
+        """
+        await self._files_api.download(
+            directory=directory,
+            instance_id=node_ids,
+            keep_directory_structure=keep_directory_structure,
+            resolve_duplicate_file_names=resolve_duplicate_file_names,
+        )
+
+    async def download_to_path(self, path: Path, node_id: NodeId | tuple[str, str]) -> None:
+        """Download a file to a specific path by instance ID.
+
+        Args:
+            path (Path): Download to this path.
+            node_id (NodeId | tuple[str, str]): Instance ID of the file to download.
+
+        Examples:
+
+            Download a file by instance ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> client.data_modeling.files.download_to_path(
+                ...     Path("~/mydir/my_file.txt"), NodeId("my-space", "my-file")
+                ... )
+        """
+        await self._files_api.download_to_path(path=path, instance_id=node_id)
+
+    async def download_bytes(self, node_id: NodeId | tuple[str, str]) -> bytes:
+        """Download a file as bytes by instance ID.
+
+        Args:
+            node_id (NodeId | tuple[str, str]): Instance ID of the file.
+
+        Returns:
+            bytes: The file content.
+
+        Examples:
+
+            Download a file's content into memory by instance ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> content = client.data_modeling.files.download_bytes(NodeId("my-space", "my-file"))
+        """
+        return await self._files_api.download_bytes(instance_id=node_id)
 
     async def upload(self, *args: Any, **kwargs: Any) -> NoReturn:
         raise NotImplementedError("This method is not implemented yet!")

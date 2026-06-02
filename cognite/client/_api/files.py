@@ -1104,23 +1104,61 @@ class FilesAPI(APIClient):
             semaphore=self._get_semaphore("upload"),
         )
 
+    @overload
+    async def retrieve_download_urls(
+        self,
+        id: int | Sequence[int],
+        external_id: None = None,
+        instance_id: None = None,
+        extended_expiration: bool = False,
+    ) -> dict[int, str]: ...
+
+    @overload
+    async def retrieve_download_urls(
+        self,
+        id: None = None,
+        *,
+        external_id: str | SequenceNotStr[str],
+        instance_id: None = None,
+        extended_expiration: bool = False,
+    ) -> dict[str, str]: ...
+
+    @overload
+    async def retrieve_download_urls(
+        self,
+        id: None = None,
+        external_id: None = None,
+        *,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        extended_expiration: bool = False,
+    ) -> dict[NodeId, str]: ...
+
+    @overload
     async def retrieve_download_urls(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
-        instance_id: NodeId | Sequence[NodeId] | None = None,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None = None,
         extended_expiration: bool = False,
-    ) -> dict[int | str | NodeId, str]:
+    ) -> dict[int | str | NodeId, str]: ...
+
+    async def retrieve_download_urls(
+        self,
+        id: int | Sequence[int] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None = None,
+        extended_expiration: bool = False,
+    ) -> dict[int, str] | dict[str, str] | dict[NodeId, str] | dict[int | str | NodeId, str]:
         """Get download links by id or external id.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
             external_id (str | SequenceNotStr[str] | None): External id or list of external ids.
-            instance_id (NodeId | Sequence[NodeId] | None): Instance id or list of instance ids.
+            instance_id (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None): Instance id or list of instance ids.
             extended_expiration (bool): Extend expiration time of download url to 1 hour. Defaults to false.
 
         Returns:
-            dict[int | str | NodeId, str]: Dictionary containing download urls.
+            dict[int, str] | dict[str, str] | dict[NodeId, str] | dict[int | str | NodeId, str]: Dictionary containing download urls.
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id)
 
@@ -1176,7 +1214,7 @@ class FilesAPI(APIClient):
         directory: str | Path,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
-        instance_id: NodeId | Sequence[NodeId] | None = None,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None = None,
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
@@ -1197,9 +1235,8 @@ class FilesAPI(APIClient):
             directory (str | Path): Directory to download the file(s) to.
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): External ID or list of external ids.
-            instance_id (NodeId | Sequence[NodeId] | None): Instance ID or list of instance ids.
-            keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF,
-                creating subdirectories as needed below the given directory.
+            instance_id (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None): Instance ID or list of instance ids.
+            keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF, creating subdirectories as needed below the given directory.
             resolve_duplicate_file_names (bool): Whether or not to resolve duplicate file names by appending a number on duplicate file names
 
         Examples:
@@ -1335,7 +1372,11 @@ class FilesAPI(APIClient):
                     file.write(chunk)
 
     async def download_to_path(
-        self, path: Path | str, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+        self,
+        path: Path | str,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | tuple[str, str] | None = None,
     ) -> None:
         """Download a file to a specific target.
 
@@ -1343,7 +1384,7 @@ class FilesAPI(APIClient):
             path (Path | str): Download to this path.
             id (int | None): Id of of the file to download.
             external_id (str | None): External id of the file to download.
-            instance_id (NodeId | None): Instance id of the file to download.
+            instance_id (NodeId | tuple[str, str] | None): Instance id of the file to download.
 
         Examples:
 
@@ -1362,14 +1403,14 @@ class FilesAPI(APIClient):
         await self._download_file_to_path(download_link, path)
 
     async def download_bytes(
-        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | tuple[str, str] | None = None
     ) -> bytes:
         """Download a file as bytes.
 
         Args:
             id (int | None): Id of the file
             external_id (str | None): External id of the file
-            instance_id (NodeId | None): Instance id of the file
+            instance_id (NodeId | tuple[str, str] | None): Instance id of the file
 
         Examples:
 

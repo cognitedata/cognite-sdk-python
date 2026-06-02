@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e94f7bae992820654928ba05deb54e7d
+5240586b60487a967e2b71808698fbb5
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -795,24 +795,62 @@ class SyncFilesAPI(SyncAPIClient):
             )
         )
 
+    @overload
+    def retrieve_download_urls(
+        self,
+        id: int | Sequence[int],
+        external_id: None = None,
+        instance_id: None = None,
+        extended_expiration: bool = False,
+    ) -> dict[int, str]: ...
+
+    @overload
+    def retrieve_download_urls(
+        self,
+        id: None = None,
+        *,
+        external_id: str | SequenceNotStr[str],
+        instance_id: None = None,
+        extended_expiration: bool = False,
+    ) -> dict[str, str]: ...
+
+    @overload
+    def retrieve_download_urls(
+        self,
+        id: None = None,
+        external_id: None = None,
+        *,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        extended_expiration: bool = False,
+    ) -> dict[NodeId, str]: ...
+
+    @overload
     def retrieve_download_urls(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
-        instance_id: NodeId | Sequence[NodeId] | None = None,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None = None,
         extended_expiration: bool = False,
-    ) -> dict[int | str | NodeId, str]:
+    ) -> dict[int | str | NodeId, str]: ...
+
+    def retrieve_download_urls(
+        self,
+        id: int | Sequence[int] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None = None,
+        extended_expiration: bool = False,
+    ) -> dict[int, str] | dict[str, str] | dict[NodeId, str] | dict[int | str | NodeId, str]:
         """
         Get download links by id or external id.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
             external_id (str | SequenceNotStr[str] | None): External id or list of external ids.
-            instance_id (NodeId | Sequence[NodeId] | None): Instance id or list of instance ids.
+            instance_id (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None): Instance id or list of instance ids.
             extended_expiration (bool): Extend expiration time of download url to 1 hour. Defaults to false.
 
         Returns:
-            dict[int | str | NodeId, str]: Dictionary containing download urls.
+            dict[int, str] | dict[str, str] | dict[NodeId, str] | dict[int | str | NodeId, str]: Dictionary containing download urls.
         """
         return run_sync(
             self.__async_client.files.retrieve_download_urls(
@@ -825,7 +863,7 @@ class SyncFilesAPI(SyncAPIClient):
         directory: str | Path,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
-        instance_id: NodeId | Sequence[NodeId] | None = None,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None = None,
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
@@ -847,9 +885,8 @@ class SyncFilesAPI(SyncAPIClient):
             directory (str | Path): Directory to download the file(s) to.
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): External ID or list of external ids.
-            instance_id (NodeId | Sequence[NodeId] | None): Instance ID or list of instance ids.
-            keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF,
-                creating subdirectories as needed below the given directory.
+            instance_id (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None): Instance ID or list of instance ids.
+            keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF, creating subdirectories as needed below the given directory.
             resolve_duplicate_file_names (bool): Whether or not to resolve duplicate file names by appending a number on duplicate file names
 
         Examples:
@@ -879,7 +916,11 @@ class SyncFilesAPI(SyncAPIClient):
         )
 
     def download_to_path(
-        self, path: Path | str, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+        self,
+        path: Path | str,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | tuple[str, str] | None = None,
     ) -> None:
         """
         Download a file to a specific target.
@@ -888,7 +929,7 @@ class SyncFilesAPI(SyncAPIClient):
             path (Path | str): Download to this path.
             id (int | None): Id of of the file to download.
             external_id (str | None): External id of the file to download.
-            instance_id (NodeId | None): Instance id of the file to download.
+            instance_id (NodeId | tuple[str, str] | None): Instance id of the file to download.
 
         Examples:
 
@@ -905,7 +946,7 @@ class SyncFilesAPI(SyncAPIClient):
         )
 
     def download_bytes(
-        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | tuple[str, str] | None = None
     ) -> bytes:
         """
         Download a file as bytes.
@@ -913,7 +954,7 @@ class SyncFilesAPI(SyncAPIClient):
         Args:
             id (int | None): Id of the file
             external_id (str | None): External id of the file
-            instance_id (NodeId | None): Instance id of the file
+            instance_id (NodeId | tuple[str, str] | None): Instance id of the file
 
         Examples:
 
