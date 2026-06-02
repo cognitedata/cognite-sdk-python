@@ -1220,7 +1220,8 @@ class FilesAPI(APIClient):
     ) -> None:
         """`Download files by id or external id <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_.
 
-        This method will stream all files to disk, never keeping more than 2MB in memory per worker.
+        This method streams all files to disk one chunk at a time. By default, chunk size is dynamic to maximize
+        throughput; set ``global_config.file_download_chunk_size`` (bytes) to enforce a fixed size.
         The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.
         You can also choose to keep the directory structure from CDF so that the files will be stored in subdirectories
         matching the directory attribute on the files. When missing, the (root) directory is used.
