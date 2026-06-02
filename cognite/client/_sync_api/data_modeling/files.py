@@ -1,6 +1,6 @@
 """
 ===============================================================================
-05e2d9cb042ef78f99feef3c0077f6d3
+8697b547c188bef5ac62f97a94101b13
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -83,7 +83,8 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
         """
         `Download files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
 
-        Streams all files to disk, never keeping more than 2MB in memory per worker.
+        Streams all files to disk one chunk at a time. By default, chunk size is dynamic to maximize
+        throughput; set ``global_config.file_download_chunk_size`` (bytes) to enforce a fixed size.
 
         Args:
             directory (Path): Directory to download the file(s) to.
