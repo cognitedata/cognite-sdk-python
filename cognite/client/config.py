@@ -8,7 +8,7 @@ from typing import Any, ClassVar, NoReturn, overload
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
-from cognite.client.utils._auxiliary import load_resource_to_dict
+from cognite.client.utils._auxiliary import is_finite, load_resource_to_dict
 from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._importing import local_import
 
@@ -77,6 +77,15 @@ class GlobalConfig:
         self.file_download_chunk_size: int | None = None
         self.file_upload_chunk_size: int | None = None
         self.silence_feature_preview_warnings: bool = False
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        # Why __setattr__ instead of just more use of @property? It is to avoid breaking a bunch of existing
+        # inspection code (which would then need special handling). Setting global config options is a rare
+        # one-off type event, so overhead is no issue.
+        match name:
+            case "max_retries" if not is_finite(value):
+                raise ValueError(f"max_retries must be a non-negative integer, got {value!r}")
+        super().__setattr__(name, value)
 
     @property
     def max_workers(self) -> int:

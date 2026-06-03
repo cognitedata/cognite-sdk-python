@@ -57,6 +57,18 @@ class TestGlobalConfig:
             assert isinstance(gc.default_client_config.credentials, Token)
             assert gc.default_client_config.project == "test-project"
 
+    @pytest.mark.parametrize("value", [0, 1, 10])
+    def test_max_retries_valid(self, monkeypatch: MonkeyPatch, value: int) -> None:
+        # A bit weird way to test "global_config.max_retries = value" works, but monkeypatch will revert
+        # the global changes on teardown which is why:
+        monkeypatch.setattr(global_config, "max_retries", value, raising=True)
+        assert global_config.max_retries == value
+
+    @pytest.mark.parametrize("value", [-1, -100, 1.5, "5", None])
+    def test_max_retries_invalid(self, value: object) -> None:
+        with pytest.raises(ValueError, match="max_retries must be a non-negative integer"):
+            global_config.max_retries = value  # type: ignore[assignment]
+
     def test_load_non_existent_attr(self) -> None:
         settings = {
             "max_workers": 0,  # use a nonsensical value to ensure that it is not applied without assuming other tests kept the default value
