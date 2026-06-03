@@ -503,7 +503,7 @@ class CoordinateReferenceSystemCore(WriteableCogniteResource["CoordinateReferenc
 
     Args:
         srid (int): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
-        wkt (str): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
+        wkt (str): Well-known text of the geometry, see https://docs.geotools.org/latest/javadocs/org/geotools/api/referencing/doc-files/WKT.html
         proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
     """
 
@@ -519,7 +519,7 @@ class CoordinateReferenceSystem(CoordinateReferenceSystemCore):
 
     Args:
         srid (int): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
-        wkt (str): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
+        wkt (str): Well-known text of the geometry, see https://docs.geotools.org/latest/javadocs/org/geotools/api/referencing/doc-files/WKT.html
         proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
     """
 
@@ -541,7 +541,7 @@ class CoordinateReferenceSystemWrite(CoordinateReferenceSystemCore):
 
     Args:
         srid (int): EPSG code, e.g., 4326. Only valid for geometry types. See https://en.wikipedia.org/wiki/Spatial_reference_system
-        wkt (str): Well-known text of the geometry, see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
+        wkt (str): Well-known text of the geometry, see https://docs.geotools.org/latest/javadocs/org/geotools/api/referencing/doc-files/WKT.html
         proj_string (str): The projection specification string as described in https://proj.org/usage/quickstart.html
     """
 
@@ -621,7 +621,7 @@ class GeospatialGeometryComputeFunction(GeospatialComputeFunction, ABC):
 class GeospatialGeometryValueComputeFunction(GeospatialGeometryComputeFunction):
     """A geospatial geometry value compute function.
     Accepts a well-known text of the geometry prefixed with a spatial reference identifier,
-    see https://docs.geotools.org/stable/javadocs/org/opengis/referencing/doc-files/WKT.html
+    see https://docs.geotools.org/latest/javadocs/org/geotools/api/referencing/doc-files/WKT.html
 
     Args:
         ewkt (str): No description.
