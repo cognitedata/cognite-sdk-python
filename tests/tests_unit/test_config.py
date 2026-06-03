@@ -76,6 +76,7 @@ class TestGlobalConfig:
         ],
     )
     def test_validated_attrs_valid(self, monkeypatch: MonkeyPatch, attr: str, value: object) -> None:
+        # raising=True ensures the attribute actually exists on global_config, catching typos in parameters
         monkeypatch.setattr(global_config, attr, value, raising=True)
         assert getattr(global_config, attr) == value
 
