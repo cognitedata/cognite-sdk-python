@@ -142,6 +142,7 @@ Specialized Features
    postgres_gateway
    data_organization
    limits
+   metering
 
 Reference
 """""""""

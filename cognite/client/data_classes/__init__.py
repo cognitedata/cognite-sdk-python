@@ -162,6 +162,7 @@ from cognite.client.data_classes.labels import (
     LabelFilter,
 )
 from cognite.client.data_classes.limits import Limit, LimitList
+from cognite.client.data_classes.metering import MeteringData, MeteringDataList, MeteringDataPoint
 from cognite.client.data_classes.raw import (
     Database,
     DatabaseList,
@@ -455,6 +456,9 @@ __all__ = [
     "LatestDatapointQuery",
     "Limit",
     "LimitList",
+    "MeteringData",
+    "MeteringDataList",
+    "MeteringDataPoint",
     "OidcCredentials",
     "RawTable",
     "RecordId",
