@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, basic_instance_dump
 
 
 class MeteringDataPoint:
@@ -53,17 +53,16 @@ class MeteringData(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> MeteringData:
+        datapoints: list[dict[str, Any]] = resource.get("datapoints") or []
         return cls(
             meter_id=resource["meterId"],
-            datapoints=[MeteringDataPoint._load(dp) for dp in resource.get("datapoints", [])],
+            datapoints=[MeteringDataPoint._load(dp) for dp in datapoints],
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        key = "meterId" if camel_case else "meter_id"
-        return {
-            key: self.meter_id,
-            "datapoints": [dp.dump() for dp in self.datapoints],
-        }
+        result = basic_instance_dump(self, camel_case=camel_case)
+        result["datapoints"] = [dp.dump() for dp in self.datapoints]
+        return result
 
 
 class MeteringDataList(CogniteResourceList[MeteringData]):
