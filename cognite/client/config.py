@@ -219,7 +219,9 @@ class ClientConfig:
         self.timeout = timeout or 60
         self.file_transfer_timeout = file_transfer_timeout or 600
         if debug:
-            self.debug = True
+            from cognite.client.utils._logging import _configure_logger_for_debug_mode
+
+            _configure_logger_for_debug_mode()
         self._validate_config()
 
         if not global_config.disable_pypi_version_check:
