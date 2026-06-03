@@ -1,6 +1,6 @@
 """
 ===============================================================================
-830266fb5fd8d205e7c1163175ba904e
+11db1a7d26a91d8995b83430830bc7a6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -9,10 +9,13 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 from zoneinfo import ZoneInfo
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._api.datapoint_tasks import (
+    BaseDpsFetchSubtask,
+)
 from cognite.client._constants import DEFAULT_DATAPOINTS_CHUNK_SIZE
 from cognite.client._sync_api.synthetic_time_series import SyncSyntheticDatapointsAPI
 from cognite.client._sync_api_client import SyncAPIClient
@@ -33,6 +36,9 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import pandas as pd
+
+PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
+_T = TypeVar("_T")
 
 
 class SyncDatapointsAPI(SyncAPIClient):
