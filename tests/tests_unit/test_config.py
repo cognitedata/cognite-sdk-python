@@ -57,17 +57,45 @@ class TestGlobalConfig:
             assert isinstance(gc.default_client_config.credentials, Token)
             assert gc.default_client_config.project == "test-project"
 
-    @pytest.mark.parametrize("value", [0, 1, 10])
-    def test_max_retries_valid(self, monkeypatch: MonkeyPatch, value: int) -> None:
-        # A bit weird way to test "global_config.max_retries = value" works, but monkeypatch will revert
-        # the global changes on teardown which is why:
-        monkeypatch.setattr(global_config, "max_retries", value, raising=True)
-        assert global_config.max_retries == value
+    @pytest.mark.parametrize(
+        "attr, value",
+        [
+            ("max_retries", 0),
+            ("max_retries", 10),
+            ("max_retries_connect", 0),
+            ("max_retries_connect", 3),
+            ("max_retry_backoff", 0),
+            ("max_retry_backoff", 60),
+            ("max_connection_pool_size", 1),
+            ("max_connection_pool_size", 20),
+            ("file_download_chunk_size", None),
+            ("file_download_chunk_size", 1024),
+            ("file_upload_chunk_size", None),
+            ("file_upload_chunk_size", 65536),
+        ],
+    )
+    def test_validated_attrs_valid(self, monkeypatch: MonkeyPatch, attr: str, value: object) -> None:
+        monkeypatch.setattr(global_config, attr, value, raising=True)
+        assert getattr(global_config, attr) == value
 
-    @pytest.mark.parametrize("value", [-1, -100, 1.5, "5", None])
-    def test_max_retries_invalid(self, value: object) -> None:
-        with pytest.raises(ValueError, match="max_retries must be a non-negative integer"):
-            global_config.max_retries = value  # type: ignore[assignment]
+    @pytest.mark.parametrize(
+        "attr, value, match",
+        [
+            ("max_retries", -1, "non-negative integer"),
+            ("max_retries", 1.5, "non-negative integer"),
+            ("max_retries", None, "non-negative integer"),
+            ("max_retries_connect", -1, "non-negative integer"),
+            ("max_retry_backoff", -1, "non-negative integer"),
+            ("max_connection_pool_size", 0, "positive integer"),
+            ("max_connection_pool_size", -1, "positive integer"),
+            ("file_download_chunk_size", 0, "positive integer or None"),
+            ("file_download_chunk_size", -1, "positive integer or None"),
+            ("file_upload_chunk_size", 0, "positive integer or None"),
+        ],
+    )
+    def test_validated_attrs_invalid(self, attr: str, value: object, match: str) -> None:
+        with pytest.raises(ValueError, match=match):
+            setattr(global_config, attr, value)
 
     def test_load_non_existent_attr(self) -> None:
         settings = {

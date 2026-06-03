@@ -8,7 +8,7 @@ from typing import Any, ClassVar, NoReturn, overload
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
-from cognite.client.utils._auxiliary import is_finite, load_resource_to_dict
+from cognite.client.utils._auxiliary import is_finite, is_positive, load_resource_to_dict
 from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._importing import local_import
 
@@ -83,8 +83,15 @@ class GlobalConfig:
         # inspection code (which would then need special handling). Setting global config options is a rare
         # one-off type event, so overhead is no issue.
         match name:
-            case "max_retries" if not is_finite(value):
-                raise ValueError(f"max_retries must be a non-negative integer, got {value!r}")
+            case "max_retries" | "max_retries_connect" | "max_retry_backoff" if not is_finite(value):
+                raise ValueError(f"{name} must be a non-negative integer, got {value!r}")
+
+            case "max_connection_pool_size" if not is_positive(value):
+                raise ValueError(f"max_connection_pool_size must be a positive integer, got {value!r}")
+
+            case "file_download_chunk_size" | "file_upload_chunk_size" if value is not None and not is_positive(value):
+                raise ValueError(f"{name} must be a positive integer or None, got {value!r}")
+
         super().__setattr__(name, value)
 
     @property
