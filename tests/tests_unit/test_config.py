@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from contextlib import nullcontext as does_not_raise
 
 import pytest
@@ -96,6 +97,19 @@ class TestGlobalConfig:
     def test_validated_attrs_invalid(self, attr: str, value: object, match: str) -> None:
         with pytest.raises(ValueError, match=match):
             setattr(global_config, attr, value)
+
+    def test_apply_settings_invalid_value_is_rolled_back(self) -> None:
+        original_retries = global_config.max_retries
+        original_retries_connect = global_config.max_retries_connect
+        # OrderedDict guarantees max_retries (valid) is applied before max_retries_connect (invalid),
+        # so the rollback has something to actually undo:
+        with pytest.raises(ValueError, match="non-negative integer"):
+            global_config.apply_settings(
+                OrderedDict([("max_retries", original_retries + 1), ("max_retries_connect", -1)])
+            )
+
+        assert global_config.max_retries == original_retries
+        assert global_config.max_retries_connect == original_retries_connect
 
     def test_load_non_existent_attr(self) -> None:
         settings = {

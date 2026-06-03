@@ -160,7 +160,15 @@ class GlobalConfig:
             if not isinstance(loaded["default_client_config"], ClientConfig):
                 loaded["default_client_config"] = ClientConfig.load(loaded["default_client_config"])
 
-        current_settings.update(loaded)
+        # Snapshot before applying so a mid-loop validation error can be rolled back atomically:
+        snapshot = {key: getattr(self, key) for key in loaded}
+        try:
+            for key, val in loaded.items():
+                setattr(self, key, val)
+        except (ValueError, TypeError):
+            for key, val in snapshot.items():
+                setattr(self, key, val)
+            raise
         # Deprecated, stored using a property, hence the special treatment:
         if maybe_max_workers is not None:
             self.max_workers = maybe_max_workers
