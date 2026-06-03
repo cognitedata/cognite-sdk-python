@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NoReturn, overload
 
@@ -15,6 +16,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
+    from cognite.client._api.data_modeling.instances import InstancesAPI
     from cognite.client.config import ClientConfig
 
 COGNITE_FILE_VIEW_ID = CogniteFile.get_source()
@@ -44,6 +46,10 @@ class DataModelingFilesAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._files_api = cognite_client.files
+
+    @cached_property
+    def _instances_api(self) -> InstancesAPI:
+        return self._cognite_client.data_modeling.instances
 
     async def retrieve_download_urls(
         self,
@@ -237,7 +243,7 @@ class DataModelingFilesAPI(APIClient):
                 ... )
         """
         sources, strip = _resolve_source(source)
-        result = await self._cognite_client.data_modeling.instances.retrieve_nodes(nodes=node_ids, sources=sources)
+        result = await self._instances_api.retrieve_nodes(nodes=node_ids, sources=sources)
         if strip and result:
             for node in [result] if isinstance(result, Node) else result:
                 node.drop_source(COGNITE_FILE_VIEW_ID)
@@ -291,7 +297,7 @@ class DataModelingFilesAPI(APIClient):
                 ... )
         """
         sources, strip = _resolve_source(source)
-        results = await self._cognite_client.data_modeling.instances.list(
+        results = await self._instances_api.list(
             instance_type="node",
             sources=sources,
             space=space,
