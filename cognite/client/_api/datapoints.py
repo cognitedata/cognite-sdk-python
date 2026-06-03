@@ -589,7 +589,7 @@ class DatapointsAPI(APIClient):
         chunk_size_time_series: int | None = None,
         return_arrays: bool = True,
     ) -> AsyncIterator[DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList]:
-        """`Iterate through datapoints in chunks, for one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        """`Iterate through datapoints in chunks, for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_.
 
         Note:
             Control memory usage by specifying ``chunk_size_time_series``, how many time series to iterate simultaneously and ``chunk_size_datapoints``,
