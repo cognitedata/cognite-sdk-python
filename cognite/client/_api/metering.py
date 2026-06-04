@@ -157,7 +157,7 @@ class MeteringAPI(APIClient):
 
         Args:
             filter (Prefix | None): Optional ``Prefix`` filter to apply on the ``meterId`` property (only ``Prefix`` filters are supported).
-            limit (int | None): Maximum number of meters to return. Defaults to 1000. Set to ``None`` or ``-1`` to return all meters.
+            limit (int | None): Maximum number of meters to return. Defaults to 25. Set to ``None`` or ``-1`` to return all meters.
             start (int | None): Start timestamp (inclusive) for historical data, in milliseconds since epoch.
                 **Must be provided together with** ``number_of_datapoints`` to get time-series data.
                 If omitted, only meter metadata is returned without time-series data.
