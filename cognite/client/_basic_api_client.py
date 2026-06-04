@@ -219,6 +219,11 @@ class BasicAsyncAPIClient:
     def _select_async_http_client(self, is_retryable: bool) -> AsyncHTTPClientWithRetry:
         return self._http_client_with_retry if is_retryable else self._http_client
 
+    def _alpha_version_header(self) -> dict[str, str]:
+        subversion = self._config.api_subversion
+        version = subversion if subversion.endswith("-alpha") else subversion + "-alpha"
+        return {"cdf-version": version}
+
     @property
     def _base_url_with_base_path(self) -> str:
         if self._api_version:

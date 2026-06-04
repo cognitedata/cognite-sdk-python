@@ -25,9 +25,6 @@ class MeteringAPI(APIClient):
             feature_name="Metering API",
         )
 
-    def _alpha_headers(self) -> dict[str, str]:
-        return {"cdf-version": f"{self._config.api_subversion}-alpha"}
-
     def _time_range_params(
         self,
         start: int | None,
@@ -94,7 +91,7 @@ class MeteringAPI(APIClient):
         return await self._retrieve(
             identifier=MeterId(id),
             cls=MeteringData,
-            headers=self._alpha_headers(),
+            headers=self._alpha_version_header(),
             params=params,
         )
 
@@ -141,7 +138,7 @@ class MeteringAPI(APIClient):
         res = await self._post(
             url_path=self._RESOURCE_PATH + "/byids",
             json=body,
-            headers=self._alpha_headers(),
+            headers=self._alpha_version_header(),
             semaphore=self._get_semaphore("read"),
         )
         return MeteringDataList._load(res.json()["items"])._maybe_set_client_ref(self._cognite_client)
@@ -206,5 +203,5 @@ class MeteringAPI(APIClient):
             limit=limit,
             filter=None if filter is None else filter.dump(camel_case_property=True),
             other_params=other_params,
-            headers=self._alpha_headers(),
+            headers=self._alpha_version_header(),
         )
