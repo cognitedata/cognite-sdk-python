@@ -1,81 +1,11 @@
-Data Modeling
-=============
-
-.. currentmodule:: cognite.client
-
-Data Models
-------------
-.. autosummary::
-   :methods:
-   :toctree: generated/
-   :template: custom-automethods-template.rst
-
-   AsyncCogniteClient.data_modeling.data_models
-
-Data model data classes
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.data_models
-    :members:
-    :show-inheritance:
-
-.. currentmodule:: cognite.client
-
-Spaces
-------
-.. autosummary::
-   :methods:
-   :toctree: generated/
-   :template: custom-automethods-template.rst
-
-   AsyncCogniteClient.data_modeling.spaces
-
-Data classes
-^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.spaces
-    :members:
-    :show-inheritance:
-
-.. currentmodule:: cognite.client
-
-Views
-------------
-.. autosummary::
-   :methods:
-   :toctree: generated/
-   :template: custom-automethods-template.rst
-
-   AsyncCogniteClient.data_modeling.views
-
-View data classes
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.views
-    :members:
-    :show-inheritance:
-
-.. currentmodule:: cognite.client
-
-Containers
-------------
-.. autosummary::
-   :methods:
-   :toctree: generated/
-   :template: custom-automethods-template.rst
-
-   AsyncCogniteClient.data_modeling.containers
-
-Containers data classes
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.containers
-    :members:
-    :show-inheritance:
-
-.. currentmodule:: cognite.client
-
 Instances
-------------
+=========
+
+.. currentmodule:: cognite.client
+
 .. autosummary::
    :methods:
-   :toctree: generated/
+   :toctree: ../generated/
    :template: custom-automethods-template.rst
 
    AsyncCogniteClient.data_modeling.instances
@@ -263,86 +193,5 @@ Instances query data classes
 Data Modeling ID data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. automodule:: cognite.client.data_classes.data_modeling.ids
-    :members:
-    :show-inheritance:
-
-.. currentmodule:: cognite.client
-
-Statistics
-------------
-.. autosummary::
-   :methods:
-   :toctree: generated/
-   :template: custom-automethods-template.rst
-
-   AsyncCogniteClient.data_modeling.statistics
-   AsyncCogniteClient.data_modeling.statistics.spaces
-
-Data modeling statistics data classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.statistics
-    :members:
-    :show-inheritance:
-
-.. currentmodule:: cognite.client
-
-Streams
--------
-.. autosummary::
-   :methods:
-   :toctree: generated/
-   :template: custom-automethods-template.rst
-
-   AsyncCogniteClient.data_modeling.streams
-
-Streams data classes
-^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.streams
-    :members:
-    :show-inheritance:
-
-.. currentmodule:: cognite.client
-
-GraphQL
--------
-.. autosummary::
-   :methods:
-   :toctree: generated/
-   :template: custom-automethods-template.rst
-
-   AsyncCogniteClient.data_modeling.graphql
-
-Core Data Model
----------------
-.. automodule:: cognite.client.data_classes.data_modeling.cdm.v1
-    :members:
-    :show-inheritance:
-
-Extractor Extensions
---------------------
-.. automodule:: cognite.client.data_classes.data_modeling.extractor_extensions.v1
-    :members:
-    :show-inheritance:
-
-Debugging Data Classes
-----------------------
-.. automodule:: cognite.client.data_classes.data_modeling.debug
-    :members:
-    :show-inheritance:
-
-.. currentmodule:: cognite.client
-
-Records
--------
-.. autosummary::
-   :methods:
-   :toctree: generated/
-   :template: custom-automethods-template.rst
-
-   AsyncCogniteClient.data_modeling.records
-
-Records data classes
-^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: cognite.client.data_classes.data_modeling.records
     :members:
     :show-inheritance:
