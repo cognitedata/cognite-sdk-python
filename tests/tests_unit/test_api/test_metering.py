@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timezone
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -6,6 +7,7 @@ from pytest_httpx import HTTPXMock
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import MeteringData, MeteringDataList
 from cognite.client.data_classes.filters import Prefix
+from cognite.client.utils._time import timestamp_to_ms
 from tests.utils import get_url, jsgz_load
 
 ATLAS_METER: dict = {"meterId": "atlas.monthly_ai_tokens", "datapoints": []}
@@ -233,6 +235,49 @@ class TestMeteringAPI:
         request = httpx_mock.get_requests()[0]
         assert "start=1764547200000" in str(request.url)
         assert "numberOfDatapoints=2" in str(request.url)
+
+    def test_retrieve_with_datetime_start_end(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        metering_url: str,
+    ) -> None:
+        url_pattern = re.compile(re.escape(f"{metering_url}/{ATLAS_METER['meterId']}") + r"\?.*")
+        httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=ATLAS_METER_WITH_DATA)
+
+        start_dt = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        end_dt = datetime(2025, 2, 1, tzinfo=timezone.utc)
+        cognite_client.metering.retrieve(
+            id=str(ATLAS_METER["meterId"]),
+            start=start_dt,
+            end=end_dt,
+            number_of_datapoints=10,
+        )
+
+        request_url = str(httpx_mock.get_requests()[0].url)
+        assert f"start={timestamp_to_ms(start_dt)}" in request_url
+        assert f"end={timestamp_to_ms(end_dt)}" in request_url
+
+    def test_retrieve_with_relative_string_start(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        metering_url: str,
+    ) -> None:
+        url_pattern = re.compile(re.escape(f"{metering_url}/{ATLAS_METER['meterId']}") + r"\?.*")
+        httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=ATLAS_METER_WITH_DATA)
+
+        cognite_client.metering.retrieve(
+            id=str(ATLAS_METER["meterId"]),
+            start="4w-ago",
+            number_of_datapoints=10,
+        )
+
+        request_url = str(httpx_mock.get_requests()[0].url)
+        assert "start=" in request_url
+        # value is an epoch ms integer, not the string "4w-ago"
+        start_val = int(request_url.split("start=")[1].split("&")[0])
+        assert start_val > 0
 
     def test_dump_and_load_roundtrip(self) -> None:
         from cognite.client.data_classes.metering import MeteringData, MeteringDataPoint

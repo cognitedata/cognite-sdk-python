@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
@@ -7,6 +8,7 @@ from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.metering import MeteringData, MeteringDataList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import MeterId
+from cognite.client.utils._time import timestamp_to_ms
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -28,15 +30,15 @@ class MeteringAPI(APIClient):
 
     def _time_range_params(
         self,
-        start: int | None,
-        end: int | None,
+        start: int | str | datetime.datetime | None,
+        end: int | str | datetime.datetime | None,
         number_of_datapoints: int | None,
     ) -> dict[str, Any]:
         params: dict[str, Any] = {}
         if start is not None:
-            params["start"] = start
+            params["start"] = timestamp_to_ms(start)
         if end is not None:
-            params["end"] = end
+            params["end"] = timestamp_to_ms(end)
         if number_of_datapoints is not None:
             params["numberOfDatapoints"] = number_of_datapoints
         return params
@@ -45,8 +47,8 @@ class MeteringAPI(APIClient):
     async def retrieve(
         self,
         id: str,
-        start: int | None = None,
-        end: int | None = None,
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
         number_of_datapoints: int | None = None,
     ) -> MeteringData | None: ...
 
@@ -54,16 +56,16 @@ class MeteringAPI(APIClient):
     async def retrieve(
         self,
         id: SequenceNotStr[str],
-        start: int | None = None,
-        end: int | None = None,
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
         number_of_datapoints: int | None = None,
     ) -> MeteringDataList: ...
 
     async def retrieve(
         self,
         id: str | SequenceNotStr[str],
-        start: int | None = None,
-        end: int | None = None,
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
         number_of_datapoints: int | None = None,
     ) -> MeteringData | MeteringDataList | None:
         """`Retrieve one or more meters by id <https://api-docs.cognite.com/20230101-alpha/tag/Metering/operation/fetchConsumptionDataById/>`_.
@@ -72,22 +74,13 @@ class MeteringAPI(APIClient):
         or a list of strings to get multiple meters at once.
 
         Args:
-            id (str | SequenceNotStr[str]): Single meter ID or list of meter IDs.
-                Metering is identified by an id containing the service name and a service-scoped metering name.
-                For instance ``atlas.monthly_ai_tokens`` is the id of the ``atlas`` service metering ``monthly_ai_tokens``.
-                Service and metering names are always in ``lower_snake_case``.
-            start (int | None): Start timestamp (inclusive) for historical data, in milliseconds since epoch.
-                **Must be provided together with** ``number_of_datapoints`` to get time-series data.
-                If omitted, only meter metadata is returned without time-series data.
-            end (int | None): End timestamp (inclusive) for historical data, in milliseconds since epoch.
-                Only relevant when ``start`` is provided. Defaults to the current time on the server if omitted.
-            number_of_datapoints (int | None): Number of equal-width time buckets to return between ``start`` and ``end``.
-                **Must be provided together with** ``start`` to get time-series data.
-                Valid range: 0-600. API server default is 0 (metadata only).
+            id (str | SequenceNotStr[str]): Single meter ID or list of meter IDs. Metering is identified by an id containing the service name and a service-scoped metering name. For instance ``atlas.monthly_ai_tokens`` is the id of the ``atlas`` service metering ``monthly_ai_tokens``. Service and metering names are always in ``lower_snake_case``.
+            start (int | str | datetime.datetime | None): Start of the time range for historical data. Accepts milliseconds since epoch, a ``datetime`` object, or a relative time string like ``"2w-ago"``. **Must be provided together with** ``number_of_datapoints`` to get time-series data. If omitted, only meter metadata is returned without time-series data.
+            end (int | str | datetime.datetime | None): End of the time range for historical data. Accepts milliseconds since epoch, a ``datetime`` object, or a relative time string like ``"now"``. Only relevant when ``start`` is provided. Defaults to the current time on the server if omitted.
+            number_of_datapoints (int | None): Number of equal-width time buckets to return between ``start`` and ``end``. **Must be provided together with** ``start`` to get time-series data. Valid range: 0-600. API server default is 0 (metadata only).
 
         Returns:
-            MeteringData | MeteringDataList | None: If a single ID is given: the requested meter, or ``None`` if not found.
-                If a list of IDs is given: the requested meters in the same order.
+            MeteringData | MeteringDataList | None: If a single ID is given: the requested meter, or ``None`` if not found. If a list of IDs is given: the requested meters in the same order.
 
         Examples:
 
@@ -134,8 +127,8 @@ class MeteringAPI(APIClient):
         self,
         filter: Prefix | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
-        start: int | None = None,
-        end: int | None = None,
+        start: int | str | datetime.datetime | None = None,
+        end: int | str | datetime.datetime | None = None,
         number_of_datapoints: int | None = None,
     ) -> MeteringDataList:
         """`List all meters <https://api-docs.cognite.com/20230101-alpha/tag/Metering/operation/listConsumptionData/>`_.
@@ -145,14 +138,9 @@ class MeteringAPI(APIClient):
         Args:
             filter (Prefix | None): Optional ``Prefix`` filter to apply on the ``meterId`` property (only ``Prefix`` filters are supported).
             limit (int | None): Maximum number of meters to return. Defaults to 25. Set to ``None`` or ``-1`` to return all meters.
-            start (int | None): Start timestamp (inclusive) for historical data, in milliseconds since epoch.
-                **Must be provided together with** ``number_of_datapoints`` to get time-series data.
-                If omitted, only meter metadata is returned without time-series data.
-            end (int | None): End timestamp (inclusive) for historical data, in milliseconds since epoch.
-                Only relevant when ``start`` is provided. Defaults to the current time on the server if omitted.
-            number_of_datapoints (int | None): Number of equal-width time buckets to return between ``start`` and ``end``.
-                **Must be provided together with** ``start`` to get time-series data.
-                Valid range: 0-600. API server default is 0 (metadata only).
+            start (int | str | datetime.datetime | None): Start of the time range for historical data. Accepts milliseconds since epoch, a ``datetime`` object, or a relative time string like ``"2w-ago"``. **Must be provided together with** ``number_of_datapoints`` to get time-series data. If omitted, only meter metadata is returned without time-series data.
+            end (int | str | datetime.datetime | None): End of the time range for historical data. Accepts milliseconds since epoch, a ``datetime`` object, or a relative time string like ``"now"``. Only relevant when ``start`` is provided. Defaults to the current time on the server if omitted.
+            number_of_datapoints (int | None): Number of equal-width time buckets to return between ``start`` and ``end``. **Must be provided together with** ``start`` to get time-series data. Valid range: 0-600. API server default is 0 (metadata only).
 
         Returns:
             MeteringDataList: List of all meters in the project.
