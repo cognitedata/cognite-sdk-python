@@ -107,8 +107,23 @@ Core Resources
 """"""""""""""
 .. toctree::
    :maxdepth: 1
+   :caption: Data Modeling
 
-   data_modeling
+   data_modeling/data_models
+   data_modeling/spaces
+   data_modeling/views
+   data_modeling/containers
+   data_modeling/instances
+   data_modeling/records
+   data_modeling/statistics
+   data_modeling/streams
+   data_modeling/graphql
+   data_modeling/core_data_model
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Core Resources
+
    agents
    ai
    assets
