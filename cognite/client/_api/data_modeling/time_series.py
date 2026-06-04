@@ -109,7 +109,7 @@ class DataModelingTimeSeriesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
-        """`List time series nodes <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_.
+        """`List time series nodes <https://api-docs.cognite.com/20230101/tag/Instances/operation/advancedListInstance>`_.
 
         Only time series nodes will be returned, regardless of the source passed.
 

@@ -112,6 +112,7 @@ Contents
    data_modeling/containers
    data_modeling/instances
    data_modeling/files
+   data_modeling/time_series
    data_modeling/statistics
    data_modeling/streams
    data_modeling/records
