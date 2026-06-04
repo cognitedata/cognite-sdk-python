@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8697b547c188bef5ac62f97a94101b13
+3518059a88477dc96f7e0099429d14d1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -9,21 +9,18 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, overload
+from typing import Any, BinaryIO, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFile
 from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
-from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeList
+from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeApply, NodeList
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 COGNITE_FILE_VIEW_ID = CogniteFile.get_source()
 
@@ -155,6 +152,108 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
                 >>> content = client.data_modeling.files.download_bytes(NodeId("my-space", "my-file"))
         """
         return run_sync(self.__async_client.data_modeling.files.download_bytes(node_id=node_id))
+
+    def upload(self, path: Path, node: NodeApply) -> None:
+        """
+        `Create a file node and upload content in one step. <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_
+
+        The node is created (or updated) via ``instances.apply``, then the file content is uploaded.
+
+        Args:
+            path (Path): Path to the file to upload.
+            node (NodeApply): The file node to apply before uploading.
+
+        Examples:
+
+            Create a file node and upload content:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFileApply
+                >>> client = CogniteClient()
+                >>> file_name = "Quarterly-Report.pdf"
+                >>> client.data_modeling.files.upload(
+                ...     Path(file_name),
+                ...     CogniteFileApply(
+                ...         space="my-space",
+                ...         external_id="my-file",
+                ...         name=file_name,
+                ...         mime_type="application/pdf",
+                ...     ),
+                ... )
+        """
+        return run_sync(self.__async_client.data_modeling.files.upload(path=path, node=node))
+
+    def upload_bytes(self, content: str | bytes | BinaryIO, node: NodeApply) -> None:
+        """
+        Create a file node and upload in-memory content in one step.
+
+        The node is created (or updated) via ``instances.apply``, then the content is uploaded.
+
+        Args:
+            content (str | bytes | BinaryIO): The content to upload.
+            node (NodeApply): The file node to apply before uploading.
+
+        Examples:
+
+            Create a file node and upload bytes:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFileApply
+                >>> client = CogniteClient()
+                >>> client.data_modeling.files.upload_bytes(
+                ...     b"some important notes",
+                ...     CogniteFileApply(
+                ...         space="my-space",
+                ...         external_id="my-file",
+                ...         name="notes.txt",
+                ...         mime_type="text/plain",
+                ...     ),
+                ... )
+        """
+        return run_sync(self.__async_client.data_modeling.files.upload_bytes(content=content, node=node))
+
+    def upload_content(self, path: Path, node_id: NodeId | tuple[str, str]) -> None:
+        """
+        `Upload content to an existing file node by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_
+
+        Args:
+            path (Path): Path to the file to upload.
+            node_id (NodeId | tuple[str, str]): Instance ID of the file node.
+
+        Examples:
+
+            Upload file content by instance ID:
+
+                >>> from pathlib import Path
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> client.data_modeling.files.upload_content(
+                ...     Path("/path/to/file.txt"), NodeId("my-space", "my-file")
+                ... )
+        """
+        return run_sync(self.__async_client.data_modeling.files.upload_content(path=path, node_id=node_id))
+
+    def upload_content_bytes(self, content: str | bytes | BinaryIO, node_id: NodeId | tuple[str, str]) -> None:
+        """
+        Upload bytes or string content to an existing file node by instance ID.
+
+        Args:
+            content (str | bytes | BinaryIO): The content to upload.
+            node_id (NodeId | tuple[str, str]): Instance ID of the file node.
+
+        Examples:
+
+            Upload bytes to an existing file node by instance ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> client.data_modeling.files.upload_content_bytes(
+                ...     b"some content", NodeId("my-space", "my-file")
+                ... )
+        """
+        return run_sync(self.__async_client.data_modeling.files.upload_content_bytes(content=content, node_id=node_id))
 
     @overload
     def retrieve(

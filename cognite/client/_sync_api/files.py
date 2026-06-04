@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a530c4f4e81ca372d28ca3149ab701bb
+1b4a36fd7abb2313cb1450a05aadde05
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -424,7 +424,7 @@ class SyncFilesAPI(SyncAPIClient):
         return run_sync(self.__async_client.files.search(name=name, filter=filter, limit=limit))
 
     def upload_content(
-        self, path: Path | str, external_id: str | None = None, instance_id: NodeId | None = None
+        self, path: Path | str, external_id: str | None = None, instance_id: NodeId | tuple[str, str] | None = None
     ) -> FileMetadata:
         """
         `Upload file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getMultiPartUploadLink>`_
@@ -437,7 +437,7 @@ class SyncFilesAPI(SyncAPIClient):
         Args:
             path (Path | str): Local file path.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file (CogniteFile).
+            instance_id (NodeId | tuple[str, str] | None): Instance ID of the file (CogniteFile).
         Returns:
             FileMetadata: No description.
         """
@@ -557,7 +557,10 @@ class SyncFilesAPI(SyncAPIClient):
         )
 
     def upload_content_bytes(
-        self, content: str | bytes | BinaryIO, external_id: str | None = None, instance_id: NodeId | None = None
+        self,
+        content: str | bytes | BinaryIO,
+        external_id: str | None = None,
+        instance_id: NodeId | tuple[str, str] | None = None,
     ) -> FileMetadata:
         """
         Upload bytes or string (UTF-8 assumed).
@@ -567,7 +570,7 @@ class SyncFilesAPI(SyncAPIClient):
         Args:
             content (str | bytes | BinaryIO): The content to upload.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            instance_id (NodeId | tuple[str, str] | None): Instance ID of the file.
 
         Returns:
             FileMetadata: No description.
@@ -752,7 +755,7 @@ class SyncFilesAPI(SyncAPIClient):
         )
 
     def multipart_upload_content_session(
-        self, parts: int, external_id: str | None = None, instance_id: NodeId | None = None
+        self, parts: int, external_id: str | None = None, instance_id: NodeId | tuple[str, str] | None = None
     ) -> FileMultipartUploadSession:
         """
         Begin uploading a file in multiple parts whose metadata is already created in CDF.
@@ -770,7 +773,7 @@ class SyncFilesAPI(SyncAPIClient):
         Args:
             parts (int): The number of parts to upload, must be between 1 and 250.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            instance_id (NodeId | tuple[str, str] | None): Instance ID of the file.
 
         Returns:
             FileMultipartUploadSession: Object containing metadata about the created file, and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once all parts are uploaded.
