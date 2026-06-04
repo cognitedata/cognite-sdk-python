@@ -34,7 +34,7 @@ from cognite.client.data_classes.datapoints import (
     DatapointsArray,
     DatapointsQuery,
 )
-from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_finite, is_unlimited
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_non_negative_int, is_unlimited
 from cognite.client.utils._datapoints import (
     AggregateDatapoints,
     DatapointsRaw,
@@ -300,7 +300,7 @@ class _DpsQueryValidator:
     def _verify_and_convert_limit(limit: int | None) -> int | None:
         if is_unlimited(limit):
             return None
-        elif is_finite(limit):  # limit=0 is accepted by the API
+        elif is_non_negative_int(limit):  # limit=0 is accepted by the API
             try:
                 # We don't want weird stuff like numpy dtypes etc:
                 return int(limit)

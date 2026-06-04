@@ -12,7 +12,7 @@ from cognite.client.data_classes.raw import Row, RowCore, RowList, RowWrite
 from cognite.client.utils._auxiliary import (
     drop_none_values,
     find_duplicates,
-    is_finite,
+    is_non_negative_int,
     is_unlimited,
     split_into_chunks,
     unpack_items,
@@ -179,7 +179,7 @@ class RawRowsAPI(APIClient):
 
         concurrency_limit = global_config.concurrency_settings.raw.read
         partitions = min(partitions, concurrency_limit)
-        if is_finite(limit):
+        if is_non_negative_int(limit):
             partitions = min(partitions, concurrency_limit, math.ceil(limit / 20_000))
             if chunk_size is not None and limit < chunk_size:
                 raise ValueError(f"chunk_size ({chunk_size}) should be much smaller than limit ({limit})")
@@ -226,7 +226,7 @@ class RawRowsAPI(APIClient):
                     await asyncio.sleep(0.5)
                     continue
 
-                if not is_finite(limit):
+                if not is_non_negative_int(limit):
                     yield chunk
                     continue
 
