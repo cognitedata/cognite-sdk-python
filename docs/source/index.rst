@@ -111,6 +111,7 @@ Contents
    data_modeling/views
    data_modeling/containers
    data_modeling/instances
+   data_modeling/files
    data_modeling/records
    data_modeling/statistics
    data_modeling/streams

@@ -47,6 +47,7 @@ if _should_build_docs := os.getenv("BUILD_COGNITE_SDK_DOCS") == "true":
     from cognite.client._api.ai.tools.documents import AIDocumentsAPI
     from cognite.client._api.data_modeling.containers import ContainersAPI
     from cognite.client._api.data_modeling.data_models import DataModelsAPI
+    from cognite.client._api.data_modeling.files import DataModelingFilesAPI
     from cognite.client._api.data_modeling.graphql import DataModelingGraphQLAPI
     from cognite.client._api.data_modeling.instances import InstancesAPI
     from cognite.client._api.data_modeling.records import RecordsAPI
@@ -436,6 +437,7 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.data_modeling.views = ViewsAPI  # type: ignore
     AsyncCogniteClient.data_modeling.containers = ContainersAPI  # type: ignore
     AsyncCogniteClient.data_modeling.instances = InstancesAPI  # type: ignore
+    AsyncCogniteClient.data_modeling.files = DataModelingFilesAPI  # type: ignore
     AsyncCogniteClient.data_modeling.graphql = DataModelingGraphQLAPI  # type: ignore
     AsyncCogniteClient.data_modeling.statistics = StatisticsAPI  # type: ignore
     AsyncCogniteClient.data_modeling.statistics.spaces = SpaceStatisticsAPI  # type: ignore
