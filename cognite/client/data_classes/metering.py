@@ -21,7 +21,7 @@ class MeteringDataPoint:
     def _load(cls, resource: dict[str, Any]) -> MeteringDataPoint:
         return cls(timestamp=resource["timestamp"], average=resource["average"])
 
-    def dump(self) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"timestamp": self.timestamp, "average": self.average}
 
     def __repr__(self) -> str:
@@ -58,7 +58,7 @@ class MeteringData(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = basic_instance_dump(self, camel_case=camel_case)
-        result["datapoints"] = [dp.dump() for dp in self.datapoints]
+        result["datapoints"] = [dp.dump(camel_case) for dp in self.datapoints]
         return result
 
 
