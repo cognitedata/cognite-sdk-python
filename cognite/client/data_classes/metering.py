@@ -24,9 +24,6 @@ class MeteringDataPoint:
     def dump(self) -> dict[str, Any]:
         return {"timestamp": self.timestamp, "average": self.average}
 
-    def __eq__(self, other: Any) -> bool:
-        return isinstance(other, MeteringDataPoint) and self.dump() == other.dump()
-
     def __repr__(self) -> str:
         return f"MeteringDataPoint(timestamp={self.timestamp}, average={self.average})"
 
