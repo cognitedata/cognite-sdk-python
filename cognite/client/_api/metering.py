@@ -135,7 +135,7 @@ class MeteringAPI(APIClient):
                 ... )
         """
         self._warning.warn()
-        body: dict[str, Any] = {"items": [{"meterId": id_} for id_ in ids]}
+        body: dict[str, Any] = {"items": [MeterId(id_).as_dict() for id_ in ids]}
         body.update(self._time_range_params(start, end, number_of_datapoints))
 
         res = await self._post(
