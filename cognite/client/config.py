@@ -190,7 +190,7 @@ class ClientConfig:
         cluster (str | None): The cluster where the CDF project is located. When passed, it is assumed that the base
             URL can be constructed as: ``https://<cluster>.cognitedata.com``. Either base_url or cluster must be provided.
         headers (dict[str, str] | None): Additional headers to add to all requests.
-        timeout (int | None): Timeout on requests sent to the api. Defaults to 60 seconds.
+        timeout (float | None): Timeout on requests sent to the api. Defaults to 60 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
         debug (bool): Enables debug logging to stderr. This includes full request/response details and logs regarding retry
             attempts (e.g., on 429 throttling or 5xx errors).
@@ -205,7 +205,7 @@ class ClientConfig:
         base_url: str | None = None,
         cluster: str | None = None,
         headers: dict[str, str] | None = None,
-        timeout: int | None = None,
+        timeout: float | None = None,
         file_transfer_timeout: int | None = None,
         debug: bool = False,
     ) -> None:
