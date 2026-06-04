@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9bceea2e40aa112592e1ee567bad5444
+069b616fd5f150b565b6bc9e566e1e4a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -329,7 +329,7 @@ class SyncDataModelingFilesAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
         """
-        `List file nodes <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_.
+        `List file nodes <https://api-docs.cognite.com/20230101/tag/Instances/operation/advancedListInstance>`_.
 
         Only file nodes will be returned, regardless of the source passed.
 
