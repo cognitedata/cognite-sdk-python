@@ -5,7 +5,7 @@ from typing import Any
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, basic_instance_dump
 
 
-class MeteringDataPoint:
+class MeteringDataPoint(CogniteResource):
     """A single timestamped data point with average value.
 
     Args:
@@ -20,12 +20,6 @@ class MeteringDataPoint:
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> MeteringDataPoint:
         return cls(timestamp=resource["timestamp"], average=resource["average"])
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {"timestamp": self.timestamp, "average": self.average}
-
-    def __repr__(self) -> str:
-        return f"MeteringDataPoint(timestamp={self.timestamp}, average={self.average})"
 
 
 class MeteringData(CogniteResource):
