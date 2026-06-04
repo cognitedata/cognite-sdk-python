@@ -488,7 +488,7 @@ class FilesAPI(APIClient):
         self,
         path: Path | str,
         external_id: str | None = None,
-        instance_id: NodeId | None = None,
+        instance_id: NodeId | tuple[str, str] | None = None,
     ) -> FileMetadata:
         """`Upload file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getMultiPartUploadLink>`_
 
@@ -500,7 +500,7 @@ class FilesAPI(APIClient):
         Args:
             path (Path | str): Local file path.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file (CogniteFile).
+            instance_id (NodeId | tuple[str, str] | None): Instance ID of the file (CogniteFile).
         Returns:
             FileMetadata: No description.
         """
@@ -719,7 +719,7 @@ class FilesAPI(APIClient):
         self,
         content: str | bytes | BinaryIO,
         external_id: str | None = None,
-        instance_id: NodeId | None = None,
+        instance_id: NodeId | tuple[str, str] | None = None,
     ) -> FileMetadata:
         """Upload bytes or string (UTF-8 assumed).
 
@@ -728,7 +728,7 @@ class FilesAPI(APIClient):
         Args:
             content (str | bytes | BinaryIO): The content to upload.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            instance_id (NodeId | tuple[str, str] | None): Instance ID of the file.
 
         Returns:
             FileMetadata: No description.
@@ -1000,7 +1000,7 @@ class FilesAPI(APIClient):
         self,
         parts: int,
         external_id: str | None = None,
-        instance_id: NodeId | None = None,
+        instance_id: NodeId | tuple[str, str] | None = None,
     ) -> FileMultipartUploadSession:
         """Begin uploading a file in multiple parts whose metadata is already created in CDF.
 
@@ -1017,7 +1017,7 @@ class FilesAPI(APIClient):
         Args:
             parts (int): The number of parts to upload, must be between 1 and 250.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            instance_id (NodeId | tuple[str, str] | None): Instance ID of the file.
 
         Returns:
             FileMultipartUploadSession: Object containing metadata about the created file, and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once all parts are uploaded.

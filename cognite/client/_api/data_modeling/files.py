@@ -1,20 +1,30 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Sequence
+from functools import cached_property
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NoReturn, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.config import global_config
 from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFile
 from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
-from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeList
+from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeApply, NodeList
 from cognite.client.data_classes.data_modeling.views import View
+from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.filters import Filter
+from cognite.client.exceptions import CogniteFileUploadError, CogniteNotFoundError
+from cognite.client.utils._retry import Backoff
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+    from typing import BinaryIO
+
     from cognite.client import AsyncCogniteClient
+    from cognite.client._api.data_modeling.instances import InstancesAPI
     from cognite.client.config import ClientConfig
 
 COGNITE_FILE_VIEW_ID = CogniteFile.get_source()
@@ -44,6 +54,10 @@ class DataModelingFilesAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._files_api = cognite_client.files
+
+    @cached_property
+    def _instances_api(self) -> InstancesAPI:
+        return self._cognite_client.data_modeling.instances
 
     async def retrieve_download_urls(
         self,
@@ -160,17 +174,186 @@ class DataModelingFilesAPI(APIClient):
         """
         return await self._files_api.download_bytes(instance_id=node_id)
 
-    async def upload(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+    async def upload(self, path: Path, node: NodeApply) -> None:
+        """`Create a file node and upload content in one step. <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_
 
-    async def upload_bytes(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+        The node is created (or updated) via ``instances.apply``, then the file content is uploaded.
 
-    async def upload_content(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+        Args:
+            path (Path): Path to the file to upload.
+            node (NodeApply): The file node to apply before uploading.
 
-    async def upload_content_bytes(self, *args: Any, **kwargs: Any) -> NoReturn:
-        raise NotImplementedError("This method is not implemented yet!")
+        Examples:
+
+            Create a file node and upload content:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFileApply
+                >>> client = CogniteClient()
+                >>> file_name = "Quarterly-Report.pdf"
+                >>> client.data_modeling.files.upload(
+                ...     Path(file_name),
+                ...     CogniteFileApply(
+                ...         space="my-space",
+                ...         external_id="my-file",
+                ...         name=file_name,
+                ...         mime_type="application/pdf",
+                ...     ),
+                ... )
+        """
+        await self._instances_api.apply(nodes=node)
+        node_id = node.as_id()
+        await self._upload_to_newly_created_file_node(
+            node_id, upload_fn=lambda: self._files_api.upload_content(path=path, instance_id=node_id)
+        )
+
+    async def upload_bytes(self, content: str | bytes | BinaryIO, node: NodeApply) -> None:
+        """Create a file node and upload in-memory content in one step.
+
+        The node is created (or updated) via ``instances.apply``, then the content is uploaded.
+
+        Args:
+            content (str | bytes | BinaryIO): The content to upload.
+            node (NodeApply): The file node to apply before uploading.
+
+        Examples:
+
+            Create a file node and upload bytes:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFileApply
+                >>> client = CogniteClient()
+                >>> client.data_modeling.files.upload_bytes(
+                ...     b"some important notes",
+                ...     CogniteFileApply(
+                ...         space="my-space",
+                ...         external_id="my-file",
+                ...         name="notes.txt",
+                ...         mime_type="text/plain",
+                ...     ),
+                ... )
+        """
+        await self._instances_api.apply(nodes=node)
+        node_id = node.as_id()
+        await self._upload_to_newly_created_file_node(
+            node_id, upload_fn=lambda: self._files_api.upload_content_bytes(content=content, instance_id=node_id)
+        )
+
+    async def _upload_to_newly_created_file_node(
+        self, node_id: NodeId, upload_fn: Callable[[], Awaitable[FileMetadata]]
+    ) -> None:
+        try:
+            await upload_fn()
+            return  # we do not want to return legacy FileMetadata
+        except CogniteNotFoundError as err:
+            # If a newly created node is not found, we first need to verify that the node is actually a file node.
+            # The retrieve endpoint is immediately consistent, so we check:
+            if await self.retrieve(node_id, source=COGNITE_FILE_VIEW_ID) is None:
+                raise CogniteFileUploadError(
+                    f"The file upload failed because the target {node_id=} is not a file node. "
+                    "Make sure to write through CogniteFile or an extension of it.",
+                    code=err.code,
+                ) from err
+
+            # We now know that the newly created node -is- a file node, we are just experiencing propagation delays to the
+            # backend file service. We should retry with backoff settings (set by the user):
+            await self._upload_with_retry(node_id, upload_fn, err)
+
+    async def _upload_with_retry(
+        self,
+        node_id: NodeId,
+        upload_fn: Callable[[], Awaitable[FileMetadata]],
+        latest_error: CogniteNotFoundError,
+    ) -> None:
+        backoff = Backoff(max_wait=global_config.max_retry_backoff)
+        for _ in range(global_config.max_retries):
+            await asyncio.sleep(next(backoff))  # we sleep immediately because we have already tried uploading
+            try:
+                await upload_fn()
+                return
+            except CogniteNotFoundError as err:
+                latest_error = err
+
+        total_attempts = global_config.max_retries + 1
+        raise CogniteFileUploadError(
+            f"The file upload failed to {node_id=} after {total_attempts} attempt(s): "
+            "backend file propagation is taking longer than expected. "
+            "Ensure no one has deleted the file node in the meantime, then try again shortly.",
+            code=latest_error.code,
+        ) from latest_error
+
+    async def upload_content(self, path: Path, node_id: NodeId | tuple[str, str]) -> None:
+        """`Upload content to an existing file node by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_
+
+        Args:
+            path (Path): Path to the file to upload.
+            node_id (NodeId | tuple[str, str]): Instance ID of the file node.
+
+        Examples:
+
+            Upload file content by instance ID:
+
+                >>> from pathlib import Path
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> client.data_modeling.files.upload_content(
+                ...     Path("/path/to/file.txt"), NodeId("my-space", "my-file")
+                ... )
+        """
+        node_id = NodeId.load(node_id)
+        await self._upload_to_existing_node(
+            node_id, upload_fn=lambda: self._files_api.upload_content(path=path, instance_id=node_id)
+        )
+
+    async def _upload_to_existing_node(self, node_id: NodeId, upload_fn: Callable[[], Awaitable[FileMetadata]]) -> None:
+        try:
+            await upload_fn()
+            return  # we do not want to return legacy FileMetadata
+        except CogniteNotFoundError as err:
+            # We did not create the node before upload, so we don't know if the node even exists. We first
+            # need to verify that the node is actually a file node, so we use the retrieve endpoint which
+            # is immediately consistent to check:
+            if await self.retrieve(node_id, source=COGNITE_FILE_VIEW_ID) is None:
+                if await self._instances_api.retrieve_nodes(nodes=node_id, sources=None):
+                    err_msg = (
+                        f"The file upload failed because the target {node_id=} exists but is not a file node. "
+                        "Make sure to write through CogniteFile or an extension of it."
+                    )
+                else:
+                    err_msg = f"The file upload failed because the target {node_id=} does not exist."
+                raise CogniteFileUploadError(err_msg, code=err.code) from err
+
+            # We now know that the existing node -is- a file node, we are just experiencing propagation delays to the
+            # backend file service. We should retry with backoff settings (set by the user):
+            await self._upload_with_retry(node_id, upload_fn, err)
+
+    async def upload_content_bytes(
+        self,
+        content: str | bytes | BinaryIO,
+        node_id: NodeId | tuple[str, str],
+    ) -> None:
+        """Upload bytes or string content to an existing file node by instance ID.
+
+        Args:
+            content (str | bytes | BinaryIO): The content to upload.
+            node_id (NodeId | tuple[str, str]): Instance ID of the file node.
+
+        Examples:
+
+            Upload bytes to an existing file node by instance ID:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> client.data_modeling.files.upload_content_bytes(
+                ...     b"some content", NodeId("my-space", "my-file")
+                ... )
+        """
+        node_id = NodeId.load(node_id)
+        await self._upload_to_existing_node(
+            node_id, upload_fn=lambda: self._files_api.upload_content_bytes(content=content, instance_id=node_id)
+        )
 
     async def __call__(self) -> NoReturn:
         raise NotImplementedError("This method is not implemented yet!")
@@ -237,7 +420,7 @@ class DataModelingFilesAPI(APIClient):
                 ... )
         """
         sources, strip = _resolve_source(source)
-        result = await self._cognite_client.data_modeling.instances.retrieve_nodes(nodes=node_ids, sources=sources)
+        result = await self._instances_api.retrieve_nodes(nodes=node_ids, sources=sources)
         if strip and result:
             for node in [result] if isinstance(result, Node) else result:
                 node.drop_source(COGNITE_FILE_VIEW_ID)
@@ -291,7 +474,7 @@ class DataModelingFilesAPI(APIClient):
                 ... )
         """
         sources, strip = _resolve_source(source)
-        results = await self._cognite_client.data_modeling.instances.list(
+        results = await self._instances_api.list(
             instance_type="node",
             sources=sources,
             space=space,
