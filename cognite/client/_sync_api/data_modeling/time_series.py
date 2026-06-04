@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c785440f6657cb93d7d732c42f4df832
+91be1213d9914f806b6472e0a49cf59b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -107,7 +107,7 @@ class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
         """
-        `List time series nodes <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_.
+        `List time series nodes <https://api-docs.cognite.com/20230101/tag/Instances/operation/advancedListInstance>`_.
 
         Only time series nodes will be returned, regardless of the source passed.
 

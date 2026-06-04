@@ -41,6 +41,8 @@ from cognite.client._api.data_modeling import (
 )
 from cognite.client._api.data_modeling import (
     files as dm_files,
+)
+from cognite.client._api.data_modeling import (
     time_series as dm_time_series,
 )
 from cognite.client._api.hosted_extractors import destinations, jobs, mappings, sources
