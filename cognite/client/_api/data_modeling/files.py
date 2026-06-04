@@ -67,6 +67,9 @@ class DataModelingFilesAPI(APIClient):
     ) -> dict[NodeId, str]:
         """`Get download URLs for one or more files by instance ID <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_.
 
+        Note:
+            If you pass instance IDs as tuple(s), the returned mapping will always use NodeIds as keys.
+
         Args:
             node_ids (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
             extended_expiration (bool): Extend expiration time of download URL to 1 hour. Defaults to False.
