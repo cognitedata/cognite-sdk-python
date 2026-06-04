@@ -35,7 +35,7 @@ class TestMeteringAPI:
             pytest.skip("No meters found in project - skipping retrieve_multiple test")
 
         ids = meters.as_ids()
-        res = cognite_client.metering.retrieve_multiple(ids=ids)
+        res = cognite_client.metering.retrieve(id=ids)
 
         assert isinstance(res, MeteringDataList)
         assert len(res) == len(ids)

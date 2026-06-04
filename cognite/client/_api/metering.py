@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.metering import MeteringData, MeteringDataList
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import MeterId
+from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -40,19 +41,38 @@ class MeteringAPI(APIClient):
             params["numberOfDatapoints"] = number_of_datapoints
         return params
 
+    @overload
     async def retrieve(
         self,
         id: str,
         start: int | None = None,
         end: int | None = None,
         number_of_datapoints: int | None = None,
-    ) -> MeteringData | None:
-        """`Retrieve consumption data by its id <https://api-docs.cognite.com/20230101-alpha/tag/Metering/operation/fetchConsumptionDataById/>`_.
+    ) -> MeteringData | None: ...
 
-        Retrieves consumption data by its ``meterId``.
+    @overload
+    async def retrieve(
+        self,
+        id: SequenceNotStr[str],
+        start: int | None = None,
+        end: int | None = None,
+        number_of_datapoints: int | None = None,
+    ) -> MeteringDataList: ...
+
+    async def retrieve(
+        self,
+        id: str | SequenceNotStr[str],
+        start: int | None = None,
+        end: int | None = None,
+        number_of_datapoints: int | None = None,
+    ) -> MeteringData | MeteringDataList | None:
+        """`Retrieve one or more meters by id <https://api-docs.cognite.com/20230101-alpha/tag/Metering/operation/fetchConsumptionDataById/>`_.
+
+        Retrieves consumption data by ``meterId``. Pass a single string to get one meter,
+        or a list of strings to get multiple meters at once.
 
         Args:
-            id (str): Meter ID to retrieve.
+            id (str | SequenceNotStr[str]): Single meter ID or list of meter IDs.
                 Metering is identified by an id containing the service name and a service-scoped metering name.
                 For instance ``atlas.monthly_ai_tokens`` is the id of the ``atlas`` service metering ``monthly_ai_tokens``.
                 Service and metering names are always in ``lower_snake_case``.
@@ -66,7 +86,8 @@ class MeteringAPI(APIClient):
                 Valid range: 0-600. API server default is 0 (metadata only).
 
         Returns:
-            MeteringData | None: The requested consumption data, or ``None`` if not found.
+            MeteringData | MeteringDataList | None: If a single ID is given: the requested meter, or ``None`` if not found.
+                If a list of IDs is given: the requested meters in the same order.
 
         Examples:
 
@@ -76,6 +97,10 @@ class MeteringAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.metering.retrieve(id="atlas.monthly_ai_tokens")
+
+            Retrieve multiple meters by id:
+
+                >>> res = client.metering.retrieve(id=["atlas.monthly_ai_tokens", "files.storage_bytes"])
 
             Retrieve a single meter with historical data:
 
@@ -87,54 +112,16 @@ class MeteringAPI(APIClient):
                 ... )
         """
         self._warning.warn()
-        params = self._time_range_params(start, end, number_of_datapoints) or None
-        return await self._retrieve(
-            identifier=MeterId(id),
-            cls=MeteringData,
-            headers=self._alpha_version_header(),
-            params=params,
-        )
-
-    async def retrieve_multiple(
-        self,
-        ids: list[str],
-        start: int | None = None,
-        end: int | None = None,
-        number_of_datapoints: int | None = None,
-    ) -> MeteringDataList:
-        """`Retrieve multiple consumption data by their ids <https://api-docs.cognite.com/20230101-alpha/tag/Metering/operation/fetchConsumptionDataByIds/>`_.
-
-        Retrieves multiple consumption data items by their meter IDs.
-
-        Args:
-            ids (list[str]): List of meter IDs to retrieve.
-            start (int | None): Start timestamp (inclusive) for historical data, in milliseconds since epoch.
-                **Must be provided together with** ``number_of_datapoints`` to get time-series data.
-                If omitted, only meter metadata is returned without time-series data.
-            end (int | None): End timestamp (inclusive) for historical data, in milliseconds since epoch.
-                Only relevant when ``start`` is provided. Defaults to the current time on the server if omitted.
-            number_of_datapoints (int | None): Number of equal-width time buckets to return between ``start`` and ``end``.
-                **Must be provided together with** ``start`` to get time-series data.
-                Valid range: 0-600. API server default is 0 (metadata only).
-
-        Returns:
-            MeteringDataList: The requested consumption data items. Order matches the request.
-
-        Examples:
-
-            Retrieve multiple meters by id:
-
-                >>> from cognite.client import CogniteClient, AsyncCogniteClient
-                >>> client = CogniteClient()
-                >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.metering.retrieve_multiple(
-                ...     ids=["atlas.monthly_ai_tokens", "files.storage_bytes"]
-                ... )
-        """
-        self._warning.warn()
-        body: dict[str, Any] = {"items": [MeterId(id_).as_dict() for id_ in ids]}
+        if isinstance(id, str):
+            params = self._time_range_params(start, end, number_of_datapoints) or None
+            return await self._retrieve(
+                identifier=MeterId(id),
+                cls=MeteringData,
+                headers=self._alpha_version_header(),
+                params=params,
+            )
+        body: dict[str, Any] = {"items": [MeterId(id_).as_dict() for id_ in id]}
         body.update(self._time_range_params(start, end, number_of_datapoints))
-
         res = await self._post(
             url_path=self._RESOURCE_PATH + "/byids",
             json=body,

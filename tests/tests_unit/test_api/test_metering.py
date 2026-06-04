@@ -98,7 +98,7 @@ class TestMeteringAPI:
 
         assert res is None
 
-    def test_retrieve_multiple(
+    def test_retrieve_list_of_ids(
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
@@ -115,7 +115,7 @@ class TestMeteringAPI:
             json={"items": meters_data},
         )
 
-        res = cognite_client.metering.retrieve_multiple(ids=["atlas.monthly_ai_tokens", "files.storage_bytes"])
+        res = cognite_client.metering.retrieve(id=["atlas.monthly_ai_tokens", "files.storage_bytes"])
 
         assert isinstance(res, MeteringDataList)
         assert len(res) == 2
@@ -130,7 +130,7 @@ class TestMeteringAPI:
             {"meterId": "files.storage_bytes"},
         ]
 
-    def test_retrieve_multiple_with_time_range(
+    def test_retrieve_list_of_ids_with_time_range(
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
@@ -143,8 +143,8 @@ class TestMeteringAPI:
             json={"items": [ATLAS_METER_WITH_DATA]},
         )
 
-        res = cognite_client.metering.retrieve_multiple(
-            ids=["atlas.monthly_ai_tokens"],
+        res = cognite_client.metering.retrieve(
+            id=["atlas.monthly_ai_tokens"],
             start=1764547200000,
             end=1767225599000,
             number_of_datapoints=2,
