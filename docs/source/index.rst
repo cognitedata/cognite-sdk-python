@@ -112,47 +112,82 @@ Contents
    data_modeling/containers
    data_modeling/instances
    data_modeling/files
-   data_modeling/records
    data_modeling/statistics
    data_modeling/streams
+   data_modeling/records
    data_modeling/graphql
    data_modeling/core_data_model
 
 .. toctree::
    :maxdepth: 1
-   :caption: Core Resources
+   :caption: Core Data
 
-   agents
-   ai
-   assets
-   events
-   documents
-   files
    time_series
    sequences
+   files
    3d
 
 .. toctree::
    :maxdepth: 1
-   :caption: Data Processing
+   :caption: Documents
+
+   ai
+   documents
+
+.. toctree::
+   :maxdepth: 1
+   :caption: AI Agents
+
+   agents
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Contextualization
 
    contextualization
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Data Lifecycle
+
    data_ingestion
+   data_organization
    transformations
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Compute and Automation
+
    functions
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Integrations
+
+   hosted_extractors
+   postgres_gateway
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Workflows
+
    data_workflows
 
 .. toctree::
    :maxdepth: 1
-   :caption: Specialized Features
+   :caption: Specialized
 
    simulators
-   geospatial
    unit_catalog
-   hosted_extractors
-   postgres_gateway
-   data_organization
+   geospatial
    limits
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Legacy
+
+   assets
+   events
 
 .. toctree::
    :maxdepth: 1
