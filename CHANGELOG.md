@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.9.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.8.0...cognite-sdk-python-v8.9.0) (2026-06-08)
+
+
+### Features
+
+* **records:** ingest endpoint ([#2652](https://github.com/cognitedata/cognite-sdk-python/issues/2652)) ([186140b](https://github.com/cognitedata/cognite-sdk-python/commit/186140bcc80964b7c31277d2b18f4fe41024a76d))
+
 ## [8.8.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.7.0...cognite-sdk-python-v8.8.0) (2026-06-08)
 
 
