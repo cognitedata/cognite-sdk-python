@@ -46,7 +46,7 @@ class RecordSource(CogniteResource):
 
     Args:
         source (RecordContainerId): Reference to the container.
-        properties (dict[str, Any]): Map of ``{property_id: value}``.
+        properties (dict[str, Any]): The data to write to the source container.
     """
 
     def __init__(self, source: RecordContainerId, properties: dict[str, Any]) -> None:
