@@ -16,6 +16,7 @@ from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.filters import Filter
 from cognite.client.exceptions import CogniteFileUploadError, CogniteNotFoundError
+from cognite.client.utils._data_modeling import resolve_source, strip_canonical_source
 from cognite.client.utils._retry import Backoff
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -28,26 +29,6 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 COGNITE_FILE_VIEW_ID = CogniteFile.get_source()
-
-
-def _resolve_source(source: View | ViewId | tuple[str, str, str]) -> tuple[list[ViewId], bool]:
-    match source:
-        case ViewId():
-            source_as_id = source
-        case View():
-            source_as_id = source.as_id()
-        case [str(), str(), str()]:
-            source_as_id = ViewId(*source)
-        case _:
-            raise TypeError(f"Expected View, ViewId, or a (space, external_id, version) tuple, got {type(source)}")
-
-    if source_as_id == COGNITE_FILE_VIEW_ID:
-        return [source_as_id], False
-
-    # User has passed a custom source, we include CogniteFile source to guarantee only file nodes
-    # are returned. We will later strip them (hence the 'True' flag) to avoid returning nodes with
-    # properties from multiple sources as they are very annoying to work with in the SDK.
-    return [source_as_id, COGNITE_FILE_VIEW_ID], True
 
 
 class DataModelingFilesAPI(APIClient):
@@ -422,11 +403,10 @@ class DataModelingFilesAPI(APIClient):
                 ...     source=ViewId("my-space", "MyFileExtension", "v1"),
                 ... )
         """
-        sources, strip = _resolve_source(source)
+        sources, strip = resolve_source(source, COGNITE_FILE_VIEW_ID)
         result = await self._instances_api.retrieve_nodes(nodes=node_ids, sources=sources)
-        if strip and result:
-            for node in [result] if isinstance(result, Node) else result:
-                node.drop_source(COGNITE_FILE_VIEW_ID)
+        if strip:
+            strip_canonical_source(result, COGNITE_FILE_VIEW_ID)
         return result
 
     async def list(
@@ -476,7 +456,7 @@ class DataModelingFilesAPI(APIClient):
                 ...     limit=None,
                 ... )
         """
-        sources, strip = _resolve_source(source)
+        sources, strip = resolve_source(source, COGNITE_FILE_VIEW_ID)
         results = await self._instances_api.list(
             instance_type="node",
             sources=sources,
@@ -486,6 +466,5 @@ class DataModelingFilesAPI(APIClient):
             limit=limit,
         )
         if strip:
-            for node in results:
-                node.drop_source(COGNITE_FILE_VIEW_ID)
+            strip_canonical_source(results, COGNITE_FILE_VIEW_ID)
         return results
