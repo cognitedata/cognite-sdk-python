@@ -34,9 +34,6 @@ class RecordContainerId(ContainerId):
         external_id (str): External ID of the container.
     """
 
-    def as_id(self) -> RecordId:
-        return RecordId(space=self.space, external_id=self.external_id)
-
 
 class RecordSource(CogniteResource):
     """Container source with property values for a record write.
