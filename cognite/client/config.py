@@ -4,11 +4,11 @@ import getpass
 import pprint
 import re
 import warnings
-from typing import Any, NoReturn, overload
+from typing import Any, ClassVar, NoReturn, overload
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
-from cognite.client.utils._auxiliary import load_resource_to_dict
+from cognite.client.utils._auxiliary import is_finite, is_positive, load_resource_to_dict
 from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._importing import local_import
 
@@ -30,8 +30,8 @@ class GlobalConfig:
         max_connection_pool_size (int): The maximum number of connections which will be kept in the SDKs connection pool.
             Defaults to 20.
         disable_ssl (bool): Whether or not to disable SSL. Defaults to False
-        proxy (str | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. "http://localhost:8030".
-            For proxy authentication, embed credentials in the URL: "http://user:pass@localhost:8030".
+        proxy (str | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. ``http://localhost:8030``.
+            For proxy authentication, embed credentials in the URL: ``http://user:pass@localhost:8030``.
             Defaults to None (no proxy).
         max_workers (int): DEPRECATED: Use 'concurrency_settings' instead. Maximum number of concurrent API calls. Defaults to 5.
         concurrency_settings (ConcurrencySettings): Settings controlling the maximum number of concurrent API requests
@@ -47,6 +47,8 @@ class GlobalConfig:
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
     """
+
+    _instance: ClassVar[GlobalConfig]
 
     def __new__(cls) -> GlobalConfig:
         if hasattr(cls, "_instance"):
@@ -75,6 +77,22 @@ class GlobalConfig:
         self.file_download_chunk_size: int | None = None
         self.file_upload_chunk_size: int | None = None
         self.silence_feature_preview_warnings: bool = False
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        # Why __setattr__ instead of just more use of @property? It is to avoid breaking a bunch of existing
+        # inspection code (which would then need special handling). Setting global config options is a rare
+        # one-off type event, so overhead is no issue.
+        match name:
+            case "max_retries" | "max_retries_connect" | "max_retry_backoff" if not is_finite(value):
+                raise ValueError(f"{name} must be a non-negative integer, got {value!r}")
+
+            case "max_connection_pool_size" if not is_positive(value):
+                raise ValueError(f"max_connection_pool_size must be a positive integer, got {value!r}")
+
+            case "file_download_chunk_size" | "file_upload_chunk_size" if value is not None and not is_positive(value):
+                raise ValueError(f"{name} must be a positive integer or None, got {value!r}")
+
+        super().__setattr__(name, value)
 
     @property
     def max_workers(self) -> int:
@@ -142,7 +160,15 @@ class GlobalConfig:
             if not isinstance(loaded["default_client_config"], ClientConfig):
                 loaded["default_client_config"] = ClientConfig.load(loaded["default_client_config"])
 
-        current_settings.update(loaded)
+        # Snapshot before applying so a mid-loop validation error can be rolled back atomically:
+        snapshot = {key: getattr(self, key) for key in loaded}
+        try:
+            for key, val in loaded.items():
+                setattr(self, key, val)
+        except (ValueError, TypeError):
+            for key, val in snapshot.items():
+                setattr(self, key, val)
+            raise
         # Deprecated, stored using a property, hence the special treatment:
         if maybe_max_workers is not None:
             self.max_workers = maybe_max_workers
@@ -159,10 +185,10 @@ class ClientConfig:
         project (str): CDF Project name.
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
         api_subversion (str | None): API subversion
-        base_url (str | None): Base url to send requests to. Typically on the form 'https://<cluster>.cognitedata.com'.
+        base_url (str | None): Base url to send requests to. Typically on the form ``https://<cluster>.cognitedata.com``.
             Either base_url or cluster must be provided.
         cluster (str | None): The cluster where the CDF project is located. When passed, it is assumed that the base
-            URL can be constructed as: 'https://<cluster>.cognitedata.com'. Either base_url or cluster must be provided.
+            URL can be constructed as: ``https://<cluster>.cognitedata.com``. Either base_url or cluster must be provided.
         headers (dict[str, str] | None): Additional headers to add to all requests.
         timeout (int | None): Timeout on requests sent to the api. Defaults to 60 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.

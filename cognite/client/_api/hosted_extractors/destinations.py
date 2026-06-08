@@ -25,7 +25,7 @@ class DestinationsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
-            api_maturity="beta", sdk_maturity="alpha", feature_name="Hosted Extractors"
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Hosted Extractors"
         )
         self._CREATE_LIMIT = 10
         self._LIST_LIMIT = 100
@@ -61,7 +61,6 @@ class DestinationsAPI(APIClient):
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-            headers={"cdf-version": "beta"},
         ):
             yield item
 
@@ -76,7 +75,7 @@ class DestinationsAPI(APIClient):
     async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Destination | DestinationList:
-        """`Retrieve one or more destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/retrieve_destinations>`_.
+        """`Retrieve one or more destinations <https://api-docs.cognite.com/20230101/tag/Destinations/operation/retrieve_destinations>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -106,13 +105,12 @@ class DestinationsAPI(APIClient):
             resource_cls=Destination,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             ignore_unknown_ids=ignore_unknown_ids,
-            headers={"cdf-version": "beta"},
         )
 
     async def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
-        """`Delete one or more destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/delete_destinations>`_.
+        """`Delete one or more destinations <https://api-docs.cognite.com/20230101/tag/Destinations/operation/delete_destinations>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -139,7 +137,6 @@ class DestinationsAPI(APIClient):
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             returns_items=False,
-            headers={"cdf-version": "beta"},
             extra_body_fields=extra_body_fields or None,
         )
 
@@ -150,7 +147,7 @@ class DestinationsAPI(APIClient):
     async def create(self, items: Sequence[DestinationWrite]) -> DestinationList: ...
 
     async def create(self, items: DestinationWrite | Sequence[DestinationWrite]) -> Destination | DestinationList:
-        """`Create one or more destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/create_destinations>`_.
+        """`Create one or more destinations <https://api-docs.cognite.com/20230101/tag/Destinations/operation/create_destinations>`_.
 
         Args:
             items (DestinationWrite | Sequence[DestinationWrite]): Destination(s) to create.
@@ -182,7 +179,6 @@ class DestinationsAPI(APIClient):
             resource_cls=Destination,
             items=items,
             input_resource_cls=DestinationWrite,
-            headers={"cdf-version": "beta"},
         )
 
     @overload
@@ -204,7 +200,7 @@ class DestinationsAPI(APIClient):
         items: DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Destination | DestinationList:
-        """`Update one or more destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/update_destinations>`_.
+        """`Update one or more destinations <https://api-docs.cognite.com/20230101/tag/Destinations/operation/update_destinations>`_.
 
         Args:
             items (DestinationWrite | DestinationUpdate | Sequence[DestinationWrite | DestinationUpdate]): Destination(s) to update.
@@ -231,14 +227,13 @@ class DestinationsAPI(APIClient):
             resource_cls=Destination,
             update_cls=DestinationUpdate,
             mode=mode,
-            headers={"cdf-version": "beta"},
         )
 
     async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DestinationList:
-        """`List destinations <https://api-docs.cognite.com/20230101-beta/tag/Destinations/operation/list_destinations>`_.
+        """`List destinations <https://api-docs.cognite.com/20230101/tag/Destinations/operation/list_destinations>`_.
 
         Args:
             limit (int | None): Maximum number of destinations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -271,5 +266,4 @@ class DestinationsAPI(APIClient):
             resource_cls=Destination,
             method="GET",
             limit=limit,
-            headers={"cdf-version": "beta"},
         )

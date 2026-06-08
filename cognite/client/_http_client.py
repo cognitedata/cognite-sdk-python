@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
-import random
 from collections.abc import (
     AsyncIterable,
     AsyncIterator,
@@ -28,6 +27,7 @@ from cognite.client.exceptions import (
     CogniteRequestError,
 )
 from cognite.client.response import CogniteHTTPResponse
+from cognite.client.utils._retry import Backoff
 
 logger = logging.getLogger(__name__)
 
@@ -53,30 +53,17 @@ def get_global_async_httpx_client() -> httpx.AsyncClient:
         return _global_async_httpx_clients[loop]
     except KeyError:
         pass
-    async_transport = httpx.AsyncHTTPTransport(
+
+    client = _global_async_httpx_clients[loop] = httpx.AsyncClient(
         proxy=global_config.proxy,
-        retries=0,  # 'retries': The maximum number of retries when trying to establish a connection.
         verify=not global_config.disable_ssl,
         limits=httpx.Limits(
-            # max_connections: The maximum number of concurrent HTTP connections that
-            #     the pool should allow. Any attempt to send a request on a pool that
-            #     would exceed this amount will block until a connection is available.
-            # max_keepalive_connections: The maximum number of idle HTTP connections
-            #     that will be maintained in the pool.
-            # keepalive_expiry: The duration in seconds that an idle HTTP connection
-            #     may be maintained for before being expired from the pool.
             max_connections=global_config.max_connection_pool_size,
-            max_keepalive_connections=None,  # defaults to match max_connections
-            keepalive_expiry=5,  # copy httpx default
+            max_keepalive_connections=None,
+            keepalive_expiry=5,
         ),
-    )
-    client = _global_async_httpx_clients[loop] = httpx.AsyncClient(
-        transport=async_transport,
         follow_redirects=global_config.follow_redirects,
         cookies=NoCookiesPlease(),
-        # Below should not be needed when we pass transport, but... :)
-        proxy=global_config.proxy,
-        verify=not global_config.disable_ssl,
     )
     return client
 
@@ -145,24 +132,18 @@ class RetryTracker:
         self.status = self.read = self.connect = 0
         self.last_failed_reason = ""
         self.total_time_in_backoff = 0.0
+        self._backoff = Backoff(
+            multiplier=config.backoff_factor,
+            max_wait=float(config.max_backoff_seconds),
+            min_wait=0.1,
+        )
 
     @property
     def total(self) -> int:
         return self.status + self.read + self.connect
 
-    def get_backoff_time(self) -> float:
-        """
-        Computes the randomized delay (backoff time) before the next retry attempt.
-
-        This method implements the **Exponential Backoff with Full Jitter** strategy,
-        with one addition, a small "initial floor" to avoid immediate retries.
-        """
-        base = self.config.backoff_factor * 2**self.total
-        cap = min(base, self.config.max_backoff_seconds)
-        return random.uniform(0.1, cap)
-
     async def back_off(self) -> None:
-        backoff_time = self.get_backoff_time()
+        backoff_time = next(self._backoff)
         self.total_time_in_backoff += backoff_time
         # We put logging here, since this is always called before retrying
         logger.debug(

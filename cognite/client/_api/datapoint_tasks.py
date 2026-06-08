@@ -170,7 +170,7 @@ class _FullDatapointsQuery:
             # We merge 'defaults' and the given user query; the query takes precedence:
             if isinstance(query, exp_type):
                 id_dct = {arg_name: query}
-                query = DatapointsQuery(**self.top_level_defaults, **id_dct)  # type: ignore [misc, arg-type]
+                query = DatapointsQuery(**self.top_level_defaults, **id_dct)  # type: ignore [arg-type]
 
             elif isinstance(query, DatapointsQuery):
                 if query.identifier.name() != arg_name:

@@ -46,6 +46,7 @@ from cognite.client.data_classes.hosted_extractors import Destination, Destinati
 from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
 from cognite.client.data_classes.sequences import SequenceUpdate
 from cognite.client.data_classes.time_series import TimeSeries, TimeSeriesList
+from cognite.client.data_classes.workflows import UnknownWorkflowTaskParameters, WorkflowTaskOutput
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json_extended as _json
@@ -175,7 +176,19 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource, exclude={SyntheticDatapoints, SubscriptionDatapoints})
+            for cls in all_concrete_subclasses(
+                CogniteResource,
+                exclude={
+                    SyntheticDatapoints,
+                    SubscriptionDatapoints,
+                    # WorkflowTaskOutput subclasses: The load input needs the parent object's full response payload, which
+                    # does not match its own dump output (which is just object's attributes as normal)
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    # UnknownWorkflowTaskParameters: Requires task_type which is only available in the parent object's
+                    # full response payload
+                    UnknownWorkflowTaskParameters,
+                },
+            )
         ],
     )
     def test_json_serialize(
@@ -198,7 +211,15 @@ class TestCogniteResource:
             # Agent._load requires runtimeVersion/ownerId (always sent by the API),
             # but Agent.__init__ keeps them optional for SDK back-compat. The
             # minimal-args round-trip therefore can't satisfy both contracts.
-            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints, Agent})
+            for cls in all_concrete_subclasses(
+                CogniteResource,
+                exclude={
+                    SubscriptionDatapoints,
+                    Agent,
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    UnknownWorkflowTaskParameters,
+                },
+            )
         ],
     )
     def test_dump_load_only_required(
@@ -295,7 +316,14 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
+            for cls in all_concrete_subclasses(
+                CogniteResource,
+                exclude={
+                    SubscriptionDatapoints,
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    UnknownWorkflowTaskParameters,
+                },
+            )
         ],
     )
     def test_load_has_no_side_effects(
@@ -325,7 +353,14 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
+            for cls in all_concrete_subclasses(
+                CogniteResource,
+                exclude={
+                    SubscriptionDatapoints,
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    UnknownWorkflowTaskParameters,
+                },
+            )
         ],
     )
     def test_handle_unknown_arguments_when_loading(
@@ -368,7 +403,14 @@ class TestCogniteResource:
         "cog_res_subclass",
         [
             pytest.param(cls, id=f"{cls.__name__} in {cls.__module__}")
-            for cls in all_concrete_subclasses(CogniteResource, exclude={SubscriptionDatapoints})
+            for cls in all_concrete_subclasses(
+                CogniteResource,
+                exclude={
+                    SubscriptionDatapoints,
+                    *all_concrete_subclasses(WorkflowTaskOutput),
+                    UnknownWorkflowTaskParameters,
+                },
+            )
         ],
     )
     def test_yaml_serialize(

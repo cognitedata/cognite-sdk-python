@@ -18,6 +18,7 @@ from scripts.sync_client_codegen.codegen_utils import (
     get_all_imports,
     get_canonical_source,
     get_dot_path_lookup,
+    get_module_level_constants,
     get_source_code,
     hash_file,
     is_pyfile,
@@ -148,6 +149,7 @@ def _generate_code_for_single_sync_api(
     # In init, we find nested APIs - we also may need to modify existing imports:
     api_names, nested_apis = find_self_assignments(class_def)
     all_imports = fix_imports_for_sync_apis(all_imports, api_names)
+    module_constants = get_module_level_constants(tree)
 
     # Combine everything 🤞
     return (
@@ -158,6 +160,7 @@ def _generate_code_for_single_sync_api(
                 existing_imports=all_imports,
                 type_checking_imports=type_checking_imports,
                 nested_apis_init="\n        ".join(nested_apis),
+                module_constants=module_constants,
             )
         )
         + "\n\n".join(generated_methods)

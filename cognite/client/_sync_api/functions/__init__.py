@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1862715b947706f15000fe1f49906d00
+0b674533567ce0bc60d5f16e4655528b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -170,8 +170,8 @@ class SyncFunctionsAPI(SyncAPIClient):
             memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
             runtime (RunTime | None): The function runtime. Valid values are ["py310", "py311", "py312", "py313", `None`], and `None` translates to the API default which will change over time. The runtime "py313" resolves to the latest version of the Python 3.13 series.
             metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
-            index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/use_functions#additional-arguments>`_
+            extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/use_functions#additional-arguments>`_
             skip_folder_validation (bool): When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
             data_set_id (int | None): Data set to upload the function code to. Note: Does not affect the function itself.
 
@@ -214,6 +214,11 @@ class SyncFunctionsAPI(SyncAPIClient):
             .. note:
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
                 The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
+
+            .. note:
+                Only the source code of the handle function itself is deployed. Non-builtin type
+                annotations (e.g. ``client: CogniteClient``) will cause a ``NameError`` at deploy
+                time. Either omit the annotation or use string form (e.g. ``client: "CogniteClient"``).
         """
         return run_sync(
             self.__async_client.functions.create(

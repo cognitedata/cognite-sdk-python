@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3fb2bb1e260073e2d54317794dab4d4d
+5f32300ea692afe9a855bd627447b49c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -20,6 +20,8 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationRunDataList,
     SimulationRunList,
     SimulationRunWrite,
+    SimulatorRunStatus,
+    SimulatorRunType,
 )
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -39,8 +41,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         self,
         chunk_size: int,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -57,8 +59,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         self,
         chunk_size: None = None,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -74,8 +76,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -94,8 +96,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         Args:
             chunk_size (int | None): Number of simulation runs to return in each chunk. Defaults to yielding one simulation run a time.
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
+            status (SimulatorRunStatus | None): Filter by simulation run status
+            run_type (SimulatorRunType | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
             simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
@@ -130,8 +132,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
     def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -149,8 +151,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
         Args:
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
+            status (SimulatorRunStatus | None): Filter by simulation run status
+            run_type (SimulatorRunType | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
             simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
@@ -183,8 +185,8 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
             Filter runs by time ranges:
                 >>> from cognite.client.data_classes.shared import TimestampRange
                 >>> res = client.simulators.runs.list(
-                ...     created_time=TimestampRange(min=0, max=1_700_000_000_000),
-                ...     simulation_time=TimestampRange(min=0, max=1_700_000_000_000),
+                ...     created_time=TimestampRange(min="1d-ago", max="now"),
+                ...     simulation_time=TimestampRange(min="1d-ago", max="now"),
                 ... )
         """
         return run_sync(
@@ -264,7 +266,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
     def list_run_data(self, run_id: int) -> SimulationRunDataList:
         """
-        `Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+        `Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_data>`_
 
         Retrieve data associated with a simulation run by ID.
 

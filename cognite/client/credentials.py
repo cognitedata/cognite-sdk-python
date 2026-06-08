@@ -264,11 +264,11 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
     """OAuth credential provider for the device code login flow.
 
     Args:
-        authority_url (str | None): MS Entra OAuth authority url, typically "https://login.microsoftonline.com/{tenant_id}"
+        authority_url (str | None): MS Entra OAuth authority url, typically ``https://login.microsoftonline.com/{tenant_id}``
         client_id (str): Your application's client id that allows device code flows.
         scopes (list[str] | None): A list of scopes.
         cdf_cluster (str | None): The CDF cluster where the CDF project is located. If provided, scopes will be set to
-            [f"https://{cdf_cluster}.cognitedata.com/IDENTITY https://{cdf_cluster}.cognitedata.com/user_impersonation openid profile"].
+            ``[f"https://{cdf_cluster}.cognitedata.com/IDENTITY https://{cdf_cluster}.cognitedata.com/user_impersonation openid profile"]``.
         oauth_discovery_url (str | None): Standard OAuth discovery URL, should be where "/.well-known/openid-configuration" is found.
         token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
@@ -591,8 +591,8 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 
         The default configuration creates the URLs based on the tenant id and cluster:
 
-        * Authority URL: "https://login.microsoftonline.com/{tenant_id}"
-        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/IDENTITY", f"https://{cdf_cluster}.cognitedata.com/user_impersonation", "profile", "openid", "offline_access"]
+        * Authority URL: ``https://login.microsoftonline.com/{tenant_id}``
+        * Scopes: [``https://{cdf_cluster}.cognitedata.com/IDENTITY``, ``https://{cdf_cluster}.cognitedata.com/user_impersonation``, ``profile``, ``openid``, ``offline_access``]
 
         Args:
             tenant_id (str): The Azure tenant id
@@ -640,7 +640,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
 class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
     """OAuth credential provider for an interactive login flow.
 
-    Make sure you have http://localhost:port in Redirect URI in App Registration as type "Mobile and desktop applications".
+    Make sure you have ``http://localhost:port`` in Redirect URI in App Registration as type "Mobile and desktop applications".
 
     Args:
         authority_url (str): OAuth authority url
@@ -762,8 +762,8 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
 
         The default configuration creates the URLs based on the tenant id and cluster:
 
-        * Authority URL: "https://login.microsoftonline.com/{tenant_id}"
-        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
+        * Authority URL: ``https://login.microsoftonline.com/{tenant_id}``
+        * Scopes: [``https://{cdf_cluster}.cognitedata.com/.default``]
 
         Args:
             tenant_id (str): The Azure tenant id
@@ -953,8 +953,8 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
 
         The default configuration creates the URLs based on the tenant id and cluster/oauth2/v2.0/token:
 
-        * Token URL: "https://login.microsoftonline.com/{tenant_id}"
-        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
+        * Token URL: ``https://login.microsoftonline.com/{tenant_id}``
+        * Scopes: [``https://{cdf_cluster}.cognitedata.com/.default``]
 
         Args:
             tenant_id (str): The Azure tenant id

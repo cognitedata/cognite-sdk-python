@@ -91,10 +91,9 @@ See the :doc:`quickstart` for configuration examples.
 Contents
 ^^^^^^^^
 
-Getting Started
-"""""""""""""""
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
+   :caption: Getting Started
 
    quickstart
    settings
@@ -103,12 +102,25 @@ Getting Started
    extensions_and_optional_dependencies
    identity_and_access_management
 
-Core Resources
-""""""""""""""
 .. toctree::
    :maxdepth: 1
+   :caption: Data Modeling
 
-   data_modeling
+   data_modeling/data_models
+   data_modeling/spaces
+   data_modeling/views
+   data_modeling/containers
+   data_modeling/instances
+   data_modeling/records
+   data_modeling/statistics
+   data_modeling/streams
+   data_modeling/graphql
+   data_modeling/core_data_model
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Core Resources
+
    agents
    ai
    assets
@@ -119,10 +131,9 @@ Core Resources
    sequences
    3d
 
-Data Processing
-"""""""""""""""
 .. toctree::
    :maxdepth: 1
+   :caption: Data Processing
 
    contextualization
    data_ingestion
@@ -130,10 +141,9 @@ Data Processing
    functions
    data_workflows
 
-Specialized Features
-""""""""""""""""""""
 .. toctree::
    :maxdepth: 1
+   :caption: Specialized Features
 
    simulators
    geospatial
@@ -143,10 +153,9 @@ Specialized Features
    data_organization
    limits
 
-Reference
-"""""""""
 .. toctree::
    :maxdepth: 1
+   :caption: Reference
 
    filters
    deprecated

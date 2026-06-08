@@ -14,6 +14,7 @@ from cognite.client.data_classes.data_modeling.containers import (
     ContainerList,
     ContainerProperty,
     ContainerPropertyApply,
+    ContainerUsedFor,
     Index,
     IndexApply,
     InvertedIndex,
@@ -118,7 +119,19 @@ from cognite.client.data_classes.data_modeling.query import (
     Union,
     UnionAll,
 )
+from cognite.client.data_classes.data_modeling.records import RecordId
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
+from cognite.client.data_classes.data_modeling.streams import (
+    Stream,
+    StreamLifecycleSettings,
+    StreamLimit,
+    StreamLimitSettings,
+    StreamList,
+    StreamSettings,
+    StreamTemplate,
+    StreamTemplateWriteSettings,
+    StreamWrite,
+)
 from cognite.client.data_classes.data_modeling.sync import SubscriptionContext
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
@@ -157,6 +170,7 @@ __all__ = [
     "ContainerList",
     "ContainerProperty",
     "ContainerPropertyApply",
+    "ContainerUsedFor",
     "DataModel",
     "DataModelApply",
     "DataModelApplyList",
@@ -229,6 +243,7 @@ __all__ = [
     "Query",
     "QueryResult",
     "QuerySync",
+    "RecordId",
     "RequiresConstraint",
     "RequiresConstraintApply",
     "ResultSetExpression",
@@ -243,6 +258,15 @@ __all__ = [
     "SpaceApply",
     "SpaceApplyList",
     "SpaceList",
+    "Stream",
+    "StreamLifecycleSettings",
+    "StreamLimit",
+    "StreamLimitSettings",
+    "StreamList",
+    "StreamSettings",
+    "StreamTemplate",
+    "StreamTemplateWriteSettings",
+    "StreamWrite",
     "SubscriptionContext",
     "Text",
     "TimeSeriesReference",

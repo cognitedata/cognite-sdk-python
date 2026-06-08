@@ -34,6 +34,7 @@ NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS: tuple[str, ...] = (
     "raw/dbs/[^/]+/tables$",
     "relationships",
     "sequences",
+    "streams",
     "simulators",
     "simulators/models",
     "simulators/models/revisions",

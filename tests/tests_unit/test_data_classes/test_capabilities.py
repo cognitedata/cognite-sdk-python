@@ -79,6 +79,7 @@ def all_acls() -> Iterator[dict[str, Any]]:
         {"filesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"filesAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["2332579", "372"]}}}},
         {"functionsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+        {"functionsAcl": {"actions": ["READ", "WRITE", "RUN"], "scope": {"all": {}}}},
         {"genericsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"groupsAcl": {"actions": ["LIST", "READ", "DELETE", "UPDATE", "CREATE"], "scope": {"all": {}}}},
         {"groupsAcl": {"actions": ["READ", "CREATE", "UPDATE", "DELETE"], "scope": {"currentuserscope": {}}}},

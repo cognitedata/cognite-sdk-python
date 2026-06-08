@@ -13,6 +13,62 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.7.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.6.0...cognite-sdk-python-v8.7.0) (2026-05-27)
+
+
+### Features
+
+* **Data Modeling:** support usedFor=record on containers ([#2621](https://github.com/cognitedata/cognite-sdk-python/issues/2621)) ([8a8a106](https://github.com/cognitedata/cognite-sdk-python/commit/8a8a106b47f775a78652eee5513edf8398d66f04))
+
+
+### Bug Fixes
+
+* **Files:** Fix pyodide fstat not returning actual file size but 0 ([#2649](https://github.com/cognitedata/cognite-sdk-python/issues/2649)) ([b191b2b](https://github.com/cognitedata/cognite-sdk-python/commit/b191b2b0c615a37c65f1615b115c11ffd3bbccf2))
+* **Functions:** skip pip validation on browser use ([#2638](https://github.com/cognitedata/cognite-sdk-python/issues/2638)) ([c3fbdfa](https://github.com/cognitedata/cognite-sdk-python/commit/c3fbdfaea7ca66d80bc1357b3982b9d35d233427))
+
+
+### Documentation
+
+* **Functions:** clarify type annotation restrictions when using function_handle ([#2639](https://github.com/cognitedata/cognite-sdk-python/issues/2639)) ([98154b0](https://github.com/cognitedata/cognite-sdk-python/commit/98154b01973f853994169d29fad73a52cc6cbd85))
+
+## [8.6.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.5.0...cognite-sdk-python-v8.6.0) (2026-05-20)
+
+
+### Features
+
+* Add ability to use datetime objects or time-shift strings in TimestampRange ([#2432](https://github.com/cognitedata/cognite-sdk-python/issues/2432)) ([85debd3](https://github.com/cognitedata/cognite-sdk-python/commit/85debd305d568aed34392a52b61d155bbd3356fa))
+
+
+### Bug Fixes
+
+* respect HTTP(S)_PROXY env vars for httpx client ([#2632](https://github.com/cognitedata/cognite-sdk-python/issues/2632)) ([ac60c0e](https://github.com/cognitedata/cognite-sdk-python/commit/ac60c0e79c00ec3afe2f3f059e4246661bf73705))
+
+## [8.5.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.4.0...cognite-sdk-python-v8.5.0) (2026-05-18)
+
+
+### Features
+
+* **Workflows:** Add missing unknown classes for future-compatibility ([#2623](https://github.com/cognitedata/cognite-sdk-python/issues/2623)) ([5c74927](https://github.com/cognitedata/cognite-sdk-python/commit/5c74927b808f77e295bffe76c5c1d5f97e281867))
+
+
+### Bug Fixes
+
+* **capabilities:** add missing RUN action to FunctionsAcl ([#2614](https://github.com/cognitedata/cognite-sdk-python/issues/2614)) ([fd97419](https://github.com/cognitedata/cognite-sdk-python/commit/fd97419a87aade63e796d8bd106a20284aba99ee))
+* deprecate public api_client property. warn on async api_client footgun on sync client ([#2618](https://github.com/cognitedata/cognite-sdk-python/issues/2618)) ([4b38aa0](https://github.com/cognitedata/cognite-sdk-python/commit/4b38aa05007ce7b1bdab9e1038ab032030655f3d))
+* **iam:** tolerate partial Session response when caller lacks sessionsAcl:LIST ([#2617](https://github.com/cognitedata/cognite-sdk-python/issues/2617)) ([754fbc6](https://github.com/cognitedata/cognite-sdk-python/commit/754fbc676766bd3fc31bd87edea6cd5bb873f2e4))
+
+
+### Documentation
+
+* **simulators:** improve type hints and default values for some arguments in the simulator module ([#2624](https://github.com/cognitedata/cognite-sdk-python/issues/2624)) ([b16a310](https://github.com/cognitedata/cognite-sdk-python/commit/b16a31063a68bf072ed6e797d82461036e25519e))
+
+## [8.4.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.3.0...cognite-sdk-python-v8.4.0) (2026-05-07)
+
+
+### Features
+
+* **Data Modeling (alpha):** add `instances.sync_with_file_cache` for /sync jobs with file cache (DM-3759) ([#2599](https://github.com/cognitedata/cognite-sdk-python/issues/2599)) ([df273dc](https://github.com/cognitedata/cognite-sdk-python/commit/df273dc2a1315b289794b49626f723c3f6eb5551))
+
 ## [8.3.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.2.0...cognite-sdk-python-v8.3.0) (2026-05-05)
 
 

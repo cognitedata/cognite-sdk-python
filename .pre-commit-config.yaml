@@ -65,3 +65,9 @@ repos:
           - --quiet  # otherwise prints all checked files that are ok...
           - --skip-checking-raises=true
           - --check-class-attributes=false
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.4.2
+    hooks:
+    - id: codespell
+      files: ^cognite/.*

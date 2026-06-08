@@ -196,7 +196,7 @@ class AnnotationsAPI(APIClient):
 
         Examples:
 
-            Retrieve the first 100 ids of annotated resources mathing the 'file' resource type:
+            Retrieve the first 100 ids of annotated resources matching the 'file' resource type:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AnnotationReverseLookupFilter

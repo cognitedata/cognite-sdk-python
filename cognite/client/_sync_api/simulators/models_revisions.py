@@ -1,6 +1,6 @@
 """
 ===============================================================================
-fb7d457799eb07aa51d4dd24a2224b5e
+47e322bfcfd2d8e68861dbb683a9a381
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -39,7 +39,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
-        all_versions: bool | None = None,
+        all_versions: bool = False,
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
     ) -> SimulatorModelRevisionList:
@@ -52,7 +52,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
             limit (int): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
             sort (PropertySort | None): The criteria to sort by.
             model_external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator models to filter by.
-            all_versions (bool | None): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
+            all_versions (bool): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
             created_time (TimestampRange | None): Filter by created time.
             last_updated_time (TimestampRange | None): Filter by last updated time.
 
@@ -72,8 +72,8 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
                 >>> res = client.simulators.models.revisions.list(
                 ...     model_external_ids=["model1", "model2"],
                 ...     all_versions=True,
-                ...     created_time=TimestampRange(min=0, max=1000000),
-                ...     last_updated_time=TimestampRange(min=0, max=1000000),
+                ...     created_time=TimestampRange(min="1d-ago", max="now"),
+                ...     last_updated_time=TimestampRange(min="1d-ago", max="now"),
                 ...     sort=PropertySort(order="asc", property="createdTime"),
                 ...     limit=10,
                 ... )
@@ -148,7 +148,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
         chunk_size: int,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
-        all_versions: bool | None = None,
+        all_versions: bool = False,
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
@@ -160,7 +160,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
         chunk_size: None = None,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
-        all_versions: bool | None = None,
+        all_versions: bool = False,
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
@@ -171,7 +171,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
         chunk_size: int | None = None,
         sort: PropertySort | None = None,
         model_external_ids: str | SequenceNotStr[str] | None = None,
-        all_versions: bool | None = None,
+        all_versions: bool = False,
         created_time: TimestampRange | None = None,
         last_updated_time: TimestampRange | None = None,
         limit: int | None = None,
@@ -185,7 +185,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
             chunk_size (int | None): Number of simulator model revisions to return in each chunk. Defaults to yielding one simulator model revision a time.
             sort (PropertySort | None): The criteria to sort by.
             model_external_ids (str | SequenceNotStr[str] | None): The external ids of the simulator models to filter by.
-            all_versions (bool | None): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
+            all_versions (bool): If True, all versions of the simulator model revisions are returned. If False, only the latest version is returned.
             created_time (TimestampRange | None): Filter by created time.
             last_updated_time (TimestampRange | None): Filter by last updated time.
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float(“inf”) or None to return all items.
@@ -260,7 +260,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
 
     def retrieve_data(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
         """
-        `Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/get_simulator_model_revision_data_by_id>`_
+        `Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/retrieve_simulator_model_revision_data>`_
 
         Retrieves a list of simulator model revisions data that match the given criteria.
 

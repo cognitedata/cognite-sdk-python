@@ -6,6 +6,7 @@ import re
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, NoReturn
 from unittest.mock import AsyncMock, patch
 
@@ -14,6 +15,7 @@ from httpx import Request, Response
 from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
+from cognite.client._api.files import FilesAPI
 from cognite.client._constants import FILE_MAX_MULTIPART_COUNT, FILE_MAX_MULTIPART_SIZE, FILE_MIN_MULTIPART_SIZE
 from cognite.client.config import global_config
 from cognite.client.data_classes import GeoLocation, GeoLocationFilter, Geometry, GeometryFilter, TimestampRange
@@ -27,7 +29,7 @@ from cognite.client.data_classes.files import (
     FileMetadataWrite,
 )
 from cognite.client.data_classes.labels import Label, LabelFilter
-from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError
+from cognite.client.exceptions import CogniteAPIError, CogniteAuthorizationError, CogniteFileUploadError
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_or_raise, get_url, jsgz_load
 
@@ -834,6 +836,57 @@ class TestFilesAPI:
         with pytest.raises(FileNotFoundError):
             cognite_client.files.upload(path=Path("/no/such/path"))
 
+    def test_upload_bytes_400_raises_file_upload_error(
+        self,
+        cognite_client: CogniteClient,
+        example_file: dict[str, Any],
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
+    ) -> None:
+        """Bug in 8.0.0 to 8.6.0: a 400 from the blob storage PUT raised CogniteHTTPStatusError instead of CogniteFileUploadError."""
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.files) + "/files?overwrite=false",
+            status_code=200,
+            json=example_file,
+        )
+        httpx_mock.add_response(method="PUT", url="https://upload.here", status_code=400, text="Bad Request")
+
+        with pytest.raises(CogniteFileUploadError) as exc_info:
+            cognite_client.files.upload_bytes(content=b"content", name="bla")
+
+        assert exc_info.value.code == 400
+
+    def test_upload_content_part_400_raises_file_upload_error(
+        self,
+        cognite_client: CogniteClient,
+        example_file: dict[str, Any],
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
+        tmp_path: Path,
+    ) -> None:
+        """Bug in 8.0.0 to 8.6.0: a 400 from the blob storage PUT during multipart upload raised CogniteHTTPStatusError
+        instead of CogniteFileUploadError.
+        """
+        multipart_response = {
+            "items": [{**example_file, "uploadUrls": ["https://upload.here/part0"], "uploadId": "test-id"}]
+        }
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(re.escape(get_url(async_client.files) + "/files/multiuploadlink") + r"\?.*"),
+            status_code=200,
+            json=multipart_response,
+        )
+        httpx_mock.add_response(method="PUT", url="https://upload.here/part0", status_code=400, text="Bad Request")
+
+        test_file = tmp_path / "test.bin"
+        test_file.write_bytes(b"x")
+
+        with pytest.raises(CogniteFileUploadError) as exc_info:
+            cognite_client.files.upload_content(path=test_file, instance_id=NodeId("test-space", "test-0001"))
+
+        assert exc_info.value.code == 400
+
     @pytest.mark.parametrize(
         "file_size, expected_parts",
         [
@@ -1183,6 +1236,46 @@ class TestFilesAPI:
         )
 
         assert peak == concurrency_limit
+
+
+@pytest.fixture
+def lying_stat(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Monkeypatch Path.stat to report st_size=0, mimicking Pyodide's broken fstat."""
+    monkeypatch.setattr(Path, "stat", lambda _path, **_kw: SimpleNamespace(st_size=0))
+
+
+class TestGetFileSize:
+    def test_browser_falls_back_to_seek_when_stat_lies(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, lying_stat: None
+    ) -> None:
+        """Pyodide /drive/... regression: stat reports 0 but the file -has- bytes."""
+        p = tmp_path / "lied_about.bin"
+        p.write_bytes(b"hey\nyo\n")  # 7 bytes really on disk
+        # We have to pretend we are running in the browser with Pyodide:
+        monkeypatch.setattr("cognite.client._api.files._RUNNING_IN_BROWSER", True)
+
+        # Sanity-check that stat is now lying:
+        assert p.stat().st_size == 0
+        # The helper should still report correct size:
+        assert FilesAPI._get_file_size(p) == 7
+
+    def test_empty_file_in_browser_still_reports_zero(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A genuinely empty file must still report size=0 in browser mode."""
+        p = tmp_path / "empty.bin"
+        p.touch()
+        monkeypatch.setattr("cognite.client._api.files._RUNNING_IN_BROWSER", True)
+
+        assert FilesAPI._get_file_size(p) == 0
+
+    def test_returns_stat_size_for_non_empty_file(self, tmp_path: Path) -> None:
+        p = tmp_path / "x.bin"
+        p.write_bytes(b"hello world")
+        assert FilesAPI._get_file_size(p) == 11
+
+    def test_returns_zero_for_genuinely_empty_file(self, tmp_path: Path) -> None:
+        p = tmp_path / "empty.bin"
+        p.touch()
+        assert FilesAPI._get_file_size(p) == 0
 
 
 @pytest.fixture
