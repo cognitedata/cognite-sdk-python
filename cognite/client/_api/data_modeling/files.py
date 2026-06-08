@@ -65,7 +65,10 @@ class DataModelingFilesAPI(APIClient):
         *,
         extended_expiration: bool = False,
     ) -> dict[NodeId, str]:
-        """`Get download URLs for one or more files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
+        """`Get download URLs for one or more files by instance ID <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_.
+
+        Note:
+            If you pass instance IDs as tuple(s), the returned mapping will always use NodeIds as keys.
 
         Args:
             node_ids (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]]): Instance ID or list of instance IDs.
@@ -103,7 +106,7 @@ class DataModelingFilesAPI(APIClient):
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
-        """`Download files by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_
+        """`Download files by instance ID <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_.
 
         Streams all files to disk one chunk at a time. By default, chunk size is dynamic to maximize
         throughput; set ``global_config.file_download_chunk_size`` (bytes) to enforce a fixed size.
@@ -175,7 +178,7 @@ class DataModelingFilesAPI(APIClient):
         return await self._files_api.download_bytes(instance_id=node_id)
 
     async def upload(self, path: Path, node: NodeApply) -> None:
-        """`Create a file node and upload content in one step. <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_
+        """`Create a file node and upload content in one step <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_.
 
         The node is created (or updated) via ``instances.apply``, then the file content is uploaded.
 
@@ -283,7 +286,7 @@ class DataModelingFilesAPI(APIClient):
         ) from latest_error
 
     async def upload_content(self, path: Path, node_id: NodeId | tuple[str, str]) -> None:
-        """`Upload content to an existing file node by instance ID. <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_
+        """`Upload content to an existing file node by instance ID <https://api-docs.cognite.com/20230101/tag/Files/operation/getUploadLink>`_.
 
         Args:
             path (Path): Path to the file to upload.
@@ -380,7 +383,7 @@ class DataModelingFilesAPI(APIClient):
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_FILE_VIEW_ID,
     ) -> Node | NodeList[Node] | None:
-        """`Retrieve one or more files by instance ID. <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_
+        """`Retrieve one or more files by instance ID <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_.
 
         Only nodes that are files (i.e. have data in the CogniteFile view) will be returned.
         If a single instance ID is requested and it is not found, ``None`` is returned.
@@ -435,7 +438,7 @@ class DataModelingFilesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
-        """`List file nodes. <https://api-docs.cognite.com/20230101/tag/Instances/operation/listInstances>`_
+        """`List file nodes <https://api-docs.cognite.com/20230101/tag/Instances/operation/advancedListInstance>`_.
 
         Only file nodes will be returned, regardless of the source passed.
 
