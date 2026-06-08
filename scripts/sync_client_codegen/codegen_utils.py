@@ -87,6 +87,11 @@ def get_module_level_imports(tree: ast.Module):
     return "\n".join(ast.unparse(node) for node in import_nodes)
 
 
+def get_module_level_constants(tree: ast.Module) -> str:
+    constant_nodes = [node for node in tree.body if isinstance(node, (ast.Assign, ast.AnnAssign))]
+    return "\n".join(ast.unparse(node) for node in constant_nodes)
+
+
 def get_module_level_type_checking_imports(tree: ast.Module) -> str:
     imports: list[str] = []
     for node in tree.body:
@@ -178,12 +183,16 @@ def inverse_foolish_cls_name_rewrite(class_name: str) -> str:
     return class_name.replace("3D", "ThreeD")  # Needed when searching
 
 
+def _has_no_return(node: ast.AsyncFunctionDef | ast.FunctionDef) -> bool:
+    return node.returns is not None and ast.unparse(node.returns) == "NoReturn"
+
+
 def method_should_be_converted(node: ast.AST) -> bool:
     match node:
         case ast.AsyncFunctionDef(name=n) if not n.startswith("_") or n in ASYNC_METHODS_TO_KEEP:
-            return True
+            return not _has_no_return(node)
         case ast.FunctionDef(name=n) if n in SYNC_METHODS_TO_KEEP:
-            return True
+            return not _has_no_return(node)
         case _:
             return False
 

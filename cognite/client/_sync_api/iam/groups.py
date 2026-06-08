@@ -1,6 +1,6 @@
 """
 ===============================================================================
-586373043d2d2ff985980c01554ca7f1
+28320047ebb4d387e0b459600d4b9a7f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -102,7 +102,7 @@ class SyncGroupsAPI(SyncAPIClient):
                 ...     members=ALL_USER_ACCOUNTS,
                 ... )
                 >>> user_list_group = GroupWrite(
-                ...     name="Specfic users only",
+                ...     name="Specific users only",
                 ...     capabilities=my_capabilities,
                 ...     members=["XRsSD1k3mTIKG", "M0SxY6bM9Jl"],
                 ... )

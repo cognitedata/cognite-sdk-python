@@ -20,7 +20,7 @@ class MappingsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
-            api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Hosted Extractors"
         )
         self._CREATE_LIMIT = 10
         self._LIST_LIMIT = 100
@@ -56,7 +56,6 @@ class MappingsAPI(APIClient):
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-            headers={"cdf-version": "beta"},
         ):
             yield item
 
@@ -69,7 +68,7 @@ class MappingsAPI(APIClient):
     async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Mapping | MappingList:
-        """`Retrieve one or more mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/retrieve_mappings>`_.
+        """`Retrieve one or more mappings <https://api-docs.cognite.com/20230101/tag/Mappings/operation/retrieve_mappings>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -99,13 +98,12 @@ class MappingsAPI(APIClient):
             resource_cls=Mapping,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             ignore_unknown_ids=ignore_unknown_ids,
-            headers={"cdf-version": "beta"},
         )
 
     async def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False
     ) -> None:
-        """`Delete one or more mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/delete_mappings>`_.
+        """`Delete one or more mappings <https://api-docs.cognite.com/20230101/tag/Mappings/operation/delete_mappings>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
@@ -131,7 +129,6 @@ class MappingsAPI(APIClient):
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
             returns_items=False,
-            headers={"cdf-version": "beta"},
             extra_body_fields=extra_body_fields,
         )
 
@@ -142,7 +139,7 @@ class MappingsAPI(APIClient):
     async def create(self, items: Sequence[MappingWrite]) -> MappingList: ...
 
     async def create(self, items: MappingWrite | Sequence[MappingWrite]) -> Mapping | MappingList:
-        """`Create one or more mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/create_mappings>`_.
+        """`Create one or more mappings <https://api-docs.cognite.com/20230101/tag/Mappings/operation/create_mappings>`_.
 
         Args:
             items (MappingWrite | Sequence[MappingWrite]): Mapping(s) to create.
@@ -172,7 +169,6 @@ class MappingsAPI(APIClient):
             resource_cls=Mapping,
             items=items,
             input_resource_cls=MappingWrite,
-            headers={"cdf-version": "beta"},
         )
 
     @overload
@@ -184,7 +180,7 @@ class MappingsAPI(APIClient):
     async def update(
         self, items: MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]
     ) -> Mapping | MappingList:
-        """`Update one or more mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/update_mappings>`_.
+        """`Update one or more mappings <https://api-docs.cognite.com/20230101/tag/Mappings/operation/update_mappings>`_.
 
         Args:
             items (MappingWrite | MappingUpdate | Sequence[MappingWrite | MappingUpdate]): Mapping(s) to update.
@@ -209,14 +205,13 @@ class MappingsAPI(APIClient):
             list_cls=MappingList,
             resource_cls=Mapping,
             update_cls=MappingUpdate,
-            headers={"cdf-version": "beta"},
         )
 
     async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> MappingList:
-        """`List mappings <https://api-docs.cognite.com/20230101-beta/tag/Mappings/operation/list_mappings>`_.
+        """`List mappings <https://api-docs.cognite.com/20230101/tag/Mappings/operation/list_mappings>`_.
 
         Args:
             limit (int | None): Maximum number of mappings to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -249,5 +244,4 @@ class MappingsAPI(APIClient):
             resource_cls=Mapping,
             method="GET",
             limit=limit,
-            headers={"cdf-version": "beta"},
         )

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-fa523a777c9b728e0712f75d938fbb0c
+26c89a64a49ece12d8f69199724157f0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -366,7 +366,7 @@ class SyncContainersAPI(SyncAPIClient):
                 ...     "prop21": ContainerPropertyApply(Json(is_list=True)),
                 ...     "prop22": ContainerPropertyApply(SequenceReference),
                 ...     "prop23": ContainerPropertyApply(SequenceReference(is_list=True)),
-                ...     # Note: It is adviced to represent files and time series directly as nodes
+                ...     # Note: It is advised to represent files and time series directly as nodes
                 ...     #       instead of referencing existing:
                 ...     "prop24": ContainerPropertyApply(FileReference),
                 ...     "prop25": ContainerPropertyApply(FileReference(is_list=True)),

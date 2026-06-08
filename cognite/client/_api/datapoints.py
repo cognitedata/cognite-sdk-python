@@ -52,8 +52,7 @@ from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import (
     exactly_one_is_not_none,
     find_duplicates,
-    is_finite,
-    is_positive,
+    is_positive_int,
     split_into_chunks,
     split_into_n_parts,
     unpack_items,
@@ -673,7 +672,7 @@ class DatapointsAPI(APIClient):
         # get 10k/100k datapoints per request. Thus, we round up the given chunk size to the nearest integer multiple of 100k,
         # then subdivide and yield client-side (we use the raw limit also when dealing with aggregates):
         request_limit = self._DPS_LIMIT_RAW * math.ceil(chunk_size_datapoints / self._DPS_LIMIT_RAW)
-        if not is_finite(chunk_size_datapoints) or (
+        if not is_positive_int(chunk_size_datapoints) or (
             chunk_size_datapoints != request_limit and request_limit % chunk_size_datapoints
         ):
             raise ValueError(
@@ -681,7 +680,7 @@ class DatapointsAPI(APIClient):
                 f"(to ensure efficient API usage), not {chunk_size_datapoints}."
             )
 
-        if not (chunk_size_time_series is None or is_positive(chunk_size_time_series)):
+        if not (chunk_size_time_series is None or is_positive_int(chunk_size_time_series)):
             raise ValueError(
                 f"'chunk_size_time_series' must be a positive integer or None, not {chunk_size_time_series}"
             )
