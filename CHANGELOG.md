@@ -13,6 +13,29 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.8.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.7.0...cognite-sdk-python-v8.8.0) (2026-06-08)
+
+
+### Features
+
+* **config:** Add global config validation ([#2664](https://github.com/cognitedata/cognite-sdk-python/issues/2664)) ([5be58e2](https://github.com/cognitedata/cognite-sdk-python/commit/5be58e2371cc264af2b7fb7ee8bd4859e345fcb4))
+* **Data Modeling, Files:** Add files api to data modeling with /retrieve and /list ([#2647](https://github.com/cognitedata/cognite-sdk-python/issues/2647)) ([fcd74e6](https://github.com/cognitedata/cognite-sdk-python/commit/fcd74e698606b1aa7c60f305acfeff12ca7bc24a))
+* **Data Modeling, Files:** Extend DM Files with all download methods (DM-3842) ([#2653](https://github.com/cognitedata/cognite-sdk-python/issues/2653)) ([59d9756](https://github.com/cognitedata/cognite-sdk-python/commit/59d97569c2e6e7dd33cdd804e32680421cb926e9))
+* **Data Modeling, Files:** Extend DM Files with all upload methods (DM-3842) ([#2665](https://github.com/cognitedata/cognite-sdk-python/issues/2665)) ([f7e74ab](https://github.com/cognitedata/cognite-sdk-python/commit/f7e74ab867d2a7e17754b75961378266d7e66ed4))
+* **records:** add delete endpoint with infrastructure scaffolding ([#2631](https://github.com/cognitedata/cognite-sdk-python/issues/2631)) ([630a343](https://github.com/cognitedata/cognite-sdk-python/commit/630a34322477225e3d3f084ad7a005e77ec7530e))
+* Update hosted extractor API maturity ([#2668](https://github.com/cognitedata/cognite-sdk-python/issues/2668)) ([a233d8a](https://github.com/cognitedata/cognite-sdk-python/commit/a233d8a640616baff535b3dd0606fd717f9f50b8))
+
+
+### Bug Fixes
+
+* **credentials:** token cache reuse issue for OAuthDeviceCode (DM-3772) ([#2605](https://github.com/cognitedata/cognite-sdk-python/issues/2605)) ([7c76170](https://github.com/cognitedata/cognite-sdk-python/commit/7c76170e4bd43db7c9b4151bae2acd1b4bc520da))
+* **files:** raise CogniteFileUploadError instead of leaking CogniteHTTPStatusError on blob PUT failures ([#2646](https://github.com/cognitedata/cognite-sdk-python/issues/2646)) ([6904cd7](https://github.com/cognitedata/cognite-sdk-python/commit/6904cd7ac1f715017054460d30c78dc7f86a4ae7))
+
+
+### Documentation
+
+* greatly improve sidebar sectioning and expand Data Modeling (DM-3846) ([#2667](https://github.com/cognitedata/cognite-sdk-python/issues/2667)) ([9ffab8c](https://github.com/cognitedata/cognite-sdk-python/commit/9ffab8c60113704a74a270fef4abcb3d85c5b53c))
+
 ## [8.7.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.6.0...cognite-sdk-python-v8.7.0) (2026-05-27)
 
 
