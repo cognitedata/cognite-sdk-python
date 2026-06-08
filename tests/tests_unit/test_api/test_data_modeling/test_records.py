@@ -7,9 +7,9 @@ from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_modeling.records import (
+    RecordContainerId,
     RecordId,
     RecordSource,
-    RecordSourceReference,
     RecordWrite,
 )
 from tests.utils import jsgz_load
@@ -52,7 +52,7 @@ def write_item() -> RecordWrite:
         external_id="rec-1",
         sources=[
             RecordSource(
-                source=RecordSourceReference(space="sp", external_id="container-x"),
+                source=RecordContainerId(space="sp", external_id="container-x"),
                 properties={"temp": 22.5},
             )
         ],
@@ -116,7 +116,7 @@ class TestRecordsAPIIngest:
         stream_id: str,
         write_item: RecordWrite,
     ) -> None:
-        cognite_client.data_modeling.records.ingest(stream_id, write_item)
+        cognite_client.data_modeling.records.ingest(write_item, stream_id=stream_id)
         requests = httpx_mock.get_requests()
         assert len(requests) == 1
         body = jsgz_load(requests[0].content)
@@ -145,7 +145,7 @@ class TestRecordsAPIIngest:
         httpx_mock.add_response(method="POST", url=ingest_url_pattern, status_code=202)
         httpx_mock.add_response(method="POST", url=ingest_url_pattern, status_code=202)
         items = [RecordWrite(space="sp", external_id=f"r-{i}", sources=[]) for i in range(1001)]
-        cognite_client.data_modeling.records.ingest(stream_id, items)
+        cognite_client.data_modeling.records.ingest(items, stream_id=stream_id)
         requests = httpx_mock.get_requests()
         assert len(requests) == 2
         assert len(jsgz_load(requests[0].content)["items"]) == 1000
@@ -153,22 +153,11 @@ class TestRecordsAPIIngest:
 
 
 class TestRecordDTOs:
-    def test_record_write_to_identifier(self, write_item: RecordWrite) -> None:
-        from cognite.client.utils._identifier import RecordId
-
-        rid = write_item.to_identifier()
+    def test_record_write_as_id(self, write_item: RecordWrite) -> None:
+        rid = write_item.as_id()
         assert isinstance(rid, RecordId)
         assert rid.space == "sp"
         assert rid.external_id == "rec-1"
-
-    def test_record_source_reference_to_identifier(self) -> None:
-        from cognite.client.utils._identifier import RecordId
-
-        ref = RecordSourceReference(space="s", external_id="c")
-        rid = ref.to_identifier()
-        assert isinstance(rid, RecordId)
-        assert rid.space == "s"
-        assert rid.external_id == "c"
 
     def test_record_write_round_trip(self, write_item: RecordWrite) -> None:
         dumped = write_item.dump()
@@ -181,13 +170,13 @@ class TestRecordDTOs:
         assert loaded.sources[0].properties == {"temp": 22.5}
 
     def test_record_source_reference_dump(self) -> None:
-        ref = RecordSourceReference(space="s", external_id="c")
+        ref = RecordContainerId(space="s", external_id="c")
         d = ref.dump()
         assert d == {"type": "container", "space": "s", "externalId": "c"}
 
     def test_record_source_dump(self) -> None:
         src = RecordSource(
-            source=RecordSourceReference(space="s", external_id="c"),
+            source=RecordContainerId(space="s", external_id="c"),
             properties={"x": 1},
         )
         d = src.dump()

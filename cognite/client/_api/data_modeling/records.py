@@ -76,7 +76,12 @@ class RecordsAPI(APIClient):
             resource_path=self._records_url(stream_id),
         )
 
-    async def ingest(self, stream_id: str, items: RecordWrite | Sequence[RecordWrite]) -> None:
+    async def ingest(
+        self,
+        items: RecordWrite | Sequence[RecordWrite],
+        *,
+        stream_id: str,
+    ) -> None:
         """`Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
 
         Creates new records. For immutable streams, duplicate records (identical
@@ -85,8 +90,8 @@ class RecordsAPI(APIClient):
         returns a 422.
 
         Args:
-            stream_id (str): External ID of the stream to ingest into.
             items (RecordWrite | Sequence[RecordWrite]): One or more records to ingest.
+            stream_id (str): External ID of the stream to ingest into.
 
         Examples:
 
@@ -95,24 +100,24 @@ class RecordsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.records import (
                 ...     RecordWrite,
+                ...     RecordContainerId,
                 ...     RecordSource,
-                ...     RecordSourceReference,
                 ... )
                 >>> client = CogniteClient()
                 >>> client.data_modeling.records.ingest(
-                ...     stream_id="my-stream",
-                ...     items=RecordWrite(
+                ...     RecordWrite(
                 ...         space="my-space",
                 ...         external_id="rec-1",
                 ...         sources=[
                 ...             RecordSource(
-                ...                 source=RecordSourceReference(
+                ...                 source=RecordContainerId(
                 ...                     space="my-space", external_id="my-container"
                 ...                 ),
                 ...                 properties={"temperature": 22.5},
                 ...             )
                 ...         ],
                 ...     ),
+                ...     stream_id="my-stream",
                 ... )
         """
         self._warning.warn()

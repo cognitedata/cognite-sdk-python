@@ -29,13 +29,6 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingPredictionResult,
     JobStatus,
 )
-from cognite.client.data_classes.data_modeling.records import (
-    RecordId,
-    RecordSource,
-    RecordSourceReference,
-    RecordWrite,
-    RecordWriteList,
-)
 from cognite.client.data_classes.data_sets import (
     DataSet,
     DataSetFilter,
@@ -463,11 +456,6 @@ __all__ = [
     "LimitList",
     "OidcCredentials",
     "RawTable",
-    "RecordId",
-    "RecordSource",
-    "RecordSourceReference",
-    "RecordWrite",
-    "RecordWriteList",
     "Relationship",
     "RelationshipFilter",
     "RelationshipList",

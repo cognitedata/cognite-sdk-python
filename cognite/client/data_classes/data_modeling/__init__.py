@@ -120,9 +120,9 @@ from cognite.client.data_classes.data_modeling.query import (
     UnionAll,
 )
 from cognite.client.data_classes.data_modeling.records import (
+    RecordContainerId,
     RecordId,
     RecordSource,
-    RecordSourceReference,
     RecordWrite,
     RecordWriteList,
 )
@@ -249,9 +249,9 @@ __all__ = [
     "Query",
     "QueryResult",
     "QuerySync",
+    "RecordContainerId",
     "RecordId",
     "RecordSource",
-    "RecordSourceReference",
     "RecordWrite",
     "RecordWriteList",
     "RequiresConstraint",

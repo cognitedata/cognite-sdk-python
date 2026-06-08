@@ -1,6 +1,6 @@
 """
 ===============================================================================
-12a2a2c962cd217e613a9250ce393f4c
+8ad61f19a6f3aafee8321289d77550a8
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -60,7 +60,7 @@ class SyncRecordsAPI(SyncAPIClient):
             )
         )
 
-    def ingest(self, stream_id: str, items: RecordWrite | Sequence[RecordWrite]) -> None:
+    def ingest(self, items: RecordWrite | Sequence[RecordWrite], *, stream_id: str) -> None:
         """
         `Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
 
@@ -70,8 +70,8 @@ class SyncRecordsAPI(SyncAPIClient):
         returns a 422.
 
         Args:
-            stream_id (str): External ID of the stream to ingest into.
             items (RecordWrite | Sequence[RecordWrite]): One or more records to ingest.
+            stream_id (str): External ID of the stream to ingest into.
 
         Examples:
 
@@ -80,24 +80,24 @@ class SyncRecordsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.records import (
                 ...     RecordWrite,
+                ...     RecordContainerId,
                 ...     RecordSource,
-                ...     RecordSourceReference,
                 ... )
                 >>> client = CogniteClient()
                 >>> client.data_modeling.records.ingest(
-                ...     stream_id="my-stream",
-                ...     items=RecordWrite(
+                ...     RecordWrite(
                 ...         space="my-space",
                 ...         external_id="rec-1",
                 ...         sources=[
                 ...             RecordSource(
-                ...                 source=RecordSourceReference(
+                ...                 source=RecordContainerId(
                 ...                     space="my-space", external_id="my-container"
                 ...                 ),
                 ...                 properties={"temperature": 22.5},
                 ...             )
                 ...         ],
                 ...     ),
+                ...     stream_id="my-stream",
                 ... )
         """
-        return run_sync(self.__async_client.data_modeling.records.ingest(stream_id=stream_id, items=items))
+        return run_sync(self.__async_client.data_modeling.records.ingest(items=items, stream_id=stream_id))
