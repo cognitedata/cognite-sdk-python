@@ -152,6 +152,7 @@ Contents
    postgres_gateway
    data_organization
    limits
+   metering
 
 .. toctree::
    :maxdepth: 1

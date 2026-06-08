@@ -99,6 +99,7 @@ def test_POST_endpoint_idempotency_vs_retries(api: str, apis_matching_non_idempo
     idempotent_api_allow_list = {
         "groups",
         "limits",
+        "metering",
         "models",
         "principals",
         "securitycategories",

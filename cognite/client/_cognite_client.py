@@ -21,6 +21,7 @@ from cognite.client._api.hosted_extractors import HostedExtractorsAPI
 from cognite.client._api.iam import IAMAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.limits import LimitsAPI
+from cognite.client._api.metering import MeteringAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
@@ -148,6 +149,7 @@ class AsyncCogniteClient:
         self.three_d = ThreeDAPI(self._config, self._API_VERSION, self)
         self.labels = LabelsAPI(self._config, self._API_VERSION, self)
         self.limits = LimitsAPI(self._config, self._API_VERSION, self)
+        self.metering = MeteringAPI(self._config, self._API_VERSION, self)
         self.relationships = RelationshipsAPI(self._config, self._API_VERSION, self)
         self.entity_matching = EntityMatchingAPI(self._config, self._API_VERSION, self)
         self.vision = VisionAPI(self._config, self._API_VERSION, self)
@@ -406,6 +408,7 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.three_d.asset_mappings = ThreeDAssetMappingAPI  # type: ignore
     AsyncCogniteClient.labels = LabelsAPI  #  type: ignore
     AsyncCogniteClient.limits = LimitsAPI  # type: ignore
+    AsyncCogniteClient.metering = MeteringAPI  # type: ignore
     AsyncCogniteClient.relationships = RelationshipsAPI  # type: ignore
     AsyncCogniteClient.entity_matching = EntityMatchingAPI  # type: ignore
     AsyncCogniteClient.vision = VisionAPI  # type: ignore

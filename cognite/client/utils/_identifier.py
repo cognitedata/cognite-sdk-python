@@ -254,6 +254,22 @@ class LimitId:
         return self.__value
 
 
+class MeterId:
+    def __init__(self, value: str) -> None:
+        if not isinstance(value, str):
+            raise TypeError(f"Expected meterId to be of type str, got {value} of type {type(value)}")
+        self.__value = value
+
+    def name(self, camel_case: bool = False) -> str:
+        return "meterId" if camel_case else "meter_id"
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return {self.name(camel_case): self.__value}
+
+    def as_primitive(self) -> str:
+        return self.__value
+
+
 class WorkflowVersionIdentifier:
     def __init__(self, version: str, workflow_external_id: str) -> None:
         self.__version = version

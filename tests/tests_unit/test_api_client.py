@@ -1838,6 +1838,15 @@ class TestRetryableEndpoints:
                 ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values", True),
                 ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values/streams.streams", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/limits/values/list", True),
+                # Metering API
+                ("GET", "https://api.cognitedata.com/api/v1/projects/bla/metering/meters", True),
+                (
+                    "GET",
+                    "https://api.cognitedata.com/api/v1/projects/bla/metering/meters/atlas.monthly_ai_tokens",
+                    True,
+                ),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/metering/meters/list", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/metering/meters/byids", True),
                 # Streams API
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/streams/delete", False),
