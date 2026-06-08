@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1b4a36fd7abb2313cb1450a05aadde05
+0dbeb2c02e7e48efc267393817ca324d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -220,12 +220,12 @@ class SyncFilesAPI(SyncAPIClient):
 
         Examples:
 
-            Get file metadata by id:
+            Get file metadata by instance id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.retrieve(id=1)
+                >>> res = client.files.retrieve(instance_id=NodeId("my-space", "my-file-xid"))
 
             Get file metadata by external id:
 
@@ -254,14 +254,16 @@ class SyncFilesAPI(SyncAPIClient):
 
         Examples:
 
-            Get file metadatas by id:
+            Get file metadatas by instance id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.retrieve_multiple(ids=[1, 2, 3])
+                >>> res = client.files.retrieve_multiple(
+                ...     instance_ids=[NodeId("my-space", "my-file-xid")]
+                ... )
 
-            Get file_metadatas by external id:
+            Get file metadatas by external id:
 
                 >>> res = client.files.retrieve_multiple(external_ids=["abc", "def"])
         """
@@ -438,8 +440,20 @@ class SyncFilesAPI(SyncAPIClient):
             path (Path | str): Local file path.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
             instance_id (NodeId | tuple[str, str] | None): Instance ID of the file (CogniteFile).
+
         Returns:
             FileMetadata: No description.
+
+        Examples:
+
+            Upload file content using instance_id:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.files.upload_content(
+                ...     "/path/to/file.txt", instance_id=NodeId("my-space", "my-file-xid")
+                ... )
         """
         return run_sync(
             self.__async_client.files.upload_content(path=path, external_id=external_id, instance_id=instance_id)
@@ -577,19 +591,18 @@ class SyncFilesAPI(SyncAPIClient):
 
         Examples:
 
-            Finish a file creation by uploading the content using external_id:
+            Finish a file creation by uploading the content using instance_id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.upload_content_bytes(b"some content", external_id="my_file_xid")
-
-            ...or by using instance_id:
-
-                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> res = client.files.upload_content_bytes(
                 ...     b"some content", instance_id=NodeId("my-space", "my_file_xid")
                 ... )
+
+            ...or by using external_id:
+
+                >>> res = client.files.upload_content_bytes(b"some content", external_id="my_file_xid")
         """
         return run_sync(
             self.__async_client.files.upload_content_bytes(
@@ -786,7 +799,7 @@ class SyncFilesAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> with client.files.multipart_upload_content_session(
-                ...     external_id="external-id", parts=2
+                ...     instance_id=NodeId("my-space", "my-file-xid"), parts=2
                 ... ) as session:
                 ...     # Note that the minimum chunk size is 5 MiB.
                 ...     session.upload_part(0, "hello" * 1_200_000)
@@ -854,6 +867,17 @@ class SyncFilesAPI(SyncAPIClient):
 
         Returns:
             dict[int, str] | dict[str, str] | dict[NodeId, str] | dict[int | str | NodeId, str]: Dictionary containing download urls.
+
+        Examples:
+
+            Get download URLs by instance id:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> urls = client.files.retrieve_download_urls(
+                ...     instance_id=NodeId("my-space", "my-file-xid")
+                ... )
         """
         return run_sync(
             self.__async_client.files.retrieve_download_urls(
@@ -904,9 +928,9 @@ class SyncFilesAPI(SyncAPIClient):
                 ...     directory="my_directory", id=[1, 2, 3], external_id=["abc", "def"]
                 ... )
 
-            Download files by id to the current directory:
+            Download files by instance id to the current directory:
 
-                >>> client.files.download(directory=".", id=[1, 2, 3])
+                >>> client.files.download(directory=".", instance_id=NodeId("my-space", "my-file-xid"))
         """
         return run_sync(
             self.__async_client.files.download(
@@ -937,11 +961,13 @@ class SyncFilesAPI(SyncAPIClient):
 
         Examples:
 
-            Download a file by id:
+            Download a file by instance id:
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.files.download_to_path("~/mydir/my_downloaded_file.txt", id=123)
+                >>> client.files.download_to_path(
+                ...     "~/mydir/my_downloaded_file.txt", instance_id=NodeId("my-space", "my-file-xid")
+                ... )
         """
         return run_sync(
             self.__async_client.files.download_to_path(
@@ -967,7 +993,9 @@ class SyncFilesAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> file_content = client.files.download_bytes(id=1)
+                >>> file_content = client.files.download_bytes(
+                ...     instance_id=NodeId("my-space", "my-file-xid")
+                ... )
 
         Returns:
             bytes: The file in binary format

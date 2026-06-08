@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c3b8c6b1743204e71e05fd3f338b2d1d
+f0f07a68fbae83ec30875a0a5e84e992
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -182,8 +182,8 @@ class SyncDatapointsAPI(SyncAPIClient):
                 chunk_size_datapoints=chunk_size_datapoints,
                 chunk_size_time_series=chunk_size_time_series,
                 return_arrays=return_arrays,
-            )  # type: ignore [call-overload]
-        )
+            )
+        )  # type: ignore [misc]
 
     @overload
     def retrieve(
@@ -458,16 +458,15 @@ class SyncDatapointsAPI(SyncAPIClient):
         Examples:
 
             You can specify the identifiers of the datapoints you wish to retrieve in a number of ways. In this example
-            we are using the time-ago format, ``"2w-ago"`` to get raw data for the time series with id=42 from 2 weeks ago up until now.
+            we are using the time-ago format, ``"2w-ago"`` to get raw data for a time series from 2 weeks ago up until now.
             You can also use the time-ahead format, like ``"3d-ahead"``, to specify a relative time in the future.
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> dps = client.time_series.data.retrieve(id=42, start="2w-ago")
-                >>> # You can also use instance_id:
-                >>> from cognite.client.data_classes.data_modeling import NodeId
-                >>> dps = client.time_series.data.retrieve(instance_id=NodeId("ts-space", "foo"))
+                >>> dps = client.time_series.data.retrieve(
+                ...     instance_id=NodeId("ts-space", "foo"), start="2w-ago"
+                ... )
 
             Although raw datapoints are returned by default, you can also get aggregated values, such as `max` or `average`. You may also fetch more than one time series simultaneously. Here we are
             getting daily averages and maximum values for all of 2018, for two different time series, where we're specifying `start` and `end` as integers
@@ -820,14 +819,14 @@ class SyncDatapointsAPI(SyncAPIClient):
 
         Examples:
 
-            Get weekly ``min`` and ``max`` aggregates for a time series with id=42 since the year 2000, then compute the range of values:
+            Get weekly ``min`` and ``max`` aggregates for a time series using instance_id, then compute the range of values:
 
                 >>> from cognite.client import CogniteClient
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> dps = client.time_series.data.retrieve_arrays(
-                ...     id=42,
+                ...     instance_id=NodeId("my-space", "my-ts-xid"),
                 ...     start=datetime(2020, 1, 1, tzinfo=timezone.utc),
                 ...     aggregates=["min", "max"],
                 ...     granularity="7d",
@@ -878,7 +877,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 include_status=include_status,
                 ignore_bad_datapoints=ignore_bad_datapoints,
                 treat_uncertain_as_bad=treat_uncertain_as_bad,
-            )  # type: ignore [misc, call-overload]
+            )
         )
 
     def retrieve_dataframe(
@@ -952,14 +951,14 @@ class SyncDatapointsAPI(SyncAPIClient):
 
         Examples:
 
-            Get a pandas dataframe using a single time series external ID, with data from the last two weeks,
+            Get a pandas dataframe using a single time series instance ID, with data from the last two weeks,
             but with no more than 100 datapoints:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     external_id="foo", start="2w-ago", end="now", limit=100
+                ...     instance_id=NodeId("my-space", "my-ts-xid"), start="2w-ago", end="now", limit=100
                 ... )
 
             Get the pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
@@ -990,11 +989,11 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     include_aggregate_name=False,
                 ... )
 
-            You may also use ``pandas.Timestamp`` to define start and end. Here we fetch using instance_id:
+            You may also use ``pandas.Timestamp`` to define start and end:
 
                 >>> import pandas as pd
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     instance_id=NodeId("my-space", "my-ts-xid"),
+                ...     external_id="foo",
                 ...     start=pd.Timestamp("2023-01-01"),
                 ...     end=pd.Timestamp("2023-02-01"),
                 ... )
@@ -1239,16 +1238,15 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.time_series.data.retrieve_latest(id=1)
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
                 >>> if res:  # Check if datapoint exists
                 ...     print(res.timestamp, res.value)
 
-            You can also use external_id or instance_id; single identifier or list of identifiers:
+            You can also use id or external_id; single identifier or list of identifiers:
 
-                >>> from cognite.client.data_classes.data_modeling import NodeId
-                >>> res = client.time_series.data.retrieve_latest(
-                ...     external_id=["foo", "bar"], instance_id=NodeId("my-space", "my-ts-xid")
-                ... )
+                >>> res = client.time_series.data.retrieve_latest(id=1, external_id=["foo", "bar"])
 
             You can also get the latest datapoint before a specific time:
 
@@ -1371,20 +1369,19 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     (datetime(2018, 1, 3, tzinfo=timezone.utc), 3000, StatusCode.Uncertain),
                 ...     (datetime(2018, 1, 4, tzinfo=timezone.utc), None, StatusCode.Bad),
                 ... ]
-                >>> client.time_series.data.insert(datapoints, id=1)
+                >>> client.time_series.data.insert(
+                ...     datapoints, instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
 
             The timestamp can be given by datetime as above, or in milliseconds since epoch. Status codes can also be
             passed as normal integers; this is necessary if a subcategory or modifier flag is needed, e.g. 3145728: 'GoodClamped':
 
-                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> datapoints = [
                 ...     (150000000000, 1000),
                 ...     (160000000000, 2000, 3145728),
                 ...     (170000000000, 2000, 2147483648),  # Same as StatusCode.Bad
                 ... ]
-                >>> client.time_series.data.insert(
-                ...     datapoints, instance_id=NodeId("my-space", "my-ts-xid")
-                ... )
+                >>> client.time_series.data.insert(datapoints, id=1)
 
             Or they can be a list of dictionaries:
 
@@ -1548,7 +1545,9 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.time_series.data.delete_range(start="1w-ago", end="now", id=1)
+                >>> client.time_series.data.delete_range(
+                ...     start="1w-ago", end="now", instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
 
             Deleting the data from now until 2 days in the future from a time series containing e.g. forecasted data:
 
