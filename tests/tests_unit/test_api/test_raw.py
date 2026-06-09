@@ -757,3 +757,67 @@ class TestPandasIntegration:
         pd.testing.assert_frame_equal(
             row_df, pd.DataFrame({"foo": [123, *[None for _ in range(n_rows - 1)]]}, index=keys)
         )
+
+
+@pytest.mark.dsl
+class TestPolarsIntegration:
+    def test_rows_to_polars(self) -> None:
+        import polars as pl
+        from polars.testing import assert_frame_equal
+
+        row_list = RowList(
+            [
+                Row("k1", {"c1": "v1", "c2": "v1"}, last_updated_time=123),
+                Row("k2", {"c1": "v2", "c2": "v2"}, last_updated_time=123),
+            ]
+        )
+        assert_frame_equal(
+            row_list.to_polars(), pl.DataFrame({"key": ["k1", "k2"], "c1": ["v1", "v2"], "c2": ["v1", "v2"]})
+        )
+        assert_frame_equal(pl.DataFrame({"key": ["k1"], "c1": ["v1"], "c2": ["v1"]}), row_list[0].to_polars())
+
+    def test_rows_to_polars_missing_cols(self) -> None:
+        import polars as pl
+        from polars.testing import assert_frame_equal
+
+        row_list = RowList(
+            [
+                Row("k1", {"c1": "v1", "c2": "v1"}, last_updated_time=123),
+                Row("k2", {"c1": "v2", "c2": "v2", "c3": "v2"}, last_updated_time=123),
+            ]
+        )
+        assert_frame_equal(
+            row_list.to_polars(),
+            pl.DataFrame({"key": ["k1", "k2"], "c1": ["v1", "v2"], "c2": ["v1", "v2"], "c3": [None, "v2"]}),
+        )
+        assert_frame_equal(pl.DataFrame({"key": ["k1"], "c1": ["v1"], "c2": ["v1"]}), row_list[0].to_polars())
+
+    def test_rows_to_pandas__no_rows(self) -> None:
+        import polars as pl
+        from polars.testing import assert_frame_equal
+
+        row_df = RowList([]).to_polars()
+        assert row_df.shape == (0, 0)
+        assert_frame_equal(row_df, pl.DataFrame(data=[]))
+
+    @pytest.mark.parametrize("lst_cls", (RowList, RowWriteList))
+    @pytest.mark.parametrize("n_rows", (1, 5))
+    def test_rows_to_polars__empty_or_sparse(self, lst_cls: type[RowListCore], n_rows: int) -> None:
+        import polars as pl
+        from polars.testing import assert_frame_equal
+
+        keys = [f"row-{i}" for i in range(n_rows)]
+        if lst_cls is RowList:
+            row_list: RowList | RowWriteList = RowList([Row(k, {}, last_updated_time=123) for k in keys])
+        else:
+            row_list = RowWriteList([RowWrite(k, {}) for k in keys])
+        row_df = row_list.to_polars()
+        assert row_df.shape == (n_rows, 1)
+        assert_frame_equal(row_df, pl.DataFrame({"key": keys}))
+
+        row_list[0]["foo"] = 123
+        row_df = row_list.to_polars()
+        assert row_df.shape == (n_rows, 2)
+        assert_frame_equal(row_df, pl.DataFrame({"key": keys, "foo": [123, *[None for _ in range(n_rows - 1)]]}))
+
+
