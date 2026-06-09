@@ -177,13 +177,13 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     )
         """  # noqa: DOC404
         yield from SyncIterator(
-            self.__async_client.time_series.data(
+            self.__async_client.time_series.data(  # type: ignore [call-overload]
                 queries=queries,
                 chunk_size_datapoints=chunk_size_datapoints,
                 chunk_size_time_series=chunk_size_time_series,
                 return_arrays=return_arrays,
             )
-        )  # type: ignore [misc]
+        )
 
     @overload
     def retrieve(
@@ -862,7 +862,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> series = pd.Series(dps.value, index=dps.timestamp)
         """
         return run_sync(
-            self.__async_client.time_series.data.retrieve_arrays(
+            self.__async_client.time_series.data.retrieve_arrays(  # type: ignore [misc, call-overload]
                 id=id,
                 external_id=external_id,
                 instance_id=instance_id,
