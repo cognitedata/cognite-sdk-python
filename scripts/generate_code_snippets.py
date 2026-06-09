@@ -1,3 +1,4 @@
+import inspect
 import json
 import re
 from collections import defaultdict
@@ -23,15 +24,11 @@ def collect_apis(obj, done):
 
 def iter_methods(api):
     """Iterate bound methods without triggering class-level properties."""
-    seen = set()
-    for cls in type(api).__mro__:
-        for name, val in cls.__dict__.items():
-            if name in seen:
-                continue
-            seen.add(name)
-            if isinstance(val, _SKIP_DESCRIPTOR_TYPES) or not callable(val):
-                continue
-            yield name, getattr(api, name)
+    for name in dir(api):
+        val = inspect.getattr_static(api, name)
+        if isinstance(val, _SKIP_DESCRIPTOR_TYPES) or not callable(val):
+            continue
+        yield name, getattr(api, name)
 
 
 client = AsyncCogniteClient(ClientConfig(project="_", client_name="_", cluster="_", credentials=Token("_")))
