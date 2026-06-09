@@ -27,6 +27,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import pandas as pd
+    import polars as pl
 
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
@@ -516,6 +517,51 @@ class RawRowsAPI(APIClient):
             idx = [r.key for r in rows]
         cols = [r.columns for r in rows]
         return pd.DataFrame(cols, index=idx, dtype=object if not infer_dtypes else None)
+
+    async def retrieve_polars_dataframe(
+        self,
+        db_name: str,
+        table_name: str,
+        min_last_updated_time: int | None = None,
+        max_last_updated_time: int | None = None,
+        columns: list[str] | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+        partitions: int | None = None,
+        include_last_updated_time: bool = False,
+    ) -> pl.DataFrame:
+        """Retrieve rows in a table as a polars dataframe.
+
+        Rowkeys are used as the index.
+
+        Args:
+            db_name (str): Name of the database.
+            table_name (str): Name of the table.
+            min_last_updated_time (int | None): Rows must have been last updated after this time (exclusive). Milliseconds since epoch.
+            max_last_updated_time (int | None): Rows must have been last updated before this time (inclusive). Milliseconds since epoch.
+            columns (list[str] | None): List of column keys. Set to `None` to retrieving all, use empty list, [], to retrieve only row keys.
+            limit (int | None): The number of rows to retrieve. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            partitions (int | None): Retrieve rows in parallel using this number of workers. Can be used together with a (large) finite limit.
+            include_last_updated_time (bool): Whether to include the last_updated_time in the dataframe. If True, 'last_updated_time' will be added to the dataframe as a column. Defaults to False.
+        Returns:
+            pl.DataFrame: The requested rows in a polars dataframe.
+
+        Examples:
+            Get dataframe:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> df = client.raw.rows.retrieve_polars_dataframe("db1", "t1", limit=5)
+        """
+        pl = local_import("polars")
+        rows = await self.list(
+            db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions
+        )
+        if include_last_updated_time:
+            data = [{"key": r.key, **r.columns, "last_updated_time": r.last_updated_time} for r in rows]
+        else:
+            data = [{"key": r.key, **r.columns} for r in rows]
+        return pl.DataFrame(data)
 
     async def _get_parallel_cursors(
         self,

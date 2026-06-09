@@ -122,6 +122,25 @@ def integer_rows_response() -> dict:
 
 
 @pytest.fixture
+def mock_retrieve_raw_rows_response_struct_data(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[list[dict[str, Any]]]:
+    response_body = {
+        "items": [
+            {"key": "row1", "columns": {"c1": {"a": 1}, "c2": "2"}, "lastUpdatedTime": 0},
+            {"key": "row2", "columns": {"c1": {"a": 2}, "c2": "3"}, "lastUpdatedTime": 1},
+        ]
+    }
+    httpx_mock.add_response(
+        method="GET",
+        url=get_url(async_client.raw) + "/raw/dbs/db1/tables/table1/rows?limit=25",
+        status_code=200,
+        json=response_body,
+    )
+    yield response_body["items"]
+
+
+@pytest.fixture
 def mock_retrieve_integer_rows(
     httpx_mock: HTTPXMock,
     integer_rows_response: dict[str, Any],
@@ -821,3 +840,93 @@ class TestPolarsIntegration:
         assert_frame_equal(row_df, pl.DataFrame({"key": keys, "foo": [123, *[None for _ in range(n_rows - 1)]]}))
 
 
+@pytest.mark.dsl
+class TestRawRowsPolarsDataframe:
+    def test_retrieve_polars_dataframe_empty(
+        self, cognite_client: CogniteClient, mock_retrieve_raw_rows_response_no_rows: list[dict[str, Any]]
+    ) -> None:
+        import polars as pl
+
+        res_df = cognite_client.raw.rows.retrieve_polars_dataframe(db_name="db1", table_name="table1")
+        res_df_last_updated_time = cognite_client.raw.rows.retrieve_polars_dataframe(
+            db_name="db1", table_name="table1", include_last_updated_time=True
+        )
+        assert isinstance(res_df, pl.DataFrame)
+        assert res_df.shape == (0, 0)
+        assert res_df_last_updated_time.shape == (0, 0)
+        assert res_df.equals(res_df_last_updated_time)
+
+    def test_retrieve_polars_dataframe_one_row(
+        self, cognite_client: CogniteClient, mock_retrieve_raw_rows_response_one_row: list[dict[str, Any]]
+    ) -> None:
+        import polars as pl
+
+        res_df = cognite_client.raw.rows.retrieve_polars_dataframe(db_name="db1", table_name="table1")
+        res_df_w_last_updated_time = cognite_client.raw.rows.retrieve_polars_dataframe(
+            db_name="db1", table_name="table1", include_last_updated_time=True
+        )
+        assert isinstance(res_df, pl.DataFrame)
+        assert res_df.shape == (1, 3)
+        assert res_df.to_dict(as_series=False) == {"key": ["row1"], "c1": [1], "c2": ["2"]}
+        assert res_df_w_last_updated_time.shape == (1, 4)
+        assert res_df_w_last_updated_time.to_dict(as_series=False) == {
+            "key": ["row1"],
+            "c1": [1],
+            "c2": ["2"],
+            "last_updated_time": [0],
+        }
+
+    def test_retrieve_polars_dataframe_two_rows(
+        self, cognite_client: CogniteClient, mock_retrieve_raw_rows_response_two_rows: list[dict[str, Any]]
+    ) -> None:
+        import polars as pl
+
+        res_df = cognite_client.raw.rows.retrieve_polars_dataframe(db_name="db1", table_name="table1")
+        res_df_w_last_updated_time = cognite_client.raw.rows.retrieve_polars_dataframe(
+            db_name="db1", table_name="table1", include_last_updated_time=True
+        )
+        assert isinstance(res_df, pl.DataFrame)
+        assert res_df.shape == (2, 3)
+        assert res_df.to_dict(as_series=False) == {
+            "key": ["row1", "row2"],
+            "c1": [1, 2],
+            "c2": ["2", "3"],
+        }
+        assert res_df_w_last_updated_time.shape == (2, 4)
+        assert res_df_w_last_updated_time.to_dict(as_series=False) == {
+            "key": ["row1", "row2"],
+            "c1": [1, 2],
+            "c2": ["2", "3"],
+            "last_updated_time": [0, 1],
+        }
+
+    @pytest.mark.usefixtures("mock_retrieve_integer_rows")
+    def test_retrieve_polars_dataframe_integers(
+        self,
+        cognite_client: CogniteClient,
+        mock_retrieve_integer_rows: list[dict[str, Any]],
+        integer_rows_response: dict,
+    ) -> None:
+        result = cognite_client.raw.rows.retrieve_polars_dataframe(db_name="db1", table_name="table1", limit=25)
+        actual = result.to_dict(as_series=False)
+        expected = {"key": [row["key"] for row in integer_rows_response["items"]]}
+        for col in integer_rows_response["items"][0]["columns"].keys():
+            expected[col] = [row["columns"][col] for row in integer_rows_response["items"]]
+        assert_all_value_types_equal(actual, expected)
+        assert actual == expected
+
+    def test_retrieve_polars_dataframe_struct_data(
+        self,
+        cognite_client: CogniteClient,
+        mock_retrieve_raw_rows_response_struct_data: list[dict[str, Any]],
+    ) -> None:
+        import polars as pl
+
+        result = cognite_client.raw.rows.retrieve_polars_dataframe(db_name="db1", table_name="table1", limit=25)
+        assert isinstance(result, pl.DataFrame)
+        assert result.shape == (2, 3)
+        assert result.to_dict(as_series=False) == {
+            "key": ["row1", "row2"],
+            "c1": [{"a": 1}, {"a": 2}],
+            "c2": ["2", "3"],
+        }
