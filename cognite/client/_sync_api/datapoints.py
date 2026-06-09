@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f0f07a68fbae83ec30875a0a5e84e992
+c34301c83c59f6ae0eb6dedcfa998f3b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -29,7 +29,7 @@ from cognite.client.data_classes import (
     LatestDatapointList,
     LatestDatapointQuery,
 )
-from cognite.client.data_classes.data_modeling.ids import NodeId
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import Aggregate
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -462,6 +462,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             You can also use the time-ahead format, like ``"3d-ahead"``, to specify a relative time in the future.
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> dps = client.time_series.data.retrieve(
@@ -822,6 +823,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             Get weekly ``min`` and ``max`` aggregates for a time series using instance_id, then compute the range of values:
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
@@ -955,6 +957,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             but with no more than 100 datapoints:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.time_series.data.retrieve_dataframe(
@@ -1236,6 +1239,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             Getting the latest datapoint in a time series:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.time_series.data.retrieve_latest(
@@ -1360,6 +1364,7 @@ class SyncDatapointsAPI(SyncAPIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import StatusCode
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
@@ -1543,6 +1548,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             Deleting the last week of data from a time series:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.time_series.data.delete_range(

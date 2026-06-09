@@ -275,6 +275,7 @@ class FilesAPI(APIClient):
             Get file metadata by instance id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.files.retrieve(instance_id=NodeId("my-space", "my-file-xid"))
@@ -311,6 +312,7 @@ class FilesAPI(APIClient):
             Get file metadatas by instance id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.files.retrieve_multiple(
@@ -512,6 +514,7 @@ class FilesAPI(APIClient):
             Upload file content using instance_id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.files.upload_content(
@@ -752,6 +755,7 @@ class FilesAPI(APIClient):
             Finish a file creation by uploading the content using instance_id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.files.upload_content_bytes(
@@ -1040,6 +1044,7 @@ class FilesAPI(APIClient):
             Upload binary data in two chunks:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> with client.files.multipart_upload_content_session(
@@ -1178,6 +1183,7 @@ class FilesAPI(APIClient):
             Get download URLs by instance id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> urls = client.files.retrieve_download_urls(
@@ -1277,6 +1283,7 @@ class FilesAPI(APIClient):
 
             Download files by instance id to the current directory:
 
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client.files.download(directory=".", instance_id=NodeId("my-space", "my-file-xid"))
         """
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id)
@@ -1415,6 +1422,7 @@ class FilesAPI(APIClient):
 
             Download a file by instance id:
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.files.download_to_path(
@@ -1444,6 +1452,7 @@ class FilesAPI(APIClient):
             Download a file's content into memory:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> file_content = client.files.download_bytes(
