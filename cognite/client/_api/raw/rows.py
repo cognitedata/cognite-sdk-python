@@ -558,9 +558,9 @@ class RawRowsAPI(APIClient):
             db_name, table_name, min_last_updated_time, max_last_updated_time, columns, limit, partitions
         )
         if include_last_updated_time:
-            data = [{"key": r.key, **r.columns, "last_updated_time": r.last_updated_time} for r in rows]
+            data = [{"key": r.key, **(r.columns or {}), "last_updated_time": r.last_updated_time} for r in rows]
         else:
-            data = [{"key": r.key, **r.columns} for r in rows]
+            data = [{"key": r.key, **(r.columns or {})} for r in rows]
         return pl.DataFrame(data)
 
     async def _get_parallel_cursors(

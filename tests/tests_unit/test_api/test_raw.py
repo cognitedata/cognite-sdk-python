@@ -141,6 +141,26 @@ def mock_retrieve_raw_rows_response_struct_data(
 
 
 @pytest.fixture
+def mock_retrieve_raw_rows_no_columns_response(
+    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> Iterator[list[dict[str, Any]]]:
+    response_body = {
+        "items": [
+            {"key": "row1", "columns": None, "lastUpdatedTime": 0},
+            {"key": "row2", "columns": None, "lastUpdatedTime": 1},
+        ]
+    }
+    for _ in range(2):
+        httpx_mock.add_response(
+            method="GET",
+            url=get_url(async_client.raw) + "/raw/dbs/db1/tables/table1/rows?limit=25",
+            status_code=200,
+            json=response_body,
+        )
+    yield response_body["items"]
+
+
+@pytest.fixture
 def mock_retrieve_integer_rows(
     httpx_mock: HTTPXMock,
     integer_rows_response: dict[str, Any],
@@ -929,4 +949,27 @@ class TestRawRowsPolarsDataframe:
             "key": ["row1", "row2"],
             "c1": [{"a": 1}, {"a": 2}],
             "c2": ["2", "3"],
+        }
+
+    def test_retrieve_polars_dataframe_no_columns(
+        self,
+        cognite_client: CogniteClient,
+        mock_retrieve_raw_rows_no_columns_response: list[dict[str, Any]],
+    ) -> None:
+        import polars as pl
+
+        res_df = cognite_client.raw.rows.retrieve_polars_dataframe(db_name="db1", table_name="table1", limit=25)
+        res_df_w_last_updated_time = cognite_client.raw.rows.retrieve_polars_dataframe(
+            db_name="db1", table_name="table1", include_last_updated_time=True
+        )
+
+        assert isinstance(res_df, pl.DataFrame)
+        assert res_df.shape == (2, 1)
+        assert res_df.to_dict(as_series=False) == {
+            "key": ["row1", "row2"],
+        }
+        assert res_df_w_last_updated_time.shape == (2, 2)
+        assert res_df_w_last_updated_time.to_dict(as_series=False) == {
+            "key": ["row1", "row2"],
+            "last_updated_time": [0, 1],
         }

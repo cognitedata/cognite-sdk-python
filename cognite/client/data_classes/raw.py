@@ -74,7 +74,7 @@ class RowCore(WriteableCogniteResource["RowWrite"], ABC):
             polars.DataFrame: The polars DataFrame representing this instance.
         """
         pl = local_import("polars")
-        return pl.DataFrame(data={"key": self.key, **self.columns})
+        return pl.DataFrame(data={"key": self.key, **(self.columns or {})})
 
 
 T_Row = TypeVar("T_Row", bound=RowCore)
@@ -152,7 +152,7 @@ class RowListCore(WriteableCogniteResourceList[RowWrite, T_Row], ABC):
         pl = local_import("polars")
         if not self:
             return pl.DataFrame(data=[])
-        data = ({"key": row.key, **row.columns} for row in self)
+        data = ({"key": row.key, **(row.columns or {})} for row in self)
         return pl.DataFrame(data=data)
 
 
