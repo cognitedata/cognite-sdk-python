@@ -10,13 +10,12 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import CogniteClient
-from cognite.client._api.data_modeling.files import COGNITE_FILE_VIEW_ID, _resolve_source
+from cognite.client._api.data_modeling.files import COGNITE_FILE_VIEW_ID
 from cognite.client._cognite_client import AsyncCogniteClient
 from cognite.client.data_classes.data_modeling import Node, NodeId, NodeList, ViewId
 from cognite.client.data_classes.data_modeling.instances import NodeApply, Properties
 from cognite.client.exceptions import CogniteFileUploadError, CogniteNotFoundError
 from tests.tests_unit.conftest import DefaultResourceGenerator
-from tests.tests_unit.test_api.test_data_modeling.conftest import make_test_view
 
 CUSTOM_VIEW_ID = ViewId("my-space", "MyView", "v1")
 
@@ -39,27 +38,6 @@ def single_node(
         properties=props,
         type=None,
     ).dump(camel_case=True)
-
-
-class TestResolveSource:
-    @pytest.mark.parametrize(
-        "source, expected_sources, expected_strip",
-        [
-            (COGNITE_FILE_VIEW_ID, [COGNITE_FILE_VIEW_ID], False),
-            (("cdf_cdm", "CogniteFile", "v1"), [COGNITE_FILE_VIEW_ID], False),
-            (CUSTOM_VIEW_ID, [CUSTOM_VIEW_ID, COGNITE_FILE_VIEW_ID], True),
-            (("my-space", "MyView", "v1"), [CUSTOM_VIEW_ID, COGNITE_FILE_VIEW_ID], True),
-            (make_test_view("my-space", "MyView", "v1"), [CUSTOM_VIEW_ID, COGNITE_FILE_VIEW_ID], True),
-        ],
-    )
-    def test_resolve_source(self, source: Any, expected_sources: list[ViewId], expected_strip: bool) -> None:
-        sources, strip = _resolve_source(source)
-        assert sources == expected_sources
-        assert strip is expected_strip
-
-    def test_invalid_source_raises_type_error(self) -> None:
-        with pytest.raises(TypeError, match="Expected View, ViewId"):
-            _resolve_source("not-a-valid-source")  # type: ignore[arg-type]
 
 
 # avoid gzip compression in tests to simplify inspection of request bodies:

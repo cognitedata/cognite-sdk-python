@@ -12,6 +12,7 @@ from cognite.client._api.data_modeling.records import RecordsAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.statistics import StatisticsAPI
 from cognite.client._api.data_modeling.streams import StreamsAPI
+from cognite.client._api.data_modeling.time_series import DataModelingTimeSeriesAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api_client import APIClient
 
@@ -26,6 +27,7 @@ class DataModelingAPI(APIClient):
         self.containers = ContainersAPI(config, api_version, cognite_client)
         self.data_models = DataModelsAPI(config, api_version, cognite_client)
         self.files = DataModelingFilesAPI(config, api_version, cognite_client)
+        self.time_series = DataModelingTimeSeriesAPI(config, api_version, cognite_client)
         self.spaces = SpacesAPI(config, api_version, cognite_client)
         self.views = ViewsAPI(config, api_version, cognite_client)
         self.instances = InstancesAPI(config, api_version, cognite_client)
