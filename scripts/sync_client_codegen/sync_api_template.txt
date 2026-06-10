@@ -14,8 +14,7 @@ from typing import Any, Iterator, TYPE_CHECKING, overload
 from collections.abc import Coroutine
 
 if TYPE_CHECKING:
-    import pandas as pd
-    {type_checking_imports}
+{type_checking_imports}
 
 {module_constants}
 

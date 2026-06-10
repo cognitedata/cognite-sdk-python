@@ -158,7 +158,7 @@ def _generate_code_for_single_sync_api(
                 file_hash=file_hash,
                 class_name=foolish_cls_name_rewrite(class_name),
                 existing_imports=all_imports,
-                type_checking_imports=type_checking_imports,
+                type_checking_imports="\n".join([f"{FOUR_SPACES}{line}" for line in type_checking_imports.split("\n")]),
                 nested_apis_init="\n        ".join(nested_apis),
                 module_constants=module_constants,
             )
