@@ -8,6 +8,7 @@ from pathlib import Path
 
 from scripts.sync_client_codegen.codegen_utils import (
     clean_up_files,
+    create_type_checking_imports_block,
     ensure_parent_dir,
     file_has_changed,
     find_api_class_name,
@@ -150,7 +151,7 @@ def _generate_code_for_single_sync_api(
     api_names, nested_apis = find_self_assignments(class_def)
     all_imports = fix_imports_for_sync_apis(all_imports, api_names)
     module_constants = get_module_level_constants(tree)
-
+    type_checking_imports_block = create_type_checking_imports_block(type_checking_imports)
     # Combine everything 🤞
     return (
         textwrap.dedent(
@@ -158,7 +159,7 @@ def _generate_code_for_single_sync_api(
                 file_hash=file_hash,
                 class_name=foolish_cls_name_rewrite(class_name),
                 existing_imports=all_imports,
-                type_checking_imports="\n".join([f"{FOUR_SPACES}{line}" for line in type_checking_imports.split("\n")]),
+                type_checking_imports=type_checking_imports_block,
                 nested_apis_init="\n        ".join(nested_apis),
                 module_constants=module_constants,
             )

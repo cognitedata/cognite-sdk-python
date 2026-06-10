@@ -13,7 +13,6 @@ from cognite.client.utils._concurrency import _get_event_loop_executor
 from typing import Any, Iterator, TYPE_CHECKING, overload
 from collections.abc import Coroutine
 
-if TYPE_CHECKING:
 {type_checking_imports}
 
 {module_constants}
