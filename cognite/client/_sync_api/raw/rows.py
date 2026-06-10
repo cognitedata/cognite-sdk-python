@@ -19,7 +19,9 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import pandas as pd
-import polars as pl
+    import polars as pl
+
+    from cognite.client import AsyncCogniteClient
 
 
 class SyncRawRowsAPI(SyncAPIClient):
