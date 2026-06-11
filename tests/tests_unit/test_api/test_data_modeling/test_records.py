@@ -46,6 +46,16 @@ def mock_ingest(httpx_mock: HTTPXMock, ingest_url_pattern: re.Pattern) -> None:
 
 
 @pytest.fixture
+def upsert_url_pattern(records_base_url: str) -> re.Pattern:
+    return re.compile(re.escape(records_base_url) + r"/upsert$")
+
+
+@pytest.fixture
+def mock_upsert(httpx_mock: HTTPXMock, upsert_url_pattern: re.Pattern) -> None:
+    httpx_mock.add_response(method="POST", url=upsert_url_pattern, status_code=202)
+
+
+@pytest.fixture
 def write_item() -> RecordWrite:
     return RecordWrite(
         space="sp",
@@ -149,6 +159,70 @@ class TestRecordsAPIIngest:
         requests = httpx_mock.get_requests()
         assert len(requests) == 2
         assert len(jsgz_load(requests[0].content)["items"]) == 1000
+        assert len(jsgz_load(requests[1].content)["items"]) == 1
+
+
+class TestRecordsAPIUpsert:
+    def test_upsert_single_posts_correct_body(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        mock_upsert: None,
+        stream_id: str,
+        write_item: RecordWrite,
+    ) -> None:
+        cognite_client.data_modeling.records.upsert(write_item, stream_id=stream_id)
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 1
+        assert requests[0].url.path.endswith(f"/streams/{stream_id}/records/upsert")
+        body = jsgz_load(requests[0].content)
+        assert body == {
+            "items": [
+                {
+                    "space": "sp",
+                    "externalId": "rec-1",
+                    "sources": [
+                        {
+                            "source": {"type": "container", "space": "sp", "externalId": "container-x"},
+                            "properties": {"temp": 22.5},
+                        }
+                    ],
+                }
+            ]
+        }
+
+    def test_upsert_accepts_sequence(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        mock_upsert: None,
+        stream_id: str,
+    ) -> None:
+        items = [
+            RecordWrite(space="sp", external_id="rec-1", sources=[]),
+            RecordWrite(space="sp", external_id="rec-2", sources=[]),
+        ]
+        cognite_client.data_modeling.records.upsert(items, stream_id=stream_id)
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert [item["externalId"] for item in body["items"]] == ["rec-1", "rec-2"]
+
+    def test_upsert_chunks(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
+        upsert_url_pattern: re.Pattern,
+        stream_id: str,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(async_client.data_modeling.records, "_CREATE_LIMIT", 10)
+        httpx_mock.add_response(method="POST", url=upsert_url_pattern, status_code=202)
+        httpx_mock.add_response(method="POST", url=upsert_url_pattern, status_code=202)
+        items = [RecordWrite(space="sp", external_id=f"r-{i}", sources=[]) for i in range(11)]
+        cognite_client.data_modeling.records.upsert(items, stream_id=stream_id)
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 2
+        assert len(jsgz_load(requests[0].content)["items"]) == 10
         assert len(jsgz_load(requests[1].content)["items"]) == 1
 
 

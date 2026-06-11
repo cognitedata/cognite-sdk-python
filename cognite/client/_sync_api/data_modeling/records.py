@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8ad61f19a6f3aafee8321289d77550a8
+a1d781b7919482e2f395ec1fb6fb1f09
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -101,3 +101,45 @@ class SyncRecordsAPI(SyncAPIClient):
                 ... )
         """
         return run_sync(self.__async_client.data_modeling.records.ingest(items=items, stream_id=stream_id))
+
+    def upsert(self, items: RecordWrite | Sequence[RecordWrite], *, stream_id: str) -> None:
+        """
+        `Upsert records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/upsertRecords>`_.
+
+        Creates or fully updates records. Only valid for mutable streams (returns 422 on
+        immutable). When a record with the same ``space + externalId`` already exists it is
+        fully replaced (this endpoint does not do partial property updates); otherwise it is
+        created.
+
+        Args:
+            items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
+            stream_id (str): External ID of the stream to upsert into.
+
+        Examples:
+
+            Upsert a single record:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.records import (
+                ...     RecordWrite,
+                ...     RecordContainerId,
+                ...     RecordSource,
+                ... )
+                >>> client = CogniteClient()
+                >>> client.data_modeling.records.upsert(
+                ...     RecordWrite(
+                ...         space="my-space",
+                ...         external_id="rec-1",
+                ...         sources=[
+                ...             RecordSource(
+                ...                 source=RecordContainerId(
+                ...                     space="my-space", external_id="my-container"
+                ...                 ),
+                ...                 properties={"temperature": 23.0},
+                ...             )
+                ...         ],
+                ...     ),
+                ...     stream_id="my-stream",
+                ... )
+        """
+        return run_sync(self.__async_client.data_modeling.records.upsert(items=items, stream_id=stream_id))
