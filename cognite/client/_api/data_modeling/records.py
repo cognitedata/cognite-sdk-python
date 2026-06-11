@@ -135,6 +135,7 @@ class RecordsAPI(APIClient):
         items: RecordWrite | Sequence[RecordWrite],
         *,
         stream_id: str,
+        upsert_mode: Literal["replace"] = "replace",
     ) -> None:
         """`Upsert records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/upsertRecords>`_.
 
