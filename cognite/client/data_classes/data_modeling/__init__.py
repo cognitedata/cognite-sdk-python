@@ -128,6 +128,8 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordSourceSelector,
     RecordWrite,
     RecordWriteList,
+    SyncRecord,
+    SyncRecordList,
     TimeRange,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
@@ -285,6 +287,8 @@ __all__ = [
     "StreamTemplateWriteSettings",
     "StreamWrite",
     "SubscriptionContext",
+    "SyncRecord",
+    "SyncRecordList",
     "Text",
     "TimeRange",
     "TimeSeriesReference",

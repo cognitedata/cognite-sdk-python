@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e013190c9321064f168b99ecb6b2462a
+5b5439ad7bcbc94e7079befcb5130d9c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -18,6 +18,7 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordList,
     RecordSourceSelector,
     RecordWrite,
+    SyncRecordList,
     TimeRange,
 )
 from cognite.client.data_classes.filters import Filter
@@ -163,6 +164,67 @@ class SyncRecordsAPI(SyncAPIClient):
                 filter=filter,
                 sources=sources,
                 sort=sort,
+                limit=limit,
+                include_typing=include_typing,
+            )
+        )
+
+    def sync(
+        self,
+        stream_id: str,
+        *,
+        cursor: str | None = None,
+        initialize_cursor: str | None = None,
+        filter: Filter | None = None,
+        sources: Sequence[RecordSourceSelector] | None = None,
+        limit: int | None = None,
+        include_typing: bool = False,
+    ) -> SyncRecordList:
+        """
+        `Sync records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/syncRecords>`_.
+
+        Returns the next page of the change feed (new, updated and deleted records). Provide exactly
+        one of ``cursor`` (to resume a previous position) or ``initialize_cursor`` (to start from a
+        relative time such as ``"7d-ago"``). Persist the returned :attr:`SyncRecordList.cursor` and
+        pass it as ``cursor`` on the next call to continue; :attr:`SyncRecordList.has_next` indicates
+        whether more changes are immediately available.
+
+        Args:
+            stream_id (str): External ID of the stream to sync.
+            cursor (str | None): Resume from a cursor returned by a previous sync call.
+            initialize_cursor (str | None): Where to start when no ``cursor`` is given, as a
+                relative duration like ``"7d-ago"``. Ignored when ``cursor`` is set.
+            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
+            limit (int | None): Maximum number of records to return in this page (1-1000).
+            include_typing (bool): If True, include property type information on the returned
+                list's ``typing`` attribute.
+
+        Returns:
+            SyncRecordList: One page of change records, with ``cursor`` and ``has_next`` set.
+
+        Examples:
+
+            Initialize a sync, process the page, then resume from the cursor later:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> page = client.data_modeling.records.sync(
+                ...     stream_id="my-stream", initialize_cursor="7d-ago"
+                ... )
+                >>> for record in page:
+                ...     pass  # process record; record.status is created/updated/deleted
+                >>> next_page = client.data_modeling.records.sync(
+                ...     stream_id="my-stream", cursor=page.cursor
+                ... )
+        """
+        return run_sync(
+            self.__async_client.data_modeling.records.sync(
+                stream_id=stream_id,
+                cursor=cursor,
+                initialize_cursor=initialize_cursor,
+                filter=filter,
+                sources=sources,
                 limit=limit,
                 include_typing=include_typing,
             )

@@ -15,6 +15,8 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordSource,
     RecordSourceSelector,
     RecordWrite,
+    SyncRecord,
+    SyncRecordList,
     TimeRange,
 )
 from tests.utils import jsgz_load
@@ -69,6 +71,11 @@ def record_response() -> dict:
 @pytest.fixture
 def mock_filter(httpx_mock: HTTPXMock, filter_url_pattern: re.Pattern, record_response: dict) -> None:
     httpx_mock.add_response(method="POST", url=filter_url_pattern, status_code=200, json={"items": [record_response]})
+
+
+@pytest.fixture
+def sync_url_pattern(records_base_url: str) -> re.Pattern:
+    return re.compile(re.escape(records_base_url) + r"/sync$")
 
 
 @pytest.fixture
@@ -266,6 +273,106 @@ class TestRecordsAPIList:
         assert isinstance(result.typing, TypeInformation)
 
 
+class TestRecordsAPISync:
+    def test_sync_returns_page_with_cursor(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        item = {**record_response, "status": "created"}
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [item], "nextCursor": "abc", "hasNext": False},
+        )
+        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago")
+        assert isinstance(page, SyncRecordList)
+        assert page.cursor == "abc"
+        assert page.has_next is False
+        assert page[0].status == "created"
+        request = httpx_mock.get_requests()[0]
+        assert request.url.path.endswith(f"/streams/{stream_id}/records/sync")
+        assert jsgz_load(request.content) == {"initializeCursor": "7d-ago"}
+
+    def test_sync_resume_sends_cursor(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        stream_id: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [], "nextCursor": "p2", "hasNext": True},
+        )
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [], "nextCursor": "p3", "hasNext": False},
+        )
+        first = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="2d-ago")
+        assert first.has_next is True
+        second = cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor=first.cursor)
+        assert second.cursor == "p3"
+        body2 = jsgz_load(httpx_mock.get_requests()[1].content)
+        assert body2 == {"cursor": "p2"}
+
+    def test_sync_rejects_cursor_and_initialize_cursor(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        stream_id: str,
+    ) -> None:
+        with pytest.raises(ValueError, match="not both"):
+            cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="c", initialize_cursor="2d-ago")
+        assert httpx_mock.get_requests() == []
+
+    def test_sync_deleted_tombstone_has_no_properties(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        stream_id: str,
+    ) -> None:
+        item = {"space": "sp", "externalId": "rec-1", "createdTime": 1, "lastUpdatedTime": 2, "status": "deleted"}
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [item], "nextCursor": "z", "hasNext": False},
+        )
+        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="c")
+        assert page[0].status == "deleted"
+        assert page[0].properties is None
+
+    def test_sync_include_typing(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        item = {**record_response, "status": "updated"}
+        typing = {"sp": {"container-x": {"temp": {"type": {"type": "float64", "list": False}, "nullable": True}}}}
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [item], "nextCursor": "z", "hasNext": False, "typing": typing},
+        )
+        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="c", include_typing=True)
+        assert jsgz_load(httpx_mock.get_requests()[0].content)["includeTyping"] is True
+        assert isinstance(page.typing, TypeInformation)
+
+
 class TestRecordDTOs:
     def test_record_write_as_id(self, write_item: RecordWrite) -> None:
         rid = write_item.as_id()
@@ -350,3 +457,25 @@ class TestRecordDTOs:
             "source": {"type": "container", "space": "sp", "externalId": "c"},
             "properties": ["temp", "pressure"],
         }
+
+    def test_sync_record_load_dump_round_trip(self) -> None:
+        payload = {
+            "space": "sp",
+            "externalId": "rec-1",
+            "createdTime": 100,
+            "lastUpdatedTime": 200,
+            "status": "updated",
+            "properties": {"sp": {"c": {"temp": 22.5}}},
+        }
+        record = SyncRecord._load(payload)
+        assert isinstance(record, Record)
+        assert record.status == "updated"
+        assert record.dump() == payload
+
+    def test_sync_record_deleted_tombstone(self) -> None:
+        record = SyncRecord._load(
+            {"space": "sp", "externalId": "rec-1", "createdTime": 1, "lastUpdatedTime": 2, "status": "deleted"}
+        )
+        assert record.status == "deleted"
+        assert record.properties is None
+        assert "properties" not in record.dump()

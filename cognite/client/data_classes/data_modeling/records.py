@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from typing_extensions import Self
 
@@ -26,6 +26,8 @@ __all__ = [
     "RecordSourceSelector",
     "RecordWrite",
     "RecordWriteList",
+    "SyncRecord",
+    "SyncRecordList",
     "TimeRange",
 ]
 
@@ -270,3 +272,90 @@ class RecordSourceSelector(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"source": self.source.dump(camel_case=camel_case), "properties": self.properties}
+
+
+class SyncRecord(Record):
+    """A record returned by the sync endpoint, annotated with a change status.
+
+    For ``status="deleted"`` tombstones (mutable streams), :attr:`properties` is ``None``.
+
+    Args:
+        space (str): Space the record belongs to.
+        external_id (str): External ID of the record.
+        created_time (int): Creation time in milliseconds since epoch.
+        last_updated_time (int): Last updated time in milliseconds since epoch.
+        status (Literal['created', 'updated', 'deleted']): The record's change status.
+        properties (dict[str, dict[str, dict[str, Any]]] | None): Property values (absent for
+            deleted tombstones).
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        created_time: int,
+        last_updated_time: int,
+        status: Literal["created", "updated", "deleted"],
+        properties: dict[str, dict[str, dict[str, Any]]] | None = None,
+    ) -> None:
+        super().__init__(
+            space=space,
+            external_id=external_id,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+            properties=properties,
+        )
+        self.status = status
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            status=resource["status"],
+            properties=resource.get("properties"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["status"] = self.status
+        return output
+
+
+class SyncRecordList(CogniteResourceList[SyncRecord]):
+    """A page of :class:`SyncRecord` objects from the sync endpoint.
+
+    Args:
+        resources (Sequence[SyncRecord]): The records in this page.
+        cursor (str | None): Cursor to pass as ``cursor`` to the next ``sync`` call to resume
+            from this position.
+        has_next (bool): Whether more changes are available beyond this page.
+        typing (TypeInformation | None): Property type information, present when the request was
+            made with ``include_typing=True``.
+    """
+
+    _RESOURCE = SyncRecord
+
+    def __init__(
+        self,
+        resources: Sequence[SyncRecord],
+        cursor: str | None = None,
+        has_next: bool = False,
+        typing: TypeInformation | None = None,
+    ) -> None:
+        super().__init__(resources)
+        self.cursor = cursor
+        self.has_next = has_next
+        self.typing = typing
+
+    @classmethod
+    def _load_response(cls, response: dict[str, Any]) -> Self:
+        typing = TypeInformation._load(response["typing"]) if "typing" in response else None
+        return cls(
+            [SyncRecord._load(item) for item in response["items"]],
+            cursor=response["nextCursor"],
+            has_next=response["hasNext"],
+            typing=typing,
+        )
