@@ -34,6 +34,7 @@ from cognite.client._api.data_modeling import (
     data_models,
     graphql,
     instances,
+    records,
     spaces,
     statistics,
     streams,
@@ -137,6 +138,7 @@ class TestDocstringExamples:
         run_docstring_tests(graphql)
         run_docstring_tests(statistics)
         run_docstring_tests(streams)
+        run_docstring_tests(records)
         run_docstring_tests(dm_time_series)
 
     def test_datapoint_subscriptions(self) -> None:
