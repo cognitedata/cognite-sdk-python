@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a1d781b7919482e2f395ec1fb6fb1f09
+a5a0864df637b4db573ef7024e2e256f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -102,7 +102,9 @@ class SyncRecordsAPI(SyncAPIClient):
         """
         return run_sync(self.__async_client.data_modeling.records.ingest(items=items, stream_id=stream_id))
 
-    def upsert(self, items: RecordWrite | Sequence[RecordWrite], *, stream_id: str) -> None:
+    def upsert(
+        self, items: RecordWrite | Sequence[RecordWrite], *, stream_id: str, upsert_mode: Literal["replace"] = "replace"
+    ) -> None:
         """
         `Upsert records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/upsertRecords>`_.
 
@@ -114,6 +116,7 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
             stream_id (str): External ID of the stream to upsert into.
+            upsert_mode (Literal["replace"]): How existing records are updated. Currently only ``"replace"`` is supported, which fully replaces the existing record. Defaults to ``"replace"``.
 
         Examples:
 
@@ -142,4 +145,6 @@ class SyncRecordsAPI(SyncAPIClient):
                 ...     stream_id="my-stream",
                 ... )
         """
-        return run_sync(self.__async_client.data_modeling.records.upsert(items=items, stream_id=stream_id))
+        return run_sync(
+            self.__async_client.data_modeling.records.upsert(items=items, stream_id=stream_id, upsert_mode=upsert_mode)
+        )
