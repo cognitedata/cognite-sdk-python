@@ -2,10 +2,19 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.data_modeling.records import RecordId, RecordIdSequence, RecordWrite
+from cognite.client.data_classes.data_modeling.instances import InstanceSort
+from cognite.client.data_classes.data_modeling.records import (
+    RecordId,
+    RecordIdSequence,
+    RecordList,
+    RecordSourceSelector,
+    RecordWrite,
+    TimeRange,
+)
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._concurrency import RecordsConcurrencyOperation
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._url import interpolate_and_url_encode
@@ -23,11 +32,12 @@ class RecordsAPI(APIClient):
         )
 
     _OPERATION_TO_RATE_LIMIT: ClassVar[dict[str, RecordsConcurrencyOperation]] = {
+        "read": RecordsConcurrencyOperation.READ,
         "write": RecordsConcurrencyOperation.WRITE,
         "delete": RecordsConcurrencyOperation.WRITE,
     }
 
-    def _get_semaphore(self, operation: Literal["write", "delete"]) -> asyncio.BoundedSemaphore:
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
 
         return global_config.concurrency_settings.records._semaphore_factory(
@@ -183,3 +193,69 @@ class RecordsAPI(APIClient):
             resource_path=self._records_url(stream_id, "/upsert"),
             no_response=True,
         )
+
+    async def list(
+        self,
+        stream_id: str,
+        *,
+        last_updated_time: TimeRange | None = None,
+        filter: Filter | None = None,
+        sources: Sequence[RecordSourceSelector] | None = None,
+        sort: Sequence[InstanceSort] | InstanceSort | None = None,
+        limit: int = 10,
+        include_typing: bool = False,
+    ) -> RecordList:
+        """`Filter records in a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/filterRecords>`_.
+
+        Returns records matching the given filters, sorted by ``lastUpdatedTime`` unless a custom
+        ``sort`` is given. This endpoint is not cursor-paged: it returns at most ``limit`` records
+        (max 1000). To page over a large time window, issue multiple calls with partitioned
+        ``last_updated_time`` ranges.
+
+        Args:
+            stream_id (str): External ID of the stream to query.
+            last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
+                immutable streams** (must include a lower bound).
+            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
+            sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
+            limit (int): Maximum number of records to return (1-1000). Defaults to 10.
+            include_typing (bool): If True, include property type information on the returned
+                list's ``typing`` attribute.
+
+        Returns:
+            RecordList: The matching records.
+
+        Examples:
+
+            List records updated since a given timestamp:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.records import TimeRange
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.records.list(
+                ...     stream_id="my-stream",
+                ...     last_updated_time=TimeRange(gt=1705341600000),
+                ...     limit=100,
+                ... )
+        """
+        self._warning.warn()
+        body: dict[str, Any] = {"limit": limit}
+        if last_updated_time is not None:
+            body["lastUpdatedTime"] = last_updated_time.dump()
+        if filter is not None:
+            body["filter"] = filter.dump()
+        if sources is not None:
+            body["sources"] = [source.dump() for source in sources]
+        if sort is not None:
+            sort_list = [sort] if isinstance(sort, InstanceSort) else list(sort)
+            body["sort"] = [spec.dump() for spec in sort_list]
+        if include_typing:
+            body["includeTyping"] = True
+
+        response = await self._post(
+            url_path=self._records_url(stream_id, "/filter"),
+            json=body,
+            semaphore=self._get_semaphore("read"),
+        )
+        return RecordList._load_raw_api_response([response.json()])

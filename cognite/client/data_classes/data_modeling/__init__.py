@@ -120,11 +120,15 @@ from cognite.client.data_classes.data_modeling.query import (
     UnionAll,
 )
 from cognite.client.data_classes.data_modeling.records import (
+    Record,
     RecordContainerId,
     RecordId,
+    RecordList,
     RecordSource,
+    RecordSourceSelector,
     RecordWrite,
     RecordWriteList,
+    TimeRange,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
 from cognite.client.data_classes.data_modeling.streams import (
@@ -249,9 +253,12 @@ __all__ = [
     "Query",
     "QueryResult",
     "QuerySync",
+    "Record",
     "RecordContainerId",
     "RecordId",
+    "RecordList",
     "RecordSource",
+    "RecordSourceSelector",
     "RecordWrite",
     "RecordWriteList",
     "RequiresConstraint",
@@ -279,6 +286,7 @@ __all__ = [
     "StreamWrite",
     "SubscriptionContext",
     "Text",
+    "TimeRange",
     "TimeSeriesReference",
     "Timestamp",
     "TranslatedQuery",

@@ -27,8 +27,10 @@ def create_sync_cognite_client(
         override_api_name = foolish_cls_name_rewrite(api)
         all_apis.append(f"self.{attr} = Sync{override_api_name}(async_client)\n")
 
+        api_file = Path(file_path_lookup[api])
+        api_dir = next(p for p in api_file.parents if p.name == ASYNC_API_DIR.name)
         import_path = path_as_importable(
-            SYNC_API_DIR / Path(file_path_lookup[api]).relative_to(ASYNC_API_DIR.resolve())
+            SYNC_API_DIR / api_file.relative_to(api_dir)
         ).replace(".__init__", "")
         all_imports.append(f"from {import_path} import Sync{override_api_name}")
 
