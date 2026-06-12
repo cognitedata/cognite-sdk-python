@@ -48,6 +48,20 @@ def beta_cognite_client(cognite_client: CogniteClient) -> CogniteClient:
     )
 
 
+@pytest.fixture(scope="session")
+def beta_async_client(async_client: AsyncCogniteClient) -> AsyncCogniteClient:
+    cfg = async_client.config
+    return AsyncCogniteClient(
+        ClientConfig(
+            client_name=cfg.client_name,
+            project=cfg.project,
+            base_url=cfg.base_url,
+            credentials=cfg.credentials,
+            api_subversion="beta",
+        )
+    )
+
+
 @pytest.fixture(scope="class")
 def state_ts_resources(beta_cognite_client: CogniteClient, worker_id: str) -> Iterator[tuple[str, str, str, NodeId]]:
     shard = _shard_id(worker_id)
@@ -116,18 +130,22 @@ def _state_datapoints() -> list[dict[str, int | float | str | datetime.datetime]
 
 
 class TestStateTimeSeries:
+    @pytest.mark.allow_no_semaphore(
+        "State datapoint insert goes through DatapointsAPI._insert_datapoints, which holds the "
+        "semaphore via outer 'async with' and passes None to _post to avoid double-acquiring."
+    )
     def test_insert_and_retrieve_raw(
         self,
-        cognite_client: CogniteClient,
+        beta_cognite_client: CogniteClient,
         state_ts_resources: tuple[str, str, str, NodeId],
     ) -> None:
         _, _, _, ts_node_id = state_ts_resources
 
         with pytest.warns(FeaturePreviewWarning, match="State time series"):
-            cognite_client.time_series.data.insert(_state_datapoints(), instance_id=ts_node_id)
+            beta_cognite_client.time_series.data.insert(_state_datapoints(), instance_id=ts_node_id)
 
         with pytest.warns(FeaturePreviewWarning, match="State time series"):
-            dps = cognite_client.time_series.data.retrieve(instance_id=ts_node_id, start=TS_T0, end=QUERY_END)
+            dps = beta_cognite_client.time_series.data.retrieve(instance_id=ts_node_id, start=TS_T0, end=QUERY_END)
 
         assert dps is not None
         assert dps.type == "state"
@@ -137,7 +155,7 @@ class TestStateTimeSeries:
 
     def test_retrieve_arrays_state_raw(
         self,
-        cognite_client: CogniteClient,
+        beta_cognite_client: CogniteClient,
         state_ts_resources: tuple[str, str, str, NodeId],
     ) -> None:
         import numpy as np
@@ -145,7 +163,9 @@ class TestStateTimeSeries:
         _, _, _, ts_node_id = state_ts_resources
 
         with pytest.warns(FeaturePreviewWarning, match="State time series"):
-            arr = cognite_client.time_series.data.retrieve_arrays(instance_id=ts_node_id, start=TS_T0, end=QUERY_END)
+            arr = beta_cognite_client.time_series.data.retrieve_arrays(
+                instance_id=ts_node_id, start=TS_T0, end=QUERY_END
+            )
 
         assert arr is not None
         assert arr.type == "state"
@@ -157,13 +177,13 @@ class TestStateTimeSeries:
 
     def test_retrieve_state_aggregates(
         self,
-        cognite_client: CogniteClient,
+        beta_cognite_client: CogniteClient,
         state_ts_resources: tuple[str, str, str, NodeId],
     ) -> None:
         _, _, _, ts_node_id = state_ts_resources
 
         with pytest.warns(FeaturePreviewWarning, match="State time series"):
-            dps = cognite_client.time_series.data.retrieve(
+            dps = beta_cognite_client.time_series.data.retrieve(
                 instance_id=ts_node_id,
                 start=TS_T0,
                 end=QUERY_END,
@@ -188,18 +208,22 @@ class TestStateTimeSeries:
 
 
 class TestStateTimeSeriesAsync:
+    @pytest.mark.allow_no_semaphore(
+        "State datapoint insert goes through DatapointsAPI._insert_datapoints, which holds the "
+        "semaphore via outer 'async with' and passes None to _post to avoid double-acquiring."
+    )
     async def test_insert_and_retrieve_raw_async(
         self,
-        async_client: AsyncCogniteClient,
+        beta_async_client: AsyncCogniteClient,
         state_ts_resources: tuple[str, str, str, NodeId],
     ) -> None:
         _, _, _, ts_node_id = state_ts_resources
 
         with pytest.warns(FeaturePreviewWarning, match="State time series"):
-            await async_client.time_series.data.insert(_state_datapoints(), instance_id=ts_node_id)
+            await beta_async_client.time_series.data.insert(_state_datapoints(), instance_id=ts_node_id)
 
         with pytest.warns(FeaturePreviewWarning, match="State time series"):
-            dps = await async_client.time_series.data.retrieve(instance_id=ts_node_id, start=TS_T0, end=QUERY_END)
+            dps = await beta_async_client.time_series.data.retrieve(instance_id=ts_node_id, start=TS_T0, end=QUERY_END)
 
         assert dps is not None
         assert dps.type == "state"
