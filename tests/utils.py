@@ -421,6 +421,10 @@ class FakeCogniteResourceGenerator:
             else:
                 for raw in ["value", "status_code", "status_symbol", "min_datapoint", "max_datapoint"]:
                     keyword_arguments.pop(raw, None)
+            # State-series fields are only valid when type == "state"; the random choice above
+            # never produces that, so drop them to avoid a malformed instance.
+            for state_field in ("numeric_value", "string_value", "state_aggregates"):
+                keyword_arguments.pop(state_field, None)
         elif resource_cls is TransformationSchemaUnknownType:
             keyword_arguments["raw_schema"]["type"] = "unknown"
         elif resource_cls is SequenceRows:
