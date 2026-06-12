@@ -13,6 +13,14 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.10.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.9.0...cognite-sdk-python-v8.10.0) (2026-06-12)
+
+
+### Features
+
+* **Data Modeling, Time Series:** Extend Data Modeling with Time Series /retrieve + /list (DM-3842) ([#2672](https://github.com/cognitedata/cognite-sdk-python/issues/2672)) ([d8e8d83](https://github.com/cognitedata/cognite-sdk-python/commit/d8e8d830bf52ae6c11d128ad819715c87633bebe))
+* **records:** add upsert endpoint ([#2679](https://github.com/cognitedata/cognite-sdk-python/issues/2679)) ([f862306](https://github.com/cognitedata/cognite-sdk-python/commit/f862306fe62a55230a7593345955c2ba4eb94386))
+
 ## [8.9.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.8.0...cognite-sdk-python-v8.9.0) (2026-06-08)
 
 
