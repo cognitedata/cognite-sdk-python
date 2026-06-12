@@ -14,7 +14,9 @@ from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData,
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
-SPACE_PREFIX = "sp_python_sdk_state_ts"
+# Kept short: data modeling space ids are capped at 43 chars and the per-process
+# shard (os/python/worker/random) appended below consumes most of the budget.
+SPACE_PREFIX = "sp_sdk_state_ts"
 STATE_SET_VIEW = ViewId("cdf_cdm", "CogniteStateSet", "v1")
 TIME_SERIES_VIEW = ViewId("cdf_cdm", "CogniteTimeSeries", "v1")
 
