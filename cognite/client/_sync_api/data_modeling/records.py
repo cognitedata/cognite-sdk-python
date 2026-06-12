@@ -116,7 +116,7 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
             stream_id (str): External ID of the stream to upsert into.
-            upsert_mode (Literal["replace"]): How existing records are updated. Currently only ``"replace"`` is supported, which fully replaces the existing record. Defaults to ``"replace"``.
+            upsert_mode (Literal['replace']): How existing records are updated. Currently only ``"replace"`` is supported, which fully replaces the existing record. Defaults to ``"replace"``.
 
         Examples:
 
