@@ -36,7 +36,7 @@ class TransformationNotification(TransformationNotificationCore):
     Args:
         id (int): A server-generated ID for the object.
         transformation_id (int): Transformation Id.
-        transformation_external_id (str): Transformation external Id.
+        transformation_external_id (str | None): Transformation external Id.
         destination (str): Email address where notifications should be sent.
         created_time (int): Time when the notification was created.
         last_updated_time (int): Time when the notification was last updated.
@@ -46,7 +46,7 @@ class TransformationNotification(TransformationNotificationCore):
         self,
         id: int,
         transformation_id: int,
-        transformation_external_id: str,
+        transformation_external_id: str | None,
         destination: str,
         created_time: int,
         last_updated_time: int,
@@ -66,7 +66,7 @@ class TransformationNotification(TransformationNotificationCore):
         return cls(
             id=resource["id"],
             transformation_id=resource["transformationId"],
-            transformation_external_id=resource["transformationExternalId"],
+            transformation_external_id=resource.get("transformationExternalId"),
             destination=resource["destination"],
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],

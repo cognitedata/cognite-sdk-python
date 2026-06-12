@@ -65,3 +65,9 @@ my_file.txt
 
 # docs
 docs/source/generated/
+
+# git worktrees
+.worktree
+.worktrees
+.claude/worktrees
+.cursor/worktrees

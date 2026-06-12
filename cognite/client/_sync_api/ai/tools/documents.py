@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c2071f7199f9672b9a76a0dd349d2f29
+8e621bb1f41775902f2890f96445b90c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -86,7 +86,7 @@ class SyncAIDocumentsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> Answer:
         """
-        `Ask a question about one or more documents using a Large Language Model <https://api-docs.cognite.com/20230101/tag/Document-AI/operation/documents_summary_api_v1_projects__projectName__ai_tools_documents_summarize_post>`_.
+        `Ask a question about one or more documents using a Large Language Model <https://api-docs.cognite.com/20230101/tag/Document-AI/operation/document_questioning_ai_tools_documents_ask_post>`_.
 
         Supports up to 100 documents at a time.
 

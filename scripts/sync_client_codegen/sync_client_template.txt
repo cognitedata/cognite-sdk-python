@@ -86,9 +86,33 @@ class CogniteClient:
     def api_client(self) -> APIClient:
         """Returns the underlying API client used for HTTP requests.
 
+        .. deprecated:: 8.0
+            Use :meth:`post`, :meth:`get`, or :meth:`put` instead.
+            Will be removed in v9.
+
+        .. warning::
+            This returns the **async** API client. Calling its methods directly
+            requires ``await`` and will not work in a synchronous context.
+            Use :meth:`post`, :meth:`get`, or :meth:`put` instead.
+
         Returns:
-            APIClient: The API client instance.
+            APIClient: The async API client instance.
         """
+        import warnings
+
+        warnings.warn(
+            "'api_client' is deprecated and will be removed in v9. "
+            "Use client.post(), client.get(), or client.put() instead.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        warnings.warn(
+            "'api_client' returns the underlying async API client. Calling its methods directly requires "
+            "'await' and will not work in a synchronous context. "
+            "Use client.post(), client.get(), or client.put() for synchronous HTTP requests instead.",
+            UserWarning,
+            stacklevel=2,
+        )
         return self.__async_client._api_client
 
     def get_async_client(self) -> AsyncCogniteClient:
@@ -112,7 +136,7 @@ class CogniteClient:
 
         The default configuration creates the URLs based on the project and cluster:
 
-        * Base URL: "https://{{cdf_cluster}}.cognitedata.com/
+        * Base URL: ``"https://{{cdf_cluster}}.cognitedata.com/"``
 
         Args:
             project (str): The CDF project.
@@ -142,9 +166,9 @@ class CogniteClient:
 
         The default configuration creates the URLs based on the project and cluster:
 
-        * Base URL: "https://{{cdf_cluster}}.cognitedata.com/
-        * Token URL: "https://login.microsoftonline.com/{{tenant_id}}/oauth2/v2.0/token"
-        * Scopes: [f"https://{{cdf_cluster}}.cognitedata.com/.default"]
+        * Base URL: ``"https://{{cdf_cluster}}.cognitedata.com/"``
+        * Token URL: ``"https://login.microsoftonline.com/{{tenant_id}}/oauth2/v2.0/token"``
+        * Scopes: ``[f"https://{{cdf_cluster}}.cognitedata.com/.default"]``
 
         Args:
             project (str): The CDF project.
@@ -174,9 +198,9 @@ class CogniteClient:
 
         The default configuration creates the URLs based on the tenant_id and cluster:
 
-        * Base URL: "https://{{cdf_cluster}}.cognitedata.com/
-        * Authority URL: "https://login.microsoftonline.com/{{tenant_id}}"
-        * Scopes: [f"https://{{cdf_cluster}}.cognitedata.com/.default"]
+        * Base URL: ``"https://{{cdf_cluster}}.cognitedata.com/"``
+        * Authority URL: ``"https://login.microsoftonline.com/{{tenant_id}}"``
+        * Scopes: ``[f"https://{{cdf_cluster}}.cognitedata.com/.default"]``
 
         Args:
             project (str): The CDF project.

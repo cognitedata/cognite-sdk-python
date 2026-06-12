@@ -1,6 +1,6 @@
 """
 ===============================================================================
-02a87cb0afc86242caefa040616c386c
+e588d70452083ea18d701f837f1be049
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,6 +8,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable, Iterator, Sequence
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
@@ -41,7 +42,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     TargetUnit,
 )
 from cognite.client.data_classes.data_modeling.query import Query, QueryResult, QuerySync
-from cognite.client.data_classes.data_modeling.sync import SubscriptionContext
+from cognite.client.data_classes.data_modeling.sync import SubscriptionContext, SyncSessionWithCache
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -142,7 +143,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
         Yields:
             Edge | EdgeList | Node | NodeList: yields Instance one by one if chunk_size is not specified, else NodeList/EdgeList objects.
-        """
+        """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_modeling.instances(
                 chunk_size=chunk_size,
@@ -481,7 +482,7 @@ class SyncInstancesAPI(SyncAPIClient):
         involved_containers: InvolvedContainers | None = None,
     ) -> InstanceInspectResults:
         """
-        `Reverse lookup for instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/instanceInspect>`_.
+        `Reverse lookup for instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/instanceInspect>`_.
 
         This method will return the involved views and containers for the given nodes and edges.
 
@@ -810,7 +811,7 @@ class SyncInstancesAPI(SyncAPIClient):
         operator: Literal["AND", "OR"] = "AND",
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
         """
-        `Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_.
+        `Search instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/searchInstances>`_.
 
         Args:
             view (ViewId): View to search in.
@@ -936,7 +937,7 @@ class SyncInstancesAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList:
         """
-        `Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_.
+        `Aggregate data across nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/aggregateInstances>`_.
 
         Args:
             view (ViewId): View to aggregate over.
@@ -1025,7 +1026,7 @@ class SyncInstancesAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
         """
-        `Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_.
+        `Produces histograms for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/aggregateInstances>`_.
 
         Args:
             view (ViewId): View to to aggregate over.
@@ -1070,7 +1071,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
     def query(self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
         """
-        `Advanced query interface for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_.
+        `Advanced query interface for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/queryContent>`_.
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
         recursive edge traversal, chaining of result sets, and granular property selection.
@@ -1165,7 +1166,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
     def sync(self, query: QuerySync, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
         """
-        `Subscription to changes for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_.
+        `Subscription to changes for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/syncContent>`_.
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
@@ -1264,6 +1265,120 @@ class SyncInstancesAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.instances.sync(query=query, include_typing=include_typing, debug=debug)
+        )
+
+    def sync_with_file_cache(
+        self,
+        query: QuerySync,
+        *,
+        file_external_id: str,
+        security_category: int,
+        backup_every: timedelta | None = timedelta(minutes=15),
+        backup_on_exit: bool = False,
+    ) -> SyncSessionWithCache:
+        r"""
+        Create a managed sync session with persistent backup to a CDF file.
+
+        Returns a :class:`SyncSessionWithCache` that you use as an async context manager. On entry
+        the session downloads the backup file from CDF and restores the instance data and previous
+        cursor positions if the query hash matches, allowing you to immediately continue syncing
+        instances from where your last session left off (no need for a full backfill).
+
+        We **require** a security category for the file to prevent users who lack access to the
+        underlying instances from bypassing those restrictions by reading the backup file directly.
+
+        Note:
+            This session (or rather /sync) must be invoked frequently enough to keep cursors alive.
+            Cursors expire after 3 days (the soft-delete retention period). If a cursor
+            expires the session will raise an error — call ``await session.invalidate()``
+            followed by ``await session.sync_until_live()`` to start fresh from a full backfill.
+
+            If you *really* don't care about missing deleted instances, there's
+            ``allow_expired_cursors_and_accept_missed_deletes=True`` on :class:`QuerySync`
+            that will allow you to use an older cursor. **Be careful**, you can not change this
+            setting mid-session, as the hash of your query would no longer match the existing,
+            and a full backfill would be triggered.
+
+        Warning:
+            This functionality is in **alpha** and only the async context manager interface is
+            currently available. The API and behaviour may change without notice.
+
+        Args:
+            query (QuerySync): The sync query.
+            file_external_id (str): External ID of the CDF file used as the durable backup store.
+                The file is created automatically on the first backup if it does not yet exist.
+            security_category (int): The security category to apply to the backup file. The file is
+                created (and re-uploaded on each backup) with this security category set, preventing
+                users who lack access to the underlying instances from reading the backup directly.
+            backup_every (timedelta | None): How often to upload state to CDF during a
+                session (when active). ``None`` uploads only on context-manager exit.
+            backup_on_exit (bool): Whether to upload state to CDF on context-manager exit.
+
+        Raises:
+            ValueError: If ``query`` already has cursors set (cursors are managed internally).
+            ValueError: If any result-set expression referenced in ``select`` does not have an
+                explicit ``limit`` set.
+            ValueError: If the given ``security_category`` does not exist in this project.
+            ValueError: If ``backup_every`` is set to a value smaller than 1 minute.
+
+        Returns:
+            SyncSessionWithCache: The context manager for managing the sync session.
+
+        Examples:
+
+            One-off job that loads state from the Files API, syncs until it has caught up with all
+            live changes, then does some work that require huge amounts of instance data, then backs
+            up the progress on exit (from the context manager):
+
+                >>> import asyncio
+                >>> from cognite.client import AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling.query import (
+                ...     QuerySync,
+                ...     SelectSync,
+                ...     NodeResultSetExpressionSync,
+                ... )
+                >>> client = AsyncCogniteClient()
+                >>> query = QuerySync(
+                ...     with_={"my_nodes": NodeResultSetExpressionSync(limit=1000)},
+                ...     select={"my_nodes": SelectSync()},
+                ... )
+                >>> session = client.data_modeling.instances.sync_with_file_cache(
+                ...     query,
+                ...     file_external_id="my_backup_file",
+                ...     security_category=123,
+                ...     backup_every=None,  # Only backup on exit
+                ...     backup_on_exit=True,
+                ... )
+                >>> def do_work(nodes: NodeList) -> None:
+                ...     print(len(nodes))  # ¯\_(ツ)_/¯
+                >>>
+                >>> async with session:  # doctest: +SKIP
+                ...     await session.sync_until_live()
+                ...     do_work(session.get_nodes("my_nodes"))
+
+            Longer-running job with periodic backups, e.g. regularly computing statistics for a
+            dashboard:
+
+                >>> session = client.data_modeling.instances.sync_with_file_cache(
+                ...     query,
+                ...     file_external_id="my_backup_file",
+                ...     security_category=123,
+                ...     backup_every=timedelta(minutes=15),
+                ... )
+                >>> async with session:  # doctest: +SKIP
+                ...     while True:
+                ...         await session.sync_until_live()
+                ...         do_work(session.get_nodes("my_nodes"))
+                ...         await asyncio.sleep(60)
+        """
+        return run_sync(
+            self.__async_client.data_modeling.instances.sync_with_file_cache(
+                query=query,
+                file_external_id=file_external_id,
+                security_category=security_category,
+                backup_every=backup_every,
+                backup_on_exit=backup_on_exit,
+            )
         )
 
     @overload

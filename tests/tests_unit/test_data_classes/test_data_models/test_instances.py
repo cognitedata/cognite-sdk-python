@@ -638,3 +638,71 @@ class TestTypeInformation:
         df = info.to_pandas()
 
         pd.testing.assert_frame_equal(df, expected)
+
+
+def make_node(*view_ids: ViewId) -> Node:
+    """Build a Node with one property per source, named 'prop_<space>'."""
+    props: dict[str, dict[str, dict[str, Any]]] = {}
+    for vid in view_ids:
+        props.setdefault(vid.space, {})[vid.as_source_identifier()] = {f"prop_{vid.space}": 1}
+    return Node.load(
+        {
+            "space": "s",
+            "externalId": "x",
+            "version": 1,
+            "lastUpdatedTime": 0,
+            "createdTime": 0,
+            "properties": props,
+        }
+    )
+
+
+class TestDropSource:
+    def test_drop_existing_source_restores_quick_access(self) -> None:
+        custom = ViewId("my-space", "MyView", "v1")
+        file_view = ViewId("cdf_cdm", "CogniteFile", "v1")
+        node = make_node(custom, file_view)
+
+        # Two sources: quick access is broken
+        with pytest.raises(RuntimeError):
+            node["prop_my-space"]
+
+        node.drop_source(file_view)
+
+        # One source remains: quick access restored
+        assert node["prop_my-space"] == 1
+        assert file_view not in node.properties
+
+    def test_drop_nonexistent_source_is_noop(self) -> None:
+        custom = ViewId("my-space", "MyView", "v1")
+        node = make_node(custom)
+
+        assert node["prop_my-space"] == 1
+        node.drop_source(ViewId("other", "Ghost", "v1"))
+        assert node["prop_my-space"] == 1  # still works, source set unchanged
+
+    def test_drop_one_of_three_leaves_quick_access_broken(self) -> None:
+        v1 = ViewId("sp1", "V1", "v1")
+        v2 = ViewId("sp2", "V2", "v1")
+        v3 = ViewId("sp3", "V3", "v1")
+        node = make_node(v1, v2, v3)
+
+        node.drop_source(v3)
+
+        assert v3 not in node.properties
+        assert len(node.properties) == 2
+        # Still two sources, so quick access must still fail
+        with pytest.raises(RuntimeError):
+            node["prop_sp1"]
+
+    def test_drop_only_source_leaves_empty_properties_and_blocks_access(self) -> None:
+        vid = ViewId("sp", "V", "v1")
+        node = make_node(vid)
+        assert node["prop_sp"] == 1  # sanity: quick access works before drop
+
+        node.drop_source(vid)
+
+        assert len(node.properties) == 0
+        # __prop_lookup must be cleared — stale data must not be accessible:
+        with pytest.raises(RuntimeError):
+            node["prop_sp"]

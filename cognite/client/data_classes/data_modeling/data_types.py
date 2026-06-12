@@ -9,7 +9,7 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, UnknownCogniteResource
 from cognite.client.data_classes.data_modeling.ids import ContainerId, NodeId
-from cognite.client.utils._auxiliary import is_positive, rename_and_exclude_keys
+from cognite.client.utils._auxiliary import is_positive_int, rename_and_exclude_keys
 from cognite.client.utils._text import convert_all_keys_recursive
 
 logger = logging.getLogger(__name__)
@@ -35,7 +35,7 @@ class DirectRelationReference:
                 return cls(space, xid)
             case (space, xid):
                 return cls(space, xid)
-            case cls() | NodeId():  # type: ignore [misc]
+            case cls() | NodeId():
                 return cls(data.space, data.external_id)
             case _:
                 raise ValueError("Invalid data provided to load method. Must be dict or tuple with two elements.")
@@ -141,7 +141,7 @@ class ListablePropertyType(PropertyType, ABC):
     max_list_size: int | None = None
 
     def __post_init__(self) -> None:
-        if is_positive(self.max_list_size) and not self.is_list:
+        if is_positive_int(self.max_list_size) and not self.is_list:
             raise ValueError("is_list must be True if max_list_size is set")
 
 

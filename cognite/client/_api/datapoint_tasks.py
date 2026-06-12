@@ -36,7 +36,7 @@ from cognite.client.data_classes.datapoints import (
     DatapointsArray,
     DatapointsQuery,
 )
-from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_finite, is_unlimited
+from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_non_negative_int, is_unlimited
 from cognite.client.utils._datapoints import (
     AggregateDatapoints,
     DatapointsRaw,
@@ -172,7 +172,7 @@ class _FullDatapointsQuery:
             # We merge 'defaults' and the given user query; the query takes precedence:
             if isinstance(query, exp_type):
                 id_dct = {arg_name: query}
-                query = DatapointsQuery(**self.top_level_defaults, **id_dct)  # type: ignore [misc, arg-type]
+                query = DatapointsQuery(**self.top_level_defaults, **id_dct)  # type: ignore [arg-type]
 
             elif isinstance(query, DatapointsQuery):
                 if query.identifier.name() != arg_name:
@@ -302,7 +302,7 @@ class _DpsQueryValidator:
     def _verify_and_convert_limit(limit: int | None) -> int | None:
         if is_unlimited(limit):
             return None
-        elif is_finite(limit):  # limit=0 is accepted by the API
+        elif is_non_negative_int(limit):  # limit=0 is accepted by the API
             try:
                 # We don't want weird stuff like numpy dtypes etc:
                 return int(limit)

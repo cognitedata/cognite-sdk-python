@@ -125,7 +125,7 @@ class GroupsAPI(APIClient):
                 ...     members=ALL_USER_ACCOUNTS,
                 ... )
                 >>> user_list_group = GroupWrite(
-                ...     name="Specfic users only",
+                ...     name="Specific users only",
                 ...     capabilities=my_capabilities,
                 ...     members=["XRsSD1k3mTIKG", "M0SxY6bM9Jl"],
                 ... )

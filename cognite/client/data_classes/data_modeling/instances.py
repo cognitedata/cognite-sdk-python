@@ -72,6 +72,7 @@ if TYPE_CHECKING:
 
     from cognite.client.data_classes.data_modeling.debug import DebugInfo
 
+
 PropertyValue: TypeAlias = (
     str | int | float | bool | dict | list[str] | list[int] | list[float] | list[bool] | list[dict]
 )
@@ -367,6 +368,18 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         if len(self.properties) > 1:
             err_msg += f" Hint: You may use `instance.properties[view_id][{attr!r}]`"
         raise RuntimeError(err_msg) from None
+
+    def drop_source(self, source: ViewId) -> None:
+        """Remove a source with its corresponding properties from the instance and attempts to reset the
+        instance to be a 'singular-source instance' if possible. This restores the ability to use quick
+        property access, e.g. `instance["some_prop"]` and makes to_pandas() remove the view ID prefix
+        from column names.
+        """
+        self.properties.data.pop(source, None)
+        try:
+            (self.__prop_lookup,) = self.properties.values()
+        except ValueError:
+            self.__prop_lookup = None  # type: ignore [assignment]
 
     @property
     def properties(self) -> Properties:

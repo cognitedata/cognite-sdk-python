@@ -646,7 +646,7 @@ class TestPandasIntegration:
 
         d = Datapoints(id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], average=[2, 3, 4])
         expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
-        expected_df.columns = pd.MultiIndex.from_tuples([(1,)], names=["identifier"])
+        expected_df.columns = pd.Index([1], name="identifier")
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=False))
 
         expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
@@ -675,6 +675,40 @@ class TestPandasIntegration:
             names=["identifier", "aggregate"],
         )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas())
+
+    def test_raw_datapoints_external_id_gives_plain_index(self) -> None:
+        import pandas as pd
+
+        d = Datapoints(
+            id=1,
+            external_id="my-ts",
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            timestamp=[1, 2],
+            value=[3.0, 4.0],
+        )
+        df = d.to_pandas()
+        assert isinstance(df.columns, pd.Index) and not isinstance(df.columns, pd.MultiIndex)
+        assert list(df.columns) == ["my-ts"]
+
+    def test_raw_datapoints_with_status_codes_gives_multi_index(self) -> None:
+        import pandas as pd
+
+        d = Datapoints(
+            id=1,
+            external_id="my-ts",
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            timestamp=[1, 2],
+            value=[3.0, 4.0],
+            status_code=[0, 0],
+            status_symbol=["Good", "Good"],
+        )
+        df = d.to_pandas()
+        assert isinstance(df.columns, pd.MultiIndex)
+        assert df.columns.names == ["identifier", "status"]
 
     def test_datapoints_empty(self) -> None:
         d = Datapoints(id=0, is_string=False, is_step=False, type="numeric", external_id="1", timestamp=[], value=[])
@@ -729,7 +763,7 @@ class TestPandasIntegration:
         expected_df = pd.DataFrame({1: [2, 3, 4.0], 2: [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms"))
         expected_df.columns = pd.MultiIndex.from_tuples([(2, "max"), (3, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
-        expected_df.columns = pd.MultiIndex.from_tuples([(2,), (3,)], names=["identifier"])
+        expected_df.columns = pd.Index([2, 3], name="identifier")
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(include_aggregate_name=False), check_freq=False)
 
     def test_datapoints_list_names_dup(self) -> None:
@@ -759,7 +793,7 @@ class TestPandasIntegration:
             {1: [1, 2, 3, None, None], 2: [None, None, 3, 4, 5]},
             index=pd.to_datetime(range(1, 6), unit="ms"),
         )
-        expected_df.columns = pd.MultiIndex.from_tuples([(1,), (2,)], names=["identifier"])
+        expected_df.columns = pd.Index([1, 2], name="identifier")
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
 
     def test_datapoints_list_empty(self) -> None:

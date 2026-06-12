@@ -89,7 +89,6 @@ def new_notification_by_external_id(
     )
 
 
-@pytest.mark.xfail
 class TestTransformationNotificationsAPI:
     def test_create(self, new_notification: TransformationNotification) -> None:
         assert (
