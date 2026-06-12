@@ -35,7 +35,9 @@ class RecordsAPI(APIClient):
         )
 
     def _records_url(self, stream_id: str, suffix: str = "") -> str:
-        return interpolate_and_url_encode("/streams/{}/records{}", stream_id, suffix)
+        # Encode only stream_id; the suffix is a literal path segment (e.g. "/upsert"),
+        # so it must not be percent-encoded.
+        return interpolate_and_url_encode("/streams/{}/records", stream_id) + suffix
 
     async def delete(
         self,
@@ -125,5 +127,59 @@ class RecordsAPI(APIClient):
         await self._create_multiple(
             items=item_list,
             resource_path=self._records_url(stream_id),
+            no_response=True,
+        )
+
+    async def upsert(
+        self,
+        items: RecordWrite | Sequence[RecordWrite],
+        *,
+        stream_id: str,
+        upsert_mode: Literal["replace"] = "replace",
+    ) -> None:
+        """`Upsert records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/upsertRecords>`_.
+
+        Creates or fully updates records. Only valid for mutable streams (returns 422 on
+        immutable). When a record with the same ``space + externalId`` already exists it is
+        fully replaced (this endpoint does not do partial property updates); otherwise it is
+        created.
+
+        Args:
+            items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
+            stream_id (str): External ID of the stream to upsert into.
+            upsert_mode (Literal['replace']): How existing records are updated. Currently only ``"replace"`` is supported, which fully replaces the existing record. Defaults to ``"replace"``.
+
+        Examples:
+
+            Upsert a single record:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.records import (
+                ...     RecordWrite,
+                ...     RecordContainerId,
+                ...     RecordSource,
+                ... )
+                >>> client = CogniteClient()
+                >>> client.data_modeling.records.upsert(
+                ...     RecordWrite(
+                ...         space="my-space",
+                ...         external_id="rec-1",
+                ...         sources=[
+                ...             RecordSource(
+                ...                 source=RecordContainerId(
+                ...                     space="my-space", external_id="my-container"
+                ...                 ),
+                ...                 properties={"temperature": 23.0},
+                ...             )
+                ...         ],
+                ...     ),
+                ...     stream_id="my-stream",
+                ... )
+        """
+        self._warning.warn()
+        item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
+        await self._create_multiple(
+            items=item_list,
+            resource_path=self._records_url(stream_id, "/upsert"),
             no_response=True,
         )
