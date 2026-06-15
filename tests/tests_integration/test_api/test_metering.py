@@ -40,4 +40,4 @@ class TestMeteringAPI:
 
         assert isinstance(res, MeteringDataList)
         assert len(res) == len(ids)
-        assert [m.meter_id for m in res] == ids
+        assert res.as_ids() == ids
