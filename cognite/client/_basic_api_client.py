@@ -121,7 +121,9 @@ class FailedRequestHandler:
                 await self._raise_no_project_access_error(cognite_client, cluster, project)
             case 409, list(), None:
                 self._raise_api_error(CogniteDuplicatedError, cluster, project)
-            case 400 | 422, None, list():
+            case 400 | 404 | 422, None, list():
+                self._raise_api_error(CogniteNotFoundError, cluster, project)
+            case 404, *_:
                 self._raise_api_error(CogniteNotFoundError, cluster, project)
             case _:
                 self._raise_api_error(CogniteAPIError, cluster, project)
