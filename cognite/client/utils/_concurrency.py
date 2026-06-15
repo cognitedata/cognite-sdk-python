@@ -285,7 +285,7 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @query_mutable.setter
     def query_mutable(self, value: int) -> None:
-        self._check_frozen("query_mutable")
+        self._check_frozen(RecordsConcurrencyOperation.QUERY_MUTABLE.value)
         self._query_mutable = value
 
     @property
@@ -294,7 +294,7 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @query_immutable.setter
     def query_immutable(self, value: int) -> None:
-        self._check_frozen("query_immutable")
+        self._check_frozen(RecordsConcurrencyOperation.QUERY_IMMUTABLE.value)
         self._query_immutable = value
 
     @property
@@ -303,7 +303,7 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @retrieve_mutable.setter
     def retrieve_mutable(self, value: int) -> None:
-        self._check_frozen("retrieve_mutable")
+        self._check_frozen(RecordsConcurrencyOperation.RETRIEVE_MUTABLE.value)
         self._retrieve_mutable = value
 
     @property
@@ -312,7 +312,7 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @retrieve_immutable.setter
     def retrieve_immutable(self, value: int) -> None:
-        self._check_frozen("retrieve_immutable")
+        self._check_frozen(RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE.value)
         self._retrieve_immutable = value
 
     @property
@@ -321,7 +321,7 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @aggregate_mutable.setter
     def aggregate_mutable(self, value: int) -> None:
-        self._check_frozen("aggregate_mutable")
+        self._check_frozen(RecordsConcurrencyOperation.AGGREGATE_MUTABLE.value)
         self._aggregate_mutable = value
 
     @property
@@ -330,7 +330,7 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @aggregate_immutable.setter
     def aggregate_immutable(self, value: int) -> None:
-        self._check_frozen("aggregate_immutable")
+        self._check_frozen(RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE.value)
         self._aggregate_immutable = value
 
     def _semaphore_factory(self, operation: RecordsConcurrencyOperation, project: str) -> asyncio.BoundedSemaphore:
