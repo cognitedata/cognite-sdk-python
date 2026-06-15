@@ -14,6 +14,8 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
+StreamType = Literal["mutable", "immutable"]
+
 
 class RecordsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
@@ -22,16 +24,47 @@ class RecordsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Records"
         )
 
-    _OPERATION_TO_RATE_LIMIT: ClassVar[dict[str, RecordsConcurrencyOperation]] = {
-        "write": RecordsConcurrencyOperation.WRITE,
-        "delete": RecordsConcurrencyOperation.WRITE,
-    }
-
     def _get_semaphore(self, operation: Literal["write", "delete"]) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
 
         return global_config.concurrency_settings.records._semaphore_factory(
-            self._OPERATION_TO_RATE_LIMIT[operation], project=self._cognite_client.config.project
+            RecordsConcurrencyOperation.WRITE, project=self._cognite_client.config.project
+        )
+
+    def _get_query_semaphore(self, stream_type: StreamType) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        op = (
+            RecordsConcurrencyOperation.QUERY_MUTABLE
+            if stream_type == "mutable"
+            else RecordsConcurrencyOperation.QUERY_IMMUTABLE
+        )
+        return global_config.concurrency_settings.records._semaphore_factory(
+            op, project=self._cognite_client.config.project
+        )
+
+    def _get_retrieve_semaphore(self, stream_type: StreamType) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        op = (
+            RecordsConcurrencyOperation.RETRIEVE_MUTABLE
+            if stream_type == "mutable"
+            else RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE
+        )
+        return global_config.concurrency_settings.records._semaphore_factory(
+            op, project=self._cognite_client.config.project
+        )
+
+    def _get_aggregate_semaphore(self, stream_type: StreamType) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        op = (
+            RecordsConcurrencyOperation.AGGREGATE_MUTABLE
+            if stream_type == "mutable"
+            else RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE
+        )
+        return global_config.concurrency_settings.records._semaphore_factory(
+            op, project=self._cognite_client.config.project
         )
 
     def _records_url(self, stream_id: str, suffix: str = "") -> str:

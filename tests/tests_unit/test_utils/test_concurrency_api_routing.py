@@ -18,6 +18,7 @@ from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient
 from cognite.client.data_classes.data_modeling.ids import NodeId
+from cognite.client.data_classes.data_modeling.records import RecordId, RecordWrite
 from tests.utils import fresh_concurrency_state
 
 SemCall = tuple[str, str, str]  # (sub_config_name (eg 'general'), operation, project)
@@ -150,6 +151,66 @@ class TestSemaphoreRoutingSpecialResponses:
         )
         await async_client.raw.rows.retrieve("db1", "t1", "k1")
         assert_routed(semaphore_spy, "raw", "read")
+
+
+class TestRecordsSemaphoreRouting:
+    """Records API uses RecordsConcurrencyOperation enums (not plain strings),
+    so we spy on the enum values directly."""
+
+    @pytest.fixture
+    def records_spy(self, monkeypatch: pytest.MonkeyPatch) -> Iterator[list[tuple[str, str]]]:
+        calls: list[tuple[str, str]] = []
+        with fresh_concurrency_state() as settings:
+            original = settings.records._semaphore_factory
+
+            def spy(operation: Any, project: str) -> Any:
+                calls.append((operation.value, project))
+                return original(operation, project)
+
+            monkeypatch.setattr(settings.records, "_semaphore_factory", spy)
+            yield calls
+
+    @pytest.mark.usefixtures("mock_any_request")
+    @pytest.mark.parametrize(
+        "api_call, expected_operation",
+        [
+            pytest.param(
+                lambda c: c.data_modeling.records.ingest(
+                    RecordWrite(space="sp", external_id="r1", sources=[]),
+                    stream_id="s1",
+                ),
+                "write",
+                id="ingest_write",
+            ),
+            pytest.param(
+                lambda c: c.data_modeling.records.upsert(
+                    RecordWrite(space="sp", external_id="r1", sources=[]),
+                    stream_id="s1",
+                ),
+                "write",
+                id="upsert_write",
+            ),
+            pytest.param(
+                lambda c: c.data_modeling.records.delete(
+                    RecordId(space="sp", external_id="r1"),
+                    stream_id="s1",
+                ),
+                "write",
+                id="delete_write",
+            ),
+        ],
+    )
+    async def test_write_routing(
+        self,
+        async_client: AsyncCogniteClient,
+        records_spy: list[tuple[str, str]],
+        api_call: ApiCall,
+        expected_operation: str,
+    ) -> None:
+        await api_call(async_client)
+        ops = [op for op, _ in records_spy]
+        assert expected_operation in ops, f"Expected {expected_operation!r} in {ops}"
+        assert async_client.config.project in {proj for _, proj in records_spy}
 
 
 class TestStrictFixtureCatchesMissingSemaphore:

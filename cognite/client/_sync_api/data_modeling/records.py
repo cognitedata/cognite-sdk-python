@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f86364d61385123f12bc60dd004ea1c2
+e6c9a52c8279b5d08c76b016b7a25811
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -17,6 +17,8 @@ from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
+
+StreamType = Literal["mutable", "immutable"]
 
 
 class SyncRecordsAPI(SyncAPIClient):

@@ -14,6 +14,7 @@ from cognite.client.utils._concurrency import (
     ConcurrencyConfig,
     ConcurrencySettings,
     EventLoopThreadExecutor,
+    RecordsConcurrencyOperation,
     _get_event_loop_executor,
     execute_async_tasks,
 )
@@ -134,6 +135,95 @@ class TestSemaphoreFactory:
     async def test_invalid_operation_hits_assert_never(self) -> None:
         with pytest.raises(AssertionError):
             self.cs.general._semaphore_factory("totally_invalid", "proj-a")  # type: ignore[arg-type]
+
+
+class TestRecordsConcurrencyConfig:
+    def test_defaults(self) -> None:
+        cs = ConcurrencySettings()
+        assert cs.records.write == 20
+        assert cs.records.query_mutable == 30
+        assert cs.records.query_immutable == 10
+        assert cs.records.retrieve_mutable == 20
+        assert cs.records.retrieve_immutable == 10
+        assert cs.records.aggregate_mutable == 10
+        assert cs.records.aggregate_immutable == 5
+
+    def test_setters_work_before_freeze(self) -> None:
+        cs = ConcurrencySettings()
+        cs.records.write = 10
+        cs.records.query_mutable = 15
+        cs.records.query_immutable = 5
+        cs.records.retrieve_mutable = 12
+        cs.records.retrieve_immutable = 6
+        cs.records.aggregate_mutable = 8
+        cs.records.aggregate_immutable = 3
+        assert cs.records.write == 10
+        assert cs.records.query_mutable == 15
+        assert cs.records.query_immutable == 5
+        assert cs.records.retrieve_mutable == 12
+        assert cs.records.retrieve_immutable == 6
+        assert cs.records.aggregate_mutable == 8
+        assert cs.records.aggregate_immutable == 3
+
+    @pytest.mark.parametrize(
+        "attr",
+        ["write", "query_mutable", "query_immutable", "retrieve_mutable", "retrieve_immutable",
+         "aggregate_mutable", "aggregate_immutable"],
+    )
+    def test_setter_raises_after_freeze(self, attr: str) -> None:
+        cs = ConcurrencySettings()
+        cs._freeze()
+        with pytest.raises(RuntimeError, match="Cannot modify"):
+            setattr(cs.records, attr, 1)
+
+    def test_repr(self) -> None:
+        cs = ConcurrencySettings()
+        r = repr(cs.records)
+        assert "write=20" in r
+        assert "query_mutable=30" in r
+        assert "query_immutable=10" in r
+        assert "retrieve_mutable=20" in r
+        assert "retrieve_immutable=10" in r
+        assert "aggregate_mutable=10" in r
+        assert "aggregate_immutable=5" in r
+
+
+@pytest.mark.usefixtures("fresh_unfrozen_global_concurrency")
+class TestRecordsSemaphoreFactory:
+    cs: ClassVar[ConcurrencySettings] = global_config.concurrency_settings
+
+    @pytest.mark.parametrize(
+        "operation, expected_value",
+        [
+            (RecordsConcurrencyOperation.WRITE, 20),
+            (RecordsConcurrencyOperation.QUERY_MUTABLE, 30),
+            (RecordsConcurrencyOperation.QUERY_IMMUTABLE, 10),
+            (RecordsConcurrencyOperation.RETRIEVE_MUTABLE, 20),
+            (RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE, 10),
+            (RecordsConcurrencyOperation.AGGREGATE_MUTABLE, 10),
+            (RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE, 5),
+        ],
+    )
+    async def test_semaphore_values(self, operation: RecordsConcurrencyOperation, expected_value: int) -> None:
+        sem = self.cs.records._semaphore_factory(operation, "proj-a")
+        assert sem._value == expected_value
+
+    async def test_all_operations_produce_distinct_semaphores(self) -> None:
+        sems = {
+            op: self.cs.records._semaphore_factory(op, "proj-a")
+            for op in RecordsConcurrencyOperation
+        }
+        assert len(set(id(s) for s in sems.values())) == len(RecordsConcurrencyOperation)
+
+    async def test_cache_hit(self) -> None:
+        sem1 = self.cs.records._semaphore_factory(RecordsConcurrencyOperation.QUERY_MUTABLE, "proj-a")
+        sem2 = self.cs.records._semaphore_factory(RecordsConcurrencyOperation.QUERY_MUTABLE, "proj-a")
+        assert sem1 is sem2
+
+    async def test_different_project_different_semaphore(self) -> None:
+        sem_a = self.cs.records._semaphore_factory(RecordsConcurrencyOperation.QUERY_MUTABLE, "proj-a")
+        sem_b = self.cs.records._semaphore_factory(RecordsConcurrencyOperation.QUERY_MUTABLE, "proj-b")
+        assert sem_a is not sem_b
 
 
 async def i_dont_like_5(i: int) -> int:
