@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.records import RecordId, RecordIdSequence, RecordWrite
-from cognite.client.utils._concurrency import RecordsConcurrencyOperation
+from cognite.client.utils._concurrency import HierarchicalBoundedSemaphore, RecordsConcurrencyOperation
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._url import interpolate_and_url_encode
 
@@ -28,21 +28,25 @@ class RecordsAPI(APIClient):
         self,
         operation: Literal["write", "delete", "query", "retrieve", "aggregate"],
         stream_type: StreamType = "immutable",
-    ) -> asyncio.BoundedSemaphore:
+    ) -> asyncio.BoundedSemaphore | HierarchicalBoundedSemaphore:
         from cognite.client import global_config
 
+        factory = global_config.concurrency_settings.records._semaphore_factory
+        project = self._cognite_client.config.project
         match operation:
             case "write" | "delete":
-                op = RecordsConcurrencyOperation.WRITE
+                return factory(RecordsConcurrencyOperation.WRITE, project)
             case "query":
                 op = RecordsConcurrencyOperation.QUERY_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.QUERY_IMMUTABLE
+                return factory(op, project)
             case "retrieve":
-                op = RecordsConcurrencyOperation.RETRIEVE_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE
+                dedicated_op = RecordsConcurrencyOperation.RETRIEVE_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE
+                query_op = RecordsConcurrencyOperation.QUERY_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.QUERY_IMMUTABLE
+                return HierarchicalBoundedSemaphore(factory(dedicated_op, project), factory(query_op, project))
             case "aggregate":
-                op = RecordsConcurrencyOperation.AGGREGATE_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE
-        return global_config.concurrency_settings.records._semaphore_factory(
-            op, project=self._cognite_client.config.project
-        )
+                dedicated_op = RecordsConcurrencyOperation.AGGREGATE_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE
+                query_op = RecordsConcurrencyOperation.QUERY_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.QUERY_IMMUTABLE
+                return HierarchicalBoundedSemaphore(factory(dedicated_op, project), factory(query_op, project))
 
     def _records_url(self, stream_id: str, suffix: str = "") -> str:
         # Encode only stream_id; the suffix is a literal path segment (e.g. "/upsert"),

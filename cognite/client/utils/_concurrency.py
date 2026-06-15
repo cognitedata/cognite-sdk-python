@@ -222,6 +222,25 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         )
 
 
+class HierarchicalBoundedSemaphore:
+    """Acquires multiple semaphores in order, releases in reverse.
+
+    Used to model the Records API's hierarchical rate limits where an endpoint
+    (e.g. retrieve) must pass both its dedicated budget and the shared query budget.
+    """
+
+    def __init__(self, *semaphores: asyncio.BoundedSemaphore) -> None:
+        self._semaphores = semaphores
+
+    async def __aenter__(self) -> None:
+        for sem in self._semaphores:
+            await sem.__aenter__()
+
+    async def __aexit__(self, *exc: Any) -> None:
+        for sem in reversed(self._semaphores):
+            await sem.__aexit__(*exc)
+
+
 class RecordsConcurrencyOperation(Enum):
     WRITE = "write"
     QUERY_MUTABLE = "query_mutable"
