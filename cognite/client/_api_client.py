@@ -88,11 +88,10 @@ class APIClient(BasicAsyncAPIClient):
                 headers=headers,
                 semaphore=self._get_semaphore("read"),
             )
-            return cls._load(res.json())._maybe_set_client_ref(self._cognite_client)
-        except CogniteAPIError as e:
-            if e.code != 404:
-                raise
-        return None
+        except CogniteNotFoundError:
+            return None
+
+        return cls._load(res.json())._maybe_set_client_ref(self._cognite_client)
 
     @overload
     async def _retrieve_multiple(
