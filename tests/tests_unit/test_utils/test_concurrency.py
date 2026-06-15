@@ -152,7 +152,6 @@ class TestRecordsConcurrencyConfig:
     def test_setters_work_before_freeze(self) -> None:
         cs = ConcurrencySettings()
         cs.records.write = 10
-        # Lower dedicated budgets before lowering shared (to keep invariant)
         cs.records.retrieve_mutable = 12
         cs.records.retrieve_immutable = 4
         cs.records.aggregate_mutable = 8

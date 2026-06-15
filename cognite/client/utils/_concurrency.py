@@ -309,26 +309,21 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
         aggregate_immutable: int,
     ) -> None:
         super().__init__(concurrency_settings, "records", read=0, write=write, delete=0)
-        self._query_mutable = query_mutable
-        self._query_immutable = query_immutable
-        self._retrieve_mutable = retrieve_mutable
-        self._retrieve_immutable = retrieve_immutable
-        self._aggregate_mutable = aggregate_mutable
-        self._aggregate_immutable = aggregate_immutable
-        self._validate_dedicated_within_shared()
+        # Shared budgets first — dedicated setters validate against these.
+        self.query_mutable = query_mutable
+        self.query_immutable = query_immutable
+        self.retrieve_mutable = retrieve_mutable
+        self.retrieve_immutable = retrieve_immutable
+        self.aggregate_mutable = aggregate_mutable
+        self.aggregate_immutable = aggregate_immutable
 
-    def _validate_dedicated_within_shared(self) -> None:
-        for dedicated, shared, label in [
-            (self._retrieve_mutable, self._query_mutable, "retrieve_mutable vs query_mutable"),
-            (self._retrieve_immutable, self._query_immutable, "retrieve_immutable vs query_immutable"),
-            (self._aggregate_mutable, self._query_mutable, "aggregate_mutable vs query_mutable"),
-            (self._aggregate_immutable, self._query_immutable, "aggregate_immutable vs query_immutable"),
-        ]:
-            if dedicated > shared:
-                raise ValueError(
-                    f"Dedicated budget must be <= shared query budget ({label}): "
-                    f"{dedicated} > {shared}"
-                )
+    @staticmethod
+    def _validate_dedicated_le_shared(dedicated: int, shared: int, dedicated_name: str, shared_name: str) -> None:
+        if dedicated > shared:
+            raise ValueError(
+                f"Dedicated budget must be <= shared query budget "
+                f"({dedicated_name} vs {shared_name}): {dedicated} > {shared}"
+            )
 
     @property
     def query_mutable(self) -> int:
@@ -337,8 +332,10 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     @query_mutable.setter
     def query_mutable(self, value: int) -> None:
         self._check_frozen(RecordsConcurrencyOperation.QUERY_MUTABLE.value)
+        for attr, name in [("_retrieve_mutable", "retrieve_mutable"), ("_aggregate_mutable", "aggregate_mutable")]:
+            if hasattr(self, attr):
+                self._validate_dedicated_le_shared(getattr(self, attr), value, name, "query_mutable")
         self._query_mutable = value
-        self._validate_dedicated_within_shared()
 
     @property
     def query_immutable(self) -> int:
@@ -347,8 +344,10 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     @query_immutable.setter
     def query_immutable(self, value: int) -> None:
         self._check_frozen(RecordsConcurrencyOperation.QUERY_IMMUTABLE.value)
+        for attr, name in [("_retrieve_immutable", "retrieve_immutable"), ("_aggregate_immutable", "aggregate_immutable")]:
+            if hasattr(self, attr):
+                self._validate_dedicated_le_shared(getattr(self, attr), value, name, "query_immutable")
         self._query_immutable = value
-        self._validate_dedicated_within_shared()
 
     @property
     def retrieve_mutable(self) -> int:
@@ -357,8 +356,8 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     @retrieve_mutable.setter
     def retrieve_mutable(self, value: int) -> None:
         self._check_frozen(RecordsConcurrencyOperation.RETRIEVE_MUTABLE.value)
+        self._validate_dedicated_le_shared(value, self._query_mutable, "retrieve_mutable", "query_mutable")
         self._retrieve_mutable = value
-        self._validate_dedicated_within_shared()
 
     @property
     def retrieve_immutable(self) -> int:
@@ -367,8 +366,8 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     @retrieve_immutable.setter
     def retrieve_immutable(self, value: int) -> None:
         self._check_frozen(RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE.value)
+        self._validate_dedicated_le_shared(value, self._query_immutable, "retrieve_immutable", "query_immutable")
         self._retrieve_immutable = value
-        self._validate_dedicated_within_shared()
 
     @property
     def aggregate_mutable(self) -> int:
@@ -377,8 +376,8 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     @aggregate_mutable.setter
     def aggregate_mutable(self, value: int) -> None:
         self._check_frozen(RecordsConcurrencyOperation.AGGREGATE_MUTABLE.value)
+        self._validate_dedicated_le_shared(value, self._query_mutable, "aggregate_mutable", "query_mutable")
         self._aggregate_mutable = value
-        self._validate_dedicated_within_shared()
 
     @property
     def aggregate_immutable(self) -> int:
@@ -387,8 +386,8 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     @aggregate_immutable.setter
     def aggregate_immutable(self, value: int) -> None:
         self._check_frozen(RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE.value)
+        self._validate_dedicated_le_shared(value, self._query_immutable, "aggregate_immutable", "query_immutable")
         self._aggregate_immutable = value
-        self._validate_dedicated_within_shared()
 
     def _semaphore_factory(self, operation: RecordsConcurrencyOperation, project: str) -> asyncio.BoundedSemaphore:
         key = (operation.value, project, asyncio.get_running_loop())
