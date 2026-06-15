@@ -167,8 +167,6 @@ Contents
 
    hosted_extractors
    postgres_gateway
-   data_organization
-   limits
    metering
 
 .. toctree::
@@ -184,6 +182,7 @@ Contents
    simulators
    unit_catalog
    geospatial
+   limits
 
 .. toctree::
    :maxdepth: 1
