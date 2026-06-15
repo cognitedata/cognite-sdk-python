@@ -318,6 +318,9 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
         self._validate_budgets()
 
     def _validate_budgets(self, **overrides: int) -> None:
+        for name in overrides:
+            self._check_frozen(name)
+
         def resolve(name: str) -> int:
             return overrides.get(name, getattr(self, f"_{name}"))
 
@@ -341,7 +344,6 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @query_mutable.setter
     def query_mutable(self, value: int) -> None:
-        self._check_frozen(RecordsConcurrencyOperation.QUERY_MUTABLE.value)
         self._validate_budgets(query_mutable=value)
         self._query_mutable = value
 
@@ -351,7 +353,6 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @query_immutable.setter
     def query_immutable(self, value: int) -> None:
-        self._check_frozen(RecordsConcurrencyOperation.QUERY_IMMUTABLE.value)
         self._validate_budgets(query_immutable=value)
         self._query_immutable = value
 
@@ -361,7 +362,6 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @retrieve_mutable.setter
     def retrieve_mutable(self, value: int) -> None:
-        self._check_frozen(RecordsConcurrencyOperation.RETRIEVE_MUTABLE.value)
         self._validate_budgets(retrieve_mutable=value)
         self._retrieve_mutable = value
 
@@ -371,7 +371,6 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @retrieve_immutable.setter
     def retrieve_immutable(self, value: int) -> None:
-        self._check_frozen(RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE.value)
         self._validate_budgets(retrieve_immutable=value)
         self._retrieve_immutable = value
 
@@ -381,7 +380,6 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @aggregate_mutable.setter
     def aggregate_mutable(self, value: int) -> None:
-        self._check_frozen(RecordsConcurrencyOperation.AGGREGATE_MUTABLE.value)
         self._validate_budgets(aggregate_mutable=value)
         self._aggregate_mutable = value
 
@@ -391,7 +389,6 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     @aggregate_immutable.setter
     def aggregate_immutable(self, value: int) -> None:
-        self._check_frozen(RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE.value)
         self._validate_budgets(aggregate_immutable=value)
         self._aggregate_immutable = value
 
