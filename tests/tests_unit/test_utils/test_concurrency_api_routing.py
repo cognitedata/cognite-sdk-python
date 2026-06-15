@@ -296,6 +296,101 @@ class TestHierarchicalSemaphoreThroughHTTPClient:
         assert query._value == 2
 
 
+class TestRecordsSemaphoreEndpointPatterns:
+    """Simulate the exact patterns that records endpoints will use:
+    - list/sync: _get_semaphore("query", stream_type) → override_semaphore in _list
+    - retrieve: _get_semaphore("retrieve", stream_type) → override_semaphore in _post (hierarchical)
+    - aggregate: _get_semaphore("aggregate", stream_type) → override_semaphore in _post (hierarchical)
+    """
+
+    @pytest.fixture(autouse=True)
+    def _fresh_state(self) -> Iterator[None]:
+        with fresh_concurrency_state():
+            yield
+
+    async def test_list_pattern_mutable(self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
+        httpx_mock.add_response(method="POST", url=re.compile(r".*"), status_code=200, json={"items": []})
+        records_api = async_client.data_modeling.records
+        sem = records_api._get_semaphore("query", "mutable")
+        assert isinstance(sem, asyncio.BoundedSemaphore)
+        assert sem._value == 30
+
+        await records_api._post(url_path="/streams/s1/records/filter", json={"limit": 10}, semaphore=sem)
+        assert sem._value == 30
+
+    async def test_list_pattern_immutable(self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
+        httpx_mock.add_response(method="POST", url=re.compile(r".*"), status_code=200, json={"items": []})
+        records_api = async_client.data_modeling.records
+        sem = records_api._get_semaphore("query", "immutable")
+        assert isinstance(sem, asyncio.BoundedSemaphore)
+        assert sem._value == 10
+
+        await records_api._post(url_path="/streams/s1/records/filter", json={"limit": 10}, semaphore=sem)
+        assert sem._value == 10
+
+    async def test_retrieve_pattern_mutable(self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
+        httpx_mock.add_response(method="POST", url=re.compile(r".*"), status_code=200, json={"items": []})
+        records_api = async_client.data_modeling.records
+        sem = records_api._get_semaphore("retrieve", "mutable")
+        assert isinstance(sem, HierarchicalBoundedSemaphore)
+
+        await records_api._post(url_path="/streams/s1/records/retrieve", json={"items": []}, semaphore=sem)
+        dedicated, query = sem._semaphores
+        assert dedicated._value == 20
+        assert query._value == 30
+
+    async def test_retrieve_pattern_immutable(self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
+        httpx_mock.add_response(method="POST", url=re.compile(r".*"), status_code=200, json={"items": []})
+        records_api = async_client.data_modeling.records
+        sem = records_api._get_semaphore("retrieve", "immutable")
+        assert isinstance(sem, HierarchicalBoundedSemaphore)
+
+        await records_api._post(url_path="/streams/s1/records/retrieve", json={"items": []}, semaphore=sem)
+        dedicated, query = sem._semaphores
+        assert dedicated._value == 10
+        assert query._value == 10
+
+    async def test_aggregate_pattern_mutable(self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
+        httpx_mock.add_response(method="POST", url=re.compile(r".*"), status_code=200, json={"items": []})
+        records_api = async_client.data_modeling.records
+        sem = records_api._get_semaphore("aggregate", "mutable")
+        assert isinstance(sem, HierarchicalBoundedSemaphore)
+
+        await records_api._post(url_path="/streams/s1/records/aggregate", json={}, semaphore=sem)
+        dedicated, query = sem._semaphores
+        assert dedicated._value == 10
+        assert query._value == 30
+
+    async def test_aggregate_pattern_immutable(self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
+        httpx_mock.add_response(method="POST", url=re.compile(r".*"), status_code=200, json={"items": []})
+        records_api = async_client.data_modeling.records
+        sem = records_api._get_semaphore("aggregate", "immutable")
+        assert isinstance(sem, HierarchicalBoundedSemaphore)
+
+        await records_api._post(url_path="/streams/s1/records/aggregate", json={}, semaphore=sem)
+        dedicated, query = sem._semaphores
+        assert dedicated._value == 5
+        assert query._value == 10
+
+    async def test_retrieve_and_list_share_query_semaphore_through_post(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+    ) -> None:
+        """A retrieve request and a list request against the same stream type
+        must compete for the same query semaphore."""
+        httpx_mock.add_response(method="POST", url=re.compile(r".*"), status_code=200, json={"items": []}, is_optional=True)
+        httpx_mock.add_response(method="POST", url=re.compile(r".*"), status_code=200, json={"items": []}, is_optional=True)
+        records_api = async_client.data_modeling.records
+
+        retrieve_sem = records_api._get_semaphore("retrieve", "mutable")
+        list_sem = records_api._get_semaphore("query", "mutable")
+
+        assert isinstance(retrieve_sem, HierarchicalBoundedSemaphore)
+        assert retrieve_sem._semaphores[1] is list_sem
+
+        await records_api._post(url_path="/streams/s1/records/retrieve", json={"items": []}, semaphore=retrieve_sem)
+        await records_api._post(url_path="/streams/s1/records/filter", json={"limit": 10}, semaphore=list_sem)
+
+
 class TestStrictFixtureCatchesMissingSemaphore:
     """Sanity check that the suite-wide strict fixture in tests/conftest.py still works.
 
