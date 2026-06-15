@@ -718,7 +718,7 @@ class DatapointsAPI(APIClient):
 
             # We should never yield an empty chunk, so we filter out empty or exhausted time series from result
             # (need to rebuild to not keep references to those empty in various private "id lookups")
-            dps_lst = dps_lst_cls(list(filter(None, dps_lst)))
+            dps_lst = dps_lst_cls(list(filter(None, dps_lst)))  # type: ignore [arg-type]
             if not any(dps_lst):
                 if alive_queries:
                     continue

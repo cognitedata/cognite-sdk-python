@@ -296,7 +296,7 @@ class GeospatialAPI(APIClient):
         if chunk_size is not None and (chunk_size < 1 or chunk_size > self._CREATE_LIMIT):
             raise ValueError(f"The chunk_size must be strictly positive and not exceed {self._CREATE_LIMIT}")
         if isinstance(feature, (FeatureList, FeatureWriteList)):
-            feature = list(feature)
+            feature = list(feature)  # type: ignore [assignment]
 
         resource_path = self._feature_resource_path(feature_type_external_id)
         extra_body_fields = {"allowCrsTransformation": "true"} if allow_crs_transformation else {}

@@ -1715,15 +1715,15 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
 
     @cached_property
     def _id_to_item(self) -> dict[int, LatestDatapoint | list[LatestDatapoint]]:  # type: ignore [override]
-        return build_id_mapping_with_duplicates(self.data, "id")
+        return build_id_mapping_with_duplicates(self.data, "id")  # type: ignore [type-var]
 
     @cached_property
     def _external_id_to_item(self) -> dict[str, LatestDatapoint | list[LatestDatapoint]]:  # type: ignore [override]
-        return build_id_mapping_with_duplicates(self.data, "external_id")
+        return build_id_mapping_with_duplicates(self.data, "external_id")  # type: ignore [type-var]
 
     @cached_property
     def _instance_id_to_item(self) -> dict[InstanceId, LatestDatapoint | list[LatestDatapoint]]:  # type: ignore [override]
-        return build_id_mapping_with_duplicates(self.data, "instance_id")
+        return build_id_mapping_with_duplicates(self.data, "instance_id")  # type: ignore [type-var]
 
     def get(  # type: ignore [override]
         self,

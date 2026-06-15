@@ -240,7 +240,7 @@ class WriteableCogniteResourceWithClientRef(
         raise NotImplementedError
 
 
-class CogniteResourceList(UserList, Generic[T_CogniteResource]):
+class CogniteResourceList(UserList[T_CogniteResource], Generic[T_CogniteResource]):
     _RESOURCE: type[T_CogniteResource]
 
     def __init__(self, resources: Sequence[T_CogniteResource]) -> None:
@@ -257,19 +257,24 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     @cached_property
     def _id_to_item(self) -> dict[int, T_CogniteResource]:
         if self.data and hasattr(self.data[0], "id"):
-            return {item.id: item for item in self.data if item.id is not None}
+            # T_CogniteResource is not bound to HasInternalId, but concrete subclasses that
+            # use this property always have an `id` attribute. The hasattr guard ensures safety.
+            data = cast(list[Any], self.data)
+            return {item.id: item for item in data if item.id is not None}
         return {}
 
     @cached_property
     def _external_id_to_item(self) -> dict[str, T_CogniteResource]:
         if self.data and hasattr(self.data[0], "external_id"):
-            return {item.external_id: item for item in self.data if item.external_id is not None}
+            data = cast(list[Any], self.data)
+            return {item.external_id: item for item in data if item.external_id is not None}
         return {}
 
     @cached_property
     def _instance_id_to_item(self) -> dict[InstanceId, T_CogniteResource]:
         if self.data and hasattr(self.data[0], "instance_id"):
-            return {item.instance_id: item for item in self.data if item.instance_id is not None}
+            data = cast(list[Any], self.data)
+            return {item.instance_id: item for item in data if item.instance_id is not None}
         return {}
 
     def pop(self, i: int = -1) -> T_CogniteResource:

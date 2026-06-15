@@ -103,7 +103,7 @@ def concat_dps_dataframe_list(
     dfs = [
         pd.DataFrame(
             {i: col.as_array() for i, col in zip(counter, columns)},
-            index=_create_timestamp_index(dps.timestamp, dps.timezone),
+            index=_create_timestamp_index(dps.timestamp, dps.timezone),  # type: ignore [attr-defined]
             copy=False,  # we pass arrays directly for O(1) conversion
         )
         for dps, columns in zip(dps_lst, columns_lst, strict=True)
