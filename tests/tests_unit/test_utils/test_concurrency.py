@@ -7,13 +7,14 @@ from typing import ClassVar
 
 import pytest
 
-from cognite.client import global_config
+from cognite.client import AsyncCogniteClient, global_config
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._concurrency import (
     AsyncSDKTask,
     ConcurrencyConfig,
     ConcurrencySettings,
     EventLoopThreadExecutor,
+    HierarchicalBoundedSemaphore,
     RecordsConcurrencyOperation,
     _get_event_loop_executor,
     execute_async_tasks,
@@ -224,6 +225,98 @@ class TestRecordsSemaphoreFactory:
         sem_a = self.cs.records._semaphore_factory(RecordsConcurrencyOperation.QUERY_MUTABLE, "proj-a")
         sem_b = self.cs.records._semaphore_factory(RecordsConcurrencyOperation.QUERY_MUTABLE, "proj-b")
         assert sem_a is not sem_b
+
+
+class TestHierarchicalBoundedSemaphore:
+    async def test_acquires_both_semaphores(self) -> None:
+        outer = asyncio.BoundedSemaphore(2)
+        inner = asyncio.BoundedSemaphore(3)
+        h = HierarchicalBoundedSemaphore(outer, inner)
+        async with h:
+            assert outer._value == 1
+            assert inner._value == 2
+
+    async def test_releases_both_on_exit(self) -> None:
+        outer = asyncio.BoundedSemaphore(1)
+        inner = asyncio.BoundedSemaphore(1)
+        h = HierarchicalBoundedSemaphore(outer, inner)
+        async with h:
+            pass
+        assert outer._value == 1
+        assert inner._value == 1
+
+    async def test_releases_on_exception(self) -> None:
+        outer = asyncio.BoundedSemaphore(1)
+        inner = asyncio.BoundedSemaphore(1)
+        h = HierarchicalBoundedSemaphore(outer, inner)
+        with pytest.raises(ValueError):
+            async with h:
+                raise ValueError("boom")
+        assert outer._value == 1
+        assert inner._value == 1
+
+    async def test_limits_concurrency_to_min(self) -> None:
+        dedicated = asyncio.BoundedSemaphore(2)
+        query = asyncio.BoundedSemaphore(5)
+        entered = asyncio.Event()
+        hold = asyncio.Event()
+
+        async def worker() -> None:
+            async with HierarchicalBoundedSemaphore(dedicated, query):
+                entered.set()
+                await hold.wait()
+
+        tasks = [asyncio.create_task(worker()) for _ in range(3)]
+        await asyncio.sleep(0.01)
+        assert dedicated._value == 0
+        assert query._value == 3
+        hold.set()
+        await asyncio.gather(*tasks)
+
+
+@pytest.mark.usefixtures("fresh_unfrozen_global_concurrency")
+class TestRecordsGetSemaphore:
+    """Tests that RecordsAPI._get_semaphore returns the right semaphore type and composition."""
+
+    async def test_write_returns_plain_semaphore(self, async_client: AsyncCogniteClient) -> None:
+        sem = async_client.data_modeling.records._get_semaphore("write")
+        assert isinstance(sem, asyncio.BoundedSemaphore)
+
+    async def test_delete_returns_plain_semaphore(self, async_client: AsyncCogniteClient) -> None:
+        sem = async_client.data_modeling.records._get_semaphore("delete")
+        assert isinstance(sem, asyncio.BoundedSemaphore)
+
+    async def test_query_returns_plain_semaphore(self, async_client: AsyncCogniteClient) -> None:
+        sem = async_client.data_modeling.records._get_semaphore("query", "mutable")
+        assert isinstance(sem, asyncio.BoundedSemaphore)
+
+    async def test_retrieve_returns_hierarchical(self, async_client: AsyncCogniteClient) -> None:
+        sem = async_client.data_modeling.records._get_semaphore("retrieve", "mutable")
+        assert isinstance(sem, HierarchicalBoundedSemaphore)
+
+    async def test_aggregate_returns_hierarchical(self, async_client: AsyncCogniteClient) -> None:
+        sem = async_client.data_modeling.records._get_semaphore("aggregate", "immutable")
+        assert isinstance(sem, HierarchicalBoundedSemaphore)
+
+    async def test_retrieve_hierarchical_wraps_correct_semaphores(self, async_client: AsyncCogniteClient) -> None:
+        sem = async_client.data_modeling.records._get_semaphore("retrieve", "mutable")
+        assert isinstance(sem, HierarchicalBoundedSemaphore)
+        dedicated, query = sem._semaphores
+        assert dedicated._value == 20  # retrieve_mutable default
+        assert query._value == 30  # query_mutable default
+
+    async def test_aggregate_immutable_wraps_correct_semaphores(self, async_client: AsyncCogniteClient) -> None:
+        sem = async_client.data_modeling.records._get_semaphore("aggregate", "immutable")
+        assert isinstance(sem, HierarchicalBoundedSemaphore)
+        dedicated, query = sem._semaphores
+        assert dedicated._value == 5  # aggregate_immutable default
+        assert query._value == 10  # query_immutable default
+
+    async def test_retrieve_and_query_share_query_semaphore(self, async_client: AsyncCogniteClient) -> None:
+        retrieve_sem = async_client.data_modeling.records._get_semaphore("retrieve", "mutable")
+        query_sem = async_client.data_modeling.records._get_semaphore("query", "mutable")
+        assert isinstance(retrieve_sem, HierarchicalBoundedSemaphore)
+        assert retrieve_sem._semaphores[1] is query_sem
 
 
 async def i_dont_like_5(i: int) -> int:
