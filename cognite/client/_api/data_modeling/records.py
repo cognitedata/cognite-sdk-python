@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, ClassVar, Literal
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.instances import InstanceSort
 from cognite.client.data_classes.data_modeling.records import (
+    Record,
     RecordId,
     RecordIdSequence,
     RecordList,
@@ -240,22 +241,25 @@ class RecordsAPI(APIClient):
                 ... )
         """
         self._warning.warn()
-        body: dict[str, Any] = {"limit": limit}
+        other_params: dict[str, Any] = {}
         if last_updated_time is not None:
-            body["lastUpdatedTime"] = last_updated_time.dump()
-        if filter is not None:
-            body["filter"] = filter.dump()
+            other_params["lastUpdatedTime"] = last_updated_time.dump()
         if sources is not None:
-            body["sources"] = [source.dump() for source in sources]
+            other_params["sources"] = [source.dump() for source in sources]
         if sort is not None:
             sort_list = [sort] if isinstance(sort, InstanceSort) else list(sort)
-            body["sort"] = [spec.dump() for spec in sort_list]
+            other_params["sort"] = [spec.dump() for spec in sort_list]
         if include_typing:
-            body["includeTyping"] = True
+            other_params["includeTyping"] = True
 
-        response = await self._post(
+        return await self._list(
+            list_cls=RecordList,
+            resource_cls=Record,
+            method="POST",
+            resource_path=self._records_url(stream_id),
             url_path=self._records_url(stream_id, "/filter"),
-            json=body,
-            semaphore=self._get_semaphore("read"),
+            limit=limit,
+            filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
+            other_params=other_params,
+            settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else None,
         )
-        return RecordList._load_raw_api_response([response.json()])
