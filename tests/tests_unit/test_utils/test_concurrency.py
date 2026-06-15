@@ -152,17 +152,18 @@ class TestRecordsConcurrencyConfig:
     def test_setters_work_before_freeze(self) -> None:
         cs = ConcurrencySettings()
         cs.records.write = 10
-        cs.records.query_mutable = 15
-        cs.records.query_immutable = 5
+        # Lower dedicated budgets before lowering shared (to keep invariant)
         cs.records.retrieve_mutable = 12
-        cs.records.retrieve_immutable = 6
+        cs.records.retrieve_immutable = 4
         cs.records.aggregate_mutable = 8
         cs.records.aggregate_immutable = 3
+        cs.records.query_mutable = 15
+        cs.records.query_immutable = 5
         assert cs.records.write == 10
         assert cs.records.query_mutable == 15
         assert cs.records.query_immutable == 5
         assert cs.records.retrieve_mutable == 12
-        assert cs.records.retrieve_immutable == 6
+        assert cs.records.retrieve_immutable == 4
         assert cs.records.aggregate_mutable == 8
         assert cs.records.aggregate_immutable == 3
 
@@ -187,6 +188,53 @@ class TestRecordsConcurrencyConfig:
         assert "retrieve_immutable=10" in r
         assert "aggregate_mutable=10" in r
         assert "aggregate_immutable=5" in r
+
+    @pytest.mark.parametrize(
+        "dedicated, shared",
+        [
+            ("retrieve_mutable", "query_mutable"),
+            ("retrieve_immutable", "query_immutable"),
+            ("aggregate_mutable", "query_mutable"),
+            ("aggregate_immutable", "query_immutable"),
+        ],
+    )
+    def test_dedicated_exceeding_shared_raises_on_init(self, dedicated: str, shared: str) -> None:
+        cs = ConcurrencySettings()
+        defaults = {
+            "write": 20, "query_mutable": 30, "query_immutable": 10,
+            "retrieve_mutable": 20, "retrieve_immutable": 10,
+            "aggregate_mutable": 10, "aggregate_immutable": 5,
+        }
+        shared_val = defaults[shared]
+        defaults[dedicated] = shared_val + 1
+        from cognite.client.utils._concurrency import RecordsGlobalConcurrencyConfig
+        with pytest.raises(ValueError, match="Dedicated budget must be <= shared query budget"):
+            RecordsGlobalConcurrencyConfig(cs, **defaults)
+
+    @pytest.mark.parametrize(
+        "dedicated, shared",
+        [
+            ("retrieve_mutable", "query_mutable"),
+            ("retrieve_immutable", "query_immutable"),
+            ("aggregate_mutable", "query_mutable"),
+            ("aggregate_immutable", "query_immutable"),
+        ],
+    )
+    def test_dedicated_exceeding_shared_raises_on_setter(self, dedicated: str, shared: str) -> None:
+        cs = ConcurrencySettings()
+        shared_val = getattr(cs.records, shared)
+        with pytest.raises(ValueError, match="Dedicated budget must be <= shared query budget"):
+            setattr(cs.records, dedicated, shared_val + 1)
+
+    def test_lowering_shared_below_dedicated_raises(self) -> None:
+        cs = ConcurrencySettings()
+        with pytest.raises(ValueError, match="Dedicated budget must be <= shared query budget"):
+            cs.records.query_mutable = 5  # retrieve_mutable=20 > 5
+
+    def test_dedicated_equal_to_shared_is_valid(self) -> None:
+        cs = ConcurrencySettings()
+        cs.records.retrieve_mutable = 30  # equal to query_mutable=30, should be fine
+        assert cs.records.retrieve_mutable == 30
 
 
 @pytest.mark.usefixtures("fresh_unfrozen_global_concurrency")
