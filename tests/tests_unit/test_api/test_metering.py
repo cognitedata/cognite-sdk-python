@@ -279,6 +279,34 @@ class TestMeteringAPI:
         start_val = int(request_url.split("start=")[1].split("&")[0])
         assert start_val > 0
 
+    def test_retrieve_start_without_number_of_datapoints_raises(
+        self,
+        cognite_client: CogniteClient,
+    ) -> None:
+        with pytest.raises(ValueError, match="must be provided together"):
+            cognite_client.metering.retrieve(id="atlas.monthly_ai_tokens", start=1764547200000)
+
+    def test_retrieve_number_of_datapoints_without_start_raises(
+        self,
+        cognite_client: CogniteClient,
+    ) -> None:
+        with pytest.raises(ValueError, match="must be provided together"):
+            cognite_client.metering.retrieve(id="atlas.monthly_ai_tokens", number_of_datapoints=10)
+
+    def test_list_start_without_number_of_datapoints_raises(
+        self,
+        cognite_client: CogniteClient,
+    ) -> None:
+        with pytest.raises(ValueError, match="must be provided together"):
+            cognite_client.metering.list(start=1764547200000)
+
+    def test_list_number_of_datapoints_without_start_raises(
+        self,
+        cognite_client: CogniteClient,
+    ) -> None:
+        with pytest.raises(ValueError, match="must be provided together"):
+            cognite_client.metering.list(number_of_datapoints=10)
+
     def test_dump_and_load_roundtrip(self) -> None:
         from cognite.client.data_classes.metering import MeteringData, MeteringDataPoint
 

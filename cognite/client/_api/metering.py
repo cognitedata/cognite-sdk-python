@@ -34,6 +34,8 @@ class MeteringAPI(APIClient):
         end: int | str | datetime.datetime | None,
         number_of_datapoints: int | None,
     ) -> dict[str, Any]:
+        if (start is None) != (number_of_datapoints is None):
+            raise ValueError("`start` and `number_of_datapoints` must be provided together.")
         params: dict[str, Any] = {}
         if start is not None:
             params["start"] = timestamp_to_ms(start)
