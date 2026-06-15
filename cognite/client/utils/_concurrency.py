@@ -227,18 +227,36 @@ class HierarchicalBoundedSemaphore:
 
     Used to model the Records API's hierarchical rate limits where an endpoint
     (e.g. retrieve) must pass both its dedicated budget and the shared query budget.
+
+    If acquisition is interrupted (e.g. by cancellation), all already-acquired
+    semaphores are released before the exception propagates. Similarly, if a
+    release raises, the remaining semaphores are still released.
     """
 
     def __init__(self, *semaphores: asyncio.BoundedSemaphore) -> None:
         self._semaphores = semaphores
 
     async def __aenter__(self) -> None:
-        for sem in self._semaphores:
-            await sem.__aenter__()
+        acquired: list[asyncio.BoundedSemaphore] = []
+        try:
+            for sem in self._semaphores:
+                await sem.__aenter__()
+                acquired.append(sem)
+        except BaseException:
+            for sem in reversed(acquired):
+                await sem.__aexit__(None, None, None)
+            raise
 
     async def __aexit__(self, *exc: Any) -> None:
+        first_err: BaseException | None = None
         for sem in reversed(self._semaphores):
-            await sem.__aexit__(*exc)
+            try:
+                await sem.__aexit__(*exc)
+            except BaseException as e:
+                if first_err is None:
+                    first_err = e
+        if first_err is not None:
+            raise first_err
 
 
 class RecordsConcurrencyOperation(Enum):

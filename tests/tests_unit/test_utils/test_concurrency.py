@@ -274,6 +274,279 @@ class TestHierarchicalBoundedSemaphore:
         await asyncio.gather(*tasks)
 
 
+class TestHierarchicalBoundedSemaphoreAdversarial:
+    """Adversarial tests targeting real failure modes in HierarchicalBoundedSemaphore.
+
+    Two confirmed bugs are documented in the tests below:
+
+    BUG-1 (semaphore leak on cancellation): When a task is cancelled while
+    __aenter__ is blocked waiting on the second semaphore, the first semaphore
+    has already been acquired but __aexit__ is never called, so it leaks.
+
+    BUG-2 (incomplete release on mid-exit exception): When __aexit__ iterates
+    in reversed order and one semaphore's release raises, the remaining
+    semaphores (earlier in the list) are never released.
+    """
+
+    # --- BUG-1: Cancellation during acquisition leaks already-acquired semaphores ---
+
+    async def test_bug1_cancellation_while_waiting_on_second_semaphore_leaks_first(self) -> None:
+        """BUG: If cancelled between acquiring sem[0] and sem[1], sem[0] is never released.
+
+        Root cause: __aenter__ acquires semaphores in a plain for-loop with no
+        try/except around individual acquisitions. A CancelledError raised inside
+        sem[1].__aenter__() (while it is blocked) unwinds the coroutine without
+        giving __aexit__ a chance to run, so sem[0] stays acquired forever.
+        """
+        dedicated = asyncio.BoundedSemaphore(1)
+        query = asyncio.BoundedSemaphore(0)  # permanently blocked
+        h = HierarchicalBoundedSemaphore(dedicated, query)
+
+        async def worker() -> None:
+            async with h:
+                pass
+
+        task = asyncio.create_task(worker())
+        await asyncio.sleep(0.02)  # let it acquire dedicated and block on query
+
+        assert dedicated._value == 0, "dedicated should be held at this point"
+
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+        # BUG: dedicated._value is 0, not 1 — it was never released
+        assert dedicated._value == 1, (
+            "BUG-1: dedicated semaphore leaked after cancellation. "
+            "sem[0] was acquired by __aenter__ but CancelledError prevented __aexit__ from running."
+        )
+
+    async def test_bug1_two_tasks_cancelled_both_leak(self) -> None:
+        """BUG: Each cancelled task leaks one slot; with two tasks both slots are gone."""
+        dedicated = asyncio.BoundedSemaphore(2)
+        query = asyncio.BoundedSemaphore(0)  # permanently blocked
+        h = HierarchicalBoundedSemaphore(dedicated, query)
+
+        async def worker() -> None:
+            async with h:
+                pass
+
+        t1 = asyncio.create_task(worker())
+        t2 = asyncio.create_task(worker())
+        await asyncio.sleep(0.02)
+
+        t1.cancel()
+        t2.cancel()
+        await asyncio.gather(t1, t2, return_exceptions=True)
+
+        # BUG: both slots leaked — dedicated is exhausted even though no work was done
+        assert dedicated._value == 2, (
+            "BUG-1: both dedicated slots leaked; subsequent real work can never acquire the semaphore."
+        )
+
+    async def test_bug1_wait_for_timeout_leaks_first_semaphore(self) -> None:
+        """BUG: asyncio.wait_for cancels the coroutine on timeout, triggering the same leak."""
+        dedicated = asyncio.BoundedSemaphore(1)
+        query = asyncio.BoundedSemaphore(0)  # permanently blocked
+        h = HierarchicalBoundedSemaphore(dedicated, query)
+
+        async def worker() -> None:
+            async with h:
+                pass
+
+        with pytest.raises(asyncio.TimeoutError):
+            await asyncio.wait_for(worker(), timeout=0.05)
+
+        # BUG: dedicated._value remains 0 after the timeout
+        assert dedicated._value == 1, (
+            "BUG-1: dedicated semaphore leaked after asyncio.wait_for timeout. "
+            "Timeout internally cancels the task, hitting the same code path."
+        )
+
+    async def test_bug1_cancellation_with_three_semaphores_leaks_two(self) -> None:
+        """BUG: With three semaphores, cancellation while waiting on sem[2] leaks both sem[0] and sem[1]."""
+        s0 = asyncio.BoundedSemaphore(1)
+        s1 = asyncio.BoundedSemaphore(1)
+        s2 = asyncio.BoundedSemaphore(0)  # permanently blocked
+        h = HierarchicalBoundedSemaphore(s0, s1, s2)
+
+        async def worker() -> None:
+            async with h:
+                pass
+
+        task = asyncio.create_task(worker())
+        await asyncio.sleep(0.02)
+
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+        assert s0._value == 1, "BUG-1: s0 leaked (first semaphore)"
+        assert s1._value == 1, "BUG-1: s1 leaked (second semaphore)"
+
+    # --- BUG-2: Exception in __aexit__ of one semaphore skips releasing earlier ones ---
+
+    async def test_bug2_exception_in_middle_release_skips_earlier_releases(self) -> None:
+        """BUG: If releasing sem[1] raises, sem[0] is never released.
+
+        __aexit__ iterates with a plain for-loop over reversed semaphores.
+        An exception from any intermediate release propagates immediately,
+        abandoning all remaining release calls.
+        """
+
+        class BoomSemaphore:
+            """Always acquires fine; always raises on release."""
+
+            async def __aenter__(self) -> None:
+                pass
+
+            async def __aexit__(self, *exc: object) -> None:
+                raise RuntimeError("boom on release")
+
+        sem0 = asyncio.BoundedSemaphore(1)
+        sem1 = BoomSemaphore()
+        sem2 = asyncio.BoundedSemaphore(1)
+        # Acquire order: sem0, sem1, sem2
+        # Release order (reversed): sem2, sem1 (boom!), sem0 — sem0 is never reached
+        h = HierarchicalBoundedSemaphore(sem0, sem1, sem2)
+
+        with pytest.raises(RuntimeError, match="boom on release"):
+            async with h:
+                pass
+
+        assert sem0._value == 1, (
+            "BUG-2: sem0 was not released because the exception from sem1's __aexit__ "
+            "aborted the release loop before sem0's turn."
+        )
+        assert sem2._value == 1, "sem2 (released before the bomb) should be fine"
+
+    async def test_bug2_exception_in_first_release_skips_all_remaining(self) -> None:
+        """BUG: Exception from the first release (last-acquired semaphore) skips all others."""
+
+        class BoomSemaphore:
+            async def __aenter__(self) -> None:
+                pass
+
+            async def __aexit__(self, *exc: object) -> None:
+                raise RuntimeError("boom")
+
+        sem0 = asyncio.BoundedSemaphore(1)
+        sem1 = asyncio.BoundedSemaphore(1)
+        sem2 = BoomSemaphore()  # last acquired = first released = first to explode
+        h = HierarchicalBoundedSemaphore(sem0, sem1, sem2)
+
+        with pytest.raises(RuntimeError, match="boom"):
+            async with h:
+                pass
+
+        assert sem0._value == 1, "BUG-2: sem0 leaked because release loop aborted at sem2"
+        assert sem1._value == 1, "BUG-2: sem1 leaked because release loop aborted at sem2"
+
+    # --- Non-bug adversarial cases (expected to pass) ---
+
+    async def test_zero_semaphores_is_a_noop(self) -> None:
+        """Edge case: constructing with no semaphores should be a transparent noop."""
+        h = HierarchicalBoundedSemaphore()
+        async with h:
+            pass  # should not raise or block
+
+    async def test_single_semaphore_behaves_like_plain_async_with(self) -> None:
+        sem = asyncio.BoundedSemaphore(1)
+        h = HierarchicalBoundedSemaphore(sem)
+        async with h:
+            assert sem._value == 0
+        assert sem._value == 1
+
+    async def test_nested_usage_deadlocks_with_value_one(self) -> None:
+        """Nested async with on the same HierarchicalBoundedSemaphore(value=1) deadlocks.
+
+        This is expected — BoundedSemaphore is not reentrant. The test confirms
+        that the implementation does NOT protect against reentrancy.
+        """
+        sem = asyncio.BoundedSemaphore(1)
+        h = HierarchicalBoundedSemaphore(sem)
+
+        inner_started = False
+
+        async def nested_worker() -> None:
+            nonlocal inner_started
+            async with h:
+                inner_started = True
+                # Attempt reentrant acquire — will deadlock
+                async with h:
+                    pass  # unreachable
+
+        task = asyncio.create_task(nested_worker())
+        await asyncio.sleep(0.05)
+
+        assert inner_started, "outer context should have been entered"
+        assert not task.done(), "task should still be blocked waiting on inner acquire"
+
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+    async def test_release_on_exception_inside_context_body_both_semaphores_freed(self) -> None:
+        """Normal exception inside the body (not in __aexit__) must release all semaphores."""
+        sem0 = asyncio.BoundedSemaphore(1)
+        sem1 = asyncio.BoundedSemaphore(1)
+        h = HierarchicalBoundedSemaphore(sem0, sem1)
+
+        with pytest.raises(ValueError, match="body exception"):
+            async with h:
+                raise ValueError("body exception")
+
+        assert sem0._value == 1
+        assert sem1._value == 1
+
+    async def test_concurrent_retrieve_and_list_complete_without_deadlock(self) -> None:
+        """retrieve (HierarchicalBoundedSemaphore) and list (plain semaphore) sharing
+        the query semaphore must not deadlock each other."""
+        dedicated = asyncio.BoundedSemaphore(2)
+        query = asyncio.BoundedSemaphore(3)
+        h_retrieve = HierarchicalBoundedSemaphore(dedicated, query)
+
+        completed: list[str] = []
+
+        async def retrieve(name: str) -> None:
+            async with h_retrieve:
+                await asyncio.sleep(0.01)
+                completed.append(f"retrieve_{name}")
+
+        async def list_op(name: str) -> None:
+            async with query:
+                await asyncio.sleep(0.01)
+                completed.append(f"list_{name}")
+
+        await asyncio.gather(
+            asyncio.create_task(retrieve("A")),
+            asyncio.create_task(retrieve("B")),
+            asyncio.create_task(list_op("C")),
+            asyncio.create_task(list_op("D")),
+            asyncio.create_task(list_op("E")),
+        )
+
+        assert len(completed) == 5
+        assert all(name in completed for name in ["retrieve_A", "retrieve_B", "list_C", "list_D", "list_E"])
+
+    async def test_semaphores_fully_restored_after_many_sequential_uses(self) -> None:
+        """Semaphore values must be fully restored after many normal acquire/release cycles."""
+        sem0 = asyncio.BoundedSemaphore(3)
+        sem1 = asyncio.BoundedSemaphore(5)
+        h = HierarchicalBoundedSemaphore(sem0, sem1)
+
+        for _ in range(20):
+            async with h:
+                pass
+
+        assert sem0._value == 3
+        assert sem1._value == 5
+
+
 @pytest.mark.usefixtures("fresh_unfrozen_global_concurrency")
 class TestRecordsGetSemaphore:
     """Tests that RecordsAPI._get_semaphore returns the right semaphore type and composition."""
