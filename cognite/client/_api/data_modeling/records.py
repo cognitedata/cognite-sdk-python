@@ -24,7 +24,8 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
-_DEFAULT_STREAM_TYPE = "immutable"
+StreamType = Literal["immutable", "mutable"]
+_DEFAULT_STREAM_TYPE: StreamType = "immutable"
 
 
 class RecordsAPI(APIClient):
@@ -41,7 +42,7 @@ class RecordsAPI(APIClient):
     }
 
     def _get_semaphore(  # type: ignore[override]
-        self, operation: Literal["read", "write", "delete"], stream_type: str
+        self, operation: Literal["read", "write", "delete"], stream_type: StreamType
     ) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
 
@@ -59,7 +60,7 @@ class RecordsAPI(APIClient):
         items: RecordId | Sequence[RecordId],
         *,
         stream_id: str,
-        stream_type: str = _DEFAULT_STREAM_TYPE,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
         ignore_unknown_ids: Literal[True] = True,
     ) -> None:
         """`Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
@@ -101,7 +102,7 @@ class RecordsAPI(APIClient):
         items: RecordWrite | Sequence[RecordWrite],
         *,
         stream_id: str,
-        stream_type: str = _DEFAULT_STREAM_TYPE,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
     ) -> None:
         """`Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
 
@@ -156,7 +157,7 @@ class RecordsAPI(APIClient):
         items: RecordWrite | Sequence[RecordWrite],
         *,
         stream_id: str,
-        stream_type: str = _DEFAULT_STREAM_TYPE,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
         upsert_mode: Literal["replace"] = "replace",
     ) -> None:
         """`Upsert records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/upsertRecords>`_.
@@ -212,7 +213,7 @@ class RecordsAPI(APIClient):
         self,
         stream_id: str,
         *,
-        stream_type: str = _DEFAULT_STREAM_TYPE,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
         last_updated_time: TimeRange | None = None,
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,

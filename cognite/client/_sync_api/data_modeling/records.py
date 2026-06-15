@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a25e648fc3af64b2297cda6bb7d4a162
+bca827d2e262d88f79e8ba44c6303e69
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -26,7 +26,8 @@ from cognite.client.utils._async_helpers import run_sync
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
 
-_DEFAULT_STREAM_TYPE = "immutable"
+StreamType = Literal["immutable", "mutable"]
+_DEFAULT_STREAM_TYPE: StreamType = "immutable"
 
 
 class SyncRecordsAPI(SyncAPIClient):
@@ -40,7 +41,7 @@ class SyncRecordsAPI(SyncAPIClient):
         items: RecordId | Sequence[RecordId],
         *,
         stream_id: str,
-        stream_type: str = _DEFAULT_STREAM_TYPE,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
         ignore_unknown_ids: Literal[True] = True,
     ) -> None:
         """
@@ -77,7 +78,11 @@ class SyncRecordsAPI(SyncAPIClient):
         )
 
     def ingest(
-        self, items: RecordWrite | Sequence[RecordWrite], *, stream_id: str, stream_type: str = _DEFAULT_STREAM_TYPE
+        self,
+        items: RecordWrite | Sequence[RecordWrite],
+        *,
+        stream_id: str,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
     ) -> None:
         """
         `Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
@@ -128,7 +133,7 @@ class SyncRecordsAPI(SyncAPIClient):
         items: RecordWrite | Sequence[RecordWrite],
         *,
         stream_id: str,
-        stream_type: str = _DEFAULT_STREAM_TYPE,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
         upsert_mode: Literal["replace"] = "replace",
     ) -> None:
         """
@@ -182,7 +187,7 @@ class SyncRecordsAPI(SyncAPIClient):
         self,
         stream_id: str,
         *,
-        stream_type: str = _DEFAULT_STREAM_TYPE,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
         last_updated_time: TimeRange | None = None,
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,
