@@ -41,7 +41,7 @@ class TestMeteringAPI:
             json=ATLAS_METER,
         )
 
-        meter_id = str(ATLAS_METER["meterId"])
+        meter_id = ATLAS_METER["meterId"]
         res = cognite_client.metering.retrieve(id=meter_id)
 
         assert isinstance(res, MeteringData)
@@ -68,7 +68,7 @@ class TestMeteringAPI:
         )
 
         res = cognite_client.metering.retrieve(
-            id=str(ATLAS_METER["meterId"]),
+            id=ATLAS_METER["meterId"],
             start=1764547200000,
             end=1767225599000,
             number_of_datapoints=2,
@@ -246,7 +246,7 @@ class TestMeteringAPI:
         start_dt = datetime(2025, 1, 1, tzinfo=timezone.utc)
         end_dt = datetime(2025, 2, 1, tzinfo=timezone.utc)
         cognite_client.metering.retrieve(
-            id=str(ATLAS_METER["meterId"]),
+            id=ATLAS_METER["meterId"],
             start=start_dt,
             end=end_dt,
             number_of_datapoints=10,
@@ -266,7 +266,7 @@ class TestMeteringAPI:
         httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=ATLAS_METER_WITH_DATA)
 
         cognite_client.metering.retrieve(
-            id=str(ATLAS_METER["meterId"]),
+            id=ATLAS_METER["meterId"],
             start="4w-ago",
             number_of_datapoints=10,
         )
