@@ -256,7 +256,6 @@ class RecordsAPI(APIClient):
             list_cls=RecordList,
             resource_cls=Record,
             method="POST",
-            resource_path=self._records_url(stream_id),
             url_path=self._records_url(stream_id, "/filter"),
             limit=limit,
             filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
