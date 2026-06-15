@@ -24,6 +24,8 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
+_DEFAULT_STREAM_TYPE = "immutable"
+
 
 class RecordsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
@@ -38,7 +40,9 @@ class RecordsAPI(APIClient):
         "delete": RecordsConcurrencyOperation.WRITE,
     }
 
-    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+    def _get_semaphore(  # type: ignore[override]
+        self, operation: Literal["read", "write", "delete"], stream_type: str
+    ) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
 
         return global_config.concurrency_settings.records._semaphore_factory(
@@ -55,6 +59,7 @@ class RecordsAPI(APIClient):
         items: RecordId | Sequence[RecordId],
         *,
         stream_id: str,
+        stream_type: str = _DEFAULT_STREAM_TYPE,
         ignore_unknown_ids: Literal[True] = True,
     ) -> None:
         """`Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
@@ -65,6 +70,7 @@ class RecordsAPI(APIClient):
         Args:
             items (RecordId | Sequence[RecordId]): Records to delete.
             stream_id (str): External ID of the stream to delete from.
+            stream_type (str): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
             ignore_unknown_ids (Literal[True]): Currently only True is supported
 
         Examples:
@@ -87,6 +93,7 @@ class RecordsAPI(APIClient):
             identifiers=RecordIdSequence.load(items),
             wrap_ids=True,
             resource_path=self._records_url(stream_id),
+            override_semaphore=self._get_semaphore("delete", stream_type),
         )
 
     async def ingest(
@@ -94,6 +101,7 @@ class RecordsAPI(APIClient):
         items: RecordWrite | Sequence[RecordWrite],
         *,
         stream_id: str,
+        stream_type: str = _DEFAULT_STREAM_TYPE,
     ) -> None:
         """`Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
 
@@ -105,6 +113,7 @@ class RecordsAPI(APIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to ingest.
             stream_id (str): External ID of the stream to ingest into.
+            stream_type (str): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
 
         Examples:
 
@@ -139,6 +148,7 @@ class RecordsAPI(APIClient):
             items=item_list,
             resource_path=self._records_url(stream_id),
             no_response=True,
+            override_semaphore=self._get_semaphore("write", stream_type),
         )
 
     async def upsert(
@@ -146,6 +156,7 @@ class RecordsAPI(APIClient):
         items: RecordWrite | Sequence[RecordWrite],
         *,
         stream_id: str,
+        stream_type: str = _DEFAULT_STREAM_TYPE,
         upsert_mode: Literal["replace"] = "replace",
     ) -> None:
         """`Upsert records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/upsertRecords>`_.
@@ -158,6 +169,7 @@ class RecordsAPI(APIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
             stream_id (str): External ID of the stream to upsert into.
+            stream_type (str): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
             upsert_mode (Literal['replace']): How existing records are updated. Currently only ``"replace"`` is supported, which fully replaces the existing record. Defaults to ``"replace"``.
 
         Examples:
@@ -193,12 +205,14 @@ class RecordsAPI(APIClient):
             items=item_list,
             resource_path=self._records_url(stream_id, "/upsert"),
             no_response=True,
+            override_semaphore=self._get_semaphore("write", stream_type),
         )
 
     async def list(
         self,
         stream_id: str,
         *,
+        stream_type: str = _DEFAULT_STREAM_TYPE,
         last_updated_time: TimeRange | None = None,
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,
@@ -215,6 +229,7 @@ class RecordsAPI(APIClient):
 
         Args:
             stream_id (str): External ID of the stream to query.
+            stream_type (str): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
             last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
                 immutable streams** (must include a lower bound).
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
@@ -256,9 +271,11 @@ class RecordsAPI(APIClient):
             list_cls=RecordList,
             resource_cls=Record,
             method="POST",
+            resource_path=self._records_url(stream_id),
             url_path=self._records_url(stream_id, "/filter"),
             limit=limit,
             filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
             other_params=other_params,
             settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else None,
+            override_semaphore=self._get_semaphore("read", stream_type),
         )

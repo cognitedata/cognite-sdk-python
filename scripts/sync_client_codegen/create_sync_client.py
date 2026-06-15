@@ -29,9 +29,7 @@ def create_sync_cognite_client(
 
         api_file = Path(file_path_lookup[api])
         api_dir = next(p for p in api_file.parents if p.name == ASYNC_API_DIR.name)
-        import_path = path_as_importable(
-            SYNC_API_DIR / api_file.relative_to(api_dir)
-        ).replace(".__init__", "")
+        import_path = path_as_importable(SYNC_API_DIR / api_file.relative_to(api_dir)).replace(".__init__", "")
         all_imports.append(f"from {import_path} import Sync{override_api_name}")
 
     return COGNITE_CLIENT_TEMPLATE.format(
