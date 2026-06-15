@@ -1,4 +1,3 @@
-import re
 from datetime import datetime, timezone
 from typing import Any
 
@@ -27,24 +26,18 @@ def metering_url(async_client: AsyncCogniteClient) -> str:
     return get_url(async_client.metering) + "/metering/meters"
 
 
-@pytest.fixture
-def single_meter_url_pattern(metering_url: str) -> re.Pattern:
-    return re.compile(re.escape(f"{metering_url}/{ATLAS_METER['meterId']}") + r"\?.*")
-
-
 class TestMeteringAPI:
     def test_retrieve_single(
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        async_client: AsyncCogniteClient,
         metering_url: str,
     ) -> None:
         httpx_mock.add_response(
-            method="GET",
-            url=f"{metering_url}/{ATLAS_METER['meterId']}",
+            method="POST",
+            url=f"{metering_url}/byids",
             status_code=200,
-            json=ATLAS_METER,
+            json={"items": [ATLAS_METER]},
         )
 
         meter_id = ATLAS_METER["meterId"]
@@ -56,20 +49,21 @@ class TestMeteringAPI:
 
         requests = httpx_mock.get_requests()
         assert len(requests) == 1
-        assert requests[0].method == "GET"
-        assert f"metering/meters/{meter_id}" in str(requests[0].url)
+        assert requests[0].method == "POST"
+        body = jsgz_load(requests[0].content)
+        assert body["items"] == [{"meterId": meter_id}]
 
     def test_retrieve_single_with_time_range(
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        single_meter_url_pattern: re.Pattern,
+        metering_url: str,
     ) -> None:
         httpx_mock.add_response(
-            method="GET",
-            url=single_meter_url_pattern,
+            method="POST",
+            url=f"{metering_url}/byids",
             status_code=200,
-            json=ATLAS_METER_WITH_DATA,
+            json={"items": [ATLAS_METER_WITH_DATA]},
         )
 
         res = cognite_client.metering.retrieve(
@@ -84,9 +78,9 @@ class TestMeteringAPI:
         assert res.datapoints[0].timestamp == 1764547200000
         assert res.datapoints[0].average == 42000.0
 
-        request = httpx_mock.get_requests()[0]
-        assert "start=1764547200000" in str(request.url)
-        assert "numberOfDatapoints=2" in str(request.url)
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body["start"] == 1764547200000
+        assert body["numberOfDatapoints"] == 2
 
     def test_retrieve_single_not_found(
         self,
@@ -95,10 +89,10 @@ class TestMeteringAPI:
         metering_url: str,
     ) -> None:
         httpx_mock.add_response(
-            method="GET",
-            url=f"{metering_url}/{NONEXISTENT_ID}",
-            status_code=404,
-            json={"error": {"message": "Not Found"}},
+            method="POST",
+            url=f"{metering_url}/byids",
+            status_code=400,
+            json={"error": {"message": "Not Found", "missing": [{"meterId": NONEXISTENT_ID}]}},
         )
 
         res = cognite_client.metering.retrieve(id=NONEXISTENT_ID)
@@ -250,11 +244,13 @@ class TestMeteringAPI:
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        single_meter_url_pattern: re.Pattern,
+        metering_url: str,
         start: datetime | str,
         end: datetime | None,
     ) -> None:
-        httpx_mock.add_response(method="GET", url=single_meter_url_pattern, status_code=200, json=ATLAS_METER_WITH_DATA)
+        httpx_mock.add_response(
+            method="POST", url=f"{metering_url}/byids", status_code=200, json={"items": [ATLAS_METER_WITH_DATA]}
+        )
 
         cognite_client.metering.retrieve(
             id=ATLAS_METER["meterId"],
@@ -263,14 +259,13 @@ class TestMeteringAPI:
             number_of_datapoints=10,
         )
 
-        request_url = str(httpx_mock.get_requests()[0].url)
-        assert "start=" in request_url
-        start_val = int(request_url.split("start=")[1].split("&")[0])
-        assert start_val > 0
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert "start" in body
+        assert body["start"] > 0
         if isinstance(start, datetime):
-            assert start_val == timestamp_to_ms(start)
+            assert body["start"] == timestamp_to_ms(start)
             assert end is not None
-            assert f"end={timestamp_to_ms(end)}" in request_url
+            assert body["end"] == timestamp_to_ms(end)
 
     @pytest.mark.parametrize(
         "kwargs",

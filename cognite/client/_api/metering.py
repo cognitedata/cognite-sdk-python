@@ -7,7 +7,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.metering import MeteringData, MeteringDataList
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._identifier import MeterId
+from cognite.client.utils._identifier import MeterIdSequence
 from cognite.client.utils._time import timestamp_to_ms
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -22,6 +22,7 @@ class MeteringAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._RETRIEVE_LIMIT = 100
         self._warning = FeaturePreviewWarning(
             api_maturity="alpha",
             sdk_maturity="alpha",
@@ -107,23 +108,14 @@ class MeteringAPI(APIClient):
                 ... )
         """
         self._warning.warn()
-        if isinstance(id, str):
-            params = self._time_range_params(start, end, number_of_datapoints) or None
-            return await self._retrieve(
-                identifier=MeterId(id),
-                cls=MeteringData,
-                headers=self._alpha_version_header(),
-                params=params,
-            )
-        body: dict[str, Any] = {"items": [MeterId(id_).as_dict() for id_ in id]}
-        body.update(self._time_range_params(start, end, number_of_datapoints))
-        res = await self._post(
-            url_path=self._RESOURCE_PATH + "/byids",
-            json=body,
+        identifiers = MeterIdSequence.load(id)
+        return await self._retrieve_multiple(
+            list_cls=MeteringDataList,
+            resource_cls=MeteringData,
+            identifiers=identifiers,
+            other_params=self._time_range_params(start, end, number_of_datapoints) or None,
             headers=self._alpha_version_header(),
-            semaphore=self._get_semaphore("read"),
         )
-        return MeteringDataList._load(res.json()["items"])._maybe_set_client_ref(self._cognite_client)
 
     async def list(
         self,
