@@ -221,7 +221,7 @@ class BasicAsyncAPIClient:
 
     def _alpha_version_header(self) -> dict[str, str]:
         subversion = self._config.api_subversion
-        version = subversion if subversion.endswith("-alpha") else subversion + "-alpha"
+        version = subversion if "alpha" in subversion else subversion + "-alpha"
         return {"cdf-version": version}
 
     @property
