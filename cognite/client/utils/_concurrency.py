@@ -278,13 +278,10 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     retrieve and aggregate endpoints each have a dedicated budget that is checked *before*
     the shared query budget (both must pass).
 
-    - **write**: Shared across ingest, upsert, and delete (same limit for both stream types).
-    - **query_mutable / query_immutable**: Shared read budget consumed by all query endpoints
-      (list/filter, sync, retrieve, aggregate).
-    - **retrieve_mutable / retrieve_immutable**: Dedicated budget for retrieve, checked
-      *in addition to* the shared query budget.
-    - **aggregate_mutable / aggregate_immutable**: Dedicated budget for aggregate, checked
-      *in addition to* the shared query budget.
+    - **write**: Shared across ingest, upsert, and delete (same for both stream types).
+    - **query_mutable / query_immutable**: Shared read budget for all query endpoints.
+    - **retrieve_mutable / retrieve_immutable**: Dedicated retrieve budget (+ shared query).
+    - **aggregate_mutable / aggregate_immutable**: Dedicated aggregate budget (+ shared query).
 
     Args:
         concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
