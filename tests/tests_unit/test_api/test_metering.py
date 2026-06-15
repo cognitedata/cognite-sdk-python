@@ -169,10 +169,9 @@ class TestMeteringAPI:
             {"meterId": "atlas.monthly_ai_tokens", "datapoints": []},
             {"meterId": "files.storage_bytes", "datapoints": []},
         ]
-        url_pattern = re.compile(re.escape(metering_url) + r"(?:\?.+)?")
         httpx_mock.add_response(
-            method="GET",
-            url=url_pattern,
+            method="POST",
+            url=f"{metering_url}/list",
             status_code=200,
             json={"items": meters_data},
         )
@@ -221,10 +220,9 @@ class TestMeteringAPI:
         httpx_mock: HTTPXMock,
         metering_url: str,
     ) -> None:
-        url_pattern = re.compile(re.escape(metering_url) + r"(?:\?.+)?")
         httpx_mock.add_response(
-            method="GET",
-            url=url_pattern,
+            method="POST",
+            url=f"{metering_url}/list",
             status_code=200,
             json={"items": [ATLAS_METER_WITH_DATA]},
         )
@@ -232,9 +230,9 @@ class TestMeteringAPI:
         res = cognite_client.metering.list(start=1764547200000, number_of_datapoints=2)
 
         assert isinstance(res, MeteringDataList)
-        request = httpx_mock.get_requests()[0]
-        assert "start=1764547200000" in str(request.url)
-        assert "numberOfDatapoints=2" in str(request.url)
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body["start"] == 1764547200000
+        assert body["numberOfDatapoints"] == 2
 
     def test_retrieve_with_datetime_start_end(
         self,

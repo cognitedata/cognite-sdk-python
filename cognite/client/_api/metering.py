@@ -174,7 +174,7 @@ class MeteringAPI(APIClient):
         other_params = self._time_range_params(start, end, number_of_datapoints) or None
 
         return await self._list(
-            method="GET" if filter is None else "POST",
+            method="POST",
             list_cls=MeteringDataList,
             resource_cls=MeteringData,
             limit=limit,
