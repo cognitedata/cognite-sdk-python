@@ -194,7 +194,7 @@ class CogniteClient:
 
         The default configuration creates the URLs based on the project and cluster:
 
-        * Base URL: "https://{cdf_cluster}.cognitedata.com/
+        * Base URL: ``"https://{cdf_cluster}.cognitedata.com/"``
 
         Args:
             project (str): The CDF project.
@@ -224,9 +224,9 @@ class CogniteClient:
 
         The default configuration creates the URLs based on the project and cluster:
 
-        * Base URL: "https://{cdf_cluster}.cognitedata.com/
-        * Token URL: "https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
-        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
+        * Base URL: ``"https://{cdf_cluster}.cognitedata.com/"``
+        * Token URL: ``"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"``
+        * Scopes: ``[f"https://{cdf_cluster}.cognitedata.com/.default"]``
 
         Args:
             project (str): The CDF project.
@@ -256,9 +256,9 @@ class CogniteClient:
 
         The default configuration creates the URLs based on the tenant_id and cluster:
 
-        * Base URL: "https://{cdf_cluster}.cognitedata.com/
-        * Authority URL: "https://login.microsoftonline.com/{tenant_id}"
-        * Scopes: [f"https://{cdf_cluster}.cognitedata.com/.default"]
+        * Base URL: ``"https://{cdf_cluster}.cognitedata.com/"``
+        * Authority URL: ``"https://login.microsoftonline.com/{tenant_id}"``
+        * Scopes: ``[f"https://{cdf_cluster}.cognitedata.com/.default"]``
 
         Args:
             project (str): The CDF project.

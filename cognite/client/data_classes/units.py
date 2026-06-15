@@ -76,7 +76,7 @@ class Unit(CogniteResource):
         conversion (UnitConversion): The conversion between the unit and its base unit. For example, the base unit for
             temperature is Kelvin, and the conversion from Celsius to Kelvin is multiplier = 1, offset = 273.15.
         source (str | None): The source of the unit, e.g., qudt.org
-        source_reference (str | None): The reference to the source of the unit, e.g., http://qudt.org/vocab/unit/DEG_C
+        source_reference (str | None): The reference to the source of the unit, e.g., https://qudt.org/vocab/unit/DEG_C
     """
 
     def __init__(

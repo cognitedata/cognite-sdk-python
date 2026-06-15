@@ -307,7 +307,7 @@ class SimulatorRunsAPI(APIClient):
         self,
         run_id: int,
     ) -> SimulationRunDataList:
-        """`Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+        """`Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_data>`_
 
         Retrieve data associated with a simulation run by ID.
 

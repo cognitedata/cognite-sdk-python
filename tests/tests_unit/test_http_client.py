@@ -14,6 +14,7 @@ from cognite.client._http_client import (
     get_global_async_httpx_client,
 )
 from cognite.client.config import global_config
+from cognite.client.response import CogniteHTTPResponse
 
 
 @pytest.fixture
@@ -104,12 +105,6 @@ class TestRetryTracker:
         rt.config.status_codes_to_retry.add(500)
         assert rt.should_retry_status_code(make_http_status_error(500)) is True
 
-    def test_get_backoff_time(self, default_config: AsyncHTTPClientWithRetryConfig) -> None:
-        rt = RetryTracker(URL, default_config)
-        for i in range(10):
-            rt.read += 1
-            assert 0 <= rt.get_backoff_time() <= default_config.max_backoff_seconds
-
     def test_is_auto_retryable(self, default_config: AsyncHTTPClientWithRetryConfig) -> None:
         default_config._max_retries_status = 1
         rt = RetryTracker(URL, default_config)
@@ -171,3 +166,21 @@ class TestGetGlobalAsyncHttpxClient:
         assert pool._keepalive_expiry == 5
         assert pool._ssl_context.verify_mode == ssl.CERT_NONE  # disable_ssl should cause this
         assert pool._ssl_context.check_hostname is False
+
+
+def make_response(status_code: int) -> CogniteHTTPResponse:
+    request = httpx.Request("GET", URL)
+    return CogniteHTTPResponse(httpx.Response(status_code=status_code, request=request))
+
+
+class TestCogniteHTTPResponseRepr:
+    @pytest.mark.parametrize(
+        "status_code, expected",
+        [
+            (200, "<CogniteHTTPResponse [200 OK]>"),
+            (404, "<CogniteHTTPResponse [404 Not Found]>"),
+            (500, "<CogniteHTTPResponse [500 Internal Server Error]>"),
+        ],
+    )
+    def test_repr_format(self, status_code: int, expected: str) -> None:
+        assert repr(make_response(status_code)) == expected

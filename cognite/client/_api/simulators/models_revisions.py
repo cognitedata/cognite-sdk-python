@@ -279,7 +279,7 @@ class SimulatorModelRevisionsAPI(APIClient):
         )
 
     async def retrieve_data(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
-        """`Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/get_simulator_model_revision_data_by_id>`_
+        """`Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/retrieve_simulator_model_revision_data>`_
 
         Retrieves a list of simulator model revisions data that match the given criteria.
 

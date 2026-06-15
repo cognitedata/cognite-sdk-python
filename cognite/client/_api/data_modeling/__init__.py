@@ -5,12 +5,14 @@ from typing import TYPE_CHECKING, Literal
 
 from cognite.client._api.data_modeling.containers import ContainersAPI
 from cognite.client._api.data_modeling.data_models import DataModelsAPI
+from cognite.client._api.data_modeling.files import DataModelingFilesAPI
 from cognite.client._api.data_modeling.graphql import DataModelingGraphQLAPI
 from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client._api.data_modeling.records import RecordsAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.statistics import StatisticsAPI
 from cognite.client._api.data_modeling.streams import StreamsAPI
+from cognite.client._api.data_modeling.time_series import DataModelingTimeSeriesAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
 from cognite.client._api_client import APIClient
 
@@ -24,6 +26,8 @@ class DataModelingAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.containers = ContainersAPI(config, api_version, cognite_client)
         self.data_models = DataModelsAPI(config, api_version, cognite_client)
+        self.files = DataModelingFilesAPI(config, api_version, cognite_client)
+        self.time_series = DataModelingTimeSeriesAPI(config, api_version, cognite_client)
         self.spaces = SpacesAPI(config, api_version, cognite_client)
         self.views = ViewsAPI(config, api_version, cognite_client)
         self.instances = InstancesAPI(config, api_version, cognite_client)

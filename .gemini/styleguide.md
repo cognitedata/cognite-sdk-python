@@ -32,15 +32,8 @@
 - **Extend, don't duplicate** If more detail is needed, clearly state what is
   missing from the PR description and add only the necessary context.
 
-## Line Length and Formatting
-
-- **Maximum line length**: 120 characters (configured in ruff)
-- **Target Python version**: 3.10+
-- **Indentation**: 4 spaces per level
-
 ## Type Hints
 
-- **Required**: All functions, methods, and class attributes must have type hints
 - **Avoid `Any`**: Use specific types whenever possible
 - **File operations**: Always parse file content into typed structures
 
@@ -63,18 +56,11 @@ def load_config(path: Path) -> dict[str, Any]:
 
 ## Imports
 
-- **Group imports**: Standard library, third-party, local application
 - **Absolute imports**: Always use absolute imports for clarity
-- **Sort alphabetically** within groups
 - **Type checking imports**: Use `TYPE_CHECKING` for type-only imports
 
 ```python
-import json
-import logging
-from pathlib import Path
 from typing import TYPE_CHECKING
-
-from httpx import Response
 
 from cognite.client.data_classes import Asset
 
@@ -91,30 +77,6 @@ if TYPE_CHECKING:
 - **Private members**: Single leading underscore `_private`
 
 ## Docstrings
-
-Use concise docstrings with Args/Returns in google-style format. 'Raises' can be used, but is not
-required. Based on repository patterns:
-
-```python
-def render_header(header: str) -> str:
-    """
-    Renders a (markdown) heading.
-
-    Args:
-        header (str): header
-
-    Returns:
-        str: The rendered header
-    """
-    return f"{header}\n{'=' * len(header)}\n"
-
-def walk_sdk_documentation(content: Tag, parser: Parser[T]) -> Iterable[T]:
-    """Parse the content of a file and yields documents. The parser controls how
-    the sections are transformed into documents."""
-    # Implementation here
-```
-
-**Docstring patterns**:
 
 - Start with a concise description
 - Use `Args:` and `Returns:` for complex functions
@@ -136,10 +98,6 @@ def validate_data_modeling_identifier(space: str | None, external_id: str | None
     if external_id and external_id in { "space", "externalId", "createdTime", "lastUpdatedTime", "deletedTime"}:
         raise ValueError(f"The external ID: {external_id!r} is reserved. Please use another ID.")
 ```
-
-## Tooling
-
-- **Pre-commit**: `pre-commit run --all-files` for comprehensive checks
 
 ## Logging
 

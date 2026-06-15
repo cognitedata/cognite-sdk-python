@@ -39,6 +39,12 @@ from cognite.client._api.data_modeling import (
     streams,
     views,
 )
+from cognite.client._api.data_modeling import (
+    files as dm_files,
+)
+from cognite.client._api.data_modeling import (
+    time_series as dm_time_series,
+)
 from cognite.client._api.hosted_extractors import destinations, jobs, mappings, sources
 from cognite.client._api.postgres_gateway import tables as postgres_gateway_tables
 from cognite.client._api.postgres_gateway import users as postgres_gateway_users
@@ -127,9 +133,11 @@ class TestDocstringExamples:
         run_docstring_tests(instances)
         run_docstring_tests(data_models)
         run_docstring_tests(spaces)
+        run_docstring_tests(dm_files)
         run_docstring_tests(graphql)
         run_docstring_tests(statistics)
         run_docstring_tests(streams)
+        run_docstring_tests(dm_time_series)
 
     def test_datapoint_subscriptions(self) -> None:
         run_docstring_tests(datapoints_subscriptions)

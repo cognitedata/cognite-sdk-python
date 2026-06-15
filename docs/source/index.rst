@@ -91,10 +91,9 @@ See the :doc:`quickstart` for configuration examples.
 Contents
 ^^^^^^^^
 
-Getting Started
-"""""""""""""""
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
+   :caption: Getting Started
 
    quickstart
    settings
@@ -103,51 +102,99 @@ Getting Started
    extensions_and_optional_dependencies
    identity_and_access_management
 
-Core Resources
-""""""""""""""
 .. toctree::
    :maxdepth: 1
+   :caption: Data Modeling
 
-   data_modeling
-   agents
-   ai
-   assets
-   events
-   documents
-   files
+   data_modeling/data_models
+   data_modeling/spaces
+   data_modeling/views
+   data_modeling/containers
+   data_modeling/instances
+   data_modeling/files
+   data_modeling/time_series
+   data_modeling/statistics
+   data_modeling/streams
+   data_modeling/records
+   data_modeling/graphql
+   data_modeling/core_data_model
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Core Data
+
    time_series
    sequences
+   files
    3d
 
-Data Processing
-"""""""""""""""
 .. toctree::
    :maxdepth: 1
+   :caption: Documents
+
+   ai
+   documents
+
+.. toctree::
+   :maxdepth: 1
+   :caption: AI Agents
+
+   agents
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Contextualization
 
    contextualization
-   data_ingestion
-   transformations
-   functions
-   data_workflows
 
-Specialized Features
-""""""""""""""""""""
 .. toctree::
    :maxdepth: 1
+   :caption: Data Lifecycle
 
-   simulators
-   geospatial
-   unit_catalog
+   data_ingestion
+   data_organization
+   transformations
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Compute and Automation
+
+   functions
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Integrations
+
    hosted_extractors
    postgres_gateway
    data_organization
    limits
    metering
 
-Reference
-"""""""""
 .. toctree::
    :maxdepth: 1
+   :caption: Workflows
+
+   data_workflows
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Specialized
+
+   simulators
+   unit_catalog
+   geospatial
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Legacy
+
+   assets
+   events
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reference
 
    filters
    deprecated

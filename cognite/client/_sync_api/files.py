@@ -1,6 +1,6 @@
 """
 ===============================================================================
-44f1fb8ed3bbf859ea01358b27381995
+6cfa53b9447f702dc542f27bb112a22f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -220,12 +220,13 @@ class SyncFilesAPI(SyncAPIClient):
 
         Examples:
 
-            Get file metadata by id:
+            Get file metadata by instance id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.retrieve(id=1)
+                >>> res = client.files.retrieve(instance_id=NodeId("my-space", "my-file-xid"))
 
             Get file metadata by external id:
 
@@ -254,14 +255,17 @@ class SyncFilesAPI(SyncAPIClient):
 
         Examples:
 
-            Get file metadatas by id:
+            Get file metadatas by instance id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.retrieve_multiple(ids=[1, 2, 3])
+                >>> res = client.files.retrieve_multiple(
+                ...     instance_ids=[NodeId("my-space", "my-file-xid")]
+                ... )
 
-            Get file_metadatas by external id:
+            Get file metadatas by external id:
 
                 >>> res = client.files.retrieve_multiple(external_ids=["abc", "def"])
         """
@@ -424,7 +428,7 @@ class SyncFilesAPI(SyncAPIClient):
         return run_sync(self.__async_client.files.search(name=name, filter=filter, limit=limit))
 
     def upload_content(
-        self, path: Path | str, external_id: str | None = None, instance_id: NodeId | None = None
+        self, path: Path | str, external_id: str | None = None, instance_id: NodeId | tuple[str, str] | None = None
     ) -> FileMetadata:
         """
         `Upload file content <https://api-docs.cognite.com/20230101/tag/Files/operation/getMultiPartUploadLink>`_
@@ -432,14 +436,27 @@ class SyncFilesAPI(SyncAPIClient):
         Upload file content from a local file path to a file previously created (initiated) with only metadata.
         For files created with FilesAPI.create(), use `external_id`.
         For files created with data modeling API using CogniteFileApply, use `instance_id`.
-        Supports upload of large files (>5 GB), using multipart upload.
+        Supports upload of large files (>5 GiB), using multipart upload.
 
         Args:
             path (Path | str): Local file path.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file (CogniteFile).
+            instance_id (NodeId | tuple[str, str] | None): Instance ID of the file (CogniteFile).
+
         Returns:
             FileMetadata: No description.
+
+        Examples:
+
+            Upload file content using instance_id:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.files.upload_content(
+                ...     "/path/to/file.txt", instance_id=NodeId("my-space", "my-file-xid")
+                ... )
         """
         return run_sync(
             self.__async_client.files.upload_content(path=path, external_id=external_id, instance_id=instance_id)
@@ -472,7 +489,7 @@ class SyncFilesAPI(SyncAPIClient):
         Note:
             If path is a directory, this method will upload all files in that directory. Use `recursive=True` for subdirectories as well.
 
-        Supports upload of large files (>5 GB), using multipart upload.
+        Supports upload of large files (>5 GiB), using multipart upload.
 
         Args:
             path (Path | str): Path to the file you wish to upload. If path is a directory, this method will upload all files in that directory.
@@ -557,7 +574,10 @@ class SyncFilesAPI(SyncAPIClient):
         )
 
     def upload_content_bytes(
-        self, content: str | bytes | BinaryIO, external_id: str | None = None, instance_id: NodeId | None = None
+        self,
+        content: str | bytes | BinaryIO,
+        external_id: str | None = None,
+        instance_id: NodeId | tuple[str, str] | None = None,
     ) -> FileMetadata:
         """
         Upload bytes or string (UTF-8 assumed).
@@ -567,26 +587,26 @@ class SyncFilesAPI(SyncAPIClient):
         Args:
             content (str | bytes | BinaryIO): The content to upload.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            instance_id (NodeId | tuple[str, str] | None): Instance ID of the file.
 
         Returns:
             FileMetadata: No description.
 
         Examples:
 
-            Finish a file creation by uploading the content using external_id:
+            Finish a file creation by uploading the content using instance_id:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.files.upload_content_bytes(b"some content", external_id="my_file_xid")
-
-            ...or by using instance_id:
-
-                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> res = client.files.upload_content_bytes(
                 ...     b"some content", instance_id=NodeId("my-space", "my_file_xid")
                 ... )
+
+            ...or by using external_id:
+
+                >>> res = client.files.upload_content_bytes(b"some content", external_id="my_file_xid")
         """
         return run_sync(
             self.__async_client.files.upload_content_bytes(
@@ -752,7 +772,7 @@ class SyncFilesAPI(SyncAPIClient):
         )
 
     def multipart_upload_content_session(
-        self, parts: int, external_id: str | None = None, instance_id: NodeId | None = None
+        self, parts: int, external_id: str | None = None, instance_id: NodeId | tuple[str, str] | None = None
     ) -> FileMultipartUploadSession:
         """
         Begin uploading a file in multiple parts whose metadata is already created in CDF.
@@ -770,7 +790,7 @@ class SyncFilesAPI(SyncAPIClient):
         Args:
             parts (int): The number of parts to upload, must be between 1 and 250.
             external_id (str | None): The external ID provided by the client. Must be unique within the project.
-            instance_id (NodeId | None): Instance ID of the file.
+            instance_id (NodeId | tuple[str, str] | None): Instance ID of the file.
 
         Returns:
             FileMultipartUploadSession: Object containing metadata about the created file, and information needed to upload the file content. Use this object to manage the file upload, and `exit` it once all parts are uploaded.
@@ -780,10 +800,11 @@ class SyncFilesAPI(SyncAPIClient):
             Upload binary data in two chunks:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> with client.files.multipart_upload_content_session(
-                ...     external_id="external-id", parts=2
+                ...     instance_id=NodeId("my-space", "my-file-xid"), parts=2
                 ... ) as session:
                 ...     # Note that the minimum chunk size is 5 MiB.
                 ...     session.upload_part(0, "hello" * 1_200_000)
@@ -795,24 +816,74 @@ class SyncFilesAPI(SyncAPIClient):
             )
         )
 
+    @overload
+    def retrieve_download_urls(
+        self,
+        id: int | Sequence[int],
+        external_id: None = None,
+        instance_id: None = None,
+        extended_expiration: bool = False,
+    ) -> dict[int, str]: ...
+
+    @overload
+    def retrieve_download_urls(
+        self,
+        id: None = None,
+        *,
+        external_id: str | SequenceNotStr[str],
+        instance_id: None = None,
+        extended_expiration: bool = False,
+    ) -> dict[str, str]: ...
+
+    @overload
+    def retrieve_download_urls(
+        self,
+        id: None = None,
+        external_id: None = None,
+        *,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]],
+        extended_expiration: bool = False,
+    ) -> dict[NodeId, str]: ...
+
+    @overload
     def retrieve_download_urls(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
-        instance_id: NodeId | Sequence[NodeId] | None = None,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None = None,
         extended_expiration: bool = False,
-    ) -> dict[int | str | NodeId, str]:
+    ) -> dict[int | str | NodeId, str]: ...
+
+    def retrieve_download_urls(
+        self,
+        id: int | Sequence[int] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None = None,
+        extended_expiration: bool = False,
+    ) -> dict[int, str] | dict[str, str] | dict[NodeId, str] | dict[int | str | NodeId, str]:
         """
         Get download links by id or external id.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
             external_id (str | SequenceNotStr[str] | None): External id or list of external ids.
-            instance_id (NodeId | Sequence[NodeId] | None): Instance id or list of instance ids.
+            instance_id (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None): Instance id or list of instance ids.
             extended_expiration (bool): Extend expiration time of download url to 1 hour. Defaults to false.
 
         Returns:
-            dict[int | str | NodeId, str]: Dictionary containing download urls.
+            dict[int, str] | dict[str, str] | dict[NodeId, str] | dict[int | str | NodeId, str]: Dictionary containing download urls.
+
+        Examples:
+
+            Get download URLs by instance id:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> urls = client.files.retrieve_download_urls(
+                ...     instance_id=NodeId("my-space", "my-file-xid")
+                ... )
         """
         return run_sync(
             self.__async_client.files.retrieve_download_urls(
@@ -825,14 +896,15 @@ class SyncFilesAPI(SyncAPIClient):
         directory: str | Path,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
-        instance_id: NodeId | Sequence[NodeId] | None = None,
+        instance_id: NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None = None,
         keep_directory_structure: bool = False,
         resolve_duplicate_file_names: bool = False,
     ) -> None:
         """
         `Download files by id or external id <https://api-docs.cognite.com/20230101/tag/Files/operation/downloadLinks>`_.
 
-        This method will stream all files to disk, never keeping more than 2MB in memory per worker.
+        This method streams all files to disk one chunk at a time. By default, chunk size is dynamic to maximize
+        throughput; set ``global_config.file_download_chunk_size`` (bytes) to enforce a fixed size.
         The files will be stored in the provided directory using the file name retrieved from the file metadata in CDF.
         You can also choose to keep the directory structure from CDF so that the files will be stored in subdirectories
         matching the directory attribute on the files. When missing, the (root) directory is used.
@@ -847,9 +919,8 @@ class SyncFilesAPI(SyncAPIClient):
             directory (str | Path): Directory to download the file(s) to.
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): External ID or list of external ids.
-            instance_id (NodeId | Sequence[NodeId] | None): Instance ID or list of instance ids.
-            keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF,
-                creating subdirectories as needed below the given directory.
+            instance_id (NodeId | tuple[str, str] | Sequence[NodeId | tuple[str, str]] | None): Instance ID or list of instance ids.
+            keep_directory_structure (bool): Whether or not to keep the directory hierarchy in CDF, creating subdirectories as needed below the given directory.
             resolve_duplicate_file_names (bool): Whether or not to resolve duplicate file names by appending a number on duplicate file names
 
         Examples:
@@ -863,9 +934,10 @@ class SyncFilesAPI(SyncAPIClient):
                 ...     directory="my_directory", id=[1, 2, 3], external_id=["abc", "def"]
                 ... )
 
-            Download files by id to the current directory:
+            Download files by instance id to the current directory:
 
-                >>> client.files.download(directory=".", id=[1, 2, 3])
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client.files.download(directory=".", instance_id=NodeId("my-space", "my-file-xid"))
         """
         return run_sync(
             self.__async_client.files.download(
@@ -879,7 +951,11 @@ class SyncFilesAPI(SyncAPIClient):
         )
 
     def download_to_path(
-        self, path: Path | str, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+        self,
+        path: Path | str,
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | tuple[str, str] | None = None,
     ) -> None:
         """
         Download a file to a specific target.
@@ -888,15 +964,18 @@ class SyncFilesAPI(SyncAPIClient):
             path (Path | str): Download to this path.
             id (int | None): Id of of the file to download.
             external_id (str | None): External id of the file to download.
-            instance_id (NodeId | None): Instance id of the file to download.
+            instance_id (NodeId | tuple[str, str] | None): Instance id of the file to download.
 
         Examples:
 
-            Download a file by id:
+            Download a file by instance id:
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.files.download_to_path("~/mydir/my_downloaded_file.txt", id=123)
+                >>> client.files.download_to_path(
+                ...     "~/mydir/my_downloaded_file.txt", instance_id=NodeId("my-space", "my-file-xid")
+                ... )
         """
         return run_sync(
             self.__async_client.files.download_to_path(
@@ -905,7 +984,7 @@ class SyncFilesAPI(SyncAPIClient):
         )
 
     def download_bytes(
-        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | tuple[str, str] | None = None
     ) -> bytes:
         """
         Download a file as bytes.
@@ -913,16 +992,19 @@ class SyncFilesAPI(SyncAPIClient):
         Args:
             id (int | None): Id of the file
             external_id (str | None): External id of the file
-            instance_id (NodeId | None): Instance id of the file
+            instance_id (NodeId | tuple[str, str] | None): Instance id of the file
 
         Examples:
 
             Download a file's content into memory:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> file_content = client.files.download_bytes(id=1)
+                >>> file_content = client.files.download_bytes(
+                ...     instance_id=NodeId("my-space", "my-file-xid")
+                ... )
 
         Returns:
             bytes: The file in binary format
