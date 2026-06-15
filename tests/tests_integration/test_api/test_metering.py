@@ -11,6 +11,7 @@ class TestMeteringAPI:
         res = cognite_client.metering.list()
 
         assert isinstance(res, MeteringDataList)
+        assert len(res) > 0
         assert all(meter.meter_id is not None for meter in res)
 
     def test_retrieve_single(self, cognite_client: CogniteClient) -> None:
