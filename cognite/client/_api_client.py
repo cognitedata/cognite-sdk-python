@@ -253,9 +253,7 @@ class APIClient(BasicAsyncAPIClient):
             if limit and (n_remaining := limit - total_retrieved) < current_limit:
                 current_limit = n_remaining
 
-            params["limit"] = current_limit
-            if next_cursor is not None:
-                params["cursor"] = next_cursor
+
 
             if method == "GET":
                 res = await self._get(url_path=url_path, params=params, headers=headers, semaphore=semaphore)
