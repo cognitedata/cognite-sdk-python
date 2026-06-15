@@ -31,21 +31,21 @@ class RecordsAPI(APIClient):
     ) -> asyncio.BoundedSemaphore | HierarchicalBoundedSemaphore:
         from cognite.client import global_config
 
+        write_op = RecordsConcurrencyOperation.WRITE
+        query_op = RecordsConcurrencyOperation.QUERY_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.QUERY_IMMUTABLE
+
         factory = global_config.concurrency_settings.records._semaphore_factory
         project = self._cognite_client.config.project
         match operation:
             case "write" | "delete":
-                return factory(RecordsConcurrencyOperation.WRITE, project)
+                return factory(write_op, project)
             case "query":
-                op = RecordsConcurrencyOperation.QUERY_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.QUERY_IMMUTABLE
-                return factory(op, project)
+                return factory(query_op, project)
             case "retrieve":
                 dedicated_op = RecordsConcurrencyOperation.RETRIEVE_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE
-                query_op = RecordsConcurrencyOperation.QUERY_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.QUERY_IMMUTABLE
                 return HierarchicalBoundedSemaphore(factory(dedicated_op, project), factory(query_op, project))
             case "aggregate":
                 dedicated_op = RecordsConcurrencyOperation.AGGREGATE_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE
-                query_op = RecordsConcurrencyOperation.QUERY_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.QUERY_IMMUTABLE
                 return HierarchicalBoundedSemaphore(factory(dedicated_op, project), factory(query_op, project))
 
     def _records_url(self, stream_id: str, suffix: str = "") -> str:
