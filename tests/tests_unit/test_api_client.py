@@ -999,6 +999,25 @@ class TestStandardList:
         with pytest.raises(AttributeError):
             res2._cognite_client  # type: ignore[attr-defined]
 
+    async def test_list_generator_does_not_send_null_cursor(
+        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=BASE_URL + URL_PATH + "/list",
+            status_code=200,
+            json={"items": [{"x": 1, "y": 2}]},
+        )
+        async for _ in api_client_with_token._list_generator(
+            method="POST",
+            list_cls=SomeResourceListWithClient,
+            resource_cls=SomeResourceWithClient,
+            resource_path=URL_PATH,
+        ):
+            pass
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert "cursor" not in body
+
     async def test_list_generator_raw_responses_does_not_send_null_cursor(
         self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
     ) -> None:
