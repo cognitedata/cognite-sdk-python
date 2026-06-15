@@ -18,12 +18,33 @@ ATLAS_METER_WITH_DATA: dict = {
         {"timestamp": 1765411200000, "average": 38500.5},
     ],
 }
+FILES_METER: dict = {"meterId": "files.storage_bytes", "datapoints": []}
 NONEXISTENT_ID = "nonexistent.meter.id"
 
 
 @pytest.fixture
 def metering_url(async_client: AsyncCogniteClient) -> str:
     return get_url(async_client.metering) + "/metering/meters"
+
+
+@pytest.fixture
+def mock_byids_with_data(httpx_mock: HTTPXMock, metering_url: str) -> None:
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{metering_url}/byids",
+        status_code=200,
+        json={"items": [ATLAS_METER_WITH_DATA]},
+    )
+
+
+@pytest.fixture
+def mock_list(httpx_mock: HTTPXMock, metering_url: str) -> None:
+    httpx_mock.add_response(
+        method="POST",
+        url=f"{metering_url}/list",
+        status_code=200,
+        json={"items": [ATLAS_METER, FILES_METER]},
+    )
 
 
 class TestMeteringAPI:
@@ -57,15 +78,8 @@ class TestMeteringAPI:
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        metering_url: str,
+        mock_byids_with_data: None,
     ) -> None:
-        httpx_mock.add_response(
-            method="POST",
-            url=f"{metering_url}/byids",
-            status_code=200,
-            json={"items": [ATLAS_METER_WITH_DATA]},
-        )
-
         res = cognite_client.metering.retrieve(
             id=ATLAS_METER["meterId"],
             start=1764547200000,
@@ -105,45 +119,34 @@ class TestMeteringAPI:
         httpx_mock: HTTPXMock,
         metering_url: str,
     ) -> None:
-        meters_data = [
-            {"meterId": "atlas.monthly_ai_tokens", "datapoints": []},
-            {"meterId": "files.storage_bytes", "datapoints": []},
-        ]
         httpx_mock.add_response(
             method="POST",
             url=f"{metering_url}/byids",
             status_code=200,
-            json={"items": meters_data},
+            json={"items": [ATLAS_METER, FILES_METER]},
         )
 
-        res = cognite_client.metering.retrieve(id=["atlas.monthly_ai_tokens", "files.storage_bytes"])
+        res = cognite_client.metering.retrieve(id=[ATLAS_METER["meterId"], FILES_METER["meterId"]])
 
         assert isinstance(res, MeteringDataList)
         assert len(res) == 2
-        assert res[0].meter_id == "atlas.monthly_ai_tokens"
-        assert res[1].meter_id == "files.storage_bytes"
+        assert res[0].meter_id == ATLAS_METER["meterId"]
+        assert res[1].meter_id == FILES_METER["meterId"]
 
         request = httpx_mock.get_requests()[0]
         assert request.method == "POST"
         body = jsgz_load(request.content)
         assert body["items"] == [
-            {"meterId": "atlas.monthly_ai_tokens"},
-            {"meterId": "files.storage_bytes"},
+            {"meterId": ATLAS_METER["meterId"]},
+            {"meterId": FILES_METER["meterId"]},
         ]
 
     def test_retrieve_list_of_ids_with_time_range(
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        metering_url: str,
+        mock_byids_with_data: None,
     ) -> None:
-        httpx_mock.add_response(
-            method="POST",
-            url=f"{metering_url}/byids",
-            status_code=200,
-            json={"items": [ATLAS_METER_WITH_DATA]},
-        )
-
         res = cognite_client.metering.retrieve(
             id=["atlas.monthly_ai_tokens"],
             start=1764547200000,
@@ -162,19 +165,8 @@ class TestMeteringAPI:
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        metering_url: str,
+        mock_list: None,
     ) -> None:
-        meters_data = [
-            {"meterId": "atlas.monthly_ai_tokens", "datapoints": []},
-            {"meterId": "files.storage_bytes", "datapoints": []},
-        ]
-        httpx_mock.add_response(
-            method="POST",
-            url=f"{metering_url}/list",
-            status_code=200,
-            json={"items": meters_data},
-        )
-
         res = cognite_client.metering.list()
 
         assert isinstance(res, MeteringDataList)
@@ -186,15 +178,16 @@ class TestMeteringAPI:
         httpx_mock: HTTPXMock,
         metering_url: str,
     ) -> None:
-        meters_data = [
-            {"meterId": "atlas.monthly_ai_tokens", "datapoints": []},
-            {"meterId": "atlas.monthly_ai_prompts", "datapoints": []},
-        ]
         httpx_mock.add_response(
             method="POST",
             url=f"{metering_url}/list",
             status_code=200,
-            json={"items": meters_data},
+            json={
+                "items": [
+                    {"meterId": "atlas.monthly_ai_tokens", "datapoints": []},
+                    {"meterId": "atlas.monthly_ai_prompts", "datapoints": []},
+                ]
+            },
         )
 
         prefix_filter = Prefix("meter_id", "atlas.")
@@ -217,15 +210,8 @@ class TestMeteringAPI:
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        metering_url: str,
+        mock_list: None,
     ) -> None:
-        httpx_mock.add_response(
-            method="POST",
-            url=f"{metering_url}/list",
-            status_code=200,
-            json={"items": [ATLAS_METER_WITH_DATA]},
-        )
-
         res = cognite_client.metering.list(start=1764547200000, number_of_datapoints=2)
 
         assert isinstance(res, MeteringDataList)
@@ -244,14 +230,10 @@ class TestMeteringAPI:
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        metering_url: str,
+        mock_byids_with_data: None,
         start: datetime | str,
         end: datetime | None,
     ) -> None:
-        httpx_mock.add_response(
-            method="POST", url=f"{metering_url}/byids", status_code=200, json={"items": [ATLAS_METER_WITH_DATA]}
-        )
-
         cognite_client.metering.retrieve(
             id=ATLAS_METER["meterId"],
             start=start,
