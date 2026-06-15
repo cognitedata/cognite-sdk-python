@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import TYPE_CHECKING, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.records import RecordId, RecordIdSequence, RecordWrite
@@ -24,50 +24,22 @@ class RecordsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Records"
         )
 
-    _OPERATION_TO_CONCURRENCY: ClassVar[dict[str, RecordsConcurrencyOperation]] = {
-        "write": RecordsConcurrencyOperation.WRITE,
-        "delete": RecordsConcurrencyOperation.WRITE,
-    }
-
-    def _get_semaphore(self, operation: Literal["write", "delete"]) -> asyncio.BoundedSemaphore:
+    def _get_semaphore(
+        self,
+        operation: Literal["write", "delete", "query", "retrieve", "aggregate"],
+        stream_type: StreamType = "immutable",
+    ) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
 
-        return global_config.concurrency_settings.records._semaphore_factory(
-            self._OPERATION_TO_CONCURRENCY[operation], project=self._cognite_client.config.project
-        )
-
-    def _get_query_semaphore(self, stream_type: StreamType) -> asyncio.BoundedSemaphore:
-        from cognite.client import global_config
-
-        op = (
-            RecordsConcurrencyOperation.QUERY_MUTABLE
-            if stream_type == "mutable"
-            else RecordsConcurrencyOperation.QUERY_IMMUTABLE
-        )
-        return global_config.concurrency_settings.records._semaphore_factory(
-            op, project=self._cognite_client.config.project
-        )
-
-    def _get_retrieve_semaphore(self, stream_type: StreamType) -> asyncio.BoundedSemaphore:
-        from cognite.client import global_config
-
-        op = (
-            RecordsConcurrencyOperation.RETRIEVE_MUTABLE
-            if stream_type == "mutable"
-            else RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE
-        )
-        return global_config.concurrency_settings.records._semaphore_factory(
-            op, project=self._cognite_client.config.project
-        )
-
-    def _get_aggregate_semaphore(self, stream_type: StreamType) -> asyncio.BoundedSemaphore:
-        from cognite.client import global_config
-
-        op = (
-            RecordsConcurrencyOperation.AGGREGATE_MUTABLE
-            if stream_type == "mutable"
-            else RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE
-        )
+        match operation:
+            case "write" | "delete":
+                op = RecordsConcurrencyOperation.WRITE
+            case "query":
+                op = RecordsConcurrencyOperation.QUERY_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.QUERY_IMMUTABLE
+            case "retrieve":
+                op = RecordsConcurrencyOperation.RETRIEVE_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE
+            case "aggregate":
+                op = RecordsConcurrencyOperation.AGGREGATE_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE
         return global_config.concurrency_settings.records._semaphore_factory(
             op, project=self._cognite_client.config.project
         )
