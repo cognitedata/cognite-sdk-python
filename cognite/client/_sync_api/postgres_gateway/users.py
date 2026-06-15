@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9e343dcd2734f2822251a2f28026bdbe
+7726c8f9c75b41a5236ebf739d793d28
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -169,7 +169,7 @@ class SyncUsersAPI(SyncAPIClient):
 
     def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> User | UserList:
         """
-        `Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_.
+        `Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retrieve_users>`_.
 
         Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames
 
