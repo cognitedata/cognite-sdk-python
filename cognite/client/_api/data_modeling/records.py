@@ -24,7 +24,7 @@ class RecordsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Records"
         )
 
-    def _get_semaphore(
+    def _get_semaphore(  # type: ignore[override]
         self,
         operation: Literal["write", "delete", "query", "retrieve", "aggregate"],
         stream_type: StreamType = "immutable",
@@ -32,7 +32,11 @@ class RecordsAPI(APIClient):
         from cognite.client import global_config
 
         write_op = RecordsConcurrencyOperation.WRITE
-        query_op = RecordsConcurrencyOperation.QUERY_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.QUERY_IMMUTABLE
+        query_op = (
+            RecordsConcurrencyOperation.QUERY_MUTABLE
+            if stream_type == "mutable"
+            else RecordsConcurrencyOperation.QUERY_IMMUTABLE
+        )
 
         factory = global_config.concurrency_settings.records._semaphore_factory
         project = self._cognite_client.config.project
@@ -42,10 +46,18 @@ class RecordsAPI(APIClient):
             case "query":
                 return factory(query_op, project)
             case "retrieve":
-                dedicated_op = RecordsConcurrencyOperation.RETRIEVE_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE
+                dedicated_op = (
+                    RecordsConcurrencyOperation.RETRIEVE_MUTABLE
+                    if stream_type == "mutable"
+                    else RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE
+                )
                 return HierarchicalBoundedSemaphore(factory(dedicated_op, project), factory(query_op, project))
             case "aggregate":
-                dedicated_op = RecordsConcurrencyOperation.AGGREGATE_MUTABLE if stream_type == "mutable" else RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE
+                dedicated_op = (
+                    RecordsConcurrencyOperation.AGGREGATE_MUTABLE
+                    if stream_type == "mutable"
+                    else RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE
+                )
                 return HierarchicalBoundedSemaphore(factory(dedicated_op, project), factory(query_op, project))
 
     def _records_url(self, stream_id: str, suffix: str = "") -> str:

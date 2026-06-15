@@ -168,8 +168,15 @@ class TestRecordsConcurrencyConfig:
 
     @pytest.mark.parametrize(
         "attr",
-        ["write", "query_mutable", "query_immutable", "retrieve_mutable", "retrieve_immutable",
-         "aggregate_mutable", "aggregate_immutable"],
+        [
+            "write",
+            "query_mutable",
+            "query_immutable",
+            "retrieve_mutable",
+            "retrieve_immutable",
+            "aggregate_mutable",
+            "aggregate_immutable",
+        ],
     )
     def test_setter_raises_after_freeze(self, attr: str) -> None:
         cs = ConcurrencySettings()
@@ -200,13 +207,18 @@ class TestRecordsConcurrencyConfig:
     def test_dedicated_exceeding_shared_raises_on_init(self, dedicated: str, shared: str) -> None:
         cs = ConcurrencySettings()
         defaults = {
-            "write": 20, "query_mutable": 30, "query_immutable": 10,
-            "retrieve_mutable": 20, "retrieve_immutable": 10,
-            "aggregate_mutable": 10, "aggregate_immutable": 5,
+            "write": 20,
+            "query_mutable": 30,
+            "query_immutable": 10,
+            "retrieve_mutable": 20,
+            "retrieve_immutable": 10,
+            "aggregate_mutable": 10,
+            "aggregate_immutable": 5,
         }
         shared_val = defaults[shared]
         defaults[dedicated] = shared_val + 1
         from cognite.client.utils._concurrency import RecordsGlobalConcurrencyConfig
+
         with pytest.raises(ValueError, match="Dedicated budget must be <= shared query budget"):
             RecordsGlobalConcurrencyConfig(cs, **defaults)
 
@@ -257,10 +269,7 @@ class TestRecordsSemaphoreFactory:
         assert sem._value == expected_value
 
     async def test_all_operations_produce_distinct_semaphores(self) -> None:
-        sems = {
-            op: self.cs.records._semaphore_factory(op, "proj-a")
-            for op in RecordsConcurrencyOperation
-        }
+        sems = {op: self.cs.records._semaphore_factory(op, "proj-a") for op in RecordsConcurrencyOperation}
         assert len(set(id(s) for s in sems.values())) == len(RecordsConcurrencyOperation)
 
     async def test_cache_hit(self) -> None:
@@ -459,7 +468,7 @@ class TestHierarchicalBoundedSemaphoreAdversarial:
         sem2 = asyncio.BoundedSemaphore(1)
         # Acquire order: sem0, sem1, sem2
         # Release order (reversed): sem2, sem1 (boom!), sem0 — sem0 is never reached
-        h = HierarchicalBoundedSemaphore(sem0, sem1, sem2)
+        h = HierarchicalBoundedSemaphore(sem0, sem1, sem2)  # type: ignore[arg-type]
 
         with pytest.raises(RuntimeError, match="boom on release"):
             async with h:
@@ -484,7 +493,7 @@ class TestHierarchicalBoundedSemaphoreAdversarial:
         sem0 = asyncio.BoundedSemaphore(1)
         sem1 = asyncio.BoundedSemaphore(1)
         sem2 = BoomSemaphore()  # last acquired = first released = first to explode
-        h = HierarchicalBoundedSemaphore(sem0, sem1, sem2)
+        h = HierarchicalBoundedSemaphore(sem0, sem1, sem2)  # type: ignore[arg-type]
 
         with pytest.raises(RuntimeError, match="boom"):
             async with h:
