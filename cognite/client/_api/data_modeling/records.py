@@ -71,7 +71,7 @@ class RecordsAPI(APIClient):
         Args:
             items (RecordId | Sequence[RecordId]): Records to delete.
             stream_id (str): External ID of the stream to delete from.
-            stream_type (str): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
+            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
             ignore_unknown_ids (Literal[True]): Currently only True is supported
 
         Examples:
@@ -114,7 +114,7 @@ class RecordsAPI(APIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to ingest.
             stream_id (str): External ID of the stream to ingest into.
-            stream_type (str): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
+            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
 
         Examples:
 
@@ -170,7 +170,7 @@ class RecordsAPI(APIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
             stream_id (str): External ID of the stream to upsert into.
-            stream_type (str): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
+            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
             upsert_mode (Literal['replace']): How existing records are updated. Currently only ``"replace"`` is supported, which fully replaces the existing record. Defaults to ``"replace"``.
 
         Examples:
@@ -230,7 +230,7 @@ class RecordsAPI(APIClient):
 
         Args:
             stream_id (str): External ID of the stream to query.
-            stream_type (str): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
+            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
             last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
                 immutable streams** (must include a lower bound).
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
