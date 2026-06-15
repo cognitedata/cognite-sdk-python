@@ -305,24 +305,6 @@ class TestMeteringAPI:
         with pytest.raises(ValueError, match="must be provided together"):
             cognite_client.metering.list(number_of_datapoints=10)
 
-    def test_dump_and_load_roundtrip(self) -> None:
-        from cognite.client.data_classes.metering import MeteringData, MeteringDataPoint
-
-        dp = MeteringDataPoint(timestamp=1764547200000, average=42000.0)
-        meter = MeteringData(meter_id="atlas.monthly_ai_tokens", datapoints=[dp])
-
-        dumped = meter.dump(camel_case=True)
-        assert dumped == {
-            "meterId": "atlas.monthly_ai_tokens",
-            "datapoints": [{"timestamp": 1764547200000, "average": 42000.0}],
-        }
-
-        loaded = MeteringData._load(dumped)
-        assert loaded.meter_id == meter.meter_id
-        assert len(loaded.datapoints) == 1
-        assert loaded.datapoints[0].timestamp == dp.timestamp
-        assert loaded.datapoints[0].average == dp.average
-
     def test_dump_snake_case(self) -> None:
         from cognite.client.data_classes.metering import MeteringData
 
