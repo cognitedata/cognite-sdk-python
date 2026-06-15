@@ -1,5 +1,6 @@
 import re
 from datetime import datetime, timezone
+from typing import Any
 
 import pytest
 from pytest_httpx import HTTPXMock
@@ -24,6 +25,11 @@ NONEXISTENT_ID = "nonexistent.meter.id"
 @pytest.fixture
 def metering_url(async_client: AsyncCogniteClient) -> str:
     return get_url(async_client.metering) + "/metering/meters"
+
+
+@pytest.fixture
+def single_meter_url_pattern(metering_url: str) -> re.Pattern:
+    return re.compile(re.escape(f"{metering_url}/{ATLAS_METER['meterId']}") + r"\?.*")
 
 
 class TestMeteringAPI:
@@ -57,12 +63,11 @@ class TestMeteringAPI:
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        metering_url: str,
+        single_meter_url_pattern: re.Pattern,
     ) -> None:
-        url_pattern = re.compile(re.escape(f"{metering_url}/{ATLAS_METER['meterId']}") + r"\?.*")
         httpx_mock.add_response(
             method="GET",
-            url=url_pattern,
+            url=single_meter_url_pattern,
             status_code=200,
             json=ATLAS_METER_WITH_DATA,
         )
@@ -234,76 +239,68 @@ class TestMeteringAPI:
         assert body["start"] == 1764547200000
         assert body["numberOfDatapoints"] == 2
 
-    def test_retrieve_with_datetime_start_end(
+    @pytest.mark.parametrize(
+        "start,end",
+        [
+            (datetime(2025, 1, 1, tzinfo=timezone.utc), datetime(2025, 2, 1, tzinfo=timezone.utc)),
+            ("4w-ago", None),
+        ],
+    )
+    def test_retrieve_start_type_conversion(
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
-        metering_url: str,
+        single_meter_url_pattern: re.Pattern,
+        start: datetime | str,
+        end: datetime | None,
     ) -> None:
-        url_pattern = re.compile(re.escape(f"{metering_url}/{ATLAS_METER['meterId']}") + r"\?.*")
-        httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=ATLAS_METER_WITH_DATA)
-
-        start_dt = datetime(2025, 1, 1, tzinfo=timezone.utc)
-        end_dt = datetime(2025, 2, 1, tzinfo=timezone.utc)
-        cognite_client.metering.retrieve(
-            id=ATLAS_METER["meterId"],
-            start=start_dt,
-            end=end_dt,
-            number_of_datapoints=10,
-        )
-
-        request_url = str(httpx_mock.get_requests()[0].url)
-        assert f"start={timestamp_to_ms(start_dt)}" in request_url
-        assert f"end={timestamp_to_ms(end_dt)}" in request_url
-
-    def test_retrieve_with_relative_string_start(
-        self,
-        cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
-        metering_url: str,
-    ) -> None:
-        url_pattern = re.compile(re.escape(f"{metering_url}/{ATLAS_METER['meterId']}") + r"\?.*")
-        httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=ATLAS_METER_WITH_DATA)
+        httpx_mock.add_response(method="GET", url=single_meter_url_pattern, status_code=200, json=ATLAS_METER_WITH_DATA)
 
         cognite_client.metering.retrieve(
             id=ATLAS_METER["meterId"],
-            start="4w-ago",
+            start=start,
+            end=end,
             number_of_datapoints=10,
         )
 
         request_url = str(httpx_mock.get_requests()[0].url)
         assert "start=" in request_url
-        # value is an epoch ms integer, not the string "4w-ago"
         start_val = int(request_url.split("start=")[1].split("&")[0])
         assert start_val > 0
+        if isinstance(start, datetime):
+            assert start_val == timestamp_to_ms(start)
+            assert end is not None
+            assert f"end={timestamp_to_ms(end)}" in request_url
 
-    def test_retrieve_start_without_number_of_datapoints_raises(
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"id": "atlas.monthly_ai_tokens", "start": 1764547200000},
+            {"id": "atlas.monthly_ai_tokens", "number_of_datapoints": 10},
+        ],
+    )
+    def test_retrieve_missing_paired_param_raises(
         self,
         cognite_client: CogniteClient,
+        kwargs: dict[str, Any],
     ) -> None:
         with pytest.raises(ValueError, match="must be provided together"):
-            cognite_client.metering.retrieve(id="atlas.monthly_ai_tokens", start=1764547200000)
+            cognite_client.metering.retrieve(**kwargs)
 
-    def test_retrieve_number_of_datapoints_without_start_raises(
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"start": 1764547200000},
+            {"number_of_datapoints": 10},
+        ],
+    )
+    def test_list_missing_paired_param_raises(
         self,
         cognite_client: CogniteClient,
+        kwargs: dict[str, Any],
     ) -> None:
         with pytest.raises(ValueError, match="must be provided together"):
-            cognite_client.metering.retrieve(id="atlas.monthly_ai_tokens", number_of_datapoints=10)
-
-    def test_list_start_without_number_of_datapoints_raises(
-        self,
-        cognite_client: CogniteClient,
-    ) -> None:
-        with pytest.raises(ValueError, match="must be provided together"):
-            cognite_client.metering.list(start=1764547200000)
-
-    def test_list_number_of_datapoints_without_start_raises(
-        self,
-        cognite_client: CogniteClient,
-    ) -> None:
-        with pytest.raises(ValueError, match="must be provided together"):
-            cognite_client.metering.list(number_of_datapoints=10)
+            cognite_client.metering.list(**kwargs)
 
     def test_dump_snake_case(self) -> None:
         from cognite.client.data_classes.metering import MeteringData
