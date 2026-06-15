@@ -1,6 +1,6 @@
 """
 ===============================================================================
-da348b995a08ea5d27ef2edb76b74477
+2c36ebd92aba4d3441e88d4f8de45f7e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -131,7 +131,7 @@ class SyncMeteringAPI(SyncAPIClient):
             List meters filtered by prefix (e.g., all meters for the 'atlas' service):
 
                 >>> from cognite.client.data_classes.filters import Prefix
-                >>> prefix_filter = Prefix("meterId", "atlas.")
+                >>> prefix_filter = Prefix("meter_id", "atlas.")
                 >>> meters = client.metering.list(filter=prefix_filter)
 
             List meters with historical data:

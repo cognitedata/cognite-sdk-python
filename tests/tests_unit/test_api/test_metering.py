@@ -197,7 +197,7 @@ class TestMeteringAPI:
             json={"items": meters_data},
         )
 
-        prefix_filter = Prefix("meterId", "atlas.")
+        prefix_filter = Prefix("meter_id", "atlas.")
         res = cognite_client.metering.list(filter=prefix_filter)
 
         assert isinstance(res, MeteringDataList)

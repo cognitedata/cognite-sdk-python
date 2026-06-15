@@ -151,7 +151,7 @@ class MeteringAPI(APIClient):
             List meters filtered by prefix (e.g., all meters for the 'atlas' service):
 
                 >>> from cognite.client.data_classes.filters import Prefix
-                >>> prefix_filter = Prefix("meterId", "atlas.")
+                >>> prefix_filter = Prefix("meter_id", "atlas.")
                 >>> meters = client.metering.list(filter=prefix_filter)
 
             List meters with historical data:
