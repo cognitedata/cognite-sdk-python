@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, overload
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.metering import MeteringData, MeteringDataList
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import MeterIdSequence
 from cognite.client.utils._time import timestamp_to_ms
@@ -109,13 +110,18 @@ class MeteringAPI(APIClient):
         """
         self._warning.warn()
         identifiers = MeterIdSequence.load(id)
-        return await self._retrieve_multiple(
-            list_cls=MeteringDataList,
-            resource_cls=MeteringData,
-            identifiers=identifiers,
-            other_params=self._time_range_params(start, end, number_of_datapoints) or None,
-            headers=self._alpha_version_header(),
-        )
+        try:
+            return await self._retrieve_multiple(
+                list_cls=MeteringDataList,
+                resource_cls=MeteringData,
+                identifiers=identifiers,
+                other_params=self._time_range_params(start, end, number_of_datapoints) or None,
+                headers=self._alpha_version_header(),
+            )
+        except CogniteAPIError as e:
+            if identifiers.is_singleton() and e.code == 404:
+                return None
+            raise
 
     async def list(
         self,

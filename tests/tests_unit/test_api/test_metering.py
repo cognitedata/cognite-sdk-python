@@ -105,8 +105,8 @@ class TestMeteringAPI:
         httpx_mock.add_response(
             method="POST",
             url=f"{metering_url}/byids",
-            status_code=400,
-            json={"error": {"message": "Not Found", "missing": [{"meterId": NONEXISTENT_ID}]}},
+            status_code=404,
+            json={"error": {"message": "Meters not found", "code": 404}},
         )
 
         res = cognite_client.metering.retrieve(id=NONEXISTENT_ID)
