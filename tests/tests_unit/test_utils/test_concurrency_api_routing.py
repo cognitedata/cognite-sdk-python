@@ -9,16 +9,20 @@ One representative test per (sub_config, operation) combination — adding more 
 
 from __future__ import annotations
 
+import asyncio
 import re
 from collections.abc import Awaitable, Callable, Iterator
 from typing import Any
 
+import httpx
 import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.data_modeling.records import RecordId, RecordWrite
+from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._concurrency import HierarchicalBoundedSemaphore
 from tests.utils import fresh_concurrency_state
 
 SemCall = tuple[str, str, str]  # (sub_config_name (eg 'general'), operation, project)
@@ -211,6 +215,85 @@ class TestRecordsSemaphoreRouting:
         ops = [op for op, _ in records_spy]
         assert expected_operation in ops, f"Expected {expected_operation!r} in {ops}"
         assert async_client.config.project in {proj for _, proj in records_spy}
+
+
+class TestHierarchicalSemaphoreThroughHTTPClient:
+    """Verify that HierarchicalBoundedSemaphore works through the real SDK HTTP chain.
+
+    The type hints say asyncio.BoundedSemaphore, but at runtime the HTTP client
+    just does ``async with semaphore``. These tests confirm that a
+    HierarchicalBoundedSemaphore actually acquires and releases both inner
+    semaphores when passed through _post.
+    """
+
+    async def test_post_with_hierarchical_semaphore_succeeds(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+    ) -> None:
+        httpx_mock.add_response(method="POST", url=re.compile(r".*"), status_code=200, json={"items": []})
+        dedicated = asyncio.BoundedSemaphore(1)
+        query = asyncio.BoundedSemaphore(1)
+        h = HierarchicalBoundedSemaphore(dedicated, query)
+
+        await async_client.data_modeling.records._post(
+            url_path="/streams/test/records/filter",
+            json={"limit": 10},
+            semaphore=h,
+        )
+        assert dedicated._value == 1, "dedicated semaphore should be released after request"
+        assert query._value == 1, "query semaphore should be released after request"
+
+    async def test_post_with_hierarchical_semaphore_releases_on_http_error(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+    ) -> None:
+        httpx_mock.add_response(method="POST", url=re.compile(r".*"), status_code=500, json={"error": {"message": "fail", "code": 500}})
+        dedicated = asyncio.BoundedSemaphore(1)
+        query = asyncio.BoundedSemaphore(1)
+        h = HierarchicalBoundedSemaphore(dedicated, query)
+
+        with pytest.raises(CogniteAPIError):
+            await async_client.data_modeling.records._post(
+                url_path="/streams/test/records/filter",
+                json={"limit": 10},
+                semaphore=h,
+            )
+        assert dedicated._value == 1, "dedicated semaphore should be released after error"
+        assert query._value == 1, "query semaphore should be released after error"
+
+    async def test_hierarchical_semaphore_limits_concurrent_requests(
+        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+    ) -> None:
+        hold = asyncio.Event()
+
+        async def slow_response(request: Any) -> Any:
+            await hold.wait()
+            return httpx.Response(200, json={"items": []})
+
+        httpx_mock.add_callback(slow_response, method="POST", url=re.compile(r".*"), is_optional=True)
+        httpx_mock.add_callback(slow_response, method="POST", url=re.compile(r".*"), is_optional=True)
+        httpx_mock.add_callback(slow_response, method="POST", url=re.compile(r".*"), is_optional=True)
+
+        dedicated = asyncio.BoundedSemaphore(1)
+        query = asyncio.BoundedSemaphore(2)
+
+        async def make_request() -> None:
+            h = HierarchicalBoundedSemaphore(dedicated, query)
+            await async_client.data_modeling.records._post(
+                url_path="/streams/test/records/filter",
+                json={"limit": 10},
+                semaphore=h,
+            )
+
+        t1 = asyncio.create_task(make_request())
+        t2 = asyncio.create_task(make_request())
+        await asyncio.sleep(0.05)
+
+        assert dedicated._value == 0, "dedicated(1) should be fully consumed by first request"
+        assert query._value == 1, "query(2) should have 1 slot consumed"
+
+        hold.set()
+        await asyncio.gather(t1, t2)
+        assert dedicated._value == 1
+        assert query._value == 2
 
 
 class TestStrictFixtureCatchesMissingSemaphore:
