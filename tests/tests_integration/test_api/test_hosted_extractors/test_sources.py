@@ -64,6 +64,9 @@ class TestSources:
 
             with pytest.raises(CogniteNotFoundError):
                 cognite_client.hosted_extractors.sources.retrieve(created.external_id)
+            assert (
+                cognite_client.hosted_extractors.sources.retrieve(created.external_id, ignore_unknown_ids=True) is None
+            )
 
         finally:
             cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)

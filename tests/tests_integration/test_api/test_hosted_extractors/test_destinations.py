@@ -43,6 +43,10 @@ class TestDestinations:
 
             with pytest.raises(CogniteNotFoundError):
                 cognite_client.hosted_extractors.destinations.retrieve(created.external_id)
+            assert (
+                cognite_client.hosted_extractors.destinations.retrieve(created.external_id, ignore_unknown_ids=True)
+                is None
+            )
 
         finally:
             if created:
