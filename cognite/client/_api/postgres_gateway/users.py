@@ -189,7 +189,7 @@ class UsersAPI(APIClient):
     async def retrieve(self, username: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UserList: ...
 
     async def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> User | UserList:
-        """`Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_.
+        """`Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retrieve_users>`_.
 
         Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames
 
