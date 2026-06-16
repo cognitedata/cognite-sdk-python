@@ -61,14 +61,14 @@ class SourcesAPI(APIClient):
             yield item
 
     @overload
-    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source: ...
+    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source | None: ...
 
     @overload
     async def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> SourceList: ...
 
     async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> Source | SourceList:
+    ) -> Source | SourceList | None:
         """`Retrieve one or more sources <https://api-docs.cognite.com/20230101/tag/Sources/operation/retrieve_sources>`_.
 
         Args:
@@ -76,7 +76,7 @@ class SourcesAPI(APIClient):
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
-            Source | SourceList: Requested sources
+            Source | SourceList | None: Requested sources
 
         Examples:
 

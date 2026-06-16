@@ -60,23 +60,22 @@ class MappingsAPI(APIClient):
             yield item
 
     @overload
-    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Mapping: ...
+    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Mapping | None: ...
 
     @overload
     async def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> MappingList: ...
 
     async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> Mapping | MappingList:
+    ) -> Mapping | MappingList | None:
         """`Retrieve one or more mappings <https://api-docs.cognite.com/20230101/tag/Mappings/operation/retrieve_mappings>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
             ignore_unknown_ids (bool): Ignore external IDs that are not found
 
-
         Returns:
-            Mapping | MappingList: Requested mappings
+            Mapping | MappingList | None: Requested mappings
 
         Examples:
 
