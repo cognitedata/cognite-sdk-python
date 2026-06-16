@@ -543,6 +543,15 @@ class LegacyDataModelScope(Capability.Scope):
 
 
 @dataclass(frozen=True)
+class AppExternalIdScope(Capability.Scope):
+    _scope_name = "appExternalIdScope"
+    external_ids: list[str]
+
+    def as_tuples(self) -> set[tuple[str, str]]:
+        return {(self._scope_name, s) for s in self.external_ids}
+
+
+@dataclass(frozen=True)
 class UnknownScope(Capability.Scope):
     """
     This class is used for scopes that are not implemented in this version of the SDK.
@@ -1441,6 +1450,68 @@ class AuditlogAcl(Capability):
 
     class Scope:
         All = AllScope
+
+
+@dataclass
+class AppHostingAcl(Capability):
+    _capability_name = "appHostingAcl"
+    actions: Sequence[Action]
+    scope: AllScope | AppExternalIdScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Write = "WRITE"
+        Run = "RUN"
+
+    class Scope:
+        All = AllScope
+        AppExternalId = AppExternalIdScope
+
+
+@dataclass
+class ChartsAdminAcl(Capability):
+    _capability_name = "chartsAdminAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Update = "UPDATE"
+        Delete = "DELETE"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class CogUnitsAcl(Capability):
+    _capability_name = "cogUnitsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class SimulatorsAcl(Capability):
+    _capability_name = "simulatorsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Write = "WRITE"
+        Delete = "DELETE"
+        Run = "RUN"
+        Manage = "MANAGE"
+
+    class Scope:
+        All = AllScope
+        DataSet = DataSetScope
 
 
 @dataclass
