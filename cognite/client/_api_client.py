@@ -15,8 +15,6 @@ from typing import (
     overload,
 )
 
-_T = TypeVar("_T")
-
 from cognite.client._basic_api_client import BasicAsyncAPIClient
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -54,6 +52,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 logger = logging.getLogger(__name__)
 
+_T = TypeVar("_T")
 VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"}
 
 
