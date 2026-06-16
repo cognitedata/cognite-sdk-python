@@ -123,7 +123,8 @@ class FailedRequestHandler:
                 self._raise_api_error(CogniteDuplicatedError, cluster, project)
             case 400 | 404 | 422, None, list():
                 self._raise_api_error(CogniteNotFoundError, cluster, project)
-            case 404, *_:
+            case 404, None, None:
+                self.missing = []  # Some recent APIs return 404 without a missing list when a resource is not found
                 self._raise_api_error(CogniteNotFoundError, cluster, project)
             case _:
                 self._raise_api_error(CogniteAPIError, cluster, project)
