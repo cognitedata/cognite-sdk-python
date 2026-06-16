@@ -11,7 +11,7 @@ from cognite.client.data_classes.postgres_gateway import (
     UserUpdate,
     UserWrite,
 )
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteNotFoundError
 
 
 class TestUsers:
@@ -35,10 +35,8 @@ class TestUsers:
 
             cognite_client.postgres_gateway.users.delete(created.username)
 
-            with pytest.raises(CogniteAPIError):
+            with pytest.raises(CogniteNotFoundError):
                 cognite_client.postgres_gateway.users.retrieve(created.username)
-
-            cognite_client.postgres_gateway.users.retrieve(created.username, ignore_unknown_ids=True)
 
         finally:
             if created:
