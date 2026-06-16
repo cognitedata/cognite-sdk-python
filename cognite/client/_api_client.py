@@ -85,7 +85,7 @@ class APIClient(BasicAsyncAPIClient):
             "In the next major version of the SDK (v9), retrieving a single non-existent resource will return None "
             "instead of raising CogniteNotFoundError.",
             FutureWarning,
-            stacklevel=3,
+            stacklevel=2,
         )
         raise CogniteNotFoundError(message="Resource not found", code=404, missing=[missing])
 
