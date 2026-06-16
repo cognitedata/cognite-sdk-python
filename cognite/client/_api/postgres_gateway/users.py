@@ -216,6 +216,7 @@ class UsersAPI(APIClient):
             identifiers=UsernameSequence.load(usernames=username),
             ignore_unknown_ids=ignore_unknown_ids,
         )
+        # TODO: Remove in v9
         return self._raise_not_found_if_none(result, {"username": username})
 
     async def list(self, limit: int = DEFAULT_LIMIT_READ) -> UserList:
