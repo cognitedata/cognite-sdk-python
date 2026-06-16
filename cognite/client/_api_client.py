@@ -10,9 +10,12 @@ from typing import (
     Any,
     ClassVar,
     Literal,
+    TypeVar,
     cast,
     overload,
 )
+
+_T = TypeVar("_T")
 
 from cognite.client._basic_api_client import BasicAsyncAPIClient
 from cognite.client.data_classes._base import (
@@ -71,6 +74,21 @@ class APIClient(BasicAsyncAPIClient):
         return global_config.concurrency_settings.general._semaphore_factory(
             operation, project=self._cognite_client.config.project
         )
+
+    @staticmethod
+    def _raise_not_found_if_none(result: _T | None, missing: dict[str, Any]) -> _T:
+        # TODO: Remove in v9: This method is a stop-gap after it was discovered that some APIs
+        #       don't follow the "retrieve rule" in the SDK.
+        if result is not None:
+            return result
+
+        warnings.warn(
+            "In the next major version of the SDK (v9), retrieving a single non-existent resource will return None "
+            "instead of raising CogniteNotFoundError.",
+            FutureWarning,
+            stacklevel=3,
+        )
+        raise CogniteNotFoundError(message="Resource not found", code=404, missing=[missing])
 
     async def _retrieve(
         self,

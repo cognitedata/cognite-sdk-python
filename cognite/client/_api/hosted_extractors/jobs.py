@@ -100,12 +100,13 @@ class JobsAPI(APIClient):
 
         """
         self._warning.warn()
-        return await self._retrieve_multiple(
+        result = await self._retrieve_multiple(
             list_cls=JobList,
             resource_cls=Job,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             ignore_unknown_ids=ignore_unknown_ids,
         )
+        return self._raise_not_found_if_none(result, {"externalId": external_ids})
 
     async def delete(
         self,
