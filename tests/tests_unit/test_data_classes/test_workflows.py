@@ -24,6 +24,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowDefinitionUpsert,
     WorkflowExecutionDetailed,
     WorkflowIds,
+    WorkflowRecordStreamTriggerRule,
     WorkflowTask,
     WorkflowTaskOutput,
     WorkflowTaskParameters,
@@ -389,3 +390,80 @@ class TestUnknownWorkflowTaskParameters:
         data = {"someUserKey": 42, "nested": {"a": 1}}
         params = UnknownWorkflowTaskParameters("futureType", data)
         assert params.dump(camel_case=True) == data
+
+
+class TestWorkflowRecordStreamTriggerRule:
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            {
+                "triggerType": "recordStream",
+                "streamExternalId": "my-stream",
+                "batchSize": 100,
+                "batchTimeout": 60,
+            },
+            {
+                "triggerType": "recordStream",
+                "streamExternalId": "my-stream",
+                "batchSize": 500,
+                "batchTimeout": 300,
+                "initializeCursor": "6h-ago",
+            },
+            {
+                "triggerType": "recordStream",
+                "streamExternalId": "my-stream",
+                "batchSize": 10,
+                "batchTimeout": 30,
+                "sources": [
+                    {
+                        "source": {
+                            "space": "my-space",
+                            "externalId": "my-container",
+                            "type": "container",
+                        },
+                        "properties": ["name", "status"],
+                    }
+                ],
+                "initializeCursor": "2d-ago",
+            },
+        ],
+    )
+    def test_serialization(self, raw: dict[str, Any]) -> None:
+        loaded = WorkflowRecordStreamTriggerRule._load_trigger(raw)
+        assert loaded.dump(camel_case=True) == raw
+
+    def test_construct_with_initialize_cursor(self) -> None:
+        rule = WorkflowRecordStreamTriggerRule(
+            stream_external_id="my-stream",
+            batch_size=100,
+            batch_timeout=60,
+            initialize_cursor="1d-ago",
+        )
+        assert rule.dump(camel_case=True) == {
+            "triggerType": "recordStream",
+            "streamExternalId": "my-stream",
+            "batchSize": 100,
+            "batchTimeout": 60,
+            "initializeCursor": "1d-ago",
+        }
+
+    def test_omitted_initialize_cursor_not_dumped(self) -> None:
+        rule = WorkflowRecordStreamTriggerRule(
+            stream_external_id="my-stream",
+            batch_size=100,
+            batch_timeout=60,
+        )
+        dumped = rule.dump(camel_case=True)
+        assert "initializeCursor" not in dumped
+
+    def test_load_via_trigger_rule_dispatch(self) -> None:
+        raw = {
+            "triggerType": "recordStream",
+            "streamExternalId": "my-stream",
+            "batchSize": 100,
+            "batchTimeout": 60,
+            "initializeCursor": "3m-ago",
+        }
+        loaded = WorkflowRecordStreamTriggerRule._load(raw)
+        assert isinstance(loaded, WorkflowRecordStreamTriggerRule)
+        assert loaded.initialize_cursor == "3m-ago"
