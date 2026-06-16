@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d53ba8a32582c731b9981fbe8046e1d2
+a96032cef7a1d968ccf48534373696ed
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -56,14 +56,14 @@ class SyncDestinationsAPI(SyncAPIClient):
         yield from SyncIterator(self.__async_client.hosted_extractors.destinations(chunk_size=chunk_size, limit=limit))
 
     @overload
-    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Destination: ...
+    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Destination | None: ...
 
     @overload
     def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> DestinationList: ...
 
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> Destination | DestinationList:
+    ) -> Destination | DestinationList | None:
         """
         `Retrieve one or more destinations <https://api-docs.cognite.com/20230101/tag/Destinations/operation/retrieve_destinations>`_.
 
@@ -71,9 +71,8 @@ class SyncDestinationsAPI(SyncAPIClient):
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
             ignore_unknown_ids (bool): Ignore external IDs that are not found
 
-
         Returns:
-            Destination | DestinationList: Requested destinations
+            Destination | DestinationList | None: Requested destinations
 
         Examples:
 

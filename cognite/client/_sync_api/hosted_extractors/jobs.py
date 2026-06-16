@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9ed5c3c3a929e8547eb0a4763a6d27f3
+9d15566f8208e24bca2bd19a5b10d655
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -56,12 +56,14 @@ class SyncJobsAPI(SyncAPIClient):
         yield from SyncIterator(self.__async_client.hosted_extractors.jobs(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
-    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Job: ...
+    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Job | None: ...
 
     @overload
     def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> JobList: ...
 
-    def retrieve(self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> Job | JobList:
+    def retrieve(
+        self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> Job | JobList | None:
         """
         `Retrieve one or more jobs <https://api-docs.cognite.com/20230101/tag/Jobs/operation/retrieve_jobs>`_.
 
@@ -70,7 +72,7 @@ class SyncJobsAPI(SyncAPIClient):
             ignore_unknown_ids (bool): Ignore external IDs that are not found
 
         Returns:
-            Job | JobList: Requested jobs
+            Job | JobList | None: Requested jobs
 
         Examples:
 
