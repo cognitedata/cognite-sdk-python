@@ -92,16 +92,12 @@ class MappingsAPI(APIClient):
 
         """
         self._warning.warn()
-        result = await self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=MappingList,
             resource_cls=Mapping,
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        if not ignore_unknown_ids:
-            # TODO: Remove in v9
-            return self._raise_not_found_if_none(result, {"externalId": external_ids})
-        return result
 
     async def delete(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False, force: bool = False

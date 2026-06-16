@@ -212,16 +212,12 @@ class UsersAPI(APIClient):
                     >>> res = client.postgres_gateway.users.retrieve("myUser", ignore_unknown_ids=True)
 
         """
-        result = await self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=UserList,
             resource_cls=User,
             identifiers=UsernameSequence.load(usernames=username),
             ignore_unknown_ids=ignore_unknown_ids,
         )
-        if not ignore_unknown_ids:
-            # TODO: Remove in v9
-            return self._raise_not_found_if_none(result, {"username": username})
-        return result
 
     async def list(self, limit: int = DEFAULT_LIMIT_READ) -> UserList:
         """`Fetch scoped users <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/filter_users>`_.

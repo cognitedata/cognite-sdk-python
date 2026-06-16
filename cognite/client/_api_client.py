@@ -10,7 +10,6 @@ from typing import (
     Any,
     ClassVar,
     Literal,
-    TypeVar,
     cast,
     overload,
 )
@@ -52,7 +51,6 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 logger = logging.getLogger(__name__)
 
-_T = TypeVar("_T")
 VALID_AGGREGATIONS = {"count", "cardinalityValues", "cardinalityProperties", "uniqueValues", "uniqueProperties"}
 
 
@@ -73,21 +71,6 @@ class APIClient(BasicAsyncAPIClient):
         return global_config.concurrency_settings.general._semaphore_factory(
             operation, project=self._cognite_client.config.project
         )
-
-    @staticmethod
-    def _raise_not_found_if_none(result: _T | None, missing: dict[str, Any]) -> _T:
-        # TODO: Remove in v9: This method is a stop-gap after it was discovered that some APIs
-        #       don't follow the "retrieve rule" in the SDK.
-        if result is not None:
-            return result
-
-        warnings.warn(
-            "In the next major version of the SDK (v9), retrieving a single non-existent resource will return None "
-            "instead of raising CogniteNotFoundError.",
-            FutureWarning,
-            stacklevel=2,
-        )
-        raise CogniteNotFoundError(message="Resource not found", code=404, missing=[missing])
 
     async def _retrieve(
         self,
