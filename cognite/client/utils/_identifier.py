@@ -254,6 +254,22 @@ class LimitId:
         return self.__value
 
 
+class MeterId:
+    def __init__(self, value: str) -> None:
+        if not isinstance(value, str):
+            raise TypeError(f"Expected meterId to be of type str, got {value} of type {type(value)}")
+        self.__value = value
+
+    def name(self, camel_case: bool = False) -> str:
+        return "meterId" if camel_case else "meter_id"
+
+    def as_dict(self, camel_case: bool = True) -> dict[str, str]:
+        return {self.name(camel_case): self.__value}
+
+    def as_primitive(self) -> str:
+        return self.__value
+
+
 class WorkflowVersionIdentifier:
     def __init__(self, version: str, workflow_external_id: str) -> None:
         self.__version = version
@@ -546,6 +562,28 @@ class TablenameSequence(IdentifierSequenceCore[Tablename]):
                 return identifier["tablename"]
             raise ValueError(f"{identifier} does not contain 'tablename'.")
         raise TypeError(f"identifier must be of type str or dict. Found {type(identifier)}")
+
+
+class MeterIdSequence(IdentifierSequenceCore[MeterId]):
+    @classmethod
+    def load(cls, meter_ids: str | SequenceNotStr[str]) -> MeterIdSequence:
+        if isinstance(meter_ids, str):
+            return cls([MeterId(meter_ids)], is_singleton=True)
+        if isinstance(meter_ids, Sequence):
+            return cls([MeterId(m) for m in meter_ids], is_singleton=False)
+        raise TypeError(f"meter_ids must be of type str or SequenceNotStr[str]. Found {type(meter_ids)}")
+
+    def assert_singleton(self) -> None:
+        if not self.is_singleton():
+            raise ValueError("Exactly one meter ID (string) must be specified")
+
+    @staticmethod
+    def unwrap_identifier(identifier: str | int | dict) -> str:
+        if isinstance(identifier, str):
+            return identifier
+        if isinstance(identifier, dict) and "meterId" in identifier:
+            return identifier["meterId"]
+        raise ValueError(f"{identifier} does not contain 'meterId'.")
 
 
 class WorkflowVersionIdentifierSequence(IdentifierSequenceCore[WorkflowVersionIdentifier]):

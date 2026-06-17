@@ -50,7 +50,7 @@ class LimitsAPI(APIClient):
         """
         self._warning.warn()
 
-        headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
+        headers = self._alpha_version_header()
 
         return await self._retrieve(
             identifier=LimitId(id),
@@ -87,7 +87,7 @@ class LimitsAPI(APIClient):
         """
         self._warning.warn()
 
-        headers = {"cdf-version": f"{self._config.api_subversion}-alpha"}
+        headers = self._alpha_version_header()
 
         return await self._list(
             method="GET" if filter is None else "POST",

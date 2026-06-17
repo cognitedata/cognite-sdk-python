@@ -167,6 +167,7 @@ Contents
 
    hosted_extractors
    postgres_gateway
+   metering
 
 .. toctree::
    :maxdepth: 1

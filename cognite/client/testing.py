@@ -53,6 +53,7 @@ from cognite.client._api.iam.sessions import SessionsAPI
 from cognite.client._api.iam.token import TokenAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.limits import LimitsAPI
+from cognite.client._api.metering import MeteringAPI
 from cognite.client._api.org_apis.principals import PrincipalsAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.postgres_gateway.tables import TablesAPI as PostgresTablesAPI
@@ -140,6 +141,7 @@ from cognite.client._sync_api.iam.sessions import SyncSessionsAPI
 from cognite.client._sync_api.iam.token import SyncTokenAPI
 from cognite.client._sync_api.labels import SyncLabelsAPI
 from cognite.client._sync_api.limits import SyncLimitsAPI
+from cognite.client._sync_api.metering import SyncMeteringAPI
 from cognite.client._sync_api.org_apis.principals import SyncPrincipalsAPI
 from cognite.client._sync_api.postgres_gateway import SyncPostgresGatewaysAPI
 from cognite.client._sync_api.postgres_gateway.tables import SyncTablesAPI as SyncPostgresTablesAPI
@@ -298,6 +300,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
         self.labels = create_autospec(LabelsAPI, instance=True, spec_set=True)
         self.limits = create_autospec(LimitsAPI, instance=True, spec_set=True)
+        self.metering = create_autospec(MeteringAPI, instance=True, spec_set=True)
 
         raw_databases = create_autospec(RawDatabasesAPI, instance=True, spec_set=True)
         raw_rows = create_autospec(RawRowsAPI, instance=True, spec_set=True)
@@ -505,6 +508,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
         self.labels = create_autospec(SyncLabelsAPI, instance=True, spec_set=True)
         self.limits = create_autospec(SyncLimitsAPI, instance=True, spec_set=True)
+        self.metering = create_autospec(SyncMeteringAPI, instance=True, spec_set=True)
 
         raw_databases = create_autospec(SyncRawDatabasesAPI, instance=True, spec_set=True)
         raw_rows = create_autospec(SyncRawRowsAPI, instance=True, spec_set=True)
