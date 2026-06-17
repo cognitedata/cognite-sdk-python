@@ -75,7 +75,7 @@ class JobsAPI(APIClient):
 
     async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> Job | None | JobList:
+    ) -> Job | JobList | None:
         """`Retrieve one or more jobs <https://api-docs.cognite.com/20230101/tag/Jobs/operation/retrieve_jobs>`_.
 
         Args:
@@ -83,7 +83,7 @@ class JobsAPI(APIClient):
             ignore_unknown_ids (bool): Ignore external IDs that are not found
 
         Returns:
-            Job | None | JobList: Requested jobs
+            Job | JobList | None: Requested jobs
 
         Examples:
 
