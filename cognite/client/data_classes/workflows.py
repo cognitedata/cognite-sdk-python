@@ -1622,11 +1622,11 @@ class WorkflowRecordStreamTriggerRule(WorkflowTriggerRule):
             stream_external_id=data["streamExternalId"],
             batch_size=data["batchSize"],
             batch_timeout=data["batchTimeout"],
-            filter=Filter.load(flt) if (flt := data.get("filter")) is not None else None,
+            filter=Filter._load_if(data.get("filter")),
             sources=[WorkflowRecordStreamSourceSelector._load(source) for source in srcs]
             if (srcs := data.get("sources")) is not None
             else None,
-            initialize_cursor=cursor if (cursor := data.get("initializeCursor")) is not None else None,
+            initialize_cursor=data.get("initializeCursor"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
