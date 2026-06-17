@@ -1,6 +1,6 @@
 """
 ===============================================================================
-746830973e30a6718db97aea947b12ad
+e4f6dea38fb3b3a47774e4343d7c68fe
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -51,14 +51,14 @@ class SyncSourcesAPI(SyncAPIClient):
         yield from SyncIterator(self.__async_client.hosted_extractors.sources(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
     @overload
-    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source: ...
+    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source | None: ...
 
     @overload
     def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> SourceList: ...
 
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> Source | SourceList:
+    ) -> Source | SourceList | None:
         """
         `Retrieve one or more sources <https://api-docs.cognite.com/20230101/tag/Sources/operation/retrieve_sources>`_.
 
@@ -67,7 +67,7 @@ class SyncSourcesAPI(SyncAPIClient):
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
-            Source | SourceList: Requested sources
+            Source | SourceList | None: Requested sources
 
         Examples:
 

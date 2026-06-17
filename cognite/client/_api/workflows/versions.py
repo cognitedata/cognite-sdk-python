@@ -12,7 +12,7 @@ from cognite.client.data_classes.workflows import (
     WorkflowVersionList,
     WorkflowVersionUpsert,
 )
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._auxiliary import split_into_chunks
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import WorkflowVersionIdentifierSequence
@@ -236,8 +236,8 @@ class WorkflowVersionAPI(APIClient):
                     semaphore=semaphore,
                 )
                 return WorkflowVersion._load(response.json())
-            except CogniteAPIError as e:
-                if ignore_missing and e.code == 404:
+            except CogniteNotFoundError:
+                if ignore_missing:
                     return None
                 raise
 

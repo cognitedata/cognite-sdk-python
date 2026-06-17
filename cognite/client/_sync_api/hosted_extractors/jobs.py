@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d0ed0db7ea3b9712d96449aeb6b8a6ae
+23e1e7b4a53a2cb0c687b3069a3683c7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -63,7 +63,7 @@ class SyncJobsAPI(SyncAPIClient):
 
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> Job | None | JobList:
+    ) -> Job | JobList | None:
         """
         `Retrieve one or more jobs <https://api-docs.cognite.com/20230101/tag/Jobs/operation/retrieve_jobs>`_.
 
@@ -72,7 +72,7 @@ class SyncJobsAPI(SyncAPIClient):
             ignore_unknown_ids (bool): Ignore external IDs that are not found
 
         Returns:
-            Job | None | JobList: Requested jobs
+            Job | JobList | None: Requested jobs
 
         Examples:
 

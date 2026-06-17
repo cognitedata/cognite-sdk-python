@@ -1,6 +1,6 @@
 """
 ===============================================================================
-85b01b0a07b228690e7e74d0320609c2
+4d9f8019807e09ddbc51a5da70f6602a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -51,14 +51,14 @@ class SyncMappingsAPI(SyncAPIClient):
         yield from SyncIterator(self.__async_client.hosted_extractors.mappings(chunk_size=chunk_size, limit=limit))
 
     @overload
-    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Mapping: ...
+    def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Mapping | None: ...
 
     @overload
     def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> MappingList: ...
 
     def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> Mapping | MappingList:
+    ) -> Mapping | MappingList | None:
         """
         `Retrieve one or more mappings <https://api-docs.cognite.com/20230101/tag/Mappings/operation/retrieve_mappings>`_.
 
@@ -66,9 +66,8 @@ class SyncMappingsAPI(SyncAPIClient):
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
             ignore_unknown_ids (bool): Ignore external IDs that are not found
 
-
         Returns:
-            Mapping | MappingList: Requested mappings
+            Mapping | MappingList | None: Requested mappings
 
         Examples:
 

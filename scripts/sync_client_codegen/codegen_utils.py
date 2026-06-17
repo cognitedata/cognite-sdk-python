@@ -121,13 +121,9 @@ def get_all_imports(tree: ast.Module, source_code: str, source_path: Path) -> tu
     parent_source = get_source_code(parent / "__init__.py") if parent_api_in_init else ""
 
     for maybe in MAYBE_IMPORTS:
-        # Typically there are type aliases defined in the async API module that we need to import:
-        if maybe in source_code:
-            to_import = maybe.split(": ")[0]
-            import_path = path_as_importable(source_path).replace(".__init__", "")
-            extras.append(f"from {import_path} import {to_import}")
-        # For a lot of 'nested' APIs, these are in parent / init:
-        elif maybe in parent_source:
+        # If the alias is defined in this file, it will be included via module_constants — no import needed.
+        # For nested APIs, the alias lives in the parent init and must be imported explicitly:
+        if maybe in parent_source and maybe not in source_code:
             to_import = maybe.split(": ")[0]
             extras.append(f"from {path_as_importable(parent)} import {to_import}")
 
