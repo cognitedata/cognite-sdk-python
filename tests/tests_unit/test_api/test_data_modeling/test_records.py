@@ -6,11 +6,16 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
+from cognite.client.data_classes.data_modeling.instances import InstanceSort, TypeInformation
 from cognite.client.data_classes.data_modeling.records import (
+    Record,
     RecordContainerId,
     RecordId,
+    RecordList,
     RecordSource,
+    RecordSourceSelector,
     RecordWrite,
+    TimeRange,
 )
 from tests.utils import jsgz_load
 
@@ -53,6 +58,27 @@ def upsert_url_pattern(records_base_url: str) -> re.Pattern:
 @pytest.fixture
 def mock_upsert(httpx_mock: HTTPXMock, upsert_url_pattern: re.Pattern) -> None:
     httpx_mock.add_response(method="POST", url=upsert_url_pattern, status_code=202)
+
+
+@pytest.fixture
+def filter_url_pattern(records_base_url: str) -> re.Pattern:
+    return re.compile(re.escape(records_base_url) + r"/filter$")
+
+
+@pytest.fixture
+def record_response() -> dict:
+    return {
+        "space": "sp",
+        "externalId": "rec-1",
+        "createdTime": 100,
+        "lastUpdatedTime": 200,
+        "properties": {"sp": {"container-x": {"temp": 22.5}}},
+    }
+
+
+@pytest.fixture
+def mock_filter(httpx_mock: HTTPXMock, filter_url_pattern: re.Pattern, record_response: dict) -> None:
+    httpx_mock.add_response(method="POST", url=filter_url_pattern, status_code=200, json={"items": [record_response]})
 
 
 @pytest.fixture
@@ -226,6 +252,94 @@ class TestRecordsAPIUpsert:
         assert len(jsgz_load(requests[1].content)["items"]) == 1
 
 
+class TestRecordsAPIList:
+    def test_list_returns_record_list(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        mock_filter: None,
+        stream_id: str,
+    ) -> None:
+        result = cognite_client.data_modeling.records.list(stream_id=stream_id)
+        assert isinstance(result, RecordList)
+        assert len(result) == 1
+        assert result[0].external_id == "rec-1"
+        assert result[0].properties == {"sp": {"container-x": {"temp": 22.5}}}
+        request = httpx_mock.get_requests()[0]
+        assert request.url.path.endswith(f"/streams/{stream_id}/records/filter")
+
+    def test_list_default_limit_is_10(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        mock_filter: None,
+        stream_id: str,
+    ) -> None:
+        cognite_client.data_modeling.records.list(stream_id=stream_id)
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body == {"limit": 10}
+
+    def test_list_sends_last_updated_time_and_limit(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        mock_filter: None,
+        stream_id: str,
+    ) -> None:
+        cognite_client.data_modeling.records.list(
+            stream_id=stream_id, last_updated_time=TimeRange(gte=1_000_000), limit=50
+        )
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body["lastUpdatedTime"] == {"gte": 1_000_000}
+        assert body["limit"] == 50
+
+    def test_list_sources_body_shape(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        mock_filter: None,
+        stream_id: str,
+    ) -> None:
+        cognite_client.data_modeling.records.list(
+            stream_id=stream_id,
+            sources=[RecordSourceSelector(RecordContainerId(space="sp", external_id="container-x"), ["*"])],
+        )
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body["sources"] == [
+            {"source": {"type": "container", "space": "sp", "externalId": "container-x"}, "properties": ["*"]}
+        ]
+
+    def test_list_sort_body_shape(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        mock_filter: None,
+        stream_id: str,
+    ) -> None:
+        cognite_client.data_modeling.records.list(
+            stream_id=stream_id, sort=InstanceSort(property=["sp", "container-x", "temp"], direction="descending")
+        )
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body["sort"] == [{"property": ["sp", "container-x", "temp"], "direction": "descending"}]
+
+    def test_list_include_typing(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        filter_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        typing = {"sp": {"container-x": {"temp": {"type": {"type": "float64", "list": False}, "nullable": True}}}}
+        httpx_mock.add_response(
+            method="POST", url=filter_url_pattern, status_code=200, json={"items": [record_response], "typing": typing}
+        )
+        result = cognite_client.data_modeling.records.list(stream_id=stream_id, include_typing=True)
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body["includeTyping"] is True
+        assert isinstance(result.typing, TypeInformation)
+
+
 class TestRecordDTOs:
     def test_record_write_as_id(self, write_item: RecordWrite) -> None:
         rid = write_item.as_id()
@@ -256,3 +370,57 @@ class TestRecordDTOs:
         d = src.dump()
         assert d["source"]["type"] == "container"
         assert d["properties"] == {"x": 1}
+
+    def test_record_load_dump_round_trip(self) -> None:
+        payload = {
+            "space": "sp",
+            "externalId": "rec-1",
+            "createdTime": 100,
+            "lastUpdatedTime": 200,
+            "properties": {"sp": {"c": {"temp": 22.5}}},
+        }
+        record = Record._load(payload)
+        assert record.created_time == 100
+        assert record.last_updated_time == 200
+        assert record.dump() == payload
+
+    def test_record_as_id(self) -> None:
+        record = Record(space="sp", external_id="rec-1", created_time=1, last_updated_time=2)
+        rid = record.as_id()
+        assert isinstance(rid, RecordId)
+        assert (rid.space, rid.external_id) == ("sp", "rec-1")
+
+    def test_record_as_write_reconstructs_sources(self) -> None:
+        record = Record(
+            space="sp",
+            external_id="rec-1",
+            created_time=1,
+            last_updated_time=2,
+            properties={"sp": {"c": {"temp": 22.5}}},
+        )
+        write = record.as_write()
+        assert isinstance(write, RecordWrite)
+        assert write.dump()["sources"] == [
+            {"source": {"type": "container", "space": "sp", "externalId": "c"}, "properties": {"temp": 22.5}}
+        ]
+
+    def test_record_list_as_ids_and_as_write(self) -> None:
+        records = RecordList(
+            [
+                Record(space="sp", external_id="rec-1", created_time=1, last_updated_time=2),
+                Record(space="sp", external_id="rec-2", created_time=1, last_updated_time=2),
+            ]
+        )
+        assert records.as_ids() == [RecordId("sp", "rec-1"), RecordId("sp", "rec-2")]
+        assert [w.external_id for w in records.as_write()] == ["rec-1", "rec-2"]
+
+    def test_time_range_dump_omits_none(self) -> None:
+        assert TimeRange(gte=1, lt=5).dump() == {"gte": 1, "lt": 5}
+        assert TimeRange().dump() == {}
+
+    def test_record_source_selector_dump(self) -> None:
+        selector = RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), ["temp", "pressure"])
+        assert selector.dump() == {
+            "source": {"type": "container", "space": "sp", "externalId": "c"},
+            "properties": ["temp", "pressure"],
+        }

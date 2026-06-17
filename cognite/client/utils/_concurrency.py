@@ -223,6 +223,7 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
 
 
 class RecordsConcurrencyOperation(Enum):
+    READ = "read"
     WRITE = "write"
 
 
@@ -233,15 +234,17 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     Args:
         concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
-        write (int): Maximum concurrent write requests (ingest, delete).
+        read (int): Maximum concurrent read requests (list/filter, sync).
+        write (int): Maximum concurrent write requests (ingest, upsert, delete).
     """
 
     def __init__(
         self,
         concurrency_settings: ConcurrencySettings,
+        read: int,
         write: int,
     ) -> None:
-        super().__init__(concurrency_settings, "records", read=0, write=write, delete=0)
+        super().__init__(concurrency_settings, "records", read=read, write=write, delete=0)
 
     def _semaphore_factory(self, operation: RecordsConcurrencyOperation, project: str) -> asyncio.BoundedSemaphore:
         key = (operation.value, project, asyncio.get_running_loop())
@@ -252,6 +255,8 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
         global_config.concurrency_settings._freeze()
         match operation:
+            case RecordsConcurrencyOperation.READ:
+                sem = asyncio.BoundedSemaphore(self._read)
             case RecordsConcurrencyOperation.WRITE:
                 sem = asyncio.BoundedSemaphore(self._write)
             case _:
@@ -260,7 +265,7 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
         return sem
 
     def __repr__(self) -> str:
-        return f"Concurrency[records](write={self._write})"
+        return f"Concurrency[records](read={self._read}, write={self._write})"
 
 
 class FileConcurrencyConfig(ConcurrencyConfig):
@@ -425,7 +430,7 @@ class ConcurrencySettings:
             write_schema=1,
         )
         self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
-        self._records = RecordsGlobalConcurrencyConfig(self, write=20)
+        self._records = RecordsGlobalConcurrencyConfig(self, read=10, write=20)
 
     @functools.cached_property
     def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:

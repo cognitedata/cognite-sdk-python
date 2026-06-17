@@ -2,10 +2,20 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.data_modeling.records import RecordId, RecordIdSequence, RecordWrite
+from cognite.client.data_classes.data_modeling.instances import InstanceSort
+from cognite.client.data_classes.data_modeling.records import (
+    Record,
+    RecordId,
+    RecordIdSequence,
+    RecordList,
+    RecordSourceSelector,
+    RecordWrite,
+    TimeRange,
+)
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._concurrency import RecordsConcurrencyOperation
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._url import interpolate_and_url_encode
@@ -13,6 +23,9 @@ from cognite.client.utils._url import interpolate_and_url_encode
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
+
+StreamType = Literal["immutable", "mutable"]
+_DEFAULT_STREAM_TYPE: StreamType = "immutable"
 
 
 class RecordsAPI(APIClient):
@@ -23,11 +36,14 @@ class RecordsAPI(APIClient):
         )
 
     _OPERATION_TO_RATE_LIMIT: ClassVar[dict[str, RecordsConcurrencyOperation]] = {
+        "read": RecordsConcurrencyOperation.READ,
         "write": RecordsConcurrencyOperation.WRITE,
         "delete": RecordsConcurrencyOperation.WRITE,
     }
 
-    def _get_semaphore(self, operation: Literal["write", "delete"]) -> asyncio.BoundedSemaphore:
+    def _get_semaphore(  # type: ignore[override]
+        self, operation: Literal["read", "write", "delete"], stream_type: StreamType
+    ) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
 
         return global_config.concurrency_settings.records._semaphore_factory(
@@ -44,6 +60,7 @@ class RecordsAPI(APIClient):
         items: RecordId | Sequence[RecordId],
         *,
         stream_id: str,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
         ignore_unknown_ids: Literal[True] = True,
     ) -> None:
         """`Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
@@ -54,6 +71,7 @@ class RecordsAPI(APIClient):
         Args:
             items (RecordId | Sequence[RecordId]): Records to delete.
             stream_id (str): External ID of the stream to delete from.
+            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
             ignore_unknown_ids (Literal[True]): Currently only True is supported
 
         Examples:
@@ -76,6 +94,7 @@ class RecordsAPI(APIClient):
             identifiers=RecordIdSequence.load(items),
             wrap_ids=True,
             resource_path=self._records_url(stream_id),
+            override_semaphore=self._get_semaphore("delete", stream_type),
         )
 
     async def ingest(
@@ -83,6 +102,7 @@ class RecordsAPI(APIClient):
         items: RecordWrite | Sequence[RecordWrite],
         *,
         stream_id: str,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
     ) -> None:
         """`Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
 
@@ -94,6 +114,7 @@ class RecordsAPI(APIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to ingest.
             stream_id (str): External ID of the stream to ingest into.
+            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
 
         Examples:
 
@@ -128,6 +149,7 @@ class RecordsAPI(APIClient):
             items=item_list,
             resource_path=self._records_url(stream_id),
             no_response=True,
+            override_semaphore=self._get_semaphore("write", stream_type),
         )
 
     async def upsert(
@@ -135,6 +157,7 @@ class RecordsAPI(APIClient):
         items: RecordWrite | Sequence[RecordWrite],
         *,
         stream_id: str,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
         upsert_mode: Literal["replace"] = "replace",
     ) -> None:
         """`Upsert records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/upsertRecords>`_.
@@ -147,6 +170,7 @@ class RecordsAPI(APIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
             stream_id (str): External ID of the stream to upsert into.
+            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
             upsert_mode (Literal['replace']): How existing records are updated. Currently only ``"replace"`` is supported, which fully replaces the existing record. Defaults to ``"replace"``.
 
         Examples:
@@ -182,4 +206,77 @@ class RecordsAPI(APIClient):
             items=item_list,
             resource_path=self._records_url(stream_id, "/upsert"),
             no_response=True,
+            override_semaphore=self._get_semaphore("write", stream_type),
+        )
+
+    async def list(
+        self,
+        stream_id: str,
+        *,
+        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
+        last_updated_time: TimeRange | None = None,
+        filter: Filter | None = None,
+        sources: Sequence[RecordSourceSelector] | None = None,
+        sort: Sequence[InstanceSort] | InstanceSort | None = None,
+        limit: int = 10,
+        include_typing: bool = False,
+    ) -> RecordList:
+        """`Filter records in a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/filterRecords>`_.
+
+        Returns records matching the given filters, sorted by ``lastUpdatedTime`` unless a custom
+        ``sort`` is given. This endpoint is not cursor-paged: it returns at most ``limit`` records
+        (max 1000). To page over a large time window, issue multiple calls with partitioned
+        ``last_updated_time`` ranges.
+
+        Args:
+            stream_id (str): External ID of the stream to query.
+            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
+            last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
+                immutable streams** (must include a lower bound).
+            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
+            sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
+            limit (int): Maximum number of records to return (1-1000). Defaults to 10.
+            include_typing (bool): If True, include property type information on the returned
+                list's ``typing`` attribute.
+
+        Returns:
+            RecordList: The matching records.
+
+        Examples:
+
+            List records updated since a given timestamp:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.records import TimeRange
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.records.list(
+                ...     stream_id="my-stream",
+                ...     last_updated_time=TimeRange(gt=1705341600000),
+                ...     limit=100,
+                ... )
+        """
+        self._warning.warn()
+        other_params: dict[str, Any] = {}
+        if last_updated_time is not None:
+            other_params["lastUpdatedTime"] = last_updated_time.dump()
+        if sources is not None:
+            other_params["sources"] = [source.dump() for source in sources]
+        if sort is not None:
+            sort_list = [sort] if isinstance(sort, InstanceSort) else list(sort)
+            other_params["sort"] = [spec.dump() for spec in sort_list]
+        if include_typing:
+            other_params["includeTyping"] = True
+
+        return await self._list(
+            list_cls=RecordList,
+            resource_cls=Record,
+            method="POST",
+            resource_path=self._records_url(stream_id),
+            url_path=self._records_url(stream_id, "/filter"),
+            limit=limit,
+            filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
+            other_params=other_params,
+            settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else None,
+            override_semaphore=self._get_semaphore("read", stream_type),
         )
