@@ -1636,7 +1636,7 @@ class WorkflowRecordStreamTriggerRule(WorkflowTriggerRule):
         }
         if self.filter is not None:
             item["filter"] = self.filter.dump()
-        if self.sources is not None:
+        if self.sources:
             item["sources"] = [source.dump(camel_case=camel_case) for source in self.sources]
         if self.initialize_cursor is not None:
             item["initialize_cursor"] = self.initialize_cursor
