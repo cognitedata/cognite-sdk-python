@@ -1623,9 +1623,7 @@ class WorkflowRecordStreamTriggerRule(WorkflowTriggerRule):
             batch_size=data["batchSize"],
             batch_timeout=data["batchTimeout"],
             filter=Filter._load_if(data.get("filter")),
-            sources=[WorkflowRecordStreamSourceSelector._load(source) for source in srcs]
-            if (srcs := data.get("sources")) is not None
-            else None,
+            sources=[WorkflowRecordStreamSourceSelector._load(source) for source in (data.get("sources") or [])],
             initialize_cursor=data.get("initializeCursor"),
         )
 
