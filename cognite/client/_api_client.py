@@ -88,11 +88,10 @@ class APIClient(BasicAsyncAPIClient):
                 headers=headers,
                 semaphore=self._get_semaphore("read"),
             )
-            return cls._load(res.json())._maybe_set_client_ref(self._cognite_client)
-        except CogniteAPIError as e:
-            if e.code != 404:
-                raise
-        return None
+        except CogniteNotFoundError:
+            return None
+
+        return cls._load(res.json())._maybe_set_client_ref(self._cognite_client)
 
     @overload
     async def _retrieve_multiple(
@@ -313,7 +312,9 @@ class APIClient(BasicAsyncAPIClient):
             if limit and (n_remaining := limit - total_retrieved) < current_limit:
                 current_limit = n_remaining
 
-            params.update(limit=current_limit, cursor=next_cursor)
+            params["limit"] = current_limit
+            if next_cursor is not None:
+                params["cursor"] = next_cursor
             if method == "GET":
                 res = await self._get(url_path=url_path, params=params, headers=headers, semaphore=semaphore)
             else:

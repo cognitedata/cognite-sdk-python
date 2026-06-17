@@ -65,7 +65,7 @@ class DestinationsAPI(APIClient):
             yield item
 
     @overload
-    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Destination: ...
+    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Destination | None: ...
 
     @overload
     async def retrieve(
@@ -74,16 +74,15 @@ class DestinationsAPI(APIClient):
 
     async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> Destination | DestinationList:
+    ) -> Destination | DestinationList | None:
         """`Retrieve one or more destinations <https://api-docs.cognite.com/20230101/tag/Destinations/operation/retrieve_destinations>`_.
 
         Args:
             external_ids (str | SequenceNotStr[str]): The external ID provided by the client. Must be unique for the resource type.
             ignore_unknown_ids (bool): Ignore external IDs that are not found
 
-
         Returns:
-            Destination | DestinationList: Requested destinations
+            Destination | DestinationList | None: Requested destinations
 
         Examples:
 
