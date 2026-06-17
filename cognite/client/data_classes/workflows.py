@@ -1595,7 +1595,7 @@ class WorkflowRecordStreamTriggerRule(WorkflowTriggerRule):
         sources (list[WorkflowRecordStreamSourceSelector] | None): Optional containers and properties to include in
             the workflow input.
         initialize_cursor (str | None): Where record stream syncing starts when no cursor exists yet,
-            as a relative duration like ``"6h-ago"``. Defaults to ``"0d-ago"`` on the server when omitted.
+            as a relative duration like ``"6h-ago"``. If omitted, syncing starts from the current time (``"0d-ago"``).
     """
 
     _trigger_type = "recordStream"
