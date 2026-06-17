@@ -13,12 +13,6 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
-## [Unreleased]
-
-### Features
-
-- Add `WorkflowRecordStreamTriggerRule` for record stream workflow triggers, including optional `initialize_cursor` to control where syncing starts when no cursor exists yet.
-
 ## [8.9.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.8.0...cognite-sdk-python-v8.9.0) (2026-06-08)
 
 
