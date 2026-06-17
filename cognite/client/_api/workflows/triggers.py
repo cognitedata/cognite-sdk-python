@@ -103,6 +103,33 @@ class WorkflowTriggerAPI(APIClient):
                 ...     )
                 ... )
 
+            Create or update a record stream trigger for a workflow:
+
+                >>> from cognite.client.data_classes.workflows import (
+                ...     WorkflowRecordStreamTriggerRule,
+                ...     WorkflowRecordStreamSourceSelector,
+                ... )
+                >>> from cognite.client.data_classes.data_modeling.records import RecordContainerId
+                >>> client.workflows.triggers.upsert(
+                ...     WorkflowTriggerUpsert(
+                ...         external_id="my_trigger",
+                ...         trigger_rule=WorkflowRecordStreamTriggerRule(
+                ...             stream_external_id="my-stream",
+                ...             batch_size=100,
+                ...             batch_timeout=60,
+                ...             initialize_cursor="6h-ago",
+                ...             sources=[
+                ...                 WorkflowRecordStreamSourceSelector(
+                ...                     source=RecordContainerId("my-space", "my-container"),
+                ...                     properties=["name", "status"],
+                ...                 )
+                ...             ],
+                ...         ),
+                ...         workflow_external_id="my_workflow",
+                ...         workflow_version="1",
+                ...     )
+                ... )
+
         """
         nonce = await create_session_and_return_nonce(
             self._cognite_client, api_name="Workflow API", client_credentials=client_credentials
