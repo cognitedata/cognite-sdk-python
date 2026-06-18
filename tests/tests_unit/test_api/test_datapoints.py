@@ -260,7 +260,7 @@ class TestInsertDatapoints:
     @pytest.mark.parametrize("ts_key, value_key", [("timestamp", "values"), ("timstamp", "value")])
     def test_invalid_datapoints_keys(self, cognite_client: CogniteClient, ts_key: str, value_key: str) -> None:
         dps: list[dict] = [{ts_key: i * 1e11, value_key: i} for i in range(1, 11)]
-        with pytest.raises(KeyError, match="A datapoint is missing one or both keys"):
+        with pytest.raises(KeyError, match="A datapoint dict must include"):
             cognite_client.time_series.data.insert(dps, id=1)
 
     def test_insert_datapoints_over_limit(
@@ -1133,3 +1133,100 @@ class TestDatapointsPoster:
             assert 0 < n_dps <= dps_limit
             assert 0 < len(call) <= ts_limit
         assert expected_n_dps == tot_n_dps
+
+
+class TestStateTimeSeriesUtils:
+    def test_get_datapoints_from_proto_state(self) -> None:
+        from cognite.client._proto.data_point_list_response_pb2 import (
+            TIMESERIES_TYPE_STATE,
+            DataPointListItem,
+        )
+        from cognite.client._proto.data_points_pb2 import StateDatapoint, StateDatapoints
+        from cognite.client.utils._datapoints import (
+            get_datapoints_from_proto,
+            get_ts_info_from_proto,
+            infer_time_series_type_from_list_item,
+        )
+
+        item = DataPointListItem(
+            id=42,
+            isString=False,
+            isStep=False,
+            type=TIMESERIES_TYPE_STATE,
+            stateDatapoints=StateDatapoints(
+                datapoints=[
+                    StateDatapoint(timestamp=10, numericValue=1),
+                    StateDatapoint(timestamp=20, stringValue="open"),
+                ]
+            ),
+        )
+        dps = get_datapoints_from_proto(item)
+        assert len(dps) == 2
+        assert infer_time_series_type_from_list_item(item) == "state"
+        info = get_ts_info_from_proto(item)
+        assert info["type"] == "state"
+        assert info["id"] == 42
+
+    def test_dps_unpack_fns_state_aggregates(self) -> None:
+        from cognite.client._proto.data_points_pb2 import (
+            AggregateDatapoint,
+            AggregateDatapoints,
+        )
+        from cognite.client._proto.data_points_pb2 import (
+            StateAggregate as ProtoStateAggregate,
+        )
+        from cognite.client.utils._datapoints import DpsUnpackFns
+
+        adps = AggregateDatapoints(
+            datapoints=[
+                AggregateDatapoint(
+                    timestamp=1000,
+                    average=1.0,
+                    stateAggregates=[
+                        ProtoStateAggregate(numericValue=1, stringValue="a", stateCount=2),
+                        ProtoStateAggregate(numericValue=2, stringValue="b", stateTransitions=3),
+                    ],
+                )
+            ]
+        )
+        rows = DpsUnpackFns.extract_state_aggregates_rows(adps.datapoints)
+        assert len(rows) == 1
+        assert len(rows[0]) == 2
+        assert rows[0][0].numeric_value == 1
+        assert rows[0][0].string_value == "a"
+        assert rows[0][0].state_count == 2
+        assert rows[0][1].state_transitions == 3
+
+
+@pytest.mark.allow_no_semaphore(
+    "DatapointsAPI._insert_datapoints holds the semaphore via outer 'async with' for memory "
+    "backpressure, then passes None to _post to avoid double-acquiring."
+)
+class TestStateTimeSeriesInsert:
+    def test_insert_state_dict_emits_feature_preview_warning(
+        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock
+    ) -> None:
+        from cognite.client.utils._experimental import FeaturePreviewWarning
+
+        dps: list[dict[str, Any]] = [{"timestamp": 1, "numericValue": 0, "stringValue": "off"}]
+        with pytest.warns(FeaturePreviewWarning, match="State time series"):
+            cognite_client.time_series.data.insert(dps, id=1)
+        req = mock_post_datapoints.get_requests()[0]
+        body = jsgz_load(req.content)
+        dumped = body["items"][0]["datapoints"][0]
+        assert dumped["numericValue"] == 0
+        assert dumped["stringValue"] == "off"
+        assert "value" not in dumped
+
+    def test_datapoints_query_includes_state_aggregate_names(self) -> None:
+        from cognite.client.data_classes import DatapointsQuery
+
+        q = DatapointsQuery(
+            id=1,
+            aggregates=["average", "state_count", "state_transitions"],
+            granularity="1h",
+        )
+        aggs = q.aggs_camel_case
+        assert "stateCount" in aggs
+        assert "stateTransitions" in aggs
+        assert "average" in aggs
