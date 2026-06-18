@@ -222,26 +222,172 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         )
 
 
+class HierarchicalBoundedSemaphore:
+    """Acquires multiple semaphores in order, releases in reverse.
+
+    Used to model the Records API's hierarchical rate limits where an endpoint
+    (e.g. retrieve) must pass both its dedicated budget and the shared query budget.
+
+    If acquisition is interrupted (e.g. by cancellation), all already-acquired
+    semaphores are released before the exception propagates. Similarly, if a
+    release raises, the remaining semaphores are still released.
+    """
+
+    def __init__(self, *semaphores: asyncio.BoundedSemaphore) -> None:
+        self._semaphores = semaphores
+
+    async def __aenter__(self) -> None:
+        acquired: list[asyncio.BoundedSemaphore] = []
+        try:
+            for sem in self._semaphores:
+                await sem.__aenter__()
+                acquired.append(sem)
+        except BaseException:
+            for sem in reversed(acquired):
+                await sem.__aexit__(None, None, None)
+            raise
+
+    async def __aexit__(self, *exc: Any) -> None:
+        first_err: BaseException | None = None
+        for sem in reversed(self._semaphores):
+            try:
+                await sem.__aexit__(*exc)
+            except BaseException as e:
+                if first_err is None:
+                    first_err = e
+        if first_err is not None:
+            raise first_err
+
+
 class RecordsConcurrencyOperation(Enum):
     WRITE = "write"
+    QUERY_MUTABLE = "query_mutable"
+    QUERY_IMMUTABLE = "query_immutable"
+    RETRIEVE_MUTABLE = "retrieve_mutable"
+    RETRIEVE_IMMUTABLE = "retrieve_immutable"
+    AGGREGATE_MUTABLE = "aggregate_mutable"
+    AGGREGATE_IMMUTABLE = "aggregate_immutable"
 
 
 class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     """
-    Global concurrency settings for the Records API. Named "global" to distinguish from
-    future per-endpoint rate limits that may be added later.
+    Global concurrency settings for the Records API.
+
+    The Records API has separate rate-limit budgets for reads and writes, and read budgets
+    differ between mutable and immutable streams. Read budgets are hierarchical: the
+    retrieve and aggregate endpoints each have a dedicated budget that is checked *before*
+    the shared query budget (both must pass).
+
+    - **write**: Shared across ingest, upsert, and delete (same for both stream types).
+    - **query_mutable / query_immutable**: Shared read budget for all query endpoints.
+    - **retrieve_mutable / retrieve_immutable**: Dedicated retrieve budget (+ shared query).
+    - **aggregate_mutable / aggregate_immutable**: Dedicated aggregate budget (+ shared query).
 
     Args:
         concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
-        write (int): Maximum concurrent write requests (ingest, delete).
+        write (int): Maximum concurrent write requests (ingest, upsert, delete).
+        query_mutable (int): Maximum concurrent query requests against mutable streams.
+        query_immutable (int): Maximum concurrent query requests against immutable streams.
+        retrieve_mutable (int): Dedicated retrieve concurrency for mutable streams.
+        retrieve_immutable (int): Dedicated retrieve concurrency for immutable streams.
+        aggregate_mutable (int): Dedicated aggregate concurrency for mutable streams.
+        aggregate_immutable (int): Dedicated aggregate concurrency for immutable streams.
     """
 
     def __init__(
         self,
         concurrency_settings: ConcurrencySettings,
         write: int,
+        query_mutable: int,
+        query_immutable: int,
+        retrieve_mutable: int,
+        retrieve_immutable: int,
+        aggregate_mutable: int,
+        aggregate_immutable: int,
     ) -> None:
         super().__init__(concurrency_settings, "records", read=0, write=write, delete=0)
+        self._query_mutable = query_mutable
+        self._query_immutable = query_immutable
+        self._retrieve_mutable = retrieve_mutable
+        self._retrieve_immutable = retrieve_immutable
+        self._aggregate_mutable = aggregate_mutable
+        self._aggregate_immutable = aggregate_immutable
+        self._validate_budgets()
+
+    def _validate_budgets(self, **overrides: int) -> None:
+        for name in overrides:
+            self._check_frozen(name)
+
+        def resolve(name: str) -> int:
+            return overrides.get(name, getattr(self, f"_{name}"))
+
+        for dedicated_name, shared_name in [
+            ("retrieve_mutable", "query_mutable"),
+            ("retrieve_immutable", "query_immutable"),
+            ("aggregate_mutable", "query_mutable"),
+            ("aggregate_immutable", "query_immutable"),
+        ]:
+            dedicated = resolve(dedicated_name)
+            shared = resolve(shared_name)
+            if dedicated > shared:
+                raise ValueError(
+                    f"Dedicated budget must be <= shared query budget "
+                    f"({dedicated_name} vs {shared_name}): {dedicated} > {shared}"
+                )
+
+    @property
+    def query_mutable(self) -> int:
+        return self._query_mutable
+
+    @query_mutable.setter
+    def query_mutable(self, value: int) -> None:
+        self._validate_budgets(query_mutable=value)
+        self._query_mutable = value
+
+    @property
+    def query_immutable(self) -> int:
+        return self._query_immutable
+
+    @query_immutable.setter
+    def query_immutable(self, value: int) -> None:
+        self._validate_budgets(query_immutable=value)
+        self._query_immutable = value
+
+    @property
+    def retrieve_mutable(self) -> int:
+        return self._retrieve_mutable
+
+    @retrieve_mutable.setter
+    def retrieve_mutable(self, value: int) -> None:
+        self._validate_budgets(retrieve_mutable=value)
+        self._retrieve_mutable = value
+
+    @property
+    def retrieve_immutable(self) -> int:
+        return self._retrieve_immutable
+
+    @retrieve_immutable.setter
+    def retrieve_immutable(self, value: int) -> None:
+        self._validate_budgets(retrieve_immutable=value)
+        self._retrieve_immutable = value
+
+    @property
+    def aggregate_mutable(self) -> int:
+        return self._aggregate_mutable
+
+    @aggregate_mutable.setter
+    def aggregate_mutable(self, value: int) -> None:
+        self._validate_budgets(aggregate_mutable=value)
+        self._aggregate_mutable = value
+
+    @property
+    def aggregate_immutable(self) -> int:
+        return self._aggregate_immutable
+
+    @aggregate_immutable.setter
+    def aggregate_immutable(self, value: int) -> None:
+        self._validate_budgets(aggregate_immutable=value)
+        self._aggregate_immutable = value
 
     def _semaphore_factory(self, operation: RecordsConcurrencyOperation, project: str) -> asyncio.BoundedSemaphore:
         key = (operation.value, project, asyncio.get_running_loop())
@@ -254,13 +400,31 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
         match operation:
             case RecordsConcurrencyOperation.WRITE:
                 sem = asyncio.BoundedSemaphore(self._write)
+            case RecordsConcurrencyOperation.QUERY_MUTABLE:
+                sem = asyncio.BoundedSemaphore(self._query_mutable)
+            case RecordsConcurrencyOperation.QUERY_IMMUTABLE:
+                sem = asyncio.BoundedSemaphore(self._query_immutable)
+            case RecordsConcurrencyOperation.RETRIEVE_MUTABLE:
+                sem = asyncio.BoundedSemaphore(self._retrieve_mutable)
+            case RecordsConcurrencyOperation.RETRIEVE_IMMUTABLE:
+                sem = asyncio.BoundedSemaphore(self._retrieve_immutable)
+            case RecordsConcurrencyOperation.AGGREGATE_MUTABLE:
+                sem = asyncio.BoundedSemaphore(self._aggregate_mutable)
+            case RecordsConcurrencyOperation.AGGREGATE_IMMUTABLE:
+                sem = asyncio.BoundedSemaphore(self._aggregate_immutable)
             case _:
                 assert_never(operation)
         self._semaphore_cache[key] = sem
         return sem
 
     def __repr__(self) -> str:
-        return f"Concurrency[records](write={self._write})"
+        return (
+            f"Concurrency[records]("
+            f"write={self._write}, "
+            f"query_mutable={self._query_mutable}, query_immutable={self._query_immutable}, "
+            f"retrieve_mutable={self._retrieve_mutable}, retrieve_immutable={self._retrieve_immutable}, "
+            f"aggregate_mutable={self._aggregate_mutable}, aggregate_immutable={self._aggregate_immutable})"
+        )
 
 
 class FileConcurrencyConfig(ConcurrencyConfig):
@@ -425,7 +589,16 @@ class ConcurrencySettings:
             write_schema=1,
         )
         self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
-        self._records = RecordsGlobalConcurrencyConfig(self, write=20)
+        self._records = RecordsGlobalConcurrencyConfig(
+            self,
+            write=20,
+            query_mutable=30,
+            query_immutable=10,
+            retrieve_mutable=20,
+            retrieve_immutable=10,
+            aggregate_mutable=10,
+            aggregate_immutable=5,
+        )
 
     @functools.cached_property
     def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
