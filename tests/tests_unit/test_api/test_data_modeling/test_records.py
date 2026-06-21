@@ -307,20 +307,11 @@ class TestRecordsAPISync:
         )
         first = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="2d-ago", limit=1)
         assert first.has_next is True
-        second = cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor=first.cursor, limit=1)
+        assert first.cursor is not None
+        second = cognite_client.data_modeling.records.sync_resume(stream_id=stream_id, cursor=first.cursor, limit=1)
         assert second.cursor == "p3"
         body2 = jsgz_load(httpx_mock.get_requests()[1].content)
         assert body2 == {"cursor": "p2", "limit": 1}
-
-    def test_sync_rejects_cursor_and_initialize_cursor(
-        self,
-        cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
-        stream_id: str,
-    ) -> None:
-        with pytest.raises(ValueError, match="not both"):
-            cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="c", initialize_cursor="2d-ago")
-        assert httpx_mock.get_requests() == []
 
     def test_sync_deleted_tombstone_has_no_properties(
         self,
@@ -336,7 +327,7 @@ class TestRecordsAPISync:
             status_code=200,
             json={"items": [item], "nextCursor": "z", "hasNext": False},
         )
-        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="c", limit=1)
+        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="c", limit=1)
         assert page[0].status == "deleted"
         assert page[0].properties is None
 
@@ -356,7 +347,9 @@ class TestRecordsAPISync:
             status_code=200,
             json={"items": [item], "nextCursor": "z", "hasNext": False, "typing": typing},
         )
-        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="c", include_typing=True, limit=1)
+        page = cognite_client.data_modeling.records.sync(
+            stream_id=stream_id, initialize_cursor="c", include_typing=True, limit=1
+        )
         assert jsgz_load(httpx_mock.get_requests()[0].content)["includeTyping"] is True
         assert isinstance(page.typing, TypeInformation)
 
@@ -377,7 +370,7 @@ class TestRecordsAPISync:
         )
         cognite_client.data_modeling.records.sync(
             stream_id=stream_id,
-            cursor="c",
+            initialize_cursor="c",
             target_units=RecordTargetUnits(unit_system_name="Imperial"),
             limit=1,
         )
@@ -452,7 +445,7 @@ class TestRecordDTOs:
         with pytest.raises(ValueError, match="exactly one"):
             cognite_client.data_modeling.records.sync(
                 stream_id=stream_id,
-                cursor="c",
+                initialize_cursor="c",
                 target_units=RecordTargetUnits(),
                 limit=1,
             )
@@ -463,7 +456,7 @@ class TestRecordDTOs:
         with pytest.raises(ValueError, match="exactly one"):
             cognite_client.data_modeling.records.sync(
                 stream_id=stream_id,
-                cursor="c",
+                initialize_cursor="c",
                 target_units=RecordTargetUnits(properties=[], unit_system_name="Imperial"),
                 limit=1,
             )

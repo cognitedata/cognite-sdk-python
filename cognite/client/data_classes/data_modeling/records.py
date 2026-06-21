@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -54,12 +54,12 @@ class RecordSource(CogniteResource):
 
     Args:
         source (RecordContainerId): Reference to the container.
-        properties (dict[str, Any]): The data to write to the source container.
+        properties (Mapping[str, Any]): The data to write to the source container.
     """
 
-    def __init__(self, source: RecordContainerId, properties: dict[str, Any]) -> None:
+    def __init__(self, source: RecordContainerId, properties: Mapping[str, Any]) -> None:
         self.source = source
-        self.properties = properties
+        self.properties = dict(properties)
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -83,13 +83,13 @@ class RecordWrite(WriteableCogniteResource["RecordWrite"]):
     Args:
         space (str): Space the record belongs to.
         external_id (str): External ID of the record (1-256 chars, no null bytes).
-        sources (list[RecordSource]): Container property values to write (1-100 sources).
+        sources (Sequence[RecordSource]): Container property values to write (1-100 sources).
     """
 
-    def __init__(self, space: str, external_id: str, sources: list[RecordSource]) -> None:
+    def __init__(self, space: str, external_id: str, sources: Sequence[RecordSource]) -> None:
         self.space = space
         self.external_id = external_id
-        self.sources = sources
+        self.sources = list(sources)
 
     def as_id(self) -> RecordId:
         return RecordId(space=self.space, external_id=self.external_id)
@@ -127,12 +127,12 @@ class RecordSourceSelector(CogniteResource):
 
     Args:
         source (RecordContainerId): The container to select properties from.
-        properties (list[str]): Property identifiers to return; use ``["*"]`` to return all.
+        properties (Sequence[str]): Property identifiers to return; use ``["*"]`` to return all.
     """
 
-    def __init__(self, source: RecordContainerId, properties: list[str]) -> None:
+    def __init__(self, source: RecordContainerId, properties: Sequence[str]) -> None:
         self.source = source
-        self.properties = properties
+        self.properties = list(properties)
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -211,7 +211,7 @@ class SyncRecord(WriteableCogniteResource["RecordWrite"]):
         created_time (int): Creation time in milliseconds since epoch.
         last_updated_time (int): Last updated time in milliseconds since epoch.
         status (Literal['created', 'updated', 'deleted']): The record's change status.
-        properties (dict[str, dict[str, dict[str, Any]]] | None): Property values (absent for
+        properties (Mapping[str, Mapping[str, Mapping[str, Any]]] | None): Property values (absent for
             deleted tombstones).
     """
 
@@ -222,14 +222,21 @@ class SyncRecord(WriteableCogniteResource["RecordWrite"]):
         created_time: int,
         last_updated_time: int,
         status: Literal["created", "updated", "deleted"],
-        properties: dict[str, dict[str, dict[str, Any]]] | None = None,
+        properties: Mapping[str, Mapping[str, Mapping[str, Any]]] | None = None,
     ) -> None:
         self.space = space
         self.external_id = external_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.status = status
-        self.properties = properties
+        self.properties = (
+            {
+                space_key: {container: dict(values) for container, values in containers.items()}
+                for space_key, containers in properties.items()
+            }
+            if properties is not None
+            else None
+        )
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -275,7 +282,7 @@ class SyncRecordList(CogniteResourceList[SyncRecord]):
 
     Args:
         resources (Sequence[SyncRecord]): The records in this page.
-        cursor (str | None): Cursor to pass as ``cursor`` to the next ``sync`` call to resume
+        cursor (str | None): Cursor to pass as ``cursor`` to the next ``sync_resume`` call to resume
             from this position.
         has_next (bool): Whether more changes are available beyond this page.
         typing (TypeInformation | None): Property type information, present when the request was
