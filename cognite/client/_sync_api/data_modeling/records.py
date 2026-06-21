@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1b13cd8cb9a6d5758aee61658b3c8230
+1026c1cbc96879e5164690932bcbb9b9
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -161,8 +161,7 @@ class SyncRecordsAPI(SyncAPIClient):
         self,
         stream_id: str,
         *,
-        cursor: str | None = None,
-        initialize_cursor: str | None = None,
+        initialize_cursor: str,
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,
         target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
@@ -172,17 +171,14 @@ class SyncRecordsAPI(SyncAPIClient):
         """
         `Sync records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/syncRecords>`_.
 
-        Returns the next page of the change feed (new, updated and deleted records). Provide exactly
-        one of ``cursor`` (to resume a previous position) or ``initialize_cursor`` (to start from a
-        relative time such as ``"7d-ago"``). Persist the returned :attr:`SyncRecordList.cursor` and
-        pass it as ``cursor`` on the next call to continue; :attr:`SyncRecordList.has_next` indicates
-        whether more changes are immediately available.
+        Returns the first page of the change feed (new, updated and deleted records). Provide
+        ``initialize_cursor`` to start from a relative time such as ``"7d-ago"``. Persist the returned
+        :attr:`SyncRecordList.cursor` and pass it to :meth:`sync_resume` on the next call to continue;
+        :attr:`SyncRecordList.has_next` indicates whether more changes are immediately available.
 
         Args:
             stream_id (str): External ID of the stream to sync.
-            cursor (str | None): Resume from a cursor returned by a previous sync call.
-            initialize_cursor (str | None): Where to start when no ``cursor`` is given, as a
-                relative duration like ``"7d-ago"``. Ignored when ``cursor`` is set.
+            initialize_cursor (str): Where to start, as a relative duration like ``"7d-ago"``.
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
@@ -205,15 +201,54 @@ class SyncRecordsAPI(SyncAPIClient):
                 ... )
                 >>> for record in page:
                 ...     pass  # process record; record.status is created/updated/deleted
-                >>> next_page = client.data_modeling.records.sync(
+                >>> next_page = client.data_modeling.records.sync_resume(
                 ...     stream_id="my-stream", cursor=page.cursor
                 ... )
         """
         return run_sync(
             self.__async_client.data_modeling.records.sync(
                 stream_id=stream_id,
-                cursor=cursor,
                 initialize_cursor=initialize_cursor,
+                filter=filter,
+                sources=sources,
+                target_units=target_units,
+                limit=limit,
+                include_typing=include_typing,
+            )
+        )
+
+    def sync_resume(
+        self,
+        stream_id: str,
+        *,
+        cursor: str,
+        filter: Filter | None = None,
+        sources: Sequence[RecordSourceSelector] | None = None,
+        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        limit: int = 10,
+        include_typing: bool = False,
+    ) -> SyncRecordList:
+        """
+        Resume syncing records from a stream using a cursor from :meth:`sync` or :meth:`sync_resume`.
+
+        Args:
+            stream_id (str): External ID of the stream to sync.
+            cursor (str): Resume from a cursor returned by a previous sync call.
+            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
+            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
+                to another unit.
+            limit (int): Maximum number of records to return in this page (1-1000). Defaults to 10.
+            include_typing (bool): If True, include property type information on the returned
+                list's ``typing`` attribute.
+
+        Returns:
+            SyncRecordList: One page of change records, with ``cursor`` and ``has_next`` set.
+        """
+        return run_sync(
+            self.__async_client.data_modeling.records.sync_resume(
+                stream_id=stream_id,
+                cursor=cursor,
                 filter=filter,
                 sources=sources,
                 target_units=target_units,
