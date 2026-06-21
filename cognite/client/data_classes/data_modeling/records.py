@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -71,7 +72,7 @@ class RecordSource(CogniteResource):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "source": self.source.dump(camel_case=camel_case),
-            "properties": self.properties,
+            "properties": deepcopy(self.properties),
         }
 
 
@@ -258,7 +259,7 @@ class SyncRecord(WriteableCogniteResource["RecordWrite"]):
             "status": self.status,
         }
         if self.properties is not None:
-            output["properties"] = self.properties
+            output["properties"] = deepcopy(self.properties)
         return output
 
     def as_id(self) -> RecordId:
