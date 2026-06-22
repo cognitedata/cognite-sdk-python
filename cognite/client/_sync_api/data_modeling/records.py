@@ -1,6 +1,6 @@
 """
 ===============================================================================
-735bb9bce10a62d913210dc6ee62a01b
+edfc27eee5ba5a131ccdddff1c6061f0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -26,9 +26,6 @@ from cognite.client.utils._async_helpers import run_sync
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
 
-StreamType = Literal["immutable", "mutable"]
-_DEFAULT_STREAM_TYPE: StreamType = "immutable"
-
 
 class SyncRecordsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
@@ -41,7 +38,7 @@ class SyncRecordsAPI(SyncAPIClient):
         items: RecordId | Sequence[RecordId],
         *,
         stream_id: str,
-        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
+        stream_type: Literal["immutable", "mutable"] = "immutable",
         ignore_unknown_ids: Literal[True] = True,
     ) -> None:
         """
@@ -53,7 +50,7 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             items (RecordId | Sequence[RecordId]): Records to delete.
             stream_id (str): External ID of the stream to delete from.
-            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
+            stream_type (Literal["immutable", "mutable"]): Type of the stream. Defaults to "immutable".
             ignore_unknown_ids (Literal[True]): Currently only True is supported
 
         Examples:
@@ -82,7 +79,7 @@ class SyncRecordsAPI(SyncAPIClient):
         items: RecordWrite | Sequence[RecordWrite],
         *,
         stream_id: str,
-        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
+        stream_type: Literal["immutable", "mutable"] = "immutable",
     ) -> None:
         """
         `Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
@@ -95,7 +92,7 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to ingest.
             stream_id (str): External ID of the stream to ingest into.
-            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
+            stream_type (Literal["immutable", "mutable"]): Type of the stream. Defaults to "immutable".
 
         Examples:
 
@@ -133,7 +130,7 @@ class SyncRecordsAPI(SyncAPIClient):
         items: RecordWrite | Sequence[RecordWrite],
         *,
         stream_id: str,
-        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
+        stream_type: Literal["immutable", "mutable"] = "immutable",
         upsert_mode: Literal["replace"] = "replace",
     ) -> None:
         """
@@ -147,7 +144,7 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
             stream_id (str): External ID of the stream to upsert into.
-            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
+            stream_type (Literal["immutable", "mutable"]): Type of the stream. Defaults to "immutable".
             upsert_mode (Literal['replace']): How existing records are updated. Currently only ``"replace"`` is supported, which fully replaces the existing record. Defaults to ``"replace"``.
 
         Examples:
@@ -187,7 +184,7 @@ class SyncRecordsAPI(SyncAPIClient):
         self,
         stream_id: str,
         *,
-        stream_type: StreamType = _DEFAULT_STREAM_TYPE,
+        stream_type: Literal["immutable", "mutable"] = "immutable",
         last_updated_time: TimeRange | None = None,
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,
@@ -199,13 +196,11 @@ class SyncRecordsAPI(SyncAPIClient):
         `Filter records in a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/filterRecords>`_.
 
         Returns records matching the given filters, sorted by ``lastUpdatedTime`` unless a custom
-        ``sort`` is given. This endpoint is not cursor-paged: it returns at most ``limit`` records
-        (max 1000). To page over a large time window, issue multiple calls with partitioned
-        ``last_updated_time`` ranges.
+        ``sort`` is given.
 
         Args:
             stream_id (str): External ID of the stream to query.
-            stream_type (StreamType): Type of the stream ("immutable" or "mutable"). Defaults to "immutable".
+            stream_type (Literal["immutable", "mutable"]): Type of the stream. Defaults to "immutable".
             last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
                 immutable streams** (must include a lower bound).
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
