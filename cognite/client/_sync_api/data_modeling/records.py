@@ -1,6 +1,6 @@
 """
 ===============================================================================
-edfc27eee5ba5a131ccdddff1c6061f0
+75d0868c483e766a10125b9dc20e0d4c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -34,12 +34,7 @@ class SyncRecordsAPI(SyncAPIClient):
         self.__async_client = async_client
 
     def delete(
-        self,
-        items: RecordId | Sequence[RecordId],
-        *,
-        stream_id: str,
-        stream_type: Literal["immutable", "mutable"] = "immutable",
-        ignore_unknown_ids: Literal[True] = True,
+        self, items: RecordId | Sequence[RecordId], *, stream_id: str, ignore_unknown_ids: Literal[True] = True
     ) -> None:
         """
         `Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
@@ -50,7 +45,6 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             items (RecordId | Sequence[RecordId]): Records to delete.
             stream_id (str): External ID of the stream to delete from.
-            stream_type (Literal["immutable", "mutable"]): Type of the stream. Defaults to "immutable".
             ignore_unknown_ids (Literal[True]): Currently only True is supported
 
         Examples:
@@ -70,17 +64,11 @@ class SyncRecordsAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.records.delete(
-                items=items, stream_id=stream_id, stream_type=stream_type, ignore_unknown_ids=ignore_unknown_ids
+                items=items, stream_id=stream_id, ignore_unknown_ids=ignore_unknown_ids
             )
         )
 
-    def ingest(
-        self,
-        items: RecordWrite | Sequence[RecordWrite],
-        *,
-        stream_id: str,
-        stream_type: Literal["immutable", "mutable"] = "immutable",
-    ) -> None:
+    def ingest(self, items: RecordWrite | Sequence[RecordWrite], *, stream_id: str) -> None:
         """
         `Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
 
@@ -92,7 +80,6 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to ingest.
             stream_id (str): External ID of the stream to ingest into.
-            stream_type (Literal["immutable", "mutable"]): Type of the stream. Defaults to "immutable".
 
         Examples:
 
@@ -121,17 +108,10 @@ class SyncRecordsAPI(SyncAPIClient):
                 ...     stream_id="my-stream",
                 ... )
         """
-        return run_sync(
-            self.__async_client.data_modeling.records.ingest(items=items, stream_id=stream_id, stream_type=stream_type)
-        )
+        return run_sync(self.__async_client.data_modeling.records.ingest(items=items, stream_id=stream_id))
 
     def upsert(
-        self,
-        items: RecordWrite | Sequence[RecordWrite],
-        *,
-        stream_id: str,
-        stream_type: Literal["immutable", "mutable"] = "immutable",
-        upsert_mode: Literal["replace"] = "replace",
+        self, items: RecordWrite | Sequence[RecordWrite], *, stream_id: str, upsert_mode: Literal["replace"] = "replace"
     ) -> None:
         """
         `Upsert records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/upsertRecords>`_.
@@ -144,7 +124,6 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
             stream_id (str): External ID of the stream to upsert into.
-            stream_type (Literal["immutable", "mutable"]): Type of the stream. Defaults to "immutable".
             upsert_mode (Literal['replace']): How existing records are updated. Currently only ``"replace"`` is supported, which fully replaces the existing record. Defaults to ``"replace"``.
 
         Examples:
@@ -175,16 +154,13 @@ class SyncRecordsAPI(SyncAPIClient):
                 ... )
         """
         return run_sync(
-            self.__async_client.data_modeling.records.upsert(
-                items=items, stream_id=stream_id, stream_type=stream_type, upsert_mode=upsert_mode
-            )
+            self.__async_client.data_modeling.records.upsert(items=items, stream_id=stream_id, upsert_mode=upsert_mode)
         )
 
     def list(
         self,
         stream_id: str,
         *,
-        stream_type: Literal["immutable", "mutable"] = "immutable",
         last_updated_time: TimeRange | None = None,
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,
@@ -200,7 +176,6 @@ class SyncRecordsAPI(SyncAPIClient):
 
         Args:
             stream_id (str): External ID of the stream to query.
-            stream_type (Literal["immutable", "mutable"]): Type of the stream. Defaults to "immutable".
             last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
                 immutable streams** (must include a lower bound).
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
@@ -229,7 +204,6 @@ class SyncRecordsAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.data_modeling.records.list(
                 stream_id=stream_id,
-                stream_type=stream_type,
                 last_updated_time=last_updated_time,
                 filter=filter,
                 sources=sources,
