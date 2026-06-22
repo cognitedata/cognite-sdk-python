@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f86364d61385123f12bc60dd004ea1c2
+c6fbcef756b27d697a0d4d2ffb7f846a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,7 +12,15 @@ from typing import TYPE_CHECKING, Literal
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes.data_modeling.records import RecordId, RecordWrite
+from cognite.client.data_classes.data_modeling.instances import InstanceSort
+from cognite.client.data_classes.data_modeling.records import (
+    RecordId,
+    RecordList,
+    RecordSourceSelector,
+    RecordWrite,
+    TimeRange,
+)
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
@@ -147,4 +155,60 @@ class SyncRecordsAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.records.upsert(items=items, stream_id=stream_id, upsert_mode=upsert_mode)
+        )
+
+    def list(
+        self,
+        stream_id: str,
+        *,
+        last_updated_time: TimeRange | None = None,
+        filter: Filter | None = None,
+        sources: Sequence[RecordSourceSelector] | None = None,
+        sort: Sequence[InstanceSort] | InstanceSort | None = None,
+        limit: int = 10,
+        include_typing: bool = False,
+    ) -> RecordList:
+        """
+        `Filter records in a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/filterRecords>`_.
+
+        Returns records matching the given filters, sorted by ``lastUpdatedTime`` unless a custom
+        ``sort`` is given.
+
+        Args:
+            stream_id (str): External ID of the stream to query.
+            last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
+                immutable streams** (must include a lower bound).
+            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
+            sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
+            limit (int): Maximum number of records to return (1-1000). Defaults to 10.
+            include_typing (bool): If True, include property type information on the returned
+                list's ``typing`` attribute.
+
+        Returns:
+            RecordList: The matching records.
+
+        Examples:
+
+            List records updated since a given timestamp:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.records import TimeRange
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.records.list(
+                ...     stream_id="my-stream",
+                ...     last_updated_time=TimeRange(gt=1705341600000),
+                ...     limit=100,
+                ... )
+        """
+        return run_sync(
+            self.__async_client.data_modeling.records.list(
+                stream_id=stream_id,
+                last_updated_time=last_updated_time,
+                filter=filter,
+                sources=sources,
+                sort=sort,
+                limit=limit,
+                include_typing=include_typing,
+            )
         )
