@@ -31,6 +31,13 @@ class RecordsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Records"
         )
 
+    def _get_semaphore(self, operation: Any) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        return global_config.concurrency_settings.records._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
+
     def _records_url(self, stream_id: str, suffix: str = "") -> str:
         # Encode only stream_id; the suffix is a literal path segment (e.g. "/upsert"),
         # so it must not be percent-encoded.
