@@ -61,7 +61,10 @@ def _cancel_running_executions_for_workflow(
         limit=None,
     )
     for execution in running:
-        client.workflows.executions.cancel(id=execution.id, reason="integration test cleanup")
+        try:
+            client.workflows.executions.cancel(id=execution.id, reason="integration test cleanup")
+        except CogniteAPIError:
+            pass  # execution may have completed/cancelled between list and cancel
 
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -84,7 +87,13 @@ def _safe_delete_workflows(
 ) -> None:
     ids = [external_ids] if isinstance(external_ids, str) else external_ids
     for workflow_external_id in ids:
-        _cancel_running_executions_for_workflow(client, workflow_external_id)
+        if ignore_unknown_ids and client.workflows.retrieve(workflow_external_id) is None:
+            continue
+        try:
+            _cancel_running_executions_for_workflow(client, workflow_external_id)
+        except CogniteAPIError:
+            if not ignore_unknown_ids:
+                raise
     client.workflows.delete(external_ids, ignore_unknown_ids=ignore_unknown_ids)
 
 
