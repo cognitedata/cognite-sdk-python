@@ -384,6 +384,7 @@ def workflow_execution_list(
     return _new_workflow_execution_list(cognite_client, new_workflow_version)
 
 
+@pytest.fixture
 def workflow_execution_list_test_scoped(
     cognite_client: CogniteClient, new_workflow_version_test_scoped: WorkflowVersion
 ) -> WorkflowExecutionList:
@@ -648,14 +649,14 @@ class TestWorkflowExecutions:
     def test_list_workflow_executions(
         self,
         cognite_client: CogniteClient,
-        workflow_execution_list: WorkflowExecutionList,
+        workflow_execution_list_test_scoped: WorkflowExecutionList,
     ) -> None:
         listed = cognite_client.workflows.executions.list(
-            workflow_version_ids=workflow_execution_list[0].as_workflow_id()
+            workflow_version_ids=workflow_execution_list_test_scoped[0].as_workflow_id()
         )
         # Compare by ID: cancel() can return before fields like end_time are
         # finalized server-side, so full-object equality is flaky.
-        assert {e.id for e in listed} == {e.id for e in workflow_execution_list}
+        assert {e.id for e in listed} == {e.id for e in workflow_execution_list_test_scoped}
 
     def test_list_workflow_executions_by_status(
         self,
