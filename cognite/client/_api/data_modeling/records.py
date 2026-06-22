@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.instances import InstanceSort
@@ -16,7 +16,6 @@ from cognite.client.data_classes.data_modeling.records import (
     TimeRange,
 )
 from cognite.client.data_classes.filters import Filter
-from cognite.client.utils._concurrency import RecordsConcurrencyOperation
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._url import interpolate_and_url_encode
 
@@ -32,17 +31,11 @@ class RecordsAPI(APIClient):
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Records"
         )
 
-    _OPERATION_TO_RATE_LIMIT: ClassVar[dict[str, RecordsConcurrencyOperation]] = {
-        "read": RecordsConcurrencyOperation.READ,
-        "write": RecordsConcurrencyOperation.WRITE,
-        "delete": RecordsConcurrencyOperation.WRITE,
-    }
-
-    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+    def _get_semaphore(self, operation: Any) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
 
         return global_config.concurrency_settings.records._semaphore_factory(
-            self._OPERATION_TO_RATE_LIMIT[operation], project=self._cognite_client.config.project
+            operation, project=self._cognite_client.config.project
         )
 
     def _records_url(self, stream_id: str, suffix: str = "") -> str:

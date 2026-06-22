@@ -7,7 +7,6 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Callable, Coroutine
-from enum import Enum
 from typing import (
     Any,
     Literal,
@@ -222,11 +221,6 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         )
 
 
-class RecordsConcurrencyOperation(Enum):
-    READ = "read"
-    WRITE = "write"
-
-
 class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     """
     Global concurrency settings for the Records API. Named "global" to distinguish from
@@ -246,8 +240,10 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     ) -> None:
         super().__init__(concurrency_settings, "records", read=read, write=write, delete=0)
 
-    def _semaphore_factory(self, operation: RecordsConcurrencyOperation, project: str) -> asyncio.BoundedSemaphore:
-        key = (operation.value, project, asyncio.get_running_loop())
+    def _semaphore_factory(
+        self, operation: Literal["read", "write", "delete"], project: str
+    ) -> asyncio.BoundedSemaphore:
+        key = (operation, project, asyncio.get_running_loop())
         if key in self._semaphore_cache:
             return self._semaphore_cache[key]
 
@@ -255,9 +251,9 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
         global_config.concurrency_settings._freeze()
         match operation:
-            case RecordsConcurrencyOperation.READ:
+            case "read":
                 sem = asyncio.BoundedSemaphore(self._read)
-            case RecordsConcurrencyOperation.WRITE:
+            case "write" | "delete":
                 sem = asyncio.BoundedSemaphore(self._write)
             case _:
                 assert_never(operation)
