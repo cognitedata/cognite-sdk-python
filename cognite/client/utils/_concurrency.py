@@ -7,7 +7,6 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Callable, Coroutine
-from enum import Enum
 from typing import (
     Any,
     Literal,
@@ -222,10 +221,6 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         )
 
 
-class RecordsConcurrencyOperation(Enum):
-    WRITE = "write"
-
-
 class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     """
     Global concurrency settings for the Records API. Named "global" to distinguish from
@@ -233,18 +228,22 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     Args:
         concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
+        read (int): Maximum concurrent read requests (list, retrieve, sync).
         write (int): Maximum concurrent write requests (ingest, delete).
     """
 
     def __init__(
         self,
         concurrency_settings: ConcurrencySettings,
+        read: int,
         write: int,
     ) -> None:
-        super().__init__(concurrency_settings, "records", read=0, write=write, delete=0)
+        super().__init__(concurrency_settings, "records", read=read, write=write, delete=0)
 
-    def _semaphore_factory(self, operation: RecordsConcurrencyOperation, project: str) -> asyncio.BoundedSemaphore:
-        key = (operation.value, project, asyncio.get_running_loop())
+    def _semaphore_factory(
+        self, operation: Literal["read", "write", "delete"], project: str
+    ) -> asyncio.BoundedSemaphore:
+        key = (operation, project, asyncio.get_running_loop())
         if key in self._semaphore_cache:
             return self._semaphore_cache[key]
 
@@ -252,7 +251,9 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
         global_config.concurrency_settings._freeze()
         match operation:
-            case RecordsConcurrencyOperation.WRITE:
+            case "read":
+                sem = asyncio.BoundedSemaphore(self._read)
+            case "write" | "delete":
                 sem = asyncio.BoundedSemaphore(self._write)
             case _:
                 assert_never(operation)
@@ -260,7 +261,7 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
         return sem
 
     def __repr__(self) -> str:
-        return f"Concurrency[records](write={self._write})"
+        return f"Concurrency[records](read={self._read}, write={self._write})"
 
 
 class FileConcurrencyConfig(ConcurrencyConfig):
@@ -425,7 +426,7 @@ class ConcurrencySettings:
             write_schema=1,
         )
         self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
-        self._records = RecordsGlobalConcurrencyConfig(self, write=20)
+        self._records = RecordsGlobalConcurrencyConfig(self, read=4, write=20)
 
     @functools.cached_property
     def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
