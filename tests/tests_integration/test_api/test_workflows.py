@@ -54,7 +54,7 @@ def _cancel_running_executions_for_workflow(
     *,
     timeout: float = 60,
 ) -> None:
-    """Cancel running executions so a workflow can be deleted (see jazz-api PR #2424)."""
+    """Cancel running executions so a workflow can be deleted."""
     running = client.workflows.executions.list(
         workflow_version_ids=WorkflowVersionId(workflow_external_id),
         statuses=["running"],
