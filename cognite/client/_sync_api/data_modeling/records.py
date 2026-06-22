@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c6fbcef756b27d697a0d4d2ffb7f846a
+26d4591ef83727d55e93b5f934678746
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -181,7 +181,7 @@ class SyncRecordsAPI(SyncAPIClient):
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
-            limit (int): Maximum number of records to return (1-1000). Defaults to 10.
+            limit (int): Maximum number of records to return (1-1000).
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
 

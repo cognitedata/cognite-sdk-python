@@ -221,7 +221,7 @@ class RecordsAPI(APIClient):
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
-            limit (int): Maximum number of records to return (1-1000). Defaults to 10.
+            limit (int): Maximum number of records to return (1-1000).
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
 
