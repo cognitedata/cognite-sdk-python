@@ -13,6 +13,24 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.10.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.9.0...cognite-sdk-python-v8.10.0) (2026-06-22)
+
+
+### Features
+
+* **Data Modeling, Time Series:** Extend Data Modeling with Time Series /retrieve + /list (DM-3842) ([#2672](https://github.com/cognitedata/cognite-sdk-python/issues/2672)) ([d8e8d83](https://github.com/cognitedata/cognite-sdk-python/commit/d8e8d830bf52ae6c11d128ad819715c87633bebe))
+* **metering:** add Python SDK support for the Metering API ([#2663](https://github.com/cognitedata/cognite-sdk-python/issues/2663)) ([9077f00](https://github.com/cognitedata/cognite-sdk-python/commit/9077f007a1801a7eb36d312f7b50bcc276ccc704))
+* **records:** add upsert endpoint ([#2679](https://github.com/cognitedata/cognite-sdk-python/issues/2679)) ([f862306](https://github.com/cognitedata/cognite-sdk-python/commit/f862306fe62a55230a7593345955c2ba4eb94386))
+* **workflows:** add WorkflowRecordStreamTriggerRule to workflow triggers ([#2690](https://github.com/cognitedata/cognite-sdk-python/issues/2690)) ([9ecf95c](https://github.com/cognitedata/cognite-sdk-python/commit/9ecf95c7ab2c8e9a6739f2295a8a61d2f165d92f))
+
+
+### Bug Fixes
+
+* **docs:** correct typo in Postgres Gateway Users retrieve URL ([#2685](https://github.com/cognitedata/cognite-sdk-python/issues/2685)) ([89dafd1](https://github.com/cognitedata/cognite-sdk-python/commit/89dafd116a34d00aea05d10d7c7e2d41fe09acba))
+* don't inject null cursor in _list_generator_raw_responses ([#2684](https://github.com/cognitedata/cognite-sdk-python/issues/2684)) ([7934665](https://github.com/cognitedata/cognite-sdk-python/commit/793466576823bc307d209b10f91967bc19ecb902))
+* **exceptions:** Raise specific error CogniteNotFoundError also on 404 ([#2689](https://github.com/cognitedata/cognite-sdk-python/issues/2689)) ([4831bca](https://github.com/cognitedata/cognite-sdk-python/commit/4831bcad1470d270ab03c37692648be06314ee4a))
+* narrow Sequence to Iterable in transformer mixins ([#2691](https://github.com/cognitedata/cognite-sdk-python/issues/2691)) ([aa2316c](https://github.com/cognitedata/cognite-sdk-python/commit/aa2316c8578ff5fa97ca143194a42c36548c6354))
+
 ## [8.9.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.8.0...cognite-sdk-python-v8.9.0) (2026-06-08)
 
 
