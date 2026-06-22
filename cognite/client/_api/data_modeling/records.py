@@ -80,7 +80,6 @@ class RecordsAPI(APIClient):
             identifiers=RecordIdSequence.load(items),
             wrap_ids=True,
             resource_path=self._records_url(stream_id),
-            override_semaphore=self._get_semaphore("delete"),
         )
 
     async def ingest(
@@ -133,7 +132,6 @@ class RecordsAPI(APIClient):
             items=item_list,
             resource_path=self._records_url(stream_id),
             no_response=True,
-            override_semaphore=self._get_semaphore("write"),
         )
 
     async def upsert(
@@ -188,7 +186,6 @@ class RecordsAPI(APIClient):
             items=item_list,
             resource_path=self._records_url(stream_id, "/upsert"),
             no_response=True,
-            override_semaphore=self._get_semaphore("write"),
         )
 
     async def list(
@@ -256,5 +253,4 @@ class RecordsAPI(APIClient):
             filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
             other_params=other_params,
             settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else None,
-            override_semaphore=self._get_semaphore("read"),
         )
