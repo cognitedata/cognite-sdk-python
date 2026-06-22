@@ -48,6 +48,46 @@ from tests.tests_integration.test_api.test_simulators.seed.resources import (
 from tests.utils import get_or_raise
 
 
+def _cancel_running_executions_for_workflow(
+    client: CogniteClient,
+    workflow_external_id: str,
+    *,
+    timeout: float = 60,
+) -> None:
+    """Cancel running executions so a workflow can be deleted (see jazz-api PR #2424)."""
+    running = client.workflows.executions.list(
+        workflow_version_ids=WorkflowVersionId(workflow_external_id),
+        statuses=["running"],
+        limit=None,
+    )
+    for execution in running:
+        client.workflows.executions.cancel(id=execution.id, reason="integration test cleanup")
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        running = client.workflows.executions.list(
+            workflow_version_ids=WorkflowVersionId(workflow_external_id),
+            statuses=["running"],
+            limit=1,
+        )
+        if not running:
+            return
+        time.sleep(0.5)
+    raise RuntimeError(f"Workflow {workflow_external_id!r} still has running executions after {timeout}s")
+
+
+def _safe_delete_workflows(
+    client: CogniteClient,
+    external_ids: str | list[str],
+    *,
+    ignore_unknown_ids: bool = True,
+) -> None:
+    ids = [external_ids] if isinstance(external_ids, str) else external_ids
+    for workflow_external_id in ids:
+        _cancel_running_executions_for_workflow(client, workflow_external_id)
+    client.workflows.delete(external_ids, ignore_unknown_ids=ignore_unknown_ids)
+
+
 @pytest.fixture
 def workflow_simint_routine(cognite_client: CogniteClient) -> str:
     return ensure_workflow_simint_routine(cognite_client)
@@ -93,7 +133,7 @@ def wf_setup_module(cognite_client: CogniteClient, permanent_wf_ext_id_prefix: s
         if wf.last_updated_time < resource_age and not wf.external_id.startswith(permanent_wf_ext_id_prefix)
     ]
     if wfs_to_delete:
-        cognite_client.workflows.delete(wfs_to_delete)
+        _safe_delete_workflows(cognite_client, wfs_to_delete)
 
 
 def handle(client: CogniteClient, data: dict[str, object]) -> str:
@@ -137,7 +177,7 @@ def _new_workflow(cognite_client: CogniteClient, data_set: DataSet) -> Iterator[
         data_set_id=data_set.id,
     )
     yield cognite_client.workflows.upsert(workflow)
-    cognite_client.workflows.delete(workflow.external_id, ignore_unknown_ids=True)
+    _safe_delete_workflows(cognite_client, workflow.external_id)
 
 
 @pytest.fixture(scope="session")
@@ -435,6 +475,7 @@ class TestWorkflows:
         assert updated_workflow.max_concurrent_executions == new_workflow.max_concurrent_executions
 
     def test_delete_multiple_non_existing_raise(self, cognite_client: CogniteClient, new_workflow: Workflow) -> None:
+        _cancel_running_executions_for_workflow(cognite_client, new_workflow.external_id)
         with pytest.raises(CogniteAPIError, match="workflows were not found"):
             cognite_client.workflows.delete(
                 [new_workflow.external_id, "integration_test-non_existing_workflow"], ignore_unknown_ids=False
@@ -442,6 +483,7 @@ class TestWorkflows:
         assert cognite_client.workflows.retrieve(new_workflow.external_id) is not None
 
     def test_delete_multiple_non_existing(self, cognite_client: CogniteClient, new_workflow: Workflow) -> None:
+        _cancel_running_executions_for_workflow(cognite_client, new_workflow.external_id)
         cognite_client.workflows.delete(
             [new_workflow.external_id, "integration_test-non_existing_workflow"], ignore_unknown_ids=True
         )
@@ -532,7 +574,7 @@ class TestWorkflowVersions:
         finally:
             if created_version is not None:
                 cognite_client.workflows.versions.delete(created_version.as_id())
-                cognite_client.workflows.delete(created_version.workflow_external_id)
+                _safe_delete_workflows(cognite_client, created_version.workflow_external_id)
 
     def test_upsert_preexisting(
         self, cognite_client: CogniteClient, new_workflow_version_test_scoped: WorkflowVersion
@@ -683,6 +725,7 @@ class TestWorkflowExecutions:
 
         retried_workflow_execution = cognite_client.workflows.executions.retry(workflow_execution.id)
         assert retried_workflow_execution.status == "running"
+        cognite_client.workflows.executions.cancel(id=retried_workflow_execution.id, reason="test cleanup")
 
 
 class TestWorkflowTriggers:
@@ -893,7 +936,7 @@ class TestWorkflowTriggers:
             except Exception:
                 pass
             try:
-                cognite_client.workflows.delete(workflow_external_id)
+                _safe_delete_workflows(cognite_client, workflow_external_id)
             except Exception:
                 pass
 
