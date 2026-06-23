@@ -100,6 +100,8 @@ def _safe_delete_workflows(
     except CogniteAPIError as exc:
         if "running executions" not in str(exc):
             raise
+        # Second pass: delete can still fail if cancellation is not yet visible, a new
+        # execution started (e.g. scheduled trigger), or the first cancel was skipped.
         for workflow_external_id in ids:
             if client.workflows.retrieve(workflow_external_id) is None:
                 continue
