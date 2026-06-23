@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import os
 import time
 import unittest
 from collections.abc import Iterator
@@ -94,7 +95,16 @@ def _safe_delete_workflows(
         except CogniteAPIError:
             if not ignore_unknown_ids:
                 raise
-    client.workflows.delete(external_ids, ignore_unknown_ids=ignore_unknown_ids)
+    try:
+        client.workflows.delete(external_ids, ignore_unknown_ids=ignore_unknown_ids)
+    except CogniteAPIError as exc:
+        if "running executions" not in str(exc):
+            raise
+        for workflow_external_id in ids:
+            if client.workflows.retrieve(workflow_external_id) is None:
+                continue
+            _cancel_running_executions_for_workflow(client, workflow_external_id, timeout=120)
+        client.workflows.delete(external_ids, ignore_unknown_ids=ignore_unknown_ids)
 
 
 @pytest.fixture
@@ -109,7 +119,9 @@ def permanent_wf_ext_id_prefix(os_and_py_version: str) -> str:
 
 @pytest.fixture(scope="session")
 def permanent_wf_ext_id(permanent_wf_ext_id_prefix: str, sdk_version: tuple[str, str, str]) -> str:
-    return f"{permanent_wf_ext_id_prefix}_{sdk_version[0]}"
+    # Isolate permanent trigger workflows per xdist worker to avoid cross-worker races.
+    worker = os.environ.get("PYTEST_XDIST_WORKER", "master")
+    return f"{permanent_wf_ext_id_prefix}_{sdk_version[0]}_{worker}"
 
 
 @pytest.fixture(autouse=True, scope="module")
@@ -118,13 +130,22 @@ def wf_setup_module(cognite_client: CogniteClient, permanent_wf_ext_id_prefix: s
     resource_age = timestamp_to_ms("30m-ago")
 
     wf_triggers = cognite_client.workflows.triggers.list(limit=None)
-    wf_triggers_to_delete = [
+    wf_triggers_to_delete = {
         wft.external_id
         for wft in wf_triggers
         if wft.last_updated_time < resource_age and not wft.workflow_external_id.startswith(permanent_wf_ext_id_prefix)
-    ]
+    }
+    # Drop orphan per-minute triggers left on permanent workflows by failed trigger tests.
+    permanent_trigger_keep_prefixes = ("scheduled-trigger_", "data-modeling-trigger_")
+    wf_triggers_to_delete.update(
+        wft.external_id
+        for wft in wf_triggers
+        if wft.workflow_external_id.startswith(permanent_wf_ext_id_prefix)
+        and wft.external_id.startswith("test_create_update_scheduled_trigger_")
+        and not wft.external_id.startswith(permanent_trigger_keep_prefixes)
+    )
     if wf_triggers_to_delete:
-        cognite_client.workflows.triggers.delete(wf_triggers_to_delete)
+        cognite_client.workflows.triggers.delete(list(wf_triggers_to_delete))
 
     wf_versions = cognite_client.workflows.versions.list(limit=None)
     wf_versions_to_delete = [
@@ -237,6 +258,7 @@ def _new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow)
         ),
     )
     yield cognite_client.workflows.versions.upsert(version)
+    _cancel_running_executions_for_workflow(cognite_client, new_workflow.external_id)
     cognite_client.workflows.versions.delete(version.as_id(), ignore_unknown_ids=True)
 
 
@@ -273,6 +295,7 @@ def _new_async_workflow_version(
         ),
     )
     yield cognite_client.workflows.versions.upsert(version)
+    _cancel_running_executions_for_workflow(cognite_client, new_workflow.external_id)
     cognite_client.workflows.versions.delete((new_workflow.external_id, version.version), ignore_unknown_ids=True)
 
 
@@ -344,6 +367,7 @@ def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Work
         upserted_version = cognite_client.workflows.versions.upsert(version)
         upserted_versions.append(upserted_version)
     yield upserted_versions
+    _cancel_running_executions_for_workflow(cognite_client, new_workflow.external_id)
     cognite_client.workflows.versions.delete(upserted_versions.as_ids(), ignore_unknown_ids=True)
 
 
@@ -383,6 +407,26 @@ def _new_workflow_execution_list(
         metadata={"test": "integration_cancelled"},
     )
     run_2 = cognite_client.workflows.executions.cancel(id=run_2.id, reason="test cancel")
+
+    for execution in (run_1, run_2):
+        if execution.status != "running":
+            continue
+        try:
+            cognite_client.workflows.executions.cancel(id=execution.id, reason="integration test cleanup")
+        except CogniteAPIError:
+            pass
+
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline:
+        running = cognite_client.workflows.executions.list(
+            workflow_version_ids=new_workflow_version.as_id(),
+            statuses=["running"],
+            limit=1,
+        )
+        if not running:
+            break
+        time.sleep(0.5)
+
     return WorkflowExecutionList([run_1, run_2])
 
 
@@ -400,7 +444,7 @@ def workflow_execution_list_test_scoped(
     return _new_workflow_execution_list(cognite_client, new_workflow_version_test_scoped)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="class")
 def permanent_workflow_for_triggers(cognite_client: CogniteClient, permanent_wf_ext_id: str) -> WorkflowVersion:
     workflow = WorkflowUpsert(external_id=permanent_wf_ext_id, description="Permanent workflow for trigger testing")
     cognite_client.workflows.upsert(workflow)
@@ -421,6 +465,8 @@ def permanent_workflow_for_triggers(cognite_client: CogniteClient, permanent_wf_
         ),
     )
     upserted = cognite_client.workflows.versions.upsert(version)
+    if cognite_client.workflows.versions.retrieve(upserted.as_id()) is None:
+        raise RuntimeError(f"Failed to ensure permanent workflow version {upserted.as_id()!r}")
     return upserted
 
 
