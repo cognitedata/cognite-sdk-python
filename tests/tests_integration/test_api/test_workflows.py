@@ -470,6 +470,7 @@ def _delete_workflow_after_executions_finish(
     timeout: float = 120,
 ) -> None:
     """Cancel running executions and delete once the API allows it (jazz-api#2424)."""
+    cancelled_ids: set[str] = set()
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         running = cognite_client.workflows.executions.list(
@@ -478,8 +479,11 @@ def _delete_workflow_after_executions_finish(
             limit=None,
         )
         for execution in running:
+            if execution.id in cancelled_ids:
+                continue
             try:
                 cognite_client.workflows.executions.cancel(id=execution.id, reason="integration test cleanup")
+                cancelled_ids.add(execution.id)
             except CogniteAPIError:
                 pass
         if not running:
