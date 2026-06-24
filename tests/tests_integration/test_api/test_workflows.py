@@ -4,7 +4,7 @@ import datetime
 import os
 import time
 import unittest
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -86,6 +86,15 @@ def _safe_delete_workflows(
     *,
     ignore_unknown_ids: bool = True,
 ) -> None:
+    """Delete workflows without failing on races with executions or other test runs.
+
+    "Safe" here means we skip IDs already gone, cancel running executions before
+    workflows.delete, and retry once with a longer wait if delete still reports
+    running executions. Needed because integration tests share one CDF project:
+    another worker or CI job may have deleted the workflow already, cancellation
+    may not be visible yet, or a trigger can start a new execution between cancel
+    and delete.
+    """
     ids = [external_ids] if isinstance(external_ids, str) else external_ids
     if ignore_unknown_ids:
         retrieved = client.workflows.retrieve(ids, ignore_unknown_ids=True)
@@ -124,9 +133,61 @@ def permanent_wf_ext_id_prefix(os_and_py_version: str) -> str:
     return f"integ_test_wf_trigger_{os_and_py_version}"
 
 
+def _delete_triggers_for_versions(
+    client: CogniteClient,
+    version_ids: Sequence[tuple[str, str | None]],
+) -> None:
+    """Delete triggers linked to the given workflow versions."""
+    if not version_ids:
+        return
+    version_id_set = set(version_ids)
+    triggers = client.workflows.triggers.list(limit=None)
+    trigger_ids = [
+        trigger.external_id
+        for trigger in triggers
+        if (trigger.workflow_external_id, trigger.workflow_version) in version_id_set
+    ]
+    if trigger_ids:
+        client.workflows.triggers.delete(trigger_ids)
+
+
+def _safe_delete_workflow_versions(
+    client: CogniteClient,
+    version_ids: Sequence[tuple[str, str | None]],
+    *,
+    ignore_unknown_ids: bool = True,
+) -> None:
+    """Delete workflow versions without failing on linked triggers.
+
+    "Safe" here means we remove triggers pointing at these versions before calling
+    versions.delete, and retry once if the API still reports an active trigger.
+    Needed because integration tests share one CDF project across xdist workers and
+    concurrent CI jobs: a version can gain a trigger after our cleanup list was built,
+    or another run may still have a trigger on a version we are tearing down.
+    """
+    if not version_ids:
+        return
+    _delete_triggers_for_versions(client, version_ids)
+    ids_to_delete = [
+        WorkflowVersionId(workflow_external_id=wf_ext_id, version=version)
+        for wf_ext_id, version in version_ids
+        if version is not None
+    ]
+    if not ids_to_delete:
+        return
+    try:
+        client.workflows.versions.delete(ids_to_delete, ignore_unknown_ids=ignore_unknown_ids)
+    except CogniteAPIError as exc:
+        if "active trigger" not in str(exc):
+            raise
+        _delete_triggers_for_versions(client, version_ids)
+        client.workflows.versions.delete(ids_to_delete, ignore_unknown_ids=ignore_unknown_ids)
+
+
 @pytest.fixture(scope="session")
 def permanent_wf_ext_id(permanent_wf_ext_id_prefix: str, sdk_version: tuple[str, str, str]) -> str:
-    # Isolate permanent trigger workflows per xdist worker to avoid cross-worker races.
+    # "Permanent" means exempt from wf_setup_module stale-resource cleanup (via prefix),
+    # not a new ID per CI run. Stable across runs; xdist worker suffix avoids cross-worker races.
     worker = os.environ.get("PYTEST_XDIST_WORKER", "master")
     return f"{permanent_wf_ext_id_prefix}_{sdk_version[0]}_{worker}"
 
@@ -161,7 +222,7 @@ def wf_setup_module(cognite_client: CogniteClient, permanent_wf_ext_id_prefix: s
         if wf.last_updated_time < resource_age and not wf.workflow_external_id.startswith(permanent_wf_ext_id_prefix)
     ]
     if wf_versions_to_delete:
-        cognite_client.workflows.versions.delete(wf_versions_to_delete)
+        _safe_delete_workflow_versions(cognite_client, wf_versions_to_delete)
 
     wfs = cognite_client.workflows.list(limit=None)
     wfs_to_delete = [
@@ -266,7 +327,7 @@ def _new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow)
     )
     yield cognite_client.workflows.versions.upsert(version)
     _cancel_running_executions_for_workflow(cognite_client, new_workflow.external_id)
-    cognite_client.workflows.versions.delete(version.as_id(), ignore_unknown_ids=True)
+    _safe_delete_workflow_versions(cognite_client, [version.as_id().as_tuple()])
 
 
 @pytest.fixture(scope="session")
@@ -303,7 +364,7 @@ def _new_async_workflow_version(
     )
     yield cognite_client.workflows.versions.upsert(version)
     _cancel_running_executions_for_workflow(cognite_client, new_workflow.external_id)
-    cognite_client.workflows.versions.delete((new_workflow.external_id, version.version), ignore_unknown_ids=True)
+    _safe_delete_workflow_versions(cognite_client, [(new_workflow.external_id, version.version)])
 
 
 @pytest.fixture(scope="session")
@@ -375,7 +436,7 @@ def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Work
         upserted_versions.append(upserted_version)
     yield upserted_versions
     _cancel_running_executions_for_workflow(cognite_client, new_workflow.external_id)
-    cognite_client.workflows.versions.delete(upserted_versions.as_ids(), ignore_unknown_ids=True)
+    _safe_delete_workflow_versions(cognite_client, upserted_versions.as_ids().as_tuples())
 
 
 @pytest.fixture(scope="session")
@@ -595,7 +656,7 @@ class TestWorkflowVersions:
             ),
         )
 
-        cognite_client.workflows.versions.delete(version.as_id(), ignore_unknown_ids=True)
+        _safe_delete_workflow_versions(cognite_client, [version.as_id().as_tuple()], ignore_unknown_ids=True)
         created_version: WorkflowVersion | None = None
 
         try:
@@ -629,7 +690,7 @@ class TestWorkflowVersions:
 
         finally:
             if created_version is not None:
-                cognite_client.workflows.versions.delete(created_version.as_id())
+                _safe_delete_workflow_versions(cognite_client, [created_version.as_id().as_tuple()])
                 _safe_delete_workflows(cognite_client, created_version.workflow_external_id)
 
     def test_upsert_preexisting(
@@ -793,12 +854,12 @@ class TestWorkflowTriggers:
     def test_create_update_scheduled_trigger(
         self,
         cognite_client: CogniteClient,
-        permanent_workflow_for_triggers: WorkflowVersion,
+        new_workflow_version_test_scoped: WorkflowVersion,
     ) -> None:
-        version = permanent_workflow_for_triggers
+        version = new_workflow_version_test_scoped
         existing = WorkflowTriggerUpsert(
             external_id=f"test_create_update_scheduled_trigger_{random_string(5)}",
-            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="* * * * *"),
+            trigger_rule=WorkflowScheduledTriggerRule(cron_expression="0 * * * *"),
             workflow_external_id=version.workflow_external_id,
             workflow_version=version.version,
             input={"a": 1, "b": 2},
