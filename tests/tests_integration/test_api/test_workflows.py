@@ -437,13 +437,6 @@ def _new_workflow_execution_list(
     return WorkflowExecutionList([run_1, run_2])
 
 
-@pytest.fixture(scope="session")
-def workflow_execution_list(
-    cognite_client: CogniteClient, new_workflow_version: WorkflowVersion
-) -> WorkflowExecutionList:
-    return _new_workflow_execution_list(cognite_client, new_workflow_version)
-
-
 @pytest.fixture
 def workflow_execution_list_test_scoped(
     cognite_client: CogniteClient, new_workflow_version_test_scoped: WorkflowVersion
@@ -723,20 +716,25 @@ class TestWorkflowExecutions:
     def test_list_workflow_executions_by_status(
         self,
         cognite_client: CogniteClient,
-        workflow_execution_list: WorkflowExecutionList,
+        workflow_execution_list_test_scoped: WorkflowExecutionList,
     ) -> None:
-        listed_completed = cognite_client.workflows.executions.list(statuses=["completed", "terminated"])
+        listed_completed = cognite_client.workflows.executions.list(
+            workflow_version_ids=workflow_execution_list_test_scoped[0].as_workflow_id(),
+            statuses=["completed", "terminated"],
+        )
         for execution in listed_completed:
             assert execution.status in ["completed", "terminated"]
+        expected_ids = {e.id for e in workflow_execution_list_test_scoped if e.status in ("completed", "terminated")}
+        assert expected_ids <= {e.id for e in listed_completed}
 
     def test_retrieve_workflow_execution_detailed(
         self,
         cognite_client: CogniteClient,
-        workflow_execution_list: WorkflowExecutionList,
+        workflow_execution_list_test_scoped: WorkflowExecutionList,
     ) -> None:
-        retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_list[0].id)
+        retrieved = cognite_client.workflows.executions.retrieve_detailed(workflow_execution_list_test_scoped[0].id)
         assert retrieved
-        assert retrieved.as_execution().dump() == workflow_execution_list[0].dump()
+        assert retrieved.as_execution().dump() == workflow_execution_list_test_scoped[0].dump()
         assert retrieved.executed_tasks
         assert retrieved.metadata == {"test": "integration_completed"}
 
