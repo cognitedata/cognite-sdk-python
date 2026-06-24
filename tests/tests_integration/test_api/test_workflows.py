@@ -49,6 +49,31 @@ from tests.tests_integration.test_api.test_simulators.seed.resources import (
 from tests.utils import get_or_raise
 
 
+def _ensure_no_running_executions(
+    client: CogniteClient,
+    workflow_external_id: str,
+    *,
+    timeout: float = 120,
+) -> bool:
+    """Cancel and poll until the workflow has no running executions."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        running = client.workflows.executions.list(
+            workflow_version_ids=WorkflowVersionId(workflow_external_id),
+            statuses=["running"],
+            limit=None,
+        )
+        if not running:
+            return True
+        for execution in running:
+            try:
+                client.workflows.executions.cancel(id=execution.id, reason="integration test cleanup")
+            except CogniteAPIError:
+                pass  # execution may have completed/cancelled between list and cancel
+        time.sleep(0.5)
+    return False
+
+
 def _cancel_running_executions_for_workflow(
     client: CogniteClient,
     workflow_external_id: str,
@@ -56,28 +81,8 @@ def _cancel_running_executions_for_workflow(
     timeout: float = 60,
 ) -> None:
     """Cancel running executions so a workflow can be deleted."""
-    running = client.workflows.executions.list(
-        workflow_version_ids=WorkflowVersionId(workflow_external_id),
-        statuses=["running"],
-        limit=None,
-    )
-    for execution in running:
-        try:
-            client.workflows.executions.cancel(id=execution.id, reason="integration test cleanup")
-        except CogniteAPIError:
-            pass  # execution may have completed/cancelled between list and cancel
-
-    deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        running = client.workflows.executions.list(
-            workflow_version_ids=WorkflowVersionId(workflow_external_id),
-            statuses=["running"],
-            limit=1,
-        )
-        if not running:
-            return
-        time.sleep(0.5)
-    raise RuntimeError(f"Workflow {workflow_external_id!r} still has running executions after {timeout}s")
+    if not _ensure_no_running_executions(client, workflow_external_id, timeout=timeout):
+        raise RuntimeError(f"Workflow {workflow_external_id!r} still has running executions after {timeout}s")
 
 
 def _safe_delete_workflows(
@@ -89,38 +94,38 @@ def _safe_delete_workflows(
     """Delete workflows without failing on races with executions or other test runs.
 
     "Safe" here means we skip IDs already gone, cancel running executions before
-    workflows.delete, and retry once with a longer wait if delete still reports
+    workflows.delete, and retry for up to ~3 minutes if delete still reports
     running executions. Needed because integration tests share one CDF project:
     another worker or CI job may have deleted the workflow already, cancellation
     may not be visible yet, or a trigger can start a new execution between cancel
     and delete.
     """
-    ids = [external_ids] if isinstance(external_ids, str) else external_ids
-    if ignore_unknown_ids:
-        retrieved = client.workflows.retrieve(ids, ignore_unknown_ids=True)
-        existing_ids = {wf.external_id for wf in retrieved} if retrieved else set()
-        ids = [id_ for id_ in ids if id_ in existing_ids]
+    ids = [external_ids] if isinstance(external_ids, str) else list(external_ids)
+    deadline = time.monotonic() + 180
+    last_exc: CogniteAPIError | None = None
 
-    for workflow_external_id in ids:
-        try:
-            _cancel_running_executions_for_workflow(client, workflow_external_id)
-        except CogniteAPIError:
-            if not ignore_unknown_ids:
-                raise
-    try:
-        client.workflows.delete(external_ids, ignore_unknown_ids=ignore_unknown_ids)
-    except CogniteAPIError as exc:
-        if "running executions" not in str(exc):
-            raise
-        # Second pass: delete can still fail if cancellation is not yet visible, a new
-        # execution started (e.g. scheduled trigger), or the first cancel was skipped.
-        retrieved = client.workflows.retrieve(ids, ignore_unknown_ids=True)
-        existing_ids = {wf.external_id for wf in retrieved} if retrieved else set()
+    while time.monotonic() < deadline:
+        if ignore_unknown_ids:
+            retrieved = client.workflows.retrieve(ids, ignore_unknown_ids=True)
+            existing_ids = {wf.external_id for wf in retrieved} if retrieved else set()
+            ids = [id_ for id_ in ids if id_ in existing_ids]
+        if not ids:
+            return
+
         for workflow_external_id in ids:
-            if workflow_external_id not in existing_ids:
-                continue
-            _cancel_running_executions_for_workflow(client, workflow_external_id, timeout=120)
-        client.workflows.delete(external_ids, ignore_unknown_ids=ignore_unknown_ids)
+            _ensure_no_running_executions(client, workflow_external_id, timeout=30)
+
+        try:
+            client.workflows.delete(ids, ignore_unknown_ids=ignore_unknown_ids)
+            return
+        except CogniteAPIError as exc:
+            if "running executions" not in str(exc):
+                raise
+            last_exc = exc
+            time.sleep(1)
+
+    if last_exc is not None:
+        raise last_exc
 
 
 @pytest.fixture
@@ -326,7 +331,7 @@ def _new_workflow_version(cognite_client: CogniteClient, new_workflow: Workflow)
         ),
     )
     yield cognite_client.workflows.versions.upsert(version)
-    _cancel_running_executions_for_workflow(cognite_client, new_workflow.external_id)
+    _ensure_no_running_executions(cognite_client, new_workflow.external_id, timeout=120)
     _safe_delete_workflow_versions(cognite_client, [version.as_id().as_tuple()])
 
 
@@ -363,7 +368,7 @@ def _new_async_workflow_version(
         ),
     )
     yield cognite_client.workflows.versions.upsert(version)
-    _cancel_running_executions_for_workflow(cognite_client, new_workflow.external_id)
+    _ensure_no_running_executions(cognite_client, new_workflow.external_id, timeout=120)
     _safe_delete_workflow_versions(cognite_client, [(new_workflow.external_id, version.version)])
 
 
@@ -435,7 +440,7 @@ def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Work
         upserted_version = cognite_client.workflows.versions.upsert(version)
         upserted_versions.append(upserted_version)
     yield upserted_versions
-    _cancel_running_executions_for_workflow(cognite_client, new_workflow.external_id)
+    _ensure_no_running_executions(cognite_client, new_workflow.external_id, timeout=120)
     _safe_delete_workflow_versions(cognite_client, upserted_versions.as_ids().as_tuples())
 
 
@@ -484,16 +489,11 @@ def _new_workflow_execution_list(
         except CogniteAPIError:
             pass
 
-    deadline = time.monotonic() + 30
-    while time.monotonic() < deadline:
-        running = cognite_client.workflows.executions.list(
-            workflow_version_ids=new_workflow_version.as_id(),
-            statuses=["running"],
-            limit=1,
+    if not _ensure_no_running_executions(cognite_client, new_workflow_version.workflow_external_id, timeout=120):
+        raise RuntimeError(
+            f"Workflow {new_workflow_version.workflow_external_id!r} still has running executions "
+            "after setup for execution list tests"
         )
-        if not running:
-            break
-        time.sleep(0.5)
 
     return WorkflowExecutionList([run_1, run_2])
 
