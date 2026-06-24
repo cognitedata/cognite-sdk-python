@@ -87,9 +87,12 @@ def _safe_delete_workflows(
     ignore_unknown_ids: bool = True,
 ) -> None:
     ids = [external_ids] if isinstance(external_ids, str) else external_ids
+    if ignore_unknown_ids:
+        retrieved = client.workflows.retrieve(ids, ignore_unknown_ids=True)
+        existing_ids = {wf.external_id for wf in retrieved} if retrieved else set()
+        ids = [id_ for id_ in ids if id_ in existing_ids]
+
     for workflow_external_id in ids:
-        if ignore_unknown_ids and client.workflows.retrieve(workflow_external_id) is None:
-            continue
         try:
             _cancel_running_executions_for_workflow(client, workflow_external_id)
         except CogniteAPIError:
@@ -102,8 +105,10 @@ def _safe_delete_workflows(
             raise
         # Second pass: delete can still fail if cancellation is not yet visible, a new
         # execution started (e.g. scheduled trigger), or the first cancel was skipped.
+        retrieved = client.workflows.retrieve(ids, ignore_unknown_ids=True)
+        existing_ids = {wf.external_id for wf in retrieved} if retrieved else set()
         for workflow_external_id in ids:
-            if client.workflows.retrieve(workflow_external_id) is None:
+            if workflow_external_id not in existing_ids:
                 continue
             _cancel_running_executions_for_workflow(client, workflow_external_id, timeout=120)
         client.workflows.delete(external_ids, ignore_unknown_ids=ignore_unknown_ids)
