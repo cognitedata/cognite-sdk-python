@@ -465,7 +465,6 @@ class TestWorkflows:
 def _delete_workflow_after_executions_finish(
     cognite_client: CogniteClient,
     workflow_external_id: str,
-    version_id: WorkflowVersionId,
     *,
     timeout: float = 120,
 ) -> None:
@@ -578,7 +577,6 @@ class TestWorkflowVersions:
                 _delete_workflow_after_executions_finish(
                     cognite_client,
                     created_version.workflow_external_id,
-                    created_version.as_id(),
                 )
 
     def test_upsert_preexisting(
