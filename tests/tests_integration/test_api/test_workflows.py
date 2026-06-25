@@ -494,7 +494,6 @@ def _delete_workflow_after_executions_finish(
     last_exc: CogniteAPIError | None = None
     while time.monotonic() < delete_deadline:
         try:
-            cognite_client.workflows.versions.delete(version_id, ignore_unknown_ids=True)
             cognite_client.workflows.delete(workflow_external_id, ignore_unknown_ids=True)
             return
         except CogniteAPIError as exc:
