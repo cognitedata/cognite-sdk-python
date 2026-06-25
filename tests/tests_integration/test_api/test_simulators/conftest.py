@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 from cognite.client import AsyncCogniteClient, CogniteClient
-from cognite.client.exceptions import CogniteAPIError
 from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators import (
@@ -21,6 +20,7 @@ from cognite.client.data_classes.simulators import (
     SimulatorRoutineRevisionWrite,
     SimulatorRoutineWrite,
 )
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._text import to_snake_case
 from tests.tests_integration.test_api.test_simulators.seed.data import (
