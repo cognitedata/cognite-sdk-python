@@ -20,6 +20,7 @@ from cognite.client.data_classes.simulators import (
     SimulatorRoutineRevisionWrite,
     SimulatorRoutineWrite,
 )
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._text import to_snake_case
 from tests.tests_integration.test_api.test_simulators.seed.data import (
@@ -159,6 +160,22 @@ def seed_simulator_models(
     model_unique_external_id = seed_resource_names.simulator_model_external_id
     models = cognite_client.simulators.models.list(limit=None)
     model = models.get(external_id=model_unique_external_id)
+
+    two_hours_ago_ms = int(time.time() * 1000) - 2 * 60 * 60 * 1000
+    stale_ids = [
+        m.external_id
+        for m in models
+        if m.external_id
+        and m.external_id.startswith("py_sdk_integration_tests_model_")
+        and m.external_id != model_unique_external_id
+        and m.created_time is not None
+        and m.created_time < two_hours_ago_ms
+    ]
+    if stale_ids:
+        try:
+            cognite_client.simulators.models.delete(external_ids=stale_ids)
+        except CogniteAPIError:
+            pass
 
     if not model:
         new_model = SimulatorModelWrite._load(
