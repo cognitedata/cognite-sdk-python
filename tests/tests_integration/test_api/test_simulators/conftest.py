@@ -168,6 +168,7 @@ def seed_simulator_models(
         if m.external_id
         and m.external_id.startswith("py_sdk_integration_tests_model_")
         and m.external_id != model_unique_external_id
+        and m.created_time is not None
         and m.created_time < two_hours_ago_ms
     ]
     if stale_ids:
