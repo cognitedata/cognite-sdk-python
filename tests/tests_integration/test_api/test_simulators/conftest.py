@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 
 from cognite.client import AsyncCogniteClient, CogniteClient
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators import (
@@ -160,15 +161,20 @@ def seed_simulator_models(
     models = cognite_client.simulators.models.list(limit=None)
     model = models.get(external_id=model_unique_external_id)
 
+    two_hours_ago_ms = int(time.time() * 1000) - 2 * 60 * 60 * 1000
     stale_ids = [
         m.external_id
         for m in models
         if m.external_id
         and m.external_id.startswith("py_sdk_integration_tests_model_")
         and m.external_id != model_unique_external_id
+        and m.created_time < two_hours_ago_ms
     ]
     if stale_ids:
-        cognite_client.simulators.models.delete(external_ids=stale_ids)
+        try:
+            cognite_client.simulators.models.delete(external_ids=stale_ids)
+        except CogniteAPIError:
+            pass
 
     if not model:
         new_model = SimulatorModelWrite._load(
