@@ -6,9 +6,11 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
+from cognite.client.data_classes import filters
 from cognite.client.data_classes.data_modeling.records import (
     RecordContainerId,
     RecordId,
+    RecordsAggregation,
     RecordSource,
     RecordWrite,
 )
@@ -224,6 +226,74 @@ class TestRecordsAPIUpsert:
         assert len(requests) == 2
         assert len(jsgz_load(requests[0].content)["items"]) == 10
         assert len(jsgz_load(requests[1].content)["items"]) == 1
+
+
+class TestRecordsAPIAggregate:
+    def test_aggregate_posts_request_and_returns_wrapper(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        records_base_url: str,
+        stream_id: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(re.escape(records_base_url) + r"/aggregate$"),
+            json={"aggregates": {"avg_temp": {"avg": 22.5}}},
+        )
+        out = cognite_client.data_modeling.records.aggregate(
+            stream_id=stream_id,
+            aggregates={"avg_temp": {"avg": {"property": ["sp", "container-x", "temp"]}}},
+            last_updated_time={"gte": 1_000_000},
+            filter=filters.Equals(["space"], "sp"),
+            target_units={"unitSystemName": "SI"},
+            include_typing=True,
+        )
+
+        assert isinstance(out, RecordsAggregation)
+        assert out.aggregates == {"avg_temp": {"avg": 22.5}}
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body == {
+            "aggregates": {"avg_temp": {"avg": {"property": ["sp", "container-x", "temp"]}}},
+            "lastUpdatedTime": {"gte": 1_000_000},
+            "filter": {"equals": {"property": ["space"], "value": "sp"}},
+            "targetUnits": {"unitSystemName": "SI"},
+            "includeTyping": True,
+        }
+
+    def test_aggregate_accepts_dict_filter(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        records_base_url: str,
+        stream_id: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(re.escape(records_base_url) + r"/aggregate$"),
+            json={"aggregates": {"total": {"count": 7}}},
+        )
+        cognite_client.data_modeling.records.aggregate(
+            stream_id=stream_id,
+            aggregates={"total": {"count": {}}},
+            filter={"matchAll": {}},
+        )
+
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body["filter"] == {"matchAll": {}}
+
+    def test_records_aggregation_dump_round_trip(self) -> None:
+        raw = {
+            "aggregates": {
+                "by_space": {
+                    "uniqueValueBuckets": [
+                        {"value": "sp", "count": 2, "aggregates": {"max_temp": {"max": 30.0}}},
+                    ]
+                }
+            }
+        }
+        loaded = RecordsAggregation._load(raw)
+        assert loaded.dump() == raw
 
 
 class TestRecordDTOs:

@@ -122,6 +122,7 @@ from cognite.client.data_classes.data_modeling.query import (
 from cognite.client.data_classes.data_modeling.records import (
     RecordContainerId,
     RecordId,
+    RecordsAggregation,
     RecordSource,
     RecordWrite,
     RecordWriteList,
@@ -254,6 +255,7 @@ __all__ = [
     "RecordSource",
     "RecordWrite",
     "RecordWriteList",
+    "RecordsAggregation",
     "RequiresConstraint",
     "RequiresConstraintApply",
     "ResultSetExpression",

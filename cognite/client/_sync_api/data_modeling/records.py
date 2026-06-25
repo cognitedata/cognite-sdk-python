@@ -1,18 +1,23 @@
 """
 ===============================================================================
-6fb9ded91a0d546955f9ed3109b468b6
+419d6a4367d905ade2f6d51bbbbf817b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes.data_modeling.records import RecordId, RecordWrite
+from cognite.client.data_classes.data_modeling.records import (
+    RecordId,
+    RecordsAggregation,
+    RecordWrite,
+)
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
@@ -147,4 +152,57 @@ class SyncRecordsAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.records.upsert(items=items, stream_id=stream_id, upsert_mode=upsert_mode)
+        )
+
+    def aggregate(
+        self,
+        aggregates: Mapping[str, Any],
+        *,
+        stream_id: str,
+        last_updated_time: Mapping[str, Any] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        target_units: Mapping[str, Any] | None = None,
+        include_typing: bool = False,
+    ) -> RecordsAggregation:
+        """
+        `Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_.
+
+        Args:
+            aggregates (Mapping[str, Any]): Aggregate request tree keyed by client-defined aggregate IDs.
+            stream_id (str): External ID of the stream to aggregate from.
+            last_updated_time (Mapping[str, Any] | None): Filter records by last-updated time.
+                **Required** for immutable streams (must include a lower bound).
+            filter (Filter | dict[str, Any] | None): Filter expression.
+            target_units (Mapping[str, Any] | None): Unit conversion specification.
+            include_typing (bool): Include property type metadata in the response.
+
+        Returns:
+            RecordsAggregation: Aggregate results keyed by the requested aggregate IDs.
+
+        Examples:
+
+            Aggregate average temperature:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={
+                ...         "avg_temperature": {
+                ...             "avg": {"property": ["my-space", "sensor", "temperature"]}
+                ...         }
+                ...     },
+                ... )
+                >>> res.aggregates["avg_temperature"]["avg"]
+                22.5
+        """
+        return run_sync(
+            self.__async_client.data_modeling.records.aggregate(
+                aggregates=aggregates,
+                stream_id=stream_id,
+                last_updated_time=last_updated_time,
+                filter=filter,
+                target_units=target_units,
+                include_typing=include_typing,
+            )
         )

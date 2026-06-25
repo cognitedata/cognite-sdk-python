@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -12,9 +12,29 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
 )
 from cognite.client.data_classes.data_modeling.ids import ContainerId
+from cognite.client.data_classes.data_modeling.instances import TypeInformation
 from cognite.client.utils._identifier import IdentifierSequenceCore, RecordId
 
-__all__ = ["RecordContainerId", "RecordId", "RecordIdSequence", "RecordSource", "RecordWrite", "RecordWriteList"]
+__all__ = [
+    "RecordContainerId",
+    "RecordId",
+    "RecordIdSequence",
+    "RecordSource",
+    "RecordWrite",
+    "RecordWriteList",
+    "RecordsAggregation",
+]
+
+
+def _dump_aggregate_value(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {key: _dump_aggregate_value(val) for key, val in value.items()}
+    if isinstance(value, list | tuple):
+        return [_dump_aggregate_value(item) for item in value]
+    dump = getattr(value, "dump", None)
+    if callable(dump):
+        return _dump_aggregate_value(dump())
+    return value
 
 
 class RecordIdSequence(IdentifierSequenceCore[RecordId]):
@@ -106,3 +126,29 @@ class RecordWriteList(CogniteResourceList[RecordWrite]):
 
     def as_ids(self) -> list[RecordId]:
         return [v.as_id() for v in self]
+
+
+class RecordsAggregation(CogniteResource):
+    """Aggregate results returned from the Records aggregate endpoint.
+
+    Args:
+        aggregates (dict[str, Any]): Aggregate results keyed by the client-defined aggregate IDs.
+        typing (TypeInformation | None): Optional property typing metadata.
+    """
+
+    def __init__(self, aggregates: dict[str, Any], typing: TypeInformation | None = None) -> None:
+        self.aggregates = aggregates
+        self.typing = typing
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            aggregates=resource["aggregates"],
+            typing=TypeInformation._load(resource["typing"]) if "typing" in resource else None,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"aggregates": _dump_aggregate_value(self.aggregates)}
+        if self.typing is not None:
+            output["typing"] = self.typing.dump(camel_case=camel_case)
+        return output
