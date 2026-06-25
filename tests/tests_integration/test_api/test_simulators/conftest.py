@@ -160,6 +160,16 @@ def seed_simulator_models(
     models = cognite_client.simulators.models.list(limit=None)
     model = models.get(external_id=model_unique_external_id)
 
+    stale_ids = [
+        m.external_id
+        for m in models
+        if m.external_id
+        and m.external_id.startswith("py_sdk_integration_tests_model_")
+        and m.external_id != model_unique_external_id
+    ]
+    if stale_ids:
+        cognite_client.simulators.models.delete(external_ids=stale_ids)
+
     if not model:
         new_model = SimulatorModelWrite._load(
             {
