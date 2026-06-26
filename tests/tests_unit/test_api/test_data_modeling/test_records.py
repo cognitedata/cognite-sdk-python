@@ -442,7 +442,8 @@ class TestRecordDTOs:
     def test_record_target_units_rejects_empty_request_mode(
         self, cognite_client: CogniteClient, stream_id: str
     ) -> None:
-        with pytest.raises(ValueError, match="exactly one"):
+        expected_err = "Provide exactly one of 'properties' or 'unit_system_name'."
+        with pytest.raises(ValueError, match=expected_err):
             cognite_client.data_modeling.records.sync(
                 stream_id=stream_id,
                 initialize_cursor="c",
@@ -453,7 +454,8 @@ class TestRecordDTOs:
     def test_record_target_units_rejects_multiple_request_modes(
         self, cognite_client: CogniteClient, stream_id: str
     ) -> None:
-        with pytest.raises(ValueError, match="exactly one"):
+        expected_err = "Provide exactly one of 'properties' or 'unit_system_name'."
+        with pytest.raises(ValueError, match=expected_err):
             cognite_client.data_modeling.records.sync(
                 stream_id=stream_id,
                 initialize_cursor="c",
