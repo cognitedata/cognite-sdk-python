@@ -228,8 +228,8 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     Args:
         concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
-        read (int): Maximum concurrent read requests (list, retrieve, sync).
-        write (int): Maximum concurrent write requests (ingest, delete).
+        read (int): Maximum concurrent read requests (list/filter, sync).
+        write (int): Maximum concurrent write requests (ingest, upsert, delete).
     """
 
     def __init__(
