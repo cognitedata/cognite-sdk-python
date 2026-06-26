@@ -6,11 +6,28 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
+from cognite.client.data_classes import filters
 from cognite.client.data_classes.data_modeling.records import (
+    Avg,
+    Count,
+    FilterAggregateResult,
+    Filters,
+    Max,
+    MetricAggregateResult,
+    MovingFunction,
+    MovingFunctionAggregateResult,
+    NumberHistogram,
+    NumberHistogramAggregateResult,
     RecordContainerId,
     RecordId,
+    RecordsAggregation,
     RecordSource,
     RecordWrite,
+    Sum,
+    TimeHistogram,
+    TimeHistogramAggregateResult,
+    UniqueValues,
+    UniqueValuesAggregateResult,
 )
 from tests.utils import jsgz_load
 
@@ -224,6 +241,227 @@ class TestRecordsAPIUpsert:
         assert len(requests) == 2
         assert len(jsgz_load(requests[0].content)["items"]) == 10
         assert len(jsgz_load(requests[1].content)["items"]) == 1
+
+
+class TestRecordsAPIAggregate:
+    def test_aggregate_posts_request_and_returns_wrapper(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        records_base_url: str,
+        stream_id: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(re.escape(records_base_url) + r"/aggregate$"),
+            json={"aggregates": {"avg_temp": {"avg": 22.5}}},
+        )
+        out = cognite_client.data_modeling.records.aggregate(
+            stream_id=stream_id,
+            aggregates={"avg_temp": {"avg": {"property": ["sp", "container-x", "temp"]}}},
+            last_updated_time={"gte": 1_000_000},
+            filter=filters.Equals(["space"], "sp"),
+            target_units={"unitSystemName": "SI"},
+            include_typing=True,
+        )
+
+        assert isinstance(out, RecordsAggregation)
+        assert out.aggregates == {"avg_temp": {"avg": 22.5}}
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body == {
+            "aggregates": {"avg_temp": {"avg": {"property": ["sp", "container-x", "temp"]}}},
+            "lastUpdatedTime": {"gte": 1_000_000},
+            "filter": {"equals": {"property": ["space"], "value": "sp"}},
+            "targetUnits": {"unitSystemName": "SI"},
+            "includeTyping": True,
+        }
+
+    def test_aggregate_accepts_dict_filter(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        records_base_url: str,
+        stream_id: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(re.escape(records_base_url) + r"/aggregate$"),
+            json={"aggregates": {"total": {"count": 7}}},
+        )
+        cognite_client.data_modeling.records.aggregate(
+            stream_id=stream_id,
+            aggregates={"total": {"count": {}}},
+            filter={"matchAll": {}},
+        )
+
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body["filter"] == {"matchAll": {}}
+
+    def test_aggregate_accepts_mixed_typed_and_dict_aggregates(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        records_base_url: str,
+        stream_id: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(re.escape(records_base_url) + r"/aggregate$"),
+            json={"aggregates": {"total": {"count": 7}}},
+        )
+
+        cognite_client.data_modeling.records.aggregate(
+            stream_id=stream_id,
+            aggregates={
+                "by_day": TimeHistogram(
+                    ["sp", "container-x", "timestamp"],
+                    calendar_interval="1d",
+                    aggregates={
+                        "avg_temp": Avg(["sp", "container-x", "temp"]),
+                        "moving_count": MovingFunction(
+                            buckets_path="_count",
+                            window=3,
+                            function="MovingFunctions.unweightedAvg",
+                        ),
+                        "raw_total": {"count": {}},
+                    },
+                ),
+                "by_region": UniqueValues(
+                    ["sp", "container-x", "region"],
+                    aggregates={"max_temp": Max(["sp", "container-x", "temp"])},
+                    size=5,
+                ),
+                "salary_histogram": NumberHistogram(
+                    ["sp", "container-x", "salary"],
+                    interval=1000,
+                    aggregates={"sum_salary": Sum(["sp", "container-x", "salary"])},
+                    hard_bounds={"min": 0, "max": 10000},
+                ),
+                "by_filters": Filters(
+                    filters=[
+                        filters.Range(["createdTime"], gte=1),
+                        {"matchAll": {}},
+                    ],
+                    aggregates={"total": Count()},
+                ),
+            },
+        )
+
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body["aggregates"] == {
+            "by_day": {
+                "timeHistogram": {
+                    "property": ["sp", "container-x", "timestamp"],
+                    "calendarInterval": "1d",
+                    "aggregates": {
+                        "avg_temp": {"avg": {"property": ["sp", "container-x", "temp"]}},
+                        "moving_count": {
+                            "movingFunction": {
+                                "bucketsPath": "_count",
+                                "window": 3,
+                                "function": "MovingFunctions.unweightedAvg",
+                            }
+                        },
+                        "raw_total": {"count": {}},
+                    },
+                }
+            },
+            "by_region": {
+                "uniqueValues": {
+                    "property": ["sp", "container-x", "region"],
+                    "aggregates": {"max_temp": {"max": {"property": ["sp", "container-x", "temp"]}}},
+                    "size": 5,
+                }
+            },
+            "salary_histogram": {
+                "numberHistogram": {
+                    "property": ["sp", "container-x", "salary"],
+                    "interval": 1000,
+                    "aggregates": {"sum_salary": {"sum": {"property": ["sp", "container-x", "salary"]}}},
+                    "hardBounds": {"min": 0, "max": 10000},
+                }
+            },
+            "by_filters": {
+                "filters": {
+                    "filters": [
+                        {"range": {"property": ["createdTime"], "gte": 1}},
+                        {"matchAll": {}},
+                    ],
+                    "aggregates": {"total": {"count": {}}},
+                }
+            },
+        }
+
+    def test_records_aggregation_dump_round_trip(self) -> None:
+        raw = {
+            "aggregates": {
+                "by_space": {
+                    "uniqueValueBuckets": [
+                        {"value": "sp", "count": 2, "aggregates": {"max_temp": {"max": 30.0}}},
+                    ]
+                }
+            }
+        }
+        loaded = RecordsAggregation._load(raw)
+        assert loaded.dump() == raw
+
+    def test_records_aggregation_loads_typed_results(self) -> None:
+        loaded = RecordsAggregation._load(
+            {
+                "aggregates": {
+                    "avg_temp": {"avg": 22.5},
+                    "by_region": {
+                        "uniqueValueBuckets": [
+                            {
+                                "value": "north",
+                                "count": 2,
+                                "aggregates": {"max_temp": {"max": 30.0}},
+                            }
+                        ]
+                    },
+                    "by_number": {"numberHistogramBuckets": [{"intervalStart": 0.0, "count": 1}]},
+                    "by_time": {
+                        "timeHistogramBuckets": [
+                            {
+                                "intervalStart": "2024-05-16T00:00:00Z",
+                                "count": 3,
+                                "aggregates": {"moving": {"fnValue": 7.5}},
+                            }
+                        ]
+                    },
+                    "by_filter": {"filterBuckets": [{"count": 4}]},
+                    "future": {"futureAggregateResult": 1},
+                }
+            }
+        )
+
+        avg_temp = loaded["avg_temp"]
+        assert isinstance(avg_temp, MetricAggregateResult)
+        assert avg_temp.aggregate == "avg"
+        assert avg_temp.value == 22.5
+
+        by_region = loaded["by_region"]
+        assert isinstance(by_region, UniqueValuesAggregateResult)
+        assert by_region.buckets[0].value == "north"
+        max_temp = by_region.buckets[0].results["max_temp"]
+        assert isinstance(max_temp, MetricAggregateResult)
+        assert max_temp.value == 30.0
+
+        by_number = loaded["by_number"]
+        assert isinstance(by_number, NumberHistogramAggregateResult)
+        assert by_number.buckets[0].interval_start == 0.0
+
+        by_time = loaded["by_time"]
+        assert isinstance(by_time, TimeHistogramAggregateResult)
+        moving = by_time.buckets[0].results["moving"]
+        assert isinstance(moving, MovingFunctionAggregateResult)
+        assert moving.fn_value == 7.5
+
+        by_filter = loaded["by_filter"]
+        assert isinstance(by_filter, FilterAggregateResult)
+        assert by_filter.buckets[0].count == 4
+
+        assert loaded["future"].dump() == {"futureAggregateResult": 1}
 
 
 class TestRecordDTOs:
