@@ -13,7 +13,12 @@ from cognite.client import AsyncCogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import Token
-from scripts.sync_client_codegen.constants import ASYNC_METHODS_TO_KEEP, MAYBE_IMPORTS, SYNC_METHODS_TO_KEEP
+from scripts.sync_client_codegen.constants import (
+    ASYNC_METHODS_TO_KEEP,
+    FOUR_SPACES,
+    MAYBE_IMPORTS,
+    SYNC_METHODS_TO_KEEP,
+)
 
 
 def get_api_class_by_attribute(cls_: object, parent_name: tuple[str, ...] = ()) -> dict[str, type[APIClient]]:
@@ -328,3 +333,11 @@ def get_canonical_source(source: Path | str) -> str:
 
     tree = ast.parse(source)
     return ast.unparse(tree)
+
+
+def create_type_checking_imports_block(type_checking_imports: str) -> str:
+    """Creates a block of code for type checking imports. If there are no type checking imports, it returns an empty string."""
+    if not type_checking_imports.strip():
+        return ""
+    parsed_imports = "\n".join([f"{FOUR_SPACES}{line}" for line in type_checking_imports.split("\n")])
+    return f"if TYPE_CHECKING:\n{parsed_imports}"
