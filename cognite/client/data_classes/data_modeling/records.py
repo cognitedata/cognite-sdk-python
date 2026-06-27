@@ -152,7 +152,7 @@ class RecordTargetUnit(CogniteResource):
         unit (UnitReference | UnitSystemReference): Target unit or target unit system.
     """
 
-    def __init__(self, property: Sequence[str], unit: UnitReference | UnitSystemReference) -> None:
+    def __init__(self, property: SequenceNotStr[str], unit: UnitReference | UnitSystemReference) -> None:
         self.property = list(property)
         self.unit = unit
 
