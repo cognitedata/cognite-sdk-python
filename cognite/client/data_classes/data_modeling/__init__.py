@@ -123,8 +123,13 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordContainerId,
     RecordId,
     RecordSource,
+    RecordSourceSelector,
+    RecordTargetUnit,
+    RecordTargetUnits,
     RecordWrite,
     RecordWriteList,
+    SyncRecord,
+    SyncRecordList,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
 from cognite.client.data_classes.data_modeling.streams import (
@@ -252,6 +257,9 @@ __all__ = [
     "RecordContainerId",
     "RecordId",
     "RecordSource",
+    "RecordSourceSelector",
+    "RecordTargetUnit",
+    "RecordTargetUnits",
     "RecordWrite",
     "RecordWriteList",
     "RequiresConstraint",
@@ -278,6 +286,8 @@ __all__ = [
     "StreamTemplateWriteSettings",
     "StreamWrite",
     "SubscriptionContext",
+    "SyncRecord",
+    "SyncRecordList",
     "Text",
     "TimeSeriesReference",
     "Timestamp",
