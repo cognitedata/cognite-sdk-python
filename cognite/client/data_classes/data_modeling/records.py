@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -55,12 +55,12 @@ class RecordSource(CogniteResource):
 
     Args:
         source (RecordContainerId): Reference to the container.
-        properties (Mapping[str, Any]): The data to write to the source container.
+        properties (dict[str, Any]): The data to write to the source container.
     """
 
-    def __init__(self, source: RecordContainerId, properties: Mapping[str, Any]) -> None:
+    def __init__(self, source: RecordContainerId, properties: dict[str, Any]) -> None:
         self.source = source
-        self.properties = dict(properties)
+        self.properties = properties
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -84,13 +84,13 @@ class RecordWrite(WriteableCogniteResource["RecordWrite"]):
     Args:
         space (str): Space the record belongs to.
         external_id (str): External ID of the record (1-256 chars, no null bytes).
-        sources (Sequence[RecordSource]): Container property values to write (1-100 sources).
+        sources (list[RecordSource]): Container property values to write (1-100 sources).
     """
 
-    def __init__(self, space: str, external_id: str, sources: Sequence[RecordSource]) -> None:
+    def __init__(self, space: str, external_id: str, sources: list[RecordSource]) -> None:
         self.space = space
         self.external_id = external_id
-        self.sources = list(sources)
+        self.sources = sources
 
     def as_id(self) -> RecordId:
         return RecordId(space=self.space, external_id=self.external_id)
@@ -128,12 +128,12 @@ class RecordSourceSelector(CogniteResource):
 
     Args:
         source (RecordContainerId): The container to select properties from.
-        properties (Sequence[str]): Property identifiers to return; use ``["*"]`` to return all.
+        properties (list[str]): Property identifiers to return; use ``["*"]`` to return all.
     """
 
-    def __init__(self, source: RecordContainerId, properties: SequenceNotStr[str]) -> None:
+    def __init__(self, source: RecordContainerId, properties: list[str]) -> None:
         self.source = source
-        self.properties = list(properties)
+        self.properties = properties
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -147,13 +147,13 @@ class RecordTargetUnit(CogniteResource):
     """A target unit conversion for one Records container property.
 
     Args:
-        property (Sequence[str]): Fully qualified container property path:
+        property (list[str]): Fully qualified container property path:
             ``[space, container_external_id, property_id]``.
         unit (UnitReference | UnitSystemReference): Target unit or target unit system.
     """
 
-    def __init__(self, property: SequenceNotStr[str], unit: UnitReference | UnitSystemReference) -> None:
-        self.property = list(property)
+    def __init__(self, property: list[str], unit: UnitReference | UnitSystemReference) -> None:
+        self.property = property
         self.unit = unit
 
     @classmethod
@@ -173,14 +173,12 @@ class RecordTargetUnits(CogniteResource):
     """Target unit conversions for a Records filter, sync, or aggregate request.
 
     Args:
-        properties (Sequence[RecordTargetUnit] | None): Property-specific target unit conversions.
+        properties (list[RecordTargetUnit] | None): Property-specific target unit conversions.
         unit_system_name (str | None): Convert all convertible properties to a target unit system.
     """
 
-    def __init__(
-        self, properties: Sequence[RecordTargetUnit] | None = None, unit_system_name: str | None = None
-    ) -> None:
-        self.properties = list(properties) if properties is not None else None
+    def __init__(self, properties: list[RecordTargetUnit] | None = None, unit_system_name: str | None = None) -> None:
+        self.properties = properties
         self.unit_system_name = unit_system_name
 
     @classmethod
@@ -212,7 +210,7 @@ class SyncRecord(WriteableCogniteResource["RecordWrite"]):
         created_time (int): Creation time in milliseconds since epoch.
         last_updated_time (int): Last updated time in milliseconds since epoch.
         status (Literal['created', 'updated', 'deleted']): The record's change status.
-        properties (Mapping[str, Mapping[str, Mapping[str, Any]]] | None): Property values (absent for
+        properties (dict[str, dict[str, dict[str, Any]]] | None): Property values (absent for
             deleted tombstones).
     """
 
@@ -223,21 +221,14 @@ class SyncRecord(WriteableCogniteResource["RecordWrite"]):
         created_time: int,
         last_updated_time: int,
         status: Literal["created", "updated", "deleted"],
-        properties: Mapping[str, Mapping[str, Mapping[str, Any]]] | None = None,
+        properties: dict[str, dict[str, dict[str, Any]]] | None = None,
     ) -> None:
         self.space = space
         self.external_id = external_id
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.status = status
-        self.properties = (
-            {
-                space_key: {container: dict(values) for container, values in containers.items()}
-                for space_key, containers in properties.items()
-            }
-            if properties is not None
-            else None
-        )
+        self.properties = properties
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:

@@ -49,7 +49,7 @@ class RecordsAPI(APIClient):
             if (target_units.properties is None) == (target_units.unit_system_name is None):
                 raise ValueError("Provide exactly one of 'properties' or 'unit_system_name'.")
             return target_units.dump()
-        return RecordTargetUnits(properties=target_units).dump()
+        return RecordTargetUnits(properties=list(target_units)).dump()
 
     async def _sync(
         self,
