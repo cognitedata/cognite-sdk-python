@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6cfa53b9447f702dc542f27bb112a22f
+df9a1461a02c08513af8aefd928b3e1e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -218,6 +218,9 @@ class SyncFilesAPI(SyncAPIClient):
         Returns:
             FileMetadata | None: Requested file metadata or None if it does not exist.
 
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve>` instead.
+
         Examples:
 
             Get file metadata by instance id:
@@ -252,6 +255,9 @@ class SyncFilesAPI(SyncAPIClient):
 
         Returns:
             FileMetadataList: The requested file metadatas.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve>` instead.
 
         Examples:
 
@@ -446,6 +452,9 @@ class SyncFilesAPI(SyncAPIClient):
         Returns:
             FileMetadata: No description.
 
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.upload_content <cognite.client.AsyncCogniteClient.data_modeling.files.upload_content>` instead.
+
         Examples:
 
             Upload file content using instance_id:
@@ -591,6 +600,9 @@ class SyncFilesAPI(SyncAPIClient):
 
         Returns:
             FileMetadata: No description.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.upload_content_bytes <cognite.client.AsyncCogniteClient.data_modeling.files.upload_content_bytes>` instead.
 
         Examples:
 
@@ -872,6 +884,9 @@ class SyncFilesAPI(SyncAPIClient):
 
         Returns:
             dict[int, str] | dict[str, str] | dict[NodeId, str] | dict[int | str | NodeId, str]: Dictionary containing download urls.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve_download_urls <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve_download_urls>` instead.
 
         Examples:
 
