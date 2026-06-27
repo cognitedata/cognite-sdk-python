@@ -131,7 +131,7 @@ class RecordSourceSelector(CogniteResource):
         properties (Sequence[str]): Property identifiers to return; use ``["*"]`` to return all.
     """
 
-    def __init__(self, source: RecordContainerId, properties: Sequence[str]) -> None:
+    def __init__(self, source: RecordContainerId, properties: SequenceNotStr[str]) -> None:
         self.source = source
         self.properties = list(properties)
 
