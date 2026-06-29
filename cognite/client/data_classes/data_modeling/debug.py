@@ -114,7 +114,7 @@ class DebugParameters(CogniteResource):
         include_translated_query (bool): Include the internal representation of the query.
         include_plan (bool): Include the execution plan for the query.
         profile (bool): Most thorough level of query analysis. Requires emit_results=False.
-        include_llm_prompt (bool): Include a prompt that can be bed into an LLM to help with debugging the query.
+        include_llm_prompt (bool): Include a prompt that can be fed into an LLM to help with debugging the query.
     """
 
     emit_results: bool = True
