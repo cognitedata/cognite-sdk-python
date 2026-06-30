@@ -262,7 +262,7 @@ class TestRecordsAPIUpsert:
         assert len(jsgz_load(requests[1].content)["items"]) == 1
 
 
-class TestRecordsAPIList:
+class TestRecordsAPIFilter:
     def test_list_returns_record_list(
         self,
         cognite_client: CogniteClient,
@@ -270,7 +270,7 @@ class TestRecordsAPIList:
         mock_filter: None,
         stream_id: str,
     ) -> None:
-        result = cognite_client.data_modeling.records.list(stream_id=stream_id)
+        result = cognite_client.data_modeling.records.filter(stream_id=stream_id)
         assert isinstance(result, RecordList)
         assert len(result) == 1
         assert result[0].external_id == "rec-1"
@@ -285,7 +285,7 @@ class TestRecordsAPIList:
         mock_filter: None,
         stream_id: str,
     ) -> None:
-        cognite_client.data_modeling.records.list(stream_id=stream_id)
+        cognite_client.data_modeling.records.filter(stream_id=stream_id)
         body = jsgz_load(httpx_mock.get_requests()[0].content)
         assert body == {"limit": 10}
 
@@ -296,7 +296,7 @@ class TestRecordsAPIList:
         mock_filter: None,
         stream_id: str,
     ) -> None:
-        cognite_client.data_modeling.records.list(
+        cognite_client.data_modeling.records.filter(
             stream_id=stream_id, last_updated_time=TimeRange(gte=1_000_000), limit=50
         )
         body = jsgz_load(httpx_mock.get_requests()[0].content)
@@ -310,7 +310,7 @@ class TestRecordsAPIList:
         mock_filter: None,
         stream_id: str,
     ) -> None:
-        cognite_client.data_modeling.records.list(
+        cognite_client.data_modeling.records.filter(
             stream_id=stream_id,
             sources=[RecordSourceSelector(RecordContainerId(space="sp", external_id="container-x"), ["*"])],
         )
@@ -326,7 +326,7 @@ class TestRecordsAPIList:
         mock_filter: None,
         stream_id: str,
     ) -> None:
-        cognite_client.data_modeling.records.list(
+        cognite_client.data_modeling.records.filter(
             stream_id=stream_id, sort=InstanceSort(property=["sp", "container-x", "temp"], direction="descending")
         )
         body = jsgz_load(httpx_mock.get_requests()[0].content)
@@ -344,7 +344,7 @@ class TestRecordsAPIList:
         httpx_mock.add_response(
             method="POST", url=filter_url_pattern, status_code=200, json={"items": [record_response], "typing": typing}
         )
-        result = cognite_client.data_modeling.records.list(stream_id=stream_id, include_typing=True)
+        result = cognite_client.data_modeling.records.filter(stream_id=stream_id, include_typing=True)
         body = jsgz_load(httpx_mock.get_requests()[0].content)
         assert body["includeTyping"] is True
         assert isinstance(result.typing, TypeInformation)

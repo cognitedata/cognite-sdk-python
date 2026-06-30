@@ -235,7 +235,7 @@ class RecordsAPI(APIClient):
             no_response=True,
         )
 
-    async def list(
+    async def filter(
         self,
         stream_id: str,
         *,
@@ -272,7 +272,7 @@ class RecordsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.records import TimeRange
                 >>> client = CogniteClient()
-                >>> res = client.data_modeling.records.list(
+                >>> res = client.data_modeling.records.filter(
                 ...     stream_id="my-stream",
                 ...     last_updated_time=TimeRange(gt=1705341600000),
                 ...     limit=100,

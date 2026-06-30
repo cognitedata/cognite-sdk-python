@@ -1,6 +1,6 @@
 """
 ===============================================================================
-84f418ba002f100e93469aa2b0b1929e
+b648da6cf09c84c8e1361f9c4e6c4052
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -160,7 +160,7 @@ class SyncRecordsAPI(SyncAPIClient):
             self.__async_client.data_modeling.records.upsert(items=items, stream_id=stream_id, upsert_mode=upsert_mode)
         )
 
-    def list(
+    def filter(
         self,
         stream_id: str,
         *,
@@ -198,14 +198,14 @@ class SyncRecordsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.records import TimeRange
                 >>> client = CogniteClient()
-                >>> res = client.data_modeling.records.list(
+                >>> res = client.data_modeling.records.filter(
                 ...     stream_id="my-stream",
                 ...     last_updated_time=TimeRange(gt=1705341600000),
                 ...     limit=100,
                 ... )
         """
         return run_sync(
-            self.__async_client.data_modeling.records.list(
+            self.__async_client.data_modeling.records.filter(
                 stream_id=stream_id,
                 last_updated_time=last_updated_time,
                 filter=filter,
