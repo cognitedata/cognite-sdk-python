@@ -276,7 +276,6 @@ class RecordsAPI(APIClient):
                 ...     },
                 ... )
                 >>> res.aggregates["avg_temperature"]["avg"]
-                22.5
         """
         self._warning.warn()
         body: dict[str, Any] = {"aggregates": _dump_aggregate_value(aggregates)}

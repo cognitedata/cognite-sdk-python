@@ -1,6 +1,6 @@
 """
 ===============================================================================
-835b9c788ba3a5be69323a5d6d9eef6d
+25c2214c5ff3f8d95937380fd6822d5e
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -201,7 +201,6 @@ class SyncRecordsAPI(SyncAPIClient):
                 ...     },
                 ... )
                 >>> res.aggregates["avg_temperature"]["avg"]
-                22.5
         """
         return run_sync(
             self.__async_client.data_modeling.records.aggregate(
