@@ -11,6 +11,7 @@ from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
     WriteableCogniteResource,
+    WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
 from cognite.client.data_classes.data_modeling.ids import ContainerId
@@ -18,9 +19,11 @@ from cognite.client.data_classes.data_modeling.instances import TypeInformation
 from cognite.client.utils._identifier import IdentifierSequenceCore, RecordId
 
 __all__ = [
+    "Record",
     "RecordContainerId",
     "RecordId",
     "RecordIdSequence",
+    "RecordList",
     "RecordSource",
     "RecordSourceSelector",
     "RecordTargetUnit",
@@ -29,6 +32,7 @@ __all__ = [
     "RecordWriteList",
     "SyncRecord",
     "SyncRecordList",
+    "TimeRange",
 ]
 
 
@@ -123,6 +127,137 @@ class RecordWriteList(CogniteResourceList[RecordWrite]):
         return [v.as_id() for v in self]
 
 
+class Record(WriteableCogniteResource["RecordWrite"]):
+    """A record returned from the stream records API.
+
+    This is the read version of :class:`RecordWrite`.
+
+    Args:
+        space (str): Space the record belongs to.
+        external_id (str): External ID of the record.
+        created_time (int): Creation time in milliseconds since epoch.
+        last_updated_time (int): Last updated time in milliseconds since epoch.
+        properties (dict[str, dict[str, dict[str, Any]]] | None): Property values keyed by
+            ``{space: {container_external_id: {property_id: value}}}``.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        created_time: int,
+        last_updated_time: int,
+        properties: dict[str, dict[str, dict[str, Any]]] | None = None,
+    ) -> None:
+        self.space = space
+        self.external_id = external_id
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+        self.properties = properties
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            properties=resource.get("properties"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "space": self.space,
+            "externalId" if camel_case else "external_id": self.external_id,
+            "createdTime" if camel_case else "created_time": self.created_time,
+            "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
+        }
+        if self.properties is not None:
+            output["properties"] = self.properties
+        return output
+
+    def as_id(self) -> RecordId:
+        return RecordId(space=self.space, external_id=self.external_id)
+
+    def as_write(self) -> RecordWrite:
+        """Reconstruct the :class:`RecordWrite` by grouping read properties back into sources."""
+        sources = [
+            RecordSource(
+                source=RecordContainerId(space=space, external_id=container),
+                properties=dict(props),
+            )
+            for space, containers in (self.properties or {}).items()
+            for container, props in containers.items()
+        ]
+        return RecordWrite(space=self.space, external_id=self.external_id, sources=sources)
+
+
+class RecordList(WriteableCogniteResourceList[RecordWrite, Record]):
+    """A list of :class:`Record` objects.
+
+    Args:
+        resources (Sequence[Record]): The records.
+        typing (TypeInformation | None): Property type information, present when the request
+            was made with ``include_typing=True``.
+    """
+
+    _RESOURCE = Record
+
+    def __init__(self, resources: Sequence[Record], typing: TypeInformation | None = None) -> None:
+        super().__init__(resources)
+        self.typing = typing
+
+    def as_ids(self) -> list[RecordId]:
+        return [record.as_id() for record in self]
+
+    def as_write(self) -> RecordWriteList:
+        return RecordWriteList([record.as_write() for record in self])
+
+    @classmethod
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:
+        typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
+        resources = [cls._RESOURCE._load(item) for response in responses for item in response.get("items", [])]
+        return cls(resources, typing)
+
+
+class TimeRange(CogniteResource):
+    """A time range filter on ``lastUpdatedTime``.
+
+    Bounds are either milliseconds since the Unix epoch (int) or an ISO-8601 string. At least a
+    lower bound (``gte`` or ``gt``) is required for immutable streams; specifying two lower or two
+    upper bounds is not allowed.
+
+    Args:
+        gte (int | str | None): Greater than or equal to.
+        gt (int | str | None): Greater than.
+        lte (int | str | None): Less than or equal to.
+        lt (int | str | None): Less than.
+    """
+
+    def __init__(
+        self,
+        gte: int | str | None = None,
+        gt: int | str | None = None,
+        lte: int | str | None = None,
+        lt: int | str | None = None,
+    ) -> None:
+        self.gte = gte
+        self.gt = gt
+        self.lte = lte
+        self.lt = lt
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(gte=resource.get("gte"), gt=resource.get("gt"), lte=resource.get("lte"), lt=resource.get("lt"))
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            key: value
+            for key, value in {"gte": self.gte, "gt": self.gt, "lte": self.lte, "lt": self.lt}.items()
+            if value is not None
+        }
+
+
 class RecordSourceSelector(CogniteResource):
     """Selects which container properties to return for a record.
 
@@ -199,7 +334,7 @@ class RecordTargetUnits(CogniteResource):
         return {}
 
 
-class SyncRecord(WriteableCogniteResource["RecordWrite"]):
+class SyncRecord(Record):
     """A record returned by the sync endpoint, annotated with a change status.
 
     For ``status="deleted"`` tombstones (mutable streams), :attr:`properties` is ``None``.
@@ -223,12 +358,8 @@ class SyncRecord(WriteableCogniteResource["RecordWrite"]):
         status: Literal["created", "updated", "deleted"],
         properties: dict[str, dict[str, dict[str, Any]]] | None = None,
     ) -> None:
-        self.space = space
-        self.external_id = external_id
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
+        super().__init__(space, external_id, created_time, last_updated_time, properties)
         self.status = status
-        self.properties = properties
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -242,31 +373,11 @@ class SyncRecord(WriteableCogniteResource["RecordWrite"]):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output: dict[str, Any] = {
-            "space": self.space,
-            "externalId" if camel_case else "external_id": self.external_id,
-            "createdTime" if camel_case else "created_time": self.created_time,
-            "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
-            "status": self.status,
-        }
+        output = super().dump(camel_case=camel_case)
+        output["status"] = self.status
         if self.properties is not None:
             output["properties"] = deepcopy(self.properties)
         return output
-
-    def as_id(self) -> RecordId:
-        return RecordId(space=self.space, external_id=self.external_id)
-
-    def as_write(self) -> RecordWrite:
-        """Reconstruct the :class:`RecordWrite` by grouping read properties back into sources."""
-        sources = [
-            RecordSource(
-                source=RecordContainerId(space=space, external_id=container),
-                properties=dict(props),
-            )
-            for space, containers in (self.properties or {}).items()
-            for container, props in containers.items()
-        ]
-        return RecordWrite(space=self.space, external_id=self.external_id, sources=sources)
 
 
 class SyncRecordList(CogniteResourceList[SyncRecord]):
