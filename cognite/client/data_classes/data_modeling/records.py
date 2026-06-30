@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from typing_extensions import Self
 
@@ -12,6 +13,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.data_classes.data_modeling.instances import TypeInformation
 from cognite.client.utils._identifier import IdentifierSequenceCore, RecordId
@@ -24,8 +26,12 @@ __all__ = [
     "RecordList",
     "RecordSource",
     "RecordSourceSelector",
+    "RecordTargetUnit",
+    "RecordTargetUnits",
     "RecordWrite",
     "RecordWriteList",
+    "SyncRecord",
+    "SyncRecordList",
     "TimeRange",
 ]
 
@@ -70,7 +76,7 @@ class RecordSource(CogniteResource):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "source": self.source.dump(camel_case=camel_case),
-            "properties": self.properties,
+            "properties": deepcopy(self.properties),
         }
 
 
@@ -270,3 +276,149 @@ class RecordSourceSelector(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"source": self.source.dump(camel_case=camel_case), "properties": self.properties}
+
+
+class RecordTargetUnit(CogniteResource):
+    """A target unit conversion for one Records container property.
+
+    Args:
+        property (list[str]): Fully qualified container property path:
+            ``[space, container_external_id, property_id]``.
+        unit (UnitReference | UnitSystemReference): Target unit or target unit system.
+    """
+
+    def __init__(self, property: list[str], unit: UnitReference | UnitSystemReference) -> None:
+        self.property = property
+        self.unit = unit
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            property=resource["property"],
+            unit=UnitReference.load(resource["unit"])
+            if "externalId" in resource["unit"]
+            else UnitSystemReference.load(resource["unit"]),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"property": self.property, "unit": self.unit.dump(camel_case=camel_case)}
+
+
+class RecordTargetUnits(CogniteResource):
+    """Target unit conversions for a Records filter, sync, or aggregate request.
+
+    Args:
+        properties (list[RecordTargetUnit] | None): Property-specific target unit conversions.
+        unit_system_name (str | None): Convert all convertible properties to a target unit system.
+    """
+
+    def __init__(self, properties: list[RecordTargetUnit] | None = None, unit_system_name: str | None = None) -> None:
+        self.properties = properties
+        self.unit_system_name = unit_system_name
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        if "properties" in resource:
+            return cls(properties=[RecordTargetUnit._load(item) for item in resource["properties"]])
+        if "unitSystemName" in resource:
+            return cls(unit_system_name=resource["unitSystemName"])
+        return cls()
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        if self.unit_system_name is not None:
+            return {"unitSystemName" if camel_case else "unit_system_name": self.unit_system_name}
+        if self.properties is not None:
+            return {
+                "properties": [target_unit.dump(camel_case=camel_case) for target_unit in self.properties],
+            }
+        return {}
+
+
+class SyncRecord(Record):
+    """A record returned by the sync endpoint, annotated with a change status.
+
+    For ``status="deleted"`` tombstones (mutable streams), :attr:`properties` is ``None``.
+
+    Args:
+        space (str): Space the record belongs to.
+        external_id (str): External ID of the record.
+        created_time (int): Creation time in milliseconds since epoch.
+        last_updated_time (int): Last updated time in milliseconds since epoch.
+        status (Literal['created', 'updated', 'deleted']): The record's change status.
+        properties (dict[str, dict[str, dict[str, Any]]] | None): Property values (absent for
+            deleted tombstones).
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        created_time: int,
+        last_updated_time: int,
+        status: Literal["created", "updated", "deleted"],
+        properties: dict[str, dict[str, dict[str, Any]]] | None = None,
+    ) -> None:
+        super().__init__(space, external_id, created_time, last_updated_time, properties)
+        self.status = status
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
+            status=resource["status"],
+            properties=resource.get("properties"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["status"] = self.status
+        if self.properties is not None:
+            output["properties"] = deepcopy(self.properties)
+        return output
+
+
+class SyncRecordList(CogniteResourceList[SyncRecord]):
+    """A page of :class:`SyncRecord` objects from the sync endpoint.
+
+    Args:
+        resources (Sequence[SyncRecord]): The records in this page.
+        cursor (str | None): Cursor to pass as ``cursor`` to the next ``sync_resume`` call to resume
+            from this position.
+        has_next (bool): Whether more changes are available beyond this page.
+        typing (TypeInformation | None): Property type information, present when the request was
+            made with ``include_typing=True``.
+    """
+
+    _RESOURCE = SyncRecord
+
+    def __init__(
+        self,
+        resources: Sequence[SyncRecord],
+        cursor: str | None = None,
+        has_next: bool = False,
+        typing: TypeInformation | None = None,
+    ) -> None:
+        super().__init__(resources)
+        self.cursor = cursor
+        self.has_next = has_next
+        self.typing = typing
+
+    @classmethod
+    def _load_response(cls, response: dict[str, Any]) -> Self:
+        return cls._load_raw_api_response([response])
+
+    @classmethod
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:
+        last_response = responses[-1]
+        typing = next(
+            (TypeInformation._load(response["typing"]) for response in responses if "typing" in response), None
+        )
+        return cls(
+            [SyncRecord._load(item) for response in responses for item in response["items"]],
+            cursor=last_response["nextCursor"],
+            has_next=last_response["hasNext"],
+            typing=typing,
+        )
