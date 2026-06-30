@@ -104,7 +104,7 @@ class ExecutionPlan(CogniteResource):
 
 
 @dataclass(kw_only=True)
-class DebugParameters:
+class DebugParameters(CogniteResource):
     """
     Debug parameters for debugging and analyzing queries.
 
@@ -114,6 +114,7 @@ class DebugParameters:
         include_translated_query (bool): Include the internal representation of the query.
         include_plan (bool): Include the execution plan for the query.
         profile (bool): Most thorough level of query analysis. Requires emit_results=False.
+        include_llm_prompt (bool): Include a prompt that can be fed into an LLM to help with debugging the query.
     """
 
     emit_results: bool = True
@@ -121,25 +122,34 @@ class DebugParameters:
     include_translated_query: bool = False
     include_plan: bool = False
     profile: bool = False
+    include_llm_prompt: bool = False
 
     @property
     def requires_alpha_header(self) -> bool:
-        return self.include_translated_query or self.include_plan
+        return self.include_translated_query or self.include_plan or self.include_llm_prompt
 
-    def dump(self, camel_case: bool = True) -> dict[str, bool | int]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         res: dict[str, bool | int] = {
             "emitResults" if camel_case else "emit_results": self.emit_results,
             "profile": self.profile,
+            "includeTranslatedQuery" if camel_case else "include_translated_query": self.include_translated_query,
+            "includePlan" if camel_case else "include_plan": self.include_plan,
+            "includeLlmPrompt" if camel_case else "include_llm_prompt": self.include_llm_prompt,
         }
         if self.timeout is not None:
             res["timeout"] = self.timeout
-        if self.include_translated_query:
-            key = "includeTranslatedQuery" if camel_case else "include_translated_query"
-            res[key] = self.include_translated_query
-        if self.include_plan:
-            key = "includePlan" if camel_case else "include_plan"
-            res[key] = self.include_plan
         return res
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            emit_results=resource["emitResults"],
+            timeout=resource.get("timeout"),
+            include_translated_query=resource["includeTranslatedQuery"],
+            include_plan=resource["includePlan"],
+            profile=resource["profile"],
+            include_llm_prompt=resource["includeLlmPrompt"],
+        )
 
 
 @dataclass
