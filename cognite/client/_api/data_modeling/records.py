@@ -263,19 +263,61 @@ class RecordsAPI(APIClient):
 
         Examples:
 
-            Aggregate average temperature:
+            Aggregate average temperature using typed helpers:
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.records import Avg
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.records.aggregate(
                 ...     stream_id="my-stream",
                 ...     aggregates={
-                ...         "avg_temperature": {
-                ...             "avg": {"property": ["my-space", "sensor", "temperature"]}
-                ...         }
+                ...         "avg_temp": Avg(["my-space", "sensor", "temperature"]),
                 ...     },
                 ... )
-                >>> res.aggregates["avg_temperature"]["avg"]
+
+            Count records with a time range filter:
+
+                >>> from cognite.client.data_classes.data_modeling.records import Count, TimeRange
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={"total": Count()},
+                ...     last_updated_time=TimeRange(gte=1705341600000),
+                ... )
+
+            Daily time histogram with nested metric aggregates:
+
+                >>> from cognite.client.data_classes.data_modeling.records import (
+                ...     Max,
+                ...     Min,
+                ...     TimeHistogram,
+                ... )
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={
+                ...         "by_day": TimeHistogram(
+                ...             ["my-space", "sensor", "timestamp"],
+                ...             calendar_interval="1d",
+                ...             aggregates={
+                ...                 "min_temp": Min(["my-space", "sensor", "temperature"]),
+                ...                 "max_temp": Max(["my-space", "sensor", "temperature"]),
+                ...             },
+                ...         ),
+                ...     },
+                ... )
+
+            Unique values with sub-aggregation:
+
+                >>> from cognite.client.data_classes.data_modeling.records import Sum, UniqueValues
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={
+                ...         "by_region": UniqueValues(
+                ...             ["my-space", "sensor", "region"],
+                ...             aggregates={"total_output": Sum(["my-space", "sensor", "output"])},
+                ...             size=10,
+                ...         ),
+                ...     },
+                ... )
         """
         self._warning.warn()
         body: dict[str, Any] = {"aggregates": _dump_aggregate_value(aggregates)}

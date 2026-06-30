@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d87423ebe5842df6345008dd52d9d506
+c3d1e5f0f2f38f4d21534a9882774749
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -188,19 +188,61 @@ class SyncRecordsAPI(SyncAPIClient):
 
         Examples:
 
-            Aggregate average temperature:
+            Aggregate average temperature using typed helpers:
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.records import Avg
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.records.aggregate(
                 ...     stream_id="my-stream",
                 ...     aggregates={
-                ...         "avg_temperature": {
-                ...             "avg": {"property": ["my-space", "sensor", "temperature"]}
-                ...         }
+                ...         "avg_temp": Avg(["my-space", "sensor", "temperature"]),
                 ...     },
                 ... )
-                >>> res.aggregates["avg_temperature"]["avg"]
+
+            Count records with a time range filter:
+
+                >>> from cognite.client.data_classes.data_modeling.records import Count, TimeRange
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={"total": Count()},
+                ...     last_updated_time=TimeRange(gte=1705341600000),
+                ... )
+
+            Daily time histogram with nested metric aggregates:
+
+                >>> from cognite.client.data_classes.data_modeling.records import (
+                ...     Max,
+                ...     Min,
+                ...     TimeHistogram,
+                ... )
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={
+                ...         "by_day": TimeHistogram(
+                ...             ["my-space", "sensor", "timestamp"],
+                ...             calendar_interval="1d",
+                ...             aggregates={
+                ...                 "min_temp": Min(["my-space", "sensor", "temperature"]),
+                ...                 "max_temp": Max(["my-space", "sensor", "temperature"]),
+                ...             },
+                ...         ),
+                ...     },
+                ... )
+
+            Unique values with sub-aggregation:
+
+                >>> from cognite.client.data_classes.data_modeling.records import Sum, UniqueValues
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={
+                ...         "by_region": UniqueValues(
+                ...             ["my-space", "sensor", "region"],
+                ...             aggregates={"total_output": Sum(["my-space", "sensor", "output"])},
+                ...             size=10,
+                ...         ),
+                ...     },
+                ... )
         """
         return run_sync(
             self.__async_client.data_modeling.records.aggregate(
