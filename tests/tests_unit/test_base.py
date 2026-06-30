@@ -37,6 +37,11 @@ from cognite.client.data_classes.data_modeling import (
     EdgeListWithCursor,
     NodeListWithCursor,
 )
+from cognite.client.data_classes.data_modeling.records import (
+    RecordsAggregate,
+    RecordsAggregateResult,
+    RecordsBucket,
+)
 from cognite.client.data_classes.datapoints import DatapointsArray, SyntheticDatapoints
 from cognite.client.data_classes.datapoints_subscriptions import SubscriptionDatapoints
 from cognite.client.data_classes.events import EventList
@@ -187,6 +192,13 @@ class TestCogniteResource:
                     # UnknownWorkflowTaskParameters: Requires task_type which is only available in the parent object's
                     # full response payload
                     UnknownWorkflowTaskParameters,
+                    # RecordsAggregate subclasses are request builders whose _load raises NotImplementedError.
+                    # RecordsAggregateResult/RecordsBucket have non-standard constructors.
+                    *all_concrete_subclasses(RecordsAggregate),
+                    RecordsAggregate,
+                    *all_concrete_subclasses(RecordsAggregateResult),
+                    RecordsAggregateResult,
+                    RecordsBucket,
                 },
             )
         ],
@@ -218,6 +230,11 @@ class TestCogniteResource:
                     Agent,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
+                    *all_concrete_subclasses(RecordsAggregate),
+                    RecordsAggregate,
+                    *all_concrete_subclasses(RecordsAggregateResult),
+                    RecordsAggregateResult,
+                    RecordsBucket,
                 },
             )
         ],
@@ -322,6 +339,11 @@ class TestCogniteResource:
                     SubscriptionDatapoints,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
+                    *all_concrete_subclasses(RecordsAggregate),
+                    RecordsAggregate,
+                    *all_concrete_subclasses(RecordsAggregateResult),
+                    RecordsAggregateResult,
+                    RecordsBucket,
                 },
             )
         ],
@@ -359,6 +381,11 @@ class TestCogniteResource:
                     SubscriptionDatapoints,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
+                    *all_concrete_subclasses(RecordsAggregate),
+                    RecordsAggregate,
+                    *all_concrete_subclasses(RecordsAggregateResult),
+                    RecordsAggregateResult,
+                    RecordsBucket,
                 },
             )
         ],
@@ -409,6 +436,11 @@ class TestCogniteResource:
                     SubscriptionDatapoints,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
+                    *all_concrete_subclasses(RecordsAggregate),
+                    RecordsAggregate,
+                    *all_concrete_subclasses(RecordsAggregateResult),
+                    RecordsAggregateResult,
+                    RecordsBucket,
                 },
             )
         ],
