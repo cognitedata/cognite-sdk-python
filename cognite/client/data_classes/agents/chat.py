@@ -557,9 +557,9 @@ class UnknownReasoningDataItem(ReasoningDataItem):
 
     @classmethod
     def _load_item(cls, data: dict[str, Any]) -> UnknownReasoningDataItem:
-        data = data.copy()
-        item_type = data.pop("type")
-        return cls(type=item_type, data=data)
+        raw = data.copy()
+        item_type = raw.pop("type")
+        return cls(type=item_type, data=raw)
 
 
 _REASONING_DATA_CLS_BY_TYPE: dict[str, type[ReasoningDataItem]] = {
