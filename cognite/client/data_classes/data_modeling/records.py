@@ -390,16 +390,12 @@ class MetricAggregateResult(RecordsAggregateResult):
 
 
 class MovingFunctionAggregateResult(RecordsAggregateResult):
-    """Pipeline moving function result."""
-
     def __init__(self, fn_value: float, raw_result: dict[str, Any] | None = None) -> None:
         super().__init__(raw_result or {"fnValue": fn_value})
         self.fn_value = fn_value
 
 
 class RecordsBucket(CogniteResource):
-    """Bucket result from a Records bucket aggregate."""
-
     def __init__(self, raw_bucket: dict[str, Any]) -> None:
         self._raw_bucket = raw_bucket
         self.count = raw_bucket["count"]
@@ -424,8 +420,12 @@ class _BucketAggregateResult(RecordsAggregateResult):
     _buckets_key: ClassVar[str]
 
     def __init__(self, buckets: Sequence[RecordsBucket], raw_result: dict[str, Any] | None = None) -> None:
-        self.buckets = list(buckets)
-        super().__init__(raw_result or {self._buckets_key: [bucket.dump() for bucket in self.buckets]})
+        super().__init__(raw_result or {self._buckets_key: [bucket.dump() for bucket in buckets]})
+        self._buckets = buckets
+
+    @property
+    def buckets(self) -> list[RecordsBucket]:
+        return list(self._buckets)
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -436,26 +436,18 @@ class _BucketAggregateResult(RecordsAggregateResult):
 
 
 class UniqueValuesAggregateResult(_BucketAggregateResult):
-    """Result from a ``uniqueValues`` aggregate."""
-
     _buckets_key = "uniqueValueBuckets"
 
 
 class NumberHistogramAggregateResult(_BucketAggregateResult):
-    """Result from a ``numberHistogram`` aggregate."""
-
     _buckets_key = "numberHistogramBuckets"
 
 
 class TimeHistogramAggregateResult(_BucketAggregateResult):
-    """Result from a ``timeHistogram`` aggregate."""
-
     _buckets_key = "timeHistogramBuckets"
 
 
 class FilterAggregateResult(_BucketAggregateResult):
-    """Result from a ``filters`` aggregate."""
-
     _buckets_key = "filterBuckets"
 
 
