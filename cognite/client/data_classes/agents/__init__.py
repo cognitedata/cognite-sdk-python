@@ -38,12 +38,16 @@ from cognite.client.data_classes.agents.chat import (
     Message,
     MessageContent,
     MessageList,
+    ReasoningDataItem,
     TextContent,
+    ToolCallDetail,
+    ToolCallReasoningDataItem,
     ToolConfirmationCall,
     ToolConfirmationResult,
     UnknownAction,
     UnknownActionCall,
     UnknownContent,
+    UnknownReasoningDataItem,
 )
 
 __all__ = [
@@ -81,9 +85,12 @@ __all__ = [
     "QueryKnowledgeGraphAgentToolUpsert",
     "QueryTimeSeriesDatapointsAgentTool",
     "QueryTimeSeriesDatapointsAgentToolUpsert",
+    "ReasoningDataItem",
     "SummarizeDocumentAgentTool",
     "SummarizeDocumentAgentToolUpsert",
     "TextContent",
+    "ToolCallDetail",
+    "ToolCallReasoningDataItem",
     "ToolConfirmationCall",
     "ToolConfirmationResult",
     "UnknownAction",
@@ -91,4 +98,5 @@ __all__ = [
     "UnknownAgentTool",
     "UnknownAgentToolUpsert",
     "UnknownContent",
+    "UnknownReasoningDataItem",
 ]
