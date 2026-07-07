@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import sys
 import types
+from collections.abc import Iterator
 
 import pytest
 
@@ -10,23 +11,23 @@ import cognite.client._constants as constants
 
 
 @pytest.fixture
-def restore_constants():
+def restore_constants() -> Iterator[None]:
     # Reload after each test so the real (pyodide-absent) module state is
     # restored and other tests are not affected by the simulated environment.
     yield
     importlib.reload(constants)
 
 
-def _reload_with_fake_pyodide_ffi(monkeypatch: pytest.MonkeyPatch, ffi_attrs: dict[str, bool]) -> types.ModuleType:
+def _reload_with_fake_pyodide_ffi(monkeypatch: pytest.MonkeyPatch, ffi_attrs: dict[str, bool]) -> None:
     """Reload ``cognite.client._constants`` with a fake ``pyodide.ffi`` module."""
     pyodide_mod = types.ModuleType("pyodide")
     ffi_mod = types.ModuleType("pyodide.ffi")
     for name, value in ffi_attrs.items():
         setattr(ffi_mod, name, value)
-    pyodide_mod.ffi = ffi_mod  # type: ignore[attr-defined]
+    setattr(pyodide_mod, "ffi", ffi_mod)
     monkeypatch.setitem(sys.modules, "pyodide", pyodide_mod)
     monkeypatch.setitem(sys.modules, "pyodide.ffi", ffi_mod)
-    return importlib.reload(constants)
+    importlib.reload(constants)
 
 
 class TestBrowserDetection:
@@ -46,17 +47,21 @@ class TestBrowserDetection:
         ],
     )
     def test_detects_browser_across_pyodide_versions(
-        self, monkeypatch: pytest.MonkeyPatch, restore_constants: None, ffi_attrs: dict[str, bool], expected: bool
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        restore_constants: None,
+        ffi_attrs: dict[str, bool],
+        expected: bool,
     ) -> None:
-        reloaded = _reload_with_fake_pyodide_ffi(monkeypatch, ffi_attrs)
-        assert reloaded.IN_BROWSER is expected
-        assert reloaded._RUNNING_IN_BROWSER is expected
+        _reload_with_fake_pyodide_ffi(monkeypatch, ffi_attrs)
+        assert constants.IN_BROWSER is expected
+        assert constants._RUNNING_IN_BROWSER is expected
 
     def test_not_in_browser_when_pyodide_absent(self, monkeypatch: pytest.MonkeyPatch, restore_constants: None) -> None:
-        # Setting the modules to None makes `import pyodide.ffi` raise ImportError,
-        # mirroring a non-pyodide (regular CPython) environment.
-        monkeypatch.setitem(sys.modules, "pyodide", None)
-        monkeypatch.setitem(sys.modules, "pyodide.ffi", None)
-        reloaded = importlib.reload(constants)
-        assert reloaded.IN_BROWSER is False
-        assert reloaded._RUNNING_IN_BROWSER is False
+        # A plain (non-package) pyodide module makes `import pyodide.ffi` raise
+        # ModuleNotFoundError, mirroring a regular (non-pyodide) CPython runtime.
+        monkeypatch.setitem(sys.modules, "pyodide", types.ModuleType("pyodide"))
+        monkeypatch.delitem(sys.modules, "pyodide.ffi", raising=False)
+        importlib.reload(constants)
+        assert constants.IN_BROWSER is False
+        assert constants._RUNNING_IN_BROWSER is False
