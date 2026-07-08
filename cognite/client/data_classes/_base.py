@@ -36,6 +36,7 @@ from cognite.client.utils.useful_types import is_sequence_not_str
 
 if TYPE_CHECKING:
     import pandas
+    import polars
 
     from cognite.client import AsyncCogniteClient
 
@@ -187,6 +188,14 @@ class CogniteResource(ABC):
 
     def _maybe_set_client_ref(self, client: AsyncCogniteClient) -> Self:
         return self  # Base resource has no client ref set
+
+    def to_polars(self) -> polars.DataFrame:
+        """Convert the instance into a polars DataFrame.
+
+        Returns:
+            polars.DataFrame: The polars DataFrame representing the instance.
+        """
+        raise NotImplementedError(f"to_polars is not implemented for {type(self).__name__}")
 
 
 class UnknownCogniteResource(CogniteResource):

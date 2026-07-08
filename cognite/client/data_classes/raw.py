@@ -18,6 +18,7 @@ from cognite.client.utils._text import copy_doc_from_async
 
 if TYPE_CHECKING:
     import pandas
+    import polars
 
 
 class RowCore(WriteableCogniteResource["RowWrite"], ABC):
@@ -65,6 +66,15 @@ class RowCore(WriteableCogniteResource["RowWrite"], ABC):
         """
         pd = local_import("pandas")
         return pd.DataFrame([self.columns], [self.key])
+
+    def to_polars(self) -> polars.DataFrame:
+        """Convert the instance into a polars DataFrame.
+
+        Returns:
+            polars.DataFrame: The polars DataFrame representing this instance.
+        """
+        pl = local_import("polars")
+        return pl.DataFrame(data={"key": self.key, **(self.columns or {})})
 
 
 T_Row = TypeVar("T_Row", bound=RowCore)
@@ -132,6 +142,18 @@ class RowListCore(WriteableCogniteResourceList[RowWrite, T_Row], ABC):
             return pd.DataFrame(columns=[], index=[])
         index, data = zip(*((row.key, row.columns) for row in self))
         return pd.DataFrame.from_records(data, index=index)
+
+    def to_polars(self) -> polars.DataFrame:
+        """Convert the instance into a polars DataFrame.
+
+        Returns:
+            polars.DataFrame: The polars DataFrame representing this instance.
+        """
+        pl = local_import("polars")
+        if not self:
+            return pl.DataFrame(data=[])
+        data = ({"key": row.key, **(row.columns or {})} for row in self)
+        return pl.DataFrame(data=data)
 
 
 class RowWriteList(RowListCore[RowWrite]):
