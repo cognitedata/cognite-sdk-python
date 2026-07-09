@@ -3,9 +3,10 @@ from __future__ import annotations
 import base64
 import json
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, ClassVar, Literal, Sequence
+from typing import Any, ClassVar, Literal
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_camel_case
