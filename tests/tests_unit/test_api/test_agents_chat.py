@@ -326,7 +326,7 @@ class TestMultimodalMessage:
 
     def test_message_with_invalid_content_part_raises_type_error(self) -> None:
         with pytest.raises(TypeError, match="Expected str or MessageContent, got int"):
-            Message([123])
+            Message([123])  # type: ignore[list-item]
 
     def test_chat_with_multimodal_message(
         self,
