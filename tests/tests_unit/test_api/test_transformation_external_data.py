@@ -87,9 +87,7 @@ class TestTransformationExternalDataAPI:
         assert result[0].external_id == "x"
         assert result[0].format == "one_lake"
 
-    def test_upsert_single(
-        self, cognite_client: CogniteClient, mock_upsert_response: HTTPXMock
-    ) -> None:
+    def test_upsert_single(self, cognite_client: CogniteClient, mock_upsert_response: HTTPXMock) -> None:
         source = ExternalDataSourceWrite.onelake(
             external_id="x",
             client_id="cid",
@@ -120,9 +118,7 @@ class TestTransformationExternalDataAPI:
         request_body = jsgz_load(last_request.content)
         assert request_body["items"] == [{"externalId": "x"}]
 
-    def test_verify_usability(
-        self, cognite_client: CogniteClient, mock_verify_usability_response: HTTPXMock
-    ) -> None:
+    def test_verify_usability(self, cognite_client: CogniteClient, mock_verify_usability_response: HTTPXMock) -> None:
         result = cognite_client.transformations.external_data_sources.verify_usability("x")
 
         assert isinstance(result, ExternalDataSourceUsability)

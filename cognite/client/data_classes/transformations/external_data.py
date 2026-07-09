@@ -394,7 +394,9 @@ class ExternalDataSourceWrite(ExternalDataSourceCore):
             Register a Fabric OneLake source:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.transformations.external_data import ExternalDataSourceWrite
+                >>> from cognite.client.data_classes.transformations.external_data import (
+                ...     ExternalDataSourceWrite,
+                ... )
                 >>> client = CogniteClient()
                 >>> source = ExternalDataSourceWrite.onelake(
                 ...     external_id="fabric-lakehouse-prod",
