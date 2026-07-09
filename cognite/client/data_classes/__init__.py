@@ -29,6 +29,7 @@ from cognite.client.data_classes.contextualization import (
     EntityMatchingPredictionResult,
     JobStatus,
 )
+from cognite.client.data_classes.data_modeling.records import RecordId
 from cognite.client.data_classes.data_sets import (
     DataSet,
     DataSetFilter,
@@ -161,7 +162,6 @@ from cognite.client.data_classes.labels import (
     LabelFilter,
 )
 from cognite.client.data_classes.limits import Limit, LimitList
-from cognite.client.data_classes.metering import MeteringData, MeteringDataList, MeteringDataPoint
 from cognite.client.data_classes.raw import (
     Database,
     DatabaseList,
@@ -250,6 +250,18 @@ from cognite.client.data_classes.transformations.common import (
     RawTable,
     TransformationBlockedInfo,
     TransformationDestination,
+)
+from cognite.client.data_classes.transformations.external_data import (
+    ExternalDataSource,
+    ExternalDataSourceList,
+    ExternalDataSourceUsability,
+    ExternalDataSourceWrite,
+    ExternalDataSourceWriteList,
+    OneLakeCredentialsRead,
+    OneLakeCredentialsWrite,
+    OneLakeDataSourceSettingsRead,
+    OneLakeDataSourceSettingsWrite,
+    OneLakeLocationDescription,
 )
 from cognite.client.data_classes.transformations.jobs import (
     TransformationJob,
@@ -384,6 +396,11 @@ __all__ = [
     "EventUpdate",
     "EventWrite",
     "EventWriteList",
+    "ExternalDataSource",
+    "ExternalDataSourceList",
+    "ExternalDataSourceUsability",
+    "ExternalDataSourceWrite",
+    "ExternalDataSourceWriteList",
     "ExtractionPipeline",
     "ExtractionPipelineConfig",
     "ExtractionPipelineConfigRevision",
@@ -455,11 +472,14 @@ __all__ = [
     "LatestDatapointQuery",
     "Limit",
     "LimitList",
-    "MeteringData",
-    "MeteringDataList",
-    "MeteringDataPoint",
     "OidcCredentials",
+    "OneLakeCredentialsRead",
+    "OneLakeCredentialsWrite",
+    "OneLakeDataSourceSettingsRead",
+    "OneLakeDataSourceSettingsWrite",
+    "OneLakeLocationDescription",
     "RawTable",
+    "RecordId",
     "Relationship",
     "RelationshipFilter",
     "RelationshipList",
