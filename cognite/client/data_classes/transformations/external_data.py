@@ -50,7 +50,7 @@ class OneLakeLocationDescription(CogniteResource):
 
 
 class OneLakeCredentialsRead(CogniteResource):
-    """Read-only view of Azure credentials for Fabric OneLake (clientSecret is never returned by the API).
+    """Response model for Azure credentials returned by list/get (``clientSecret`` is never included).
 
     Args:
         client_id (str): Azure application (client) ID.
@@ -70,13 +70,17 @@ class OneLakeCredentialsRead(CogniteResource):
 
 
 class OneLakeCredentialsWrite(CogniteResource):
-    """Azure credentials for writing to Fabric OneLake.
+    """Upsert model for Azure credentials when registering a OneLake external data source in CDF.
+
+    ``Write`` follows the SDK read/upsert naming convention — it does **not** mean writing data into
+    OneLake. Transforms only read from OneLake via ``ext_onelake()``; this class supplies
+    ``client_secret`` for ``external_data_sources.upsert()``.
 
     Args:
         client_id (str): Azure application (client) ID.
         tenant_id (str): Azure tenant (directory) ID.
-        client_secret (str | None): Azure client secret. Required for upsert; None when reconstructed
-            from a read model via as_write() since the API never returns the secret.
+        client_secret (str | None): Azure client secret. Required for upsert; ``None`` when
+            reconstructed from a read model via ``as_write()`` because the API never returns it.
     """
 
     def __init__(self, client_id: str, tenant_id: str, client_secret: str | None = None) -> None:
@@ -101,7 +105,7 @@ class OneLakeCredentialsWrite(CogniteResource):
 
 
 class OneLakeDataSourceSettingsRead(CogniteResource):
-    """Settings for a Fabric OneLake external data source (read model — no client secret).
+    """Response model for OneLake connection settings (no ``client_secret``).
 
     Args:
         credentials (OneLakeCredentialsRead | None): Azure credentials (client ID and tenant ID only).
@@ -137,10 +141,10 @@ class OneLakeDataSourceSettingsRead(CogniteResource):
 
 
 class OneLakeDataSourceSettingsWrite(CogniteResource):
-    """Settings for writing a Fabric OneLake external data source (includes client secret).
+    """Upsert model for OneLake connection settings registered in CDF (includes ``client_secret``).
 
     Args:
-        credentials (OneLakeCredentialsWrite | None): Azure credentials including client secret.
+        credentials (OneLakeCredentialsWrite | None): Azure credentials for ``upsert()``.
         location_description (OneLakeLocationDescription | None): Fabric workspace and lakehouse identifiers.
     """
 
@@ -173,10 +177,11 @@ class OneLakeDataSourceSettingsWrite(CogniteResource):
 
 
 class ExternalDataSourceCore(WriteableCogniteResource["ExternalDataSourceWrite"], ABC):
-    """Shared base for ExternalDataSource (read) and ExternalDataSourceWrite (write).
+    """Shared base for ``ExternalDataSource`` (API read model) and ``ExternalDataSourceWrite`` (API upsert model).
 
-    OneLake external data sources are **read-only** from a transform perspective — transforms can
-    read data from OneLake tables via ``ext_onelake()`` SQL, but writing to OneLake is not supported.
+    OneLake external data sources are **read-only from a transform perspective** — transforms can
+    read data from OneLake tables via ``ext_onelake()`` SQL, but writing transform output to OneLake
+    is not supported.
 
     Args:
         external_id (str): External ID of the data source. Must be unique within the project.
@@ -198,10 +203,11 @@ class ExternalDataSourceCore(WriteableCogniteResource["ExternalDataSourceWrite"]
 
 
 class ExternalDataSource(ExternalDataSourceCore):
-    """A Fabric OneLake external data source (read model — returned by list).
+    """A Fabric OneLake external data source (API read model — returned by list/get).
 
-    OneLake external data sources are **read-only** from a transform perspective — transforms can
-    read data from OneLake tables via ``ext_onelake()`` SQL, but writing to OneLake is not supported.
+    OneLake external data sources are **read-only from a transform perspective** — transforms can
+    read data from OneLake tables via ``ext_onelake()`` SQL, but writing transform output to OneLake
+    is not supported.
 
     The ``clientSecret`` field is **never** returned by the API.
 
@@ -254,10 +260,11 @@ class ExternalDataSource(ExternalDataSourceCore):
         )
 
     def as_write(self) -> ExternalDataSourceWrite:
-        """Return this source as an ExternalDataSourceWrite.
+        """Return an upsert model for updating this source in CDF.
 
-        Note: The ``client_secret`` cannot be reconstructed from the read model (the API never returns it).
-        The returned write object will have ``client_secret=None`` on its credentials.
+        ``client_secret`` cannot be reconstructed from the read model (the API never returns it).
+        The returned object has ``client_secret=None`` on its credentials — supply a new secret on
+        ``upsert()`` when updating credentials.
         """
         settings_write: OneLakeDataSourceSettingsWrite | None = None
         if self.settings is not None:
@@ -287,10 +294,11 @@ class ExternalDataSource(ExternalDataSourceCore):
 
 
 class ExternalDataSourceWrite(ExternalDataSourceCore):
-    """A Fabric OneLake external data source (write model — used for upsert).
+    """Upsert model for a Fabric OneLake external data source (``external_data_sources.upsert()``).
 
-    OneLake external data sources are **read-only** from a transform perspective — transforms can
-    read data from OneLake tables via ``ext_onelake()`` SQL, but writing to OneLake is not supported.
+    OneLake external data sources are **read-only from a transform perspective** — transforms can
+    read data from OneLake tables via ``ext_onelake()`` SQL, but writing transform output to OneLake
+    is not supported.
 
     The ``format`` field is always ``"one_lake"`` and is injected automatically on serialization.
 
@@ -323,10 +331,10 @@ class ExternalDataSourceWrite(ExternalDataSourceCore):
         name: str | None = None,
         data_set_id: int | None = None,
     ) -> ExternalDataSourceWrite:
-        """Create an ExternalDataSourceWrite for a Fabric OneLake source.
+        """Create an ``ExternalDataSourceWrite`` for registering a Fabric OneLake source in CDF.
 
-        OneLake external data sources are **read-only** from a transform perspective — transforms can
-        read data from OneLake tables via ``ext_onelake()`` SQL, but writing to OneLake is not supported.
+        Registers Azure credentials and lakehouse location so transforms can **read** via
+        ``ext_onelake()``. Does not write data into OneLake.
 
         Args:
             external_id (str): External ID for the data source. Must be unique.
@@ -410,7 +418,7 @@ class ExternalDataSourceList(
     _RESOURCE = ExternalDataSource
 
     def as_write(self) -> ExternalDataSourceWriteList:
-        """Return all sources in their write format (client_secret will be None on each)."""
+        """Return upsert models for each source (``client_secret`` will be ``None`` on each)."""
         return ExternalDataSourceWriteList([item.as_write() for item in self.data])
 
 
