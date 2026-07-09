@@ -48,11 +48,6 @@ class OneLakeLocationDescription(CogniteResource):
             container_name=resource["containerName"],
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        if camel_case:
-            return {"workspaceName": self.workspace_name, "containerName": self.container_name}
-        return {"workspace_name": self.workspace_name, "container_name": self.container_name}
-
 
 class OneLakeCredentialsRead(CogniteResource):
     """Read-only view of Azure credentials for Fabric OneLake (clientSecret is never returned by the API).
@@ -72,11 +67,6 @@ class OneLakeCredentialsRead(CogniteResource):
             client_id=resource["clientId"],
             tenant_id=resource["tenantId"],
         )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        if camel_case:
-            return {"clientId": self.client_id, "tenantId": self.tenant_id}
-        return {"client_id": self.client_id, "tenant_id": self.tenant_id}
 
 
 class OneLakeCredentialsWrite(CogniteResource):
@@ -109,18 +99,6 @@ class OneLakeCredentialsWrite(CogniteResource):
             client_secret=resource.get("clientSecret"),
         )
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result: dict[str, Any]
-        if camel_case:
-            result = {"clientId": self.client_id, "tenantId": self.tenant_id}
-            if self.client_secret is not None:
-                result["clientSecret"] = self.client_secret
-        else:
-            result = {"client_id": self.client_id, "tenant_id": self.tenant_id}
-            if self.client_secret is not None:
-                result["client_secret"] = self.client_secret
-        return result
-
 
 class OneLakeDataSourceSettingsRead(CogniteResource):
     """Settings for a Fabric OneLake external data source (read model — no client secret).
@@ -149,7 +127,7 @@ class OneLakeDataSourceSettingsRead(CogniteResource):
         return cls(credentials=credentials, location_description=location_description)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result: dict[str, Any] = {}
+        result = super().dump(camel_case=camel_case)
         if self.credentials is not None:
             result["credentials"] = self.credentials.dump(camel_case=camel_case)
         if self.location_description is not None:
@@ -185,7 +163,7 @@ class OneLakeDataSourceSettingsWrite(CogniteResource):
         return cls(credentials=credentials, location_description=location_description)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result: dict[str, Any] = {}
+        result = super().dump(camel_case=camel_case)
         if self.credentials is not None:
             result["credentials"] = self.credentials.dump(camel_case=camel_case)
         if self.location_description is not None:
@@ -302,35 +280,9 @@ class ExternalDataSource(ExternalDataSourceCore):
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result: dict[str, Any] = {}
-        if camel_case:
-            result["externalId"] = self.external_id
-            if self.name is not None:
-                result["name"] = self.name
-            if self.data_set_id is not None:
-                result["dataSetId"] = self.data_set_id
-            if self.settings is not None:
-                result["settings"] = self.settings.dump(camel_case=True)
-            if self.format is not None:
-                result["format"] = self.format
-            if self.created_time is not None:
-                result["createdTime"] = self.created_time
-            if self.last_updated_time is not None:
-                result["lastUpdatedTime"] = self.last_updated_time
-        else:
-            result["external_id"] = self.external_id
-            if self.name is not None:
-                result["name"] = self.name
-            if self.data_set_id is not None:
-                result["data_set_id"] = self.data_set_id
-            if self.settings is not None:
-                result["settings"] = self.settings.dump(camel_case=False)
-            if self.format is not None:
-                result["format"] = self.format
-            if self.created_time is not None:
-                result["created_time"] = self.created_time
-            if self.last_updated_time is not None:
-                result["last_updated_time"] = self.last_updated_time
+        result = super().dump(camel_case=camel_case)
+        if self.settings is not None:
+            result["settings"] = self.settings.dump(camel_case=camel_case)
         return result
 
 
@@ -443,25 +395,10 @@ class ExternalDataSourceWrite(ExternalDataSourceCore):
         return self
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result: dict[str, Any] = {}
-        if camel_case:
-            result["externalId"] = self.external_id
-            result["format"] = self._FORMAT
-            if self.name is not None:
-                result["name"] = self.name
-            if self.data_set_id is not None:
-                result["dataSetId"] = self.data_set_id
-            if self.settings is not None:
-                result["settings"] = self.settings.dump(camel_case=True)
-        else:
-            result["external_id"] = self.external_id
-            result["format"] = self._FORMAT
-            if self.name is not None:
-                result["name"] = self.name
-            if self.data_set_id is not None:
-                result["data_set_id"] = self.data_set_id
-            if self.settings is not None:
-                result["settings"] = self.settings.dump(camel_case=False)
+        result = super().dump(camel_case=camel_case)
+        result["format"] = self._FORMAT
+        if self.settings is not None:
+            result["settings"] = self.settings.dump(camel_case=camel_case)
         return result
 
 
@@ -502,8 +439,3 @@ class ExternalDataSourceUsability(CogniteResource):
             external_id=resource.get("externalId"),
             usable_version=resource.get("usableVersion"),
         )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        if camel_case:
-            return {"externalId": self.external_id, "usableVersion": self.usable_version}
-        return {"external_id": self.external_id, "usable_version": self.usable_version}
