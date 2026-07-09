@@ -414,8 +414,9 @@ class Message(CogniteResource):
     """A message to send to an agent.
 
     Args:
-        content (str | MessageContent | Sequence[MessageContent]): The message content. If a string is provided,
-            it will be converted to TextContent. Use a sequence of content parts to send multimodal messages with images.
+        content (str | MessageContent | Sequence[MessageContent | str]): The message content. If a string is
+            provided, it will be converted to TextContent. Use a sequence of content parts to send multimodal
+            messages with images. Strings in a sequence are also converted to TextContent.
         role (Literal['user']): The role of the message sender. Defaults to "user".
     """
 
@@ -423,14 +424,22 @@ class Message(CogniteResource):
     role: Literal["user"] = "user"
 
     def __init__(
-        self, content: str | MessageContent | Sequence[MessageContent], role: Literal["user"] = "user"
+        self, content: str | MessageContent | Sequence[MessageContent | str], role: Literal["user"] = "user"
     ) -> None:
         if isinstance(content, str):
             self.content = TextContent(text=content)
         elif isinstance(content, MessageContent):
             self.content = content
         else:
-            self.content = list(content)
+            parts: list[MessageContent] = []
+            for item in content:
+                if isinstance(item, str):
+                    parts.append(TextContent(text=item))
+                elif isinstance(item, MessageContent):
+                    parts.append(item)
+                else:
+                    raise TypeError(f"Expected str or MessageContent, got {type(item).__name__}")
+            self.content = parts
         self.role = role
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

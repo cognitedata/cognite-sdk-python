@@ -310,6 +310,24 @@ class TestMultimodalMessage:
             "content": {"text": "Hello world", "type": "text"},
         }
 
+    def test_message_with_string_content_parts(self) -> None:
+        image_bytes = b"fake-image-bytes"
+        message = Message(
+            [
+                "What's in this image?",
+                ImageContent.from_bytes(image_bytes, media_type="image/png"),
+            ]
+        )
+
+        assert isinstance(message.content, list)
+        assert isinstance(message.content[0], TextContent)
+        assert message.content[0].text == "What's in this image?"
+        assert isinstance(message.content[1], ImageContent)
+
+    def test_message_with_invalid_content_part_raises_type_error(self) -> None:
+        with pytest.raises(TypeError, match="Expected str or MessageContent, got int"):
+            Message([123])
+
     def test_chat_with_multimodal_message(
         self,
         httpx_mock: HTTPXMock,
