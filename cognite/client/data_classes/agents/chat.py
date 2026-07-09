@@ -111,11 +111,11 @@ class ImageContent(MessageContent):
                 f"Unsupported media type {media_type!r}. "
                 f"Allowed values: {', '.join(sorted(_ALLOWED_IMAGE_MEDIA_TYPES))}."
             )
-        encoded = base64.b64encode(data).decode()
-        if len(encoded) > _MAX_IMAGE_DATA_LENGTH:
+        if len(data) > 5_242_881:
             raise ValueError(
-                f"Encoded image data exceeds the maximum allowed length of {_MAX_IMAGE_DATA_LENGTH} characters."
+                f"Image data size ({len(data)} bytes) exceeds the maximum allowed limit of 5,242,881 bytes."
             )
+        encoded = base64.b64encode(data).decode()
         return cls(data=encoded, media_type=media_type)
 
     @classmethod
