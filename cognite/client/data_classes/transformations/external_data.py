@@ -9,6 +9,7 @@ from typing_extensions import Self
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
+    ExternalIDTransformerMixin,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -150,7 +151,7 @@ class OneLakeDataSourceSettingsRead(CogniteResource):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = {}
         if self.credentials is not None:
-            result["credentials" if not camel_case else "credentials"] = self.credentials.dump(camel_case=camel_case)
+            result["credentials"] = self.credentials.dump(camel_case=camel_case)
         if self.location_description is not None:
             key = "locationDescription" if camel_case else "location_description"
             result[key] = self.location_description.dump(camel_case=camel_case)
@@ -462,7 +463,9 @@ class ExternalDataSourceWrite(ExternalDataSourceCore):
         return result
 
 
-class ExternalDataSourceList(WriteableCogniteResourceList[ExternalDataSourceWrite, ExternalDataSource]):
+class ExternalDataSourceList(
+    WriteableCogniteResourceList[ExternalDataSourceWrite, ExternalDataSource], ExternalIDTransformerMixin
+):
     """A list of ExternalDataSource (read model) objects."""
 
     _RESOURCE = ExternalDataSource
@@ -472,7 +475,7 @@ class ExternalDataSourceList(WriteableCogniteResourceList[ExternalDataSourceWrit
         return ExternalDataSourceWriteList([item.as_write() for item in self.data])
 
 
-class ExternalDataSourceWriteList(CogniteResourceList[ExternalDataSourceWrite]):
+class ExternalDataSourceWriteList(CogniteResourceList[ExternalDataSourceWrite], ExternalIDTransformerMixin):
     """A list of ExternalDataSourceWrite objects."""
 
     _RESOURCE = ExternalDataSourceWrite

@@ -97,6 +97,7 @@ if _should_build_docs := os.getenv("BUILD_COGNITE_SDK_DOCS") == "true":
         ThreeDRevisionsAPI,
     )
     from cognite.client._api.transformations import (  # type: ignore[attr-defined]
+        TransformationExternalDataAPI,
         TransformationJobsAPI,
         TransformationNotificationsAPI,
         TransformationSchedulesAPI,
@@ -425,6 +426,7 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.transformations.notifications = TransformationNotificationsAPI  # type: ignore
     AsyncCogniteClient.transformations.jobs = TransformationJobsAPI  # type: ignore
     AsyncCogniteClient.transformations.schema = TransformationSchemaAPI  # type: ignore
+    AsyncCogniteClient.transformations.external_data_sources = TransformationExternalDataAPI  # type: ignore
     AsyncCogniteClient.diagrams = DiagramsAPI  # type: ignore
     AsyncCogniteClient.annotations = AnnotationsAPI  # type: ignore
     AsyncCogniteClient.functions = FunctionsAPI  # type: ignore

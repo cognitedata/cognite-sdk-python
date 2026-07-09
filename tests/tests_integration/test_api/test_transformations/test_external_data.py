@@ -33,7 +33,23 @@ def load_fabric_env() -> None:
         _load_jetfire_env()
 
 
-@pytest.mark.skipif(not _JETFIRE_ENV.exists(), reason=_SKIP_REASON)
+_FABRIC_ENV_VARS = (
+    "FABRIC_CLIENT_ID",
+    "FABRIC_TENANT_ID",
+    "FABRIC_CLIENT_SECRET",
+    "FABRIC_WORKSPACE",
+    "FABRIC_LAKEHOUSE",
+)
+
+
+def _fabric_ci_available() -> bool:
+    if not _JETFIRE_ENV.exists():
+        return False
+    _load_jetfire_env()
+    return all(os.environ.get(key) for key in _FABRIC_ENV_VARS)
+
+
+@pytest.mark.skipif(not _fabric_ci_available(), reason=_SKIP_REASON)
 class TestExternalDataSourcesIntegration:
     """End-to-end lifecycle test: upsert → list → verify_usability → delete."""
 
@@ -43,8 +59,8 @@ class TestExternalDataSourcesIntegration:
         client_id = os.environ["FABRIC_CLIENT_ID"]
         tenant_id = os.environ["FABRIC_TENANT_ID"]
         client_secret = os.environ["FABRIC_CLIENT_SECRET"]
-        workspace_name = os.environ["FABRIC_WORKSPACE_NAME"]
-        container_name = os.environ["FABRIC_CONTAINER_NAME"]
+        workspace_name = os.environ["FABRIC_WORKSPACE"]
+        container_name = os.environ["FABRIC_LAKEHOUSE"]
 
         source = ExternalDataSourceWrite.onelake(
             external_id=self._EXTERNAL_ID,

@@ -43,7 +43,12 @@ def source_response_body() -> dict:
 def mock_list_response(
     httpx_mock: HTTPXMock, external_data_url: str, source_response_body: dict
 ) -> Iterator[HTTPXMock]:
-    httpx_mock.add_response(method="GET", url=external_data_url, status_code=200, json=source_response_body)
+    httpx_mock.add_response(
+        method="GET",
+        url=external_data_url + "?limit=1000",
+        status_code=200,
+        json=source_response_body,
+    )
     yield httpx_mock
 
 
@@ -51,7 +56,7 @@ def mock_list_response(
 def mock_upsert_response(
     httpx_mock: HTTPXMock, external_data_url: str, source_response_body: dict
 ) -> Iterator[HTTPXMock]:
-    httpx_mock.add_response(method="POST", url=external_data_url, status_code=200, json=source_response_body)
+    httpx_mock.add_response(method="POST", url=external_data_url, status_code=201, json=source_response_body)
     yield httpx_mock
 
 

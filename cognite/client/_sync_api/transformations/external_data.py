@@ -1,7 +1,7 @@
 """
 ===============================================================================
-This file mirrors cognite/client/_api/transformations/external_data.py.
-If the async API changes, update this file manually to match.
+92307f7e19fa2b08989c01a0bba703a3
+This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
@@ -22,13 +22,14 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class SyncTransformationExternalDataAPI(SyncAPIClient):
-    """Sync wrapper for TransformationExternalDataAPI."""
+    """Auto-generated, do not modify manually."""
 
     def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
 
     def list(self, limit: int | None = None) -> ExternalDataSourceList:
-        """List Fabric OneLake external data sources.
+        """
+        `List Fabric OneLake external data sources <https://api-docs.cognite.com/20230101/tag/Transformation-External-Data-Sources/operation/listExternalDataSources>`_.
 
         OneLake external data sources are **read-only** from a transform perspective — transforms can
         read data from OneLake tables via ``ext_onelake()`` SQL, but writing to OneLake is not supported.
@@ -42,7 +43,7 @@ class SyncTransformationExternalDataAPI(SyncAPIClient):
 
         Examples:
 
-            List all registered external data sources::
+            List all registered external data sources:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -51,10 +52,10 @@ class SyncTransformationExternalDataAPI(SyncAPIClient):
         return run_sync(self.__async_client.transformations.external_data_sources.list(limit=limit))
 
     def upsert(
-        self,
-        source: ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite],
+        self, source: ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]
     ) -> ExternalDataSource | ExternalDataSourceList:
-        """Create or update (upsert) Fabric OneLake external data sources.
+        """
+        `Create or update (upsert) Fabric OneLake external data sources <https://api-docs.cognite.com/20230101/tag/Transformation-External-Data-Sources/operation/upsertExternalDataSources>`_.
 
         An upsert creates the source if it doesn't exist, or overwrites it entirely if it does.
         Uniqueness is determined by ``externalId``.
@@ -90,25 +91,33 @@ class SyncTransformationExternalDataAPI(SyncAPIClient):
         return run_sync(self.__async_client.transformations.external_data_sources.upsert(source=source))
 
     def delete(self, external_id: str | SequenceNotStr[str]) -> None:
-        """Delete Fabric OneLake external data sources.
+        """
+        `Delete Fabric OneLake external data sources <https://api-docs.cognite.com/20230101/tag/Transformation-External-Data-Sources/operation/deleteExternalDataSources>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external IDs to delete.
 
         Examples:
 
-            Delete a source by external ID::
+            Delete a source by external ID:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> client.transformations.external_data_sources.delete("fabric-lakehouse-prod")
+
+            Delete multiple sources:
+
+                >>> client.transformations.external_data_sources.delete(
+                ...     ["fabric-lakehouse-prod", "fabric-lakehouse-staging"]
+                ... )
         """
         return run_sync(
             self.__async_client.transformations.external_data_sources.delete(external_id=external_id)
         )
 
     def verify_usability(self, external_id: str) -> ExternalDataSourceUsability:
-        """Verify that a Fabric OneLake external data source is usable.
+        """
+        `Verify that a Fabric OneLake external data source is usable <https://api-docs.cognite.com/20230101/tag/Transformation-External-Data-Sources/operation/verifyExternalDataSourceUsability>`_.
 
         Checks that the source exists and that the configured Azure credentials can access the specified
         Fabric lakehouse. Returns a ``usable_version`` UUID if the source is accessible.
@@ -125,7 +134,7 @@ class SyncTransformationExternalDataAPI(SyncAPIClient):
 
         Examples:
 
-            Verify a source before running a transformation::
+            Verify a source before running a transformation:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()

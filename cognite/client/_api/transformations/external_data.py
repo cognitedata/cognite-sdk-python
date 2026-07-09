@@ -8,7 +8,6 @@ from cognite.client.data_classes.transformations.external_data import (
     ExternalDataSourceList,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
-    ExternalDataSourceWriteList,
 )
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -40,7 +39,7 @@ class TransformationExternalDataAPI(APIClient):
 
         Examples:
 
-            List all registered external data sources::
+            List all registered external data sources:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
@@ -105,13 +104,13 @@ class TransformationExternalDataAPI(APIClient):
 
         Examples:
 
-            Delete a source by external ID::
+            Delete a source by external ID:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> client.transformations.external_data_sources.delete("fabric-lakehouse-prod")
 
-            Delete multiple sources::
+            Delete multiple sources:
 
                 >>> client.transformations.external_data_sources.delete(
                 ...     ["fabric-lakehouse-prod", "fabric-lakehouse-staging"]
@@ -140,7 +139,7 @@ class TransformationExternalDataAPI(APIClient):
 
         Examples:
 
-            Verify a source before running a transformation::
+            Verify a source before running a transformation:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
