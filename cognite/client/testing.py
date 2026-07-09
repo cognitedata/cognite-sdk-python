@@ -78,6 +78,7 @@ from cognite.client._api.three_d.models import ThreeDModelsAPI
 from cognite.client._api.three_d.revisions import ThreeDRevisionsAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api.transformations import TransformationsAPI
+from cognite.client._api.transformations.external_data import TransformationExternalDataAPI
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
 from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
@@ -163,6 +164,7 @@ from cognite.client._sync_api.three_d.models import Sync3DModelsAPI
 from cognite.client._sync_api.three_d.revisions import Sync3DRevisionsAPI
 from cognite.client._sync_api.time_series import SyncTimeSeriesAPI
 from cognite.client._sync_api.transformations import SyncTransformationsAPI
+from cognite.client._sync_api.transformations.external_data import SyncTransformationExternalDataAPI
 from cognite.client._sync_api.transformations.jobs import SyncTransformationJobsAPI
 from cognite.client._sync_api.transformations.notifications import SyncTransformationNotificationsAPI
 from cognite.client._sync_api.transformations.schedules import SyncTransformationSchedulesAPI
@@ -366,6 +368,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         tr_notifications = create_autospec(TransformationNotificationsAPI, instance=True, spec_set=True)
         tr_schedules = create_autospec(TransformationSchedulesAPI, instance=True, spec_set=True)
         tr_schema = create_autospec(TransformationSchemaAPI, instance=True, spec_set=True)
+        tr_external_data = create_autospec(TransformationExternalDataAPI, instance=True, spec_set=True)
         self.transformations = create_autospec(
             TransformationsAPI,
             instance=True,
@@ -373,6 +376,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             notifications=tr_notifications,
             schedules=tr_schedules,
             schema=tr_schema,
+            external_data_sources=tr_external_data,
         )
         flip_spec_set_on(self.transformations)
 
@@ -571,6 +575,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         tr_notifications = create_autospec(SyncTransformationNotificationsAPI, instance=True, spec_set=True)
         tr_schedules = create_autospec(SyncTransformationSchedulesAPI, instance=True, spec_set=True)
         tr_schema = create_autospec(SyncTransformationSchemaAPI, instance=True, spec_set=True)
+        tr_external_data_sync = create_autospec(SyncTransformationExternalDataAPI, instance=True, spec_set=True)
         self.transformations = create_autospec(
             SyncTransformationsAPI,
             instance=True,
@@ -578,6 +583,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             notifications=tr_notifications,
             schedules=tr_schedules,
             schema=tr_schema,
+            external_data_sources=tr_external_data_sync,
         )
         flip_spec_set_on(self.transformations)
 

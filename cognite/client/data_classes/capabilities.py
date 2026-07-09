@@ -1105,6 +1105,21 @@ class TransformationsAcl(Capability):
 
 
 @dataclass
+class TransformationsExternalDataSourcesAcl(Capability):
+    _capability_name = "transformationsExternalDataSourcesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+        DataSet = DataSetScope
+
+
+@dataclass
 class TypesAcl(Capability):
     _capability_name = "typesAcl"
     actions: Sequence[Action]
