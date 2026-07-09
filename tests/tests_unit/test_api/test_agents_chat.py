@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 
@@ -7,7 +9,7 @@ import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
-from cognite.client.data_classes.agents import Message
+from cognite.client.data_classes.agents import ImageContent, Message
 from cognite.client.data_classes.agents.chat import (
     AgentChatResponse,
     AgentDataItem,
@@ -222,3 +224,160 @@ class TestAgentChat:
         assert msg.content is content
         assert isinstance(msg.content, TextContent)
         assert msg.content.text == "Hello world"
+
+
+class TestImageContent:
+    def test_from_bytes(self) -> None:
+        image_bytes = b"fake-image-bytes"
+        content = ImageContent.from_bytes(image_bytes, media_type="image/png")
+
+        assert content.data == base64.b64encode(image_bytes).decode()
+        assert content.media_type == "image/png"
+        assert content.dump() == {
+            "data": base64.b64encode(image_bytes).decode(),
+            "mediaType": "image/png",
+            "type": "image",
+        }
+
+    def test_from_bytes_invalid_media_type(self) -> None:
+        with pytest.raises(ValueError, match="Unsupported media type"):
+            ImageContent.from_bytes(b"data", media_type="image/gif")
+
+    def test_from_file(self, tmp_path: Path) -> None:
+        image_bytes = b"fake-image-bytes"
+        image_path = tmp_path / "diagram.png"
+        image_path.write_bytes(image_bytes)
+
+        content = ImageContent.from_file(image_path)
+
+        assert content.data == base64.b64encode(image_bytes).decode()
+        assert content.media_type == "image/png"
+
+    def test_from_file_with_explicit_media_type(self, tmp_path: Path) -> None:
+        image_bytes = b"fake-image-bytes"
+        image_path = tmp_path / "diagram.bin"
+        image_path.write_bytes(image_bytes)
+
+        content = ImageContent.from_file(image_path, media_type="image/webp")
+
+        assert content.media_type == "image/webp"
+
+    def test_from_file_unknown_suffix(self, tmp_path: Path) -> None:
+        image_path = tmp_path / "diagram.bin"
+        image_path.write_bytes(b"data")
+
+        with pytest.raises(ValueError, match="Could not infer media type"):
+            ImageContent.from_file(image_path)
+
+    def test_load_from_api_response(self) -> None:
+        data = {"type": "image", "data": "aGVsbG8=", "mediaType": "image/jpeg"}
+        content = ImageContent._load(data)
+
+        assert isinstance(content, ImageContent)
+        assert content.data == "aGVsbG8="
+        assert content.media_type == "image/jpeg"
+
+
+class TestMultimodalMessage:
+    def test_message_with_content_parts_dump(self) -> None:
+        image_bytes = b"fake-image-bytes"
+        message = Message(
+            [
+                TextContent(text="What's in this image?"),
+                ImageContent.from_bytes(image_bytes, media_type="image/png"),
+            ]
+        )
+
+        dumped = message.dump()
+
+        assert dumped == {
+            "role": "user",
+            "content": [
+                {"text": "What's in this image?", "type": "text"},
+                {
+                    "data": base64.b64encode(image_bytes).decode(),
+                    "mediaType": "image/png",
+                    "type": "image",
+                },
+            ],
+        }
+
+    def test_text_only_message_still_dumps_single_object(self) -> None:
+        message = Message("Hello world")
+
+        assert message.dump() == {
+            "role": "user",
+            "content": {"text": "Hello world", "type": "text"},
+        }
+
+    def test_chat_with_multimodal_message(
+        self,
+        httpx_mock: HTTPXMock,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        chat_response_body: dict,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat"),
+            status_code=200,
+            json=chat_response_body,
+        )
+
+        image_bytes = b"fake-image-bytes"
+        cognite_client.agents.chat(
+            agent_external_id="my_agent",
+            messages=Message(
+                [
+                    TextContent(text="Describe this image"),
+                    ImageContent.from_bytes(image_bytes, media_type="image/jpeg"),
+                ]
+            ),
+        )
+
+        request = httpx_mock.get_requests()[0]
+        payload = jsgz_load(request.content)
+        assert payload == {
+            "agentExternalId": "my_agent",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {"text": "Describe this image", "type": "text"},
+                        {
+                            "data": base64.b64encode(image_bytes).decode(),
+                            "mediaType": "image/jpeg",
+                            "type": "image",
+                        },
+                    ],
+                }
+            ],
+        }
+
+    def test_load_agent_message_with_content_parts(self) -> None:
+        response = AgentChatResponse._load(
+            {
+                "agentExternalId": "my_agent",
+                "response": {
+                    "type": "result",
+                    "messages": [
+                        {
+                            "role": "agent",
+                            "content": [
+                                {"text": "I see a pump in the image.", "type": "text"},
+                                {"data": "aGVsbG8=", "mediaType": "image/png", "type": "image"},
+                            ],
+                        }
+                    ],
+                },
+            }
+        )
+
+        assert response.text == "I see a pump in the image."
+        content = response.messages[0].content
+        assert isinstance(content, list)
+        assert isinstance(content[0], TextContent)
+        assert isinstance(content[1], ImageContent)
+        assert content[0].text == "I see a pump in the image."
+        assert content[1].data == "aGVsbG8="
+        assert content[1].media_type == "image/png"
