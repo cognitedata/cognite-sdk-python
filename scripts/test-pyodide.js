@@ -38,15 +38,15 @@ server.listen(PORT, () => {
     await pyodide.loadPackage("micropip");
     const micropip = pyodide.pyimport("micropip");
 
-    // TEMPORARY WORKAROUND (added 2026-04-19, auto-disables 2026-05-03):
-    // authlib 1.7+ requires cryptography>=45.0.1, which has no pure-Python wheel;
-    // the streamlit-pinned Pyodide 0.26.2 only ships cryptography 43.x, so
-    // micropip resolution fails. Preload Pyodide's built cryptography and cap
-    // authlib below 1.7 to satisfy the transitive requirement. Revisit once
-    // stlite bumps to a Pyodide release that ships cryptography>=45.0.1
-    // (Pyodide 0.29.0 already does). After the expiry date, the workaround is
-    // skipped — if it's still needed the install will fail loudly.
-    if (new Date() < new Date("2026-07-04")) {
+    // authlib 1.7+ requires cryptography>=45.0.1, which has no pure-Python wheel.
+    // Older Pyodide releases (e.g. stlite's 0.26.2) only ship cryptography 43.x,
+    // so micropip resolution fails. On those runtimes, preload Pyodide's bundled
+    // cryptography and cap authlib below 1.7 to satisfy the transitive requirement.
+    // Pyodide >= 0.29 ships cryptography>=45.0.1, so the workaround is skipped there.
+    const [pyMajor, pyMinor] = pyodide.version.split(".").map(Number);
+    const needsCryptographyWorkaround = pyMajor === 0 && pyMinor < 29;
+    if (needsCryptographyWorkaround) {
+      console.log(`Applying cryptography workaround for Pyodide ${pyodide.version}`);
       await pyodide.loadPackage(["cryptography", "ssl"]);
       await micropip.install("authlib<1.7");
     }
