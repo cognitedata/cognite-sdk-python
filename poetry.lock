@@ -111,7 +111,7 @@ description = "Backport of CPython tarfile module"
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
-markers = "python_version < \"3.12\" and platform_machine != \"ppc64le\" and platform_machine != \"s390x\""
+markers = "platform_machine != \"ppc64le\" and platform_machine != \"s390x\" and python_version < \"3.12\""
 files = [
     {file = "backports.tarfile-1.2.0-py3-none-any.whl", hash = "sha256:77e284d754527b01fb1e6fa8a1afe577858ebe4e9dad8919e34c862cb399bc34"},
     {file = "backports_tarfile-1.2.0.tar.gz", hash = "sha256:d75e02c268746e1b8144c278978b6e98e85de6ad16f8e4b0844a154557eca991"},
@@ -755,7 +755,7 @@ description = "Geographic pandas extensions"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"geo\" or extra == \"all\""
+markers = "extra == \"all\" or extra == \"geo\""
 files = [
     {file = "geopandas-1.1.3-py3-none-any.whl", hash = "sha256:90d62a64f95eaa3be2ccc115c5f3d6e24208bb11983b390fdc0621a3eccd0230"},
     {file = "geopandas-1.1.3.tar.gz", hash = "sha256:91a31989b6f566012838d21d5f8033f37dce882079ccb7cfdc40d5ccce7f284f"},
@@ -927,7 +927,7 @@ description = "Read metadata from Python packages"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
-markers = "python_version < \"3.12\" and platform_machine != \"ppc64le\" and platform_machine != \"s390x\""
+markers = "platform_machine != \"ppc64le\" and platform_machine != \"s390x\" and python_version < \"3.12\""
 files = [
     {file = "importlib_metadata-9.0.0-py3-none-any.whl", hash = "sha256:2d21d1cc5a017bd0559e36150c21c830ab1dc304dedd1b7ea85d20f45ef3edd7"},
     {file = "importlib_metadata-9.0.0.tar.gz", hash = "sha256:a4f57ab599e6a2e3016d7595cfd72eb4661a5106e787a95bcc90c7105b831efc"},
@@ -998,7 +998,7 @@ description = "IPython: Productive Interactive Computing"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
-markers = "python_version == \"3.10\""
+markers = "python_version < \"3.15\""
 files = [
     {file = "ipython-8.39.0-py3-none-any.whl", hash = "sha256:bb3c51c4fa8148ab1dea07a79584d1c854e234ea44aa1283bcb37bc75054651f"},
     {file = "ipython-8.39.0.tar.gz", hash = "sha256:4110ae96012c379b8b6db898a07e186c40a2a1ef5d57a7fa83166047d9da7624"},
@@ -1038,7 +1038,7 @@ description = "IPython: Productive Interactive Computing"
 optional = false
 python-versions = ">=3.11"
 groups = ["dev"]
-markers = "python_version > \"3.10\""
+markers = "python_version >= \"3.11\""
 files = [
     {file = "ipython-9.13.0-py3-none-any.whl", hash = "sha256:57f9d4639e20818d328d287c7b549af3d05f12486ea8f2e7f73e52a36ec4d201"},
     {file = "ipython-9.13.0.tar.gz", hash = "sha256:7e834b6afc99f020e3f05966ced34792f40267d64cb1ea9043886dab0dde5967"},
@@ -1073,7 +1073,7 @@ description = "Defines a variety of Pygments lexers for highlighting IPython cod
 optional = false
 python-versions = ">=3.8"
 groups = ["dev"]
-markers = "python_version > \"3.10\""
+markers = "python_version >= \"3.11\""
 files = [
     {file = "ipython_pygments_lexers-1.1.1-py3-none-any.whl", hash = "sha256:a9462224a505ade19a605f71f8fa63c2048833ce50abc86768a0d81d876dc81c"},
     {file = "ipython_pygments_lexers-1.1.1.tar.gz", hash = "sha256:09c0138009e56b6854f9535736f4171d855c8c08a563a0dcd8022f78355c7e81"},
@@ -1608,7 +1608,7 @@ description = "Python library for arbitrary-precision floating-point arithmetic"
 optional = true
 python-versions = "*"
 groups = ["main"]
-markers = "extra == \"sympy\" or extra == \"all\""
+markers = "extra == \"all\" or extra == \"sympy\""
 files = [
     {file = "mpmath-1.3.0-py3-none-any.whl", hash = "sha256:a0b2b9fe80bbcd81a6647ff13108738cfb482d481d826cc0e02f5b35e5c88d2c"},
     {file = "mpmath-1.3.0.tar.gz", hash = "sha256:7a28eb2a9774d00c7bc92411c19a89209d5da7c4c9a9e227be8330a23a25b91f"},
@@ -1837,7 +1837,7 @@ description = "Fundamental package for array computing in Python"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "python_version == \"3.10\" and (extra == \"numpy\" or extra == \"all\" or extra == \"pandas\" or extra == \"geo\")"
+markers = "extra == \"all\" or extra == \"numpy\" or extra == \"pandas\" or extra == \"geo\""
 files = [
     {file = "numpy-2.2.6-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:b412caa66f72040e6d268491a59f2c43bf03eb6c96dd8f0307829feb7fa2b6fb"},
     {file = "numpy-2.2.6-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:8e41fd67c52b86603a91c1a505ebaef50b3314de0213461c7a6e99c9a3beff90"},
@@ -1903,7 +1903,7 @@ description = "Fundamental package for array computing in Python"
 optional = true
 python-versions = ">=3.11"
 groups = ["main"]
-markers = "python_version > \"3.10\" and (extra == \"numpy\" or extra == \"all\" or extra == \"pandas\" or extra == \"geo\")"
+markers = "<empty>"
 files = [
     {file = "numpy-2.4.6-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:0280e0356c0829a18d9de1cb7eee50ec22ca639878d7240307ca0943d73cd2c4"},
     {file = "numpy-2.4.6-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:110f8b71aacb688ec69062bb7f6938a0f8acb01b7c1c4beb453c65b6d234584d"},
@@ -1998,7 +1998,7 @@ description = "Powerful data structures for data analysis, time series, and stat
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"pandas\" or extra == \"all\" or extra == \"geo\""
+markers = "extra == \"all\" or extra == \"pandas\" or extra == \"geo\""
 files = [
     {file = "pandas-2.3.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:376c6446ae31770764215a6c937f72d917f214b43560603cd60da6408f183b6c"},
     {file = "pandas-2.3.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e19d192383eab2f4ceb30b412b22ea30690c9e618f78870357ae1d682912015a"},
@@ -2143,14 +2143,14 @@ ptyprocess = ">=0.5"
 
 [[package]]
 name = "pip"
-version = "26.1.1"
+version = "26.1.2"
 description = "The PyPA recommended tool for installing Python packages."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "pip-26.1.1-py3-none-any.whl", hash = "sha256:99cb1c2899893b075ff56e4ed0af55669a955b49ad7fb8d8603ecdaf4ed653fb"},
-    {file = "pip-26.1.1.tar.gz", hash = "sha256:d36762751d156a4ee895de8af39aa0abeeeb577f93a2eca6ab62467bbf0f8a78"},
+    {file = "pip-26.1.2-py3-none-any.whl", hash = "sha256:382ff9f685ee3bc25864f820aa50505825f10f5458ffff07e30a6d96e5715cab"},
+    {file = "pip-26.1.2.tar.gz", hash = "sha256:f49cd134c61cf2fd75e0ce2676db03e4054504a5a4986d00f8299ae632dc4605"},
 ]
 
 [[package]]
@@ -2319,7 +2319,7 @@ files = [
     {file = "pycparser-3.0-py3-none-any.whl", hash = "sha256:b727414169a36b7d524c1c3e31839a521725078d7b2ff038656844266160a992"},
     {file = "pycparser-3.0.tar.gz", hash = "sha256:600f49d217304a5902ac3c37e1281c9fe94e4d0489de643a9504c5cdfdfc6b29"},
 ]
-markers = {main = "platform_python_implementation != \"PyPy\" and implementation_name != \"PyPy\"", dev = "(platform_python_implementation != \"PyPy\" or implementation_name == \"pypy\") and implementation_name != \"PyPy\""}
+markers = {main = "platform_python_implementation != \"PyPy\" and implementation_name != \"PyPy\"", dev = "platform_python_implementation != \"PyPy\" and implementation_name != \"PyPy\" or implementation_name == \"pypy\""}
 
 [[package]]
 name = "pygments"
@@ -2362,7 +2362,7 @@ description = "Vectorized spatial vector file format I/O using GDAL/OGR"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"geo\" or extra == \"all\""
+markers = "extra == \"all\" or extra == \"geo\""
 files = [
     {file = "pyogrio-0.12.1-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:5c4735235ca0d8dcdb4ecd69bd73e66762d161bce913b10d4458a18137cc7062"},
     {file = "pyogrio-0.12.1-cp310-cp310-macosx_12_0_x86_64.whl", hash = "sha256:3249d06c2520857b622f3ff0f1b7b4849291ee1fb72f21587825f5fd0f24b787"},
@@ -2427,7 +2427,7 @@ description = "Python interface to PROJ (cartographic projections and coordinate
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "python_version == \"3.10\" and (extra == \"geo\" or extra == \"all\")"
+markers = "python_version == \"3.10\" and (extra == \"all\" or extra == \"geo\")"
 files = [
     {file = "pyproj-3.7.1-cp310-cp310-macosx_13_0_x86_64.whl", hash = "sha256:bf09dbeb333c34e9c546364e7df1ff40474f9fddf9e70657ecb0e4f670ff0b0e"},
     {file = "pyproj-3.7.1-cp310-cp310-macosx_14_0_arm64.whl", hash = "sha256:6575b2e53cc9e3e461ad6f0692a5564b96e7782c28631c7771c668770915e169"},
@@ -2474,7 +2474,7 @@ description = "Python interface to PROJ (cartographic projections and coordinate
 optional = true
 python-versions = ">=3.11"
 groups = ["main"]
-markers = "python_version >= \"3.11\" and (extra == \"geo\" or extra == \"all\")"
+markers = "python_version >= \"3.11\" and (extra == \"all\" or extra == \"geo\")"
 files = [
     {file = "pyproj-3.7.2-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:2514d61f24c4e0bb9913e2c51487ecdaeca5f8748d8313c933693416ca41d4d5"},
     {file = "pyproj-3.7.2-cp311-cp311-macosx_14_0_arm64.whl", hash = "sha256:8693ca3892d82e70de077701ee76dd13d7bca4ae1c9d1e739d72004df015923a"},
@@ -2664,7 +2664,7 @@ files = [
     {file = "python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3"},
     {file = "python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"},
 ]
-markers = {main = "extra == \"pandas\" or extra == \"all\" or extra == \"geo\""}
+markers = {main = "extra == \"all\" or extra == \"pandas\" or extra == \"geo\""}
 
 [package.dependencies]
 six = ">=1.5"
@@ -2711,7 +2711,7 @@ description = "World timezone definitions, modern and historical"
 optional = true
 python-versions = "*"
 groups = ["main"]
-markers = "extra == \"pandas\" or extra == \"all\" or extra == \"geo\""
+markers = "extra == \"all\" or extra == \"pandas\" or extra == \"geo\""
 files = [
     {file = "pytz-2026.2-py2.py3-none-any.whl", hash = "sha256:04156e608bee23d3792fd45c94ae47fae1036688e75032eea2e3bf0323d1f126"},
     {file = "pytz-2026.2.tar.gz", hash = "sha256:0e60b47b29f21574376f218fe21abc009894a2321ea16c6754f3cad6eb7cdd6a"},
@@ -2812,7 +2812,7 @@ files = [
     {file = "pyyaml-6.0.3-cp39-cp39-win_amd64.whl", hash = "sha256:2e71d11abed7344e42a8849600193d15b6def118602c4c176f748e4583246007"},
     {file = "pyyaml-6.0.3.tar.gz", hash = "sha256:d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f"},
 ]
-markers = {main = "extra == \"yaml\" or extra == \"all\""}
+markers = {main = "extra == \"all\" or extra == \"yaml\""}
 
 [[package]]
 name = "pyzmq"
@@ -3205,7 +3205,7 @@ description = "Manipulation and analysis of geometric objects"
 optional = true
 python-versions = ">=3.10"
 groups = ["main"]
-markers = "extra == \"geo\" or extra == \"all\""
+markers = "extra == \"all\" or extra == \"geo\""
 files = [
     {file = "shapely-2.1.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:7ae48c236c0324b4e139bea88a306a04ca630f49be66741b340729d380d8f52f"},
     {file = "shapely-2.1.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:eba6710407f1daa8e7602c347dfc94adc02205ec27ed956346190d66579eb9ea"},
@@ -3284,7 +3284,7 @@ files = [
     {file = "six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"},
     {file = "six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"},
 ]
-markers = {main = "extra == \"pandas\" or extra == \"all\" or extra == \"geo\""}
+markers = {main = "extra == \"all\" or extra == \"pandas\" or extra == \"geo\""}
 
 [[package]]
 name = "snowballstemmer"
@@ -3531,7 +3531,7 @@ description = "Computer algebra system (CAS) in Python"
 optional = true
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "extra == \"sympy\" or extra == \"all\""
+markers = "extra == \"all\" or extra == \"sympy\""
 files = [
     {file = "sympy-1.14.0-py3-none-any.whl", hash = "sha256:e091cc3e99d2141a0ba2847328f5479b05d94a6635cb96148ccb3f34671bd8f5"},
     {file = "sympy-1.14.0.tar.gz", hash = "sha256:d3d3fe8df1e5a0b42f0e7bdf50541697dbe7d23746e894990c030e2b05e72517"},
@@ -3598,7 +3598,6 @@ description = "A lil' TOML parser"
 optional = false
 python-versions = ">=3.8"
 groups = ["dev", "docs"]
-markers = "python_version == \"3.10\""
 files = [
     {file = "tomli-2.4.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:f8f0fc26ec2cc2b965b7a3b87cd19c5c6b8c5e5f436b984e85f486d652285c30"},
     {file = "tomli-2.4.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:4ab97e64ccda8756376892c53a72bd1f964e519c77236368527f758fbc36a53a"},
@@ -3648,6 +3647,7 @@ files = [
     {file = "tomli-2.4.1-py3-none-any.whl", hash = "sha256:0d85819802132122da43cb86656f8d1f8c6587d54ae7dcaf30e90533028b49fe"},
     {file = "tomli-2.4.1.tar.gz", hash = "sha256:7c7e1a961a0b2f2472c1ac5b69affa0ae1132c39adcb67aba98568702b9cc23f"},
 ]
+markers = {dev = "python_full_version <= \"3.11.0a6\"", docs = "python_version == \"3.10\""}
 
 [[package]]
 name = "tornado"
@@ -3832,7 +3832,7 @@ description = "Provider of IANA time zone data"
 optional = false
 python-versions = ">=2"
 groups = ["main"]
-markers = "sys_platform == \"win32\" or sys_platform == \"emscripten\" or extra == \"pandas\" or extra == \"all\" or extra == \"geo\""
+markers = "sys_platform == \"win32\" or sys_platform == \"emscripten\" or extra == \"all\" or extra == \"pandas\" or extra == \"geo\""
 files = [
     {file = "tzdata-2026.2-py2.py3-none-any.whl", hash = "sha256:bbe9af844f658da81a5f95019480da3a89415801f6cc966806612cc7169bffe7"},
     {file = "tzdata-2026.2.tar.gz", hash = "sha256:9173fde7d80d9018e02a662e168e5a2d04f87c41ea174b139fbef642eda62d10"},
@@ -3894,7 +3894,7 @@ description = "Backport of pathlib-compatible object wrapper for zip files"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
-markers = "python_version < \"3.12\" and platform_machine != \"ppc64le\" and platform_machine != \"s390x\""
+markers = "platform_machine != \"ppc64le\" and platform_machine != \"s390x\" and python_version < \"3.12\""
 files = [
     {file = "zipp-4.1.0-py3-none-any.whl", hash = "sha256:25ad4e16390cd314347dd8f1de67a2ac538ae658ed4ab9db16029c07c188e97f"},
     {file = "zipp-4.1.0.tar.gz", hash = "sha256:4cb57381f544315db7688e976e922a2b18cdb513d21cc194eb42232ba2a3e602"},
@@ -3919,4 +3919,4 @@ yaml = ["PyYAML"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">= 3.10, <4"
-content-hash = "f1eb80b270c698dc6793b496f7aca83e51b2b2ba41a17726c80e8600257b8846"
+content-hash = "b5fd668064b093478e8d65e3b91b867dc0131c84dd683f81a7b81c5e4e52c8a6"
