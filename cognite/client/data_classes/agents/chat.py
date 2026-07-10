@@ -13,7 +13,6 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case
 
 _ALLOWED_IMAGE_MEDIA_TYPES = frozenset({"image/png", "image/jpeg", "image/webp"})
 _MEDIA_TYPE_BY_SUFFIX = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
-_MAX_IMAGE_DATA_LENGTH = 6_990_508
 
 
 @dataclass
@@ -110,10 +109,6 @@ class ImageContent(MessageContent):
             raise ValueError(
                 f"Unsupported media type {media_type!r}. "
                 f"Allowed values: {', '.join(sorted(_ALLOWED_IMAGE_MEDIA_TYPES))}."
-            )
-        if len(data) > 5_242_881:
-            raise ValueError(
-                f"Image data size ({len(data)} bytes) exceeds the maximum allowed limit of 5,242,881 bytes."
             )
         encoded = base64.b64encode(data).decode()
         return cls(data=encoded, media_type=media_type)
