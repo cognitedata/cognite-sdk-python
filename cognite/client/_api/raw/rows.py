@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
+from cognite.client._constants import _RUNNING_IN_PYODIDE, DEFAULT_LIMIT_READ
 from cognite.client.data_classes.raw import Row, RowCore, RowList, RowWrite
 from cognite.client.utils._auxiliary import (
     drop_none_values,
@@ -134,7 +134,7 @@ class RawRowsAPI(APIClient):
         Yields:
             Row | RowList: An iterator yielding the requested row or rows.
         """  # noqa: DOC404
-        if partitions is None or _RUNNING_IN_BROWSER:
+        if partitions is None or _RUNNING_IN_PYODIDE:
             iterator = self._list_generator(
                 list_cls=RowList,
                 resource_cls=Row,
@@ -600,7 +600,7 @@ class RawRowsAPI(APIClient):
                 ...     row_list  # Do something with the rows
         """
         chunk_size = None
-        if _RUNNING_IN_BROWSER:
+        if _RUNNING_IN_PYODIDE:
             chunk_size = 10_000
         elif partitions is None:
             if is_unlimited(limit):

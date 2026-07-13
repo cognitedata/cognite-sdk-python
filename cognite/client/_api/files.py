@@ -15,7 +15,7 @@ from typing_extensions import assert_never
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import (
-    _RUNNING_IN_BROWSER,
+    _RUNNING_IN_PYODIDE,
     DEFAULT_LIMIT_READ,
     FILE_DEFAULT_MULTIPART_SIZE,
     FILE_MAX_MULTIPART_COUNT,
@@ -703,7 +703,7 @@ class FilesAPI(APIClient):
         size = path.stat().st_size
         # Pyodide's File System Access API sometimes lies: stat may report st_size=0 even when there's readable
         # bytes on disk (that can be read normally...) Fall back to seek/tell, which reads the true size:
-        if _RUNNING_IN_BROWSER and size == 0:
+        if _RUNNING_IN_PYODIDE and size == 0:
             with path.open("rb") as fh:
                 fh.seek(0, os.SEEK_END)
                 return fh.tell()
