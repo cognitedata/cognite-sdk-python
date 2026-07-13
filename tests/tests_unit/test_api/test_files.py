@@ -1252,7 +1252,7 @@ class TestGetFileSize:
         p = tmp_path / "lied_about.bin"
         p.write_bytes(b"hey\nyo\n")  # 7 bytes really on disk
         # We have to pretend we are running in the browser with Pyodide:
-        monkeypatch.setattr("cognite.client._api.files._RUNNING_IN_BROWSER", True)
+        monkeypatch.setattr("cognite.client._api.files._RUNNING_IN_PYODIDE", True)
 
         # Sanity-check that stat is now lying:
         assert p.stat().st_size == 0
@@ -1263,7 +1263,7 @@ class TestGetFileSize:
         """A genuinely empty file must still report size=0 in browser mode."""
         p = tmp_path / "empty.bin"
         p.touch()
-        monkeypatch.setattr("cognite.client._api.files._RUNNING_IN_BROWSER", True)
+        monkeypatch.setattr("cognite.client._api.files._RUNNING_IN_PYODIDE", True)
 
         assert FilesAPI._get_file_size(p) == 0
 
