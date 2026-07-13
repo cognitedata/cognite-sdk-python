@@ -56,7 +56,7 @@ def get_global_async_httpx_client() -> httpx.AsyncClient:
 
     client = _global_async_httpx_clients[loop] = httpx.AsyncClient(
         proxy=global_config.proxy,
-        verify=not global_config.disable_ssl,
+        verify=False if global_config.disable_ssl else (global_config.ssl_context or True),
         limits=httpx.Limits(
             max_connections=global_config.max_connection_pool_size,
             max_keepalive_connections=None,
