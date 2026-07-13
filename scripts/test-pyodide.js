@@ -42,8 +42,9 @@ server.listen(PORT, () => {
     // Older Pyodide releases (e.g. stlite's 0.26.2) only ship cryptography 43.x,
     // so micropip resolution fails. On those runtimes, preload Pyodide's bundled
     // cryptography and cap authlib below 1.7 to satisfy the transitive requirement.
-    // Pyodide >= 0.29 ships cryptography>=45.0.1, so the workaround is skipped there.
-    const [pyMajor, pyMinor] = pyodide.version.split(".").map((val) => parseInt(val, 10));
+    // Pyodide >= 0.29 ships cryptography>=45.0.1, so the workaround is skipped there
+    // (and for the 314.x line / Python 3.14).
+    const [pyMajor, pyMinor] = pyodide.version.split(".").map(Number);
     const needsCryptographyWorkaround = pyMajor === 0 && pyMinor < 29;
     if (needsCryptographyWorkaround) {
       console.log(`Applying cryptography workaround for Pyodide ${pyodide.version}`);
