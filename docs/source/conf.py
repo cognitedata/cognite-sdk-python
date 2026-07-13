@@ -192,9 +192,11 @@ texinfo_documents = [
 
 python_maximum_signature_line_length = 80
 
-# Self-referential links to readthedocs fail in CI for PRs that add new sections
-# (the URL only exists after the PR is merged and docs are published):
-linkcheck_ignore = [r"https://cognite-sdk-python\.readthedocs-hosted\.com/.*"]
+# Anchors for newly added sections don't exist on readthedocs until after the PR is merged.
+# List them here to unblock merging — this list can be emptied once the docs are published.
+linkcheck_anchors_ignore = [
+    "ssl-certificate-configuration",
+]
 
 # Patch Sphinx to hide @overload signatures in docs
 # Sphinx's autodoc uses ModuleAnalyzer.overloads via the parser

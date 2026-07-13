@@ -31,11 +31,9 @@ class GlobalConfig:
         max_connection_pool_size (int): The maximum number of connections which will be kept in the SDKs connection pool.
             Defaults to 20.
         disable_ssl (bool): Whether or not to disable SSL. Defaults to False
-        ssl_context (ssl.SSLContext | None): Custom SSL context for certificate verification. When set, takes
-            precedence over the default certifi bundle. Use ``ssl.create_default_context()`` to verify against
-            the OS trust store, or load a custom CA bundle with ``ssl.create_default_context(cafile=...)``.
-            Ignored when ``disable_ssl`` is True. Must be set before the first API request. Defaults to None.
-            See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#ssl-certificate-configuration
+        ssl_context (ssl.SSLContext | None): Custom SSL context for certificate verification. Overrides the
+            default certifi bundle. Ignored when ``disable_ssl`` is True. Must be set before the first API
+            request. Defaults to None. See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#ssl-certificate-configuration
         proxy (str | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. ``http://localhost:8030``.
             For proxy authentication, embed credentials in the URL: ``http://user:pass@localhost:8030``.
             Defaults to None (no proxy).
