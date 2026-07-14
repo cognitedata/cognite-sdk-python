@@ -12,7 +12,15 @@ from cognite.client.data_classes.data_modeling.ids import (
     ViewIdentifier,
     _load_identifier,
 )
-from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
+from cognite.client.data_classes.data_modeling.views import (
+    RecordViewApply,
+    View,
+    ViewApply,
+    ViewFilter,
+    ViewList,
+    ViewUsedFor,
+)
+from cognite.client.utils._experimental import FeaturePreviewWarning
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -27,6 +35,13 @@ class ViewsAPI(APIClient):
         self._DELETE_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
         self._CREATE_LIMIT = 100
+        self._warn_on_record_views = FeaturePreviewWarning(
+            api_maturity="alpha", sdk_maturity="alpha", feature_name="Views on Records"
+        )
+
+    def _record_views_alpha_headers(self) -> dict[str, str]:
+        self._warn_on_record_views.warn()
+        return {"cdf-version": f"{self._config.api_subversion}-alpha"}
 
     def _get_semaphore(self, operation: Literal["read_schema", "write_schema"]) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
@@ -45,6 +60,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> AsyncIterator[View]: ...
 
     @overload
@@ -56,6 +72,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> AsyncIterator[ViewList]: ...
 
     async def __call__(
@@ -66,6 +83,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> AsyncIterator[View] | AsyncIterator[ViewList]:
         """Iterate over views
 
@@ -78,11 +96,15 @@ class ViewsAPI(APIClient):
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
+            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given
+                type(s). Passing "record" is an alpha feature, subject to breaking
+                changes without prior notice.
 
         Yields:
             View | ViewList: yields View one by one if chunk_size is not specified, else ViewList objects.
         """  # noqa: DOC404
-        filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
+        filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global, used_for)
+        headers = self._record_views_alpha_headers() if filter_.used_for and "record" in filter_.used_for else None
         async for item in self._list_generator(
             list_cls=ViewList,
             resource_cls=View,
@@ -90,6 +112,7 @@ class ViewsAPI(APIClient):
             chunk_size=chunk_size,
             limit=limit,
             filter=filter_.dump(camel_case=True),
+            headers=headers,
             semaphore=self._get_semaphore("read_schema"),
         ):
             yield item
@@ -174,6 +197,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> ViewList:
         """`List views <https://api-docs.cognite.com/20230101/tag/Views/operation/listViews>`_.
 
@@ -183,6 +207,9 @@ class ViewsAPI(APIClient):
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
+            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given
+                type(s). Passing "record" is an alpha feature, subject to breaking
+                changes without prior notice.
 
         Returns:
             ViewList: List of requested views
@@ -206,7 +233,8 @@ class ViewsAPI(APIClient):
                 >>> for view_list in client.data_modeling.views(chunk_size=10):
                 ...     view_list  # do something with the views
         """
-        filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
+        filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global, used_for)
+        headers = self._record_views_alpha_headers() if filter_.used_for and "record" in filter_.used_for else None
 
         return await self._list(
             list_cls=ViewList,
@@ -214,20 +242,21 @@ class ViewsAPI(APIClient):
             method="GET",
             limit=limit,
             filter=filter_.dump(camel_case=True),
+            headers=headers,
             override_semaphore=self._get_semaphore("read_schema"),
         )
 
     @overload
-    async def apply(self, view: Sequence[ViewApply]) -> ViewList: ...
+    async def apply(self, view: Sequence[ViewApply | RecordViewApply]) -> ViewList: ...
 
     @overload
-    async def apply(self, view: ViewApply) -> View: ...
+    async def apply(self, view: ViewApply | RecordViewApply) -> View: ...
 
-    async def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
+    async def apply(self, view: ViewApply | RecordViewApply | Sequence[ViewApply | RecordViewApply]) -> View | ViewList:
         """`Create or update (upsert) one or more views <https://api-docs.cognite.com/20230101/tag/Views/operation/ApplyViews>`_.
 
         Args:
-            view (ViewApply | Sequence[ViewApply]): View(s) to create or update.
+            view (ViewApply | RecordViewApply | Sequence[ViewApply | RecordViewApply]): View(s) to create or update.
 
         Returns:
             View | ViewList: Created view(s)
@@ -311,11 +340,35 @@ class ViewsAPI(APIClient):
                 ...     },
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
+
+            Create a record-backed view (alpha feature, subject to breaking changes without prior notice):
+
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     ContainerId,
+                ...     MappedPropertyApply,
+                ...     RecordViewApply,
+                ... )
+                >>> record_view = RecordViewApply(
+                ...     space="mySpace",
+                ...     external_id="myRecordView",
+                ...     version="v1",
+                ...     stream_id="myStream",
+                ...     properties={
+                ...         "title": MappedPropertyApply(
+                ...             container=ContainerId("mySpace", "myRecordContainer"),
+                ...             container_property_identifier="title",
+                ...         ),
+                ...     },
+                ... )
+                >>> res = client.data_modeling.views.apply(record_view)
         """
+        views = [view] if isinstance(view, (ViewApply, RecordViewApply)) else view
+        headers = self._record_views_alpha_headers() if any(isinstance(v, RecordViewApply) for v in views) else None
         return await self._create_multiple(
             list_cls=ViewList,
             resource_cls=View,
             items=view,
             input_resource_cls=ViewApply,
+            headers=headers,
             override_semaphore=self._get_semaphore("write_schema"),
         )

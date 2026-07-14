@@ -1,11 +1,144 @@
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from cognite.client.data_classes._base import UnknownCogniteResource
-from cognite.client.data_classes.data_modeling import View, ViewApply, ViewId
+from cognite.client.data_classes.data_modeling import (
+    ContainerId,
+    MappedPropertyApply,
+    RecordViewApply,
+    View,
+    ViewApply,
+    ViewFilter,
+    ViewId,
+)
 from cognite.client.data_classes.data_modeling.containers import PropertyConstraintState
 from cognite.client.data_classes.data_modeling.views import MappedProperty, ViewProperty, ViewPropertyApply
+
+
+def make_record_view_apply(stream_id: str | list[str] = "my-stream") -> RecordViewApply:
+    return RecordViewApply(
+        space="sp",
+        external_id="rv",
+        version="v1",
+        stream_id=stream_id,
+        properties={
+            "title": MappedPropertyApply(
+                container=ContainerId("sp", "recordContainer"), container_property_identifier="title"
+            )
+        },
+    )
+
+
+def make_test_view(space: str, external_id: str, version: str, created_time: int = 1) -> View:
+    return View(
+        space,
+        external_id,
+        version,
+        created_time=created_time,
+        properties={},
+        last_updated_time=2,
+        description="",
+        name="",
+        filter=None,
+        implements=None,
+        writable=False,
+        used_for="all",
+        is_global=False,
+    )
+
+
+class TestRecordViewApplyDataClass:
+    def test_accepts_singular_stream_id(self) -> None:
+        view = make_record_view_apply(stream_id="my-stream")
+        assert view.stream_id == ["my-stream"]
+
+    def test_accepts_sequence_stream_id(self) -> None:
+        view = make_record_view_apply(stream_id=["my-stream"])
+        assert view.stream_id == ["my-stream"]
+
+    def test_dump_includes_stream_id(self) -> None:
+        dumped = make_record_view_apply().dump()
+        assert dumped["streamId"] == ["my-stream"]
+        assert dumped["space"] == "sp"
+        assert dumped["properties"]["title"]["containerPropertyIdentifier"] == "title"
+
+    def test_load_dump_round_trip(self) -> None:
+        dumped = make_record_view_apply().dump()
+        loaded = RecordViewApply._load(dumped)
+        assert isinstance(loaded, RecordViewApply)
+        assert loaded.dump() == dumped
+
+    def test_view_apply_load_rejects_record_view_payload(self) -> None:
+        dumped = make_record_view_apply().dump()
+        with pytest.raises(ValueError, match=re.escape("RecordViewApply.load")):
+            ViewApply._load(dumped)
+
+
+class TestViewRecordFields:
+    def test_load_dump_round_trip_with_stream_id(self) -> None:
+        payload = {
+            "space": "sp",
+            "externalId": "rv",
+            "version": "v1",
+            "streamId": ["my-stream"],
+            "createdTime": 1,
+            "lastUpdatedTime": 2,
+            "writable": True,
+            "usedFor": "record",
+            "isGlobal": False,
+            "properties": {},
+        }
+        view = View._load(payload)
+        assert view.stream_id == ["my-stream"]
+        assert view.used_for == "record"
+        assert view.dump() == {**payload, "implements": []}
+
+    def test_load_without_stream_id_leaves_it_none(self) -> None:
+        view = make_test_view("sp", "v", "v1")
+        assert view.stream_id is None
+        assert "streamId" not in view.dump()
+
+    def test_as_apply_raises_when_stream_id_set(self) -> None:
+        view = make_test_view("sp", "rv", "v1")
+        view.stream_id = ["my-stream"]
+
+        with pytest.raises(ValueError, match="as_record_view_apply"):
+            view.as_apply()
+
+    def test_as_record_view_apply_returns_record_view_apply(self) -> None:
+        view = make_test_view("sp", "rv", "v1")
+        view.stream_id = ["my-stream"]
+
+        result = view.as_record_view_apply()
+
+        assert isinstance(result, RecordViewApply)
+        assert result.stream_id == ["my-stream"]
+        assert result.space == "sp"
+        assert result.external_id == "rv"
+
+    def test_as_record_view_apply_raises_when_stream_id_not_set(self) -> None:
+        view = make_test_view("sp", "v", "v1")
+
+        with pytest.raises(ValueError, match="not a record view"):
+            view.as_record_view_apply()
+
+
+class TestViewFilterUsedFor:
+    def test_used_for_omitted_by_default(self) -> None:
+        assert "usedFor" not in ViewFilter().dump()
+
+    def test_used_for_singular_str(self) -> None:
+        assert ViewFilter(used_for="record").dump()["usedFor"] == ["record"]
+
+    def test_used_for_sequence(self) -> None:
+        assert ViewFilter(used_for=["node", "record"]).dump()["usedFor"] == ["node", "record"]
+
+    def test_used_for_rejects_invalid_type(self) -> None:
+        with pytest.raises(TypeError, match="Invalid value for 'used_for'"):
+            ViewFilter(used_for=123)  # type: ignore[arg-type]
 
 
 class TestView:

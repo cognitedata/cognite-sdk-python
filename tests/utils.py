@@ -49,6 +49,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SelectSync,
 )
+from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.datapoint_aggregates import (
     ALL_SORTED_DP_AGGS,
     INT_AGGREGATES,
@@ -477,6 +478,10 @@ class FakeCogniteResourceGenerator:
         elif issubclass(resource_cls, ListablePropertyType):
             if not keyword_arguments.get("is_list"):
                 keyword_arguments.pop("max_list_size", None)
+        elif resource_cls is View:
+            # A View with stream_id set is a record view, which can only be converted via
+            # as_record_view_apply(), not as_write()/as_apply() (reserved for regular views):
+            keyword_arguments["stream_id"] = None
         elif resource_cls is SimulatorRoutineStepArguments:
             keyword_arguments = {"data": {"reference_id": self._random_string(50), "arg2": self._random_string(50)}}
         elif resource_cls is SimulationRunWrite:
