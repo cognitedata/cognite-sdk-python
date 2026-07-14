@@ -4,7 +4,7 @@ import getpass
 import pprint
 import re
 import warnings
-from typing import Any
+from typing import Any, ClassVar
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
@@ -33,6 +33,8 @@ class GlobalConfig:
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
     """
+
+    _instance: ClassVar[GlobalConfig]
 
     def __new__(cls) -> GlobalConfig:
         if hasattr(cls, "_instance"):
