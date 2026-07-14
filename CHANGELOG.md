@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.94.1](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.94.0...cognite-sdk-python-v7.94.1) (2026-07-14)
+
+
+### Bug Fixes
+
+* support Pyodide 314 IN_PYODIDE rename for browser detection ([#2712](https://github.com/cognitedata/cognite-sdk-python/issues/2712)) ([ff448ae](https://github.com/cognitedata/cognite-sdk-python/commit/ff448ae6f4973e691b21615ce4a3524823767759))
+
 ## [7.94.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.93.0...cognite-sdk-python-v7.94.0) (2026-05-19)
 
 
