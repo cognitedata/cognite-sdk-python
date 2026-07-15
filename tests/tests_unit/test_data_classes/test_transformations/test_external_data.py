@@ -45,7 +45,7 @@ def test_read_load_unknown_format_warns_not_raises() -> None:
     assert source.format == "delta_sharing"
 
 
-def test_as_write_returns_write_with_none_secret() -> None:
+def test_as_write_raises_without_client_secret() -> None:
     raw = {
         "externalId": "x",
         "format": "one_lake",
@@ -55,12 +55,27 @@ def test_as_write_returns_write_with_none_secret() -> None:
         },
     }
     read_source = ExternalDataSource._load(raw)
-    write_source = read_source.as_write()
+
+    with pytest.raises(ValueError, match="client_secret is required"):
+        read_source.as_write()
+
+
+def test_as_write_with_client_secret() -> None:
+    raw = {
+        "externalId": "x",
+        "format": "one_lake",
+        "settings": {
+            "credentials": {"clientId": "cid", "tenantId": "tid"},
+            "locationDescription": {"workspaceName": "ws", "containerName": "cn"},
+        },
+    }
+    read_source = ExternalDataSource._load(raw)
+    write_source = read_source.as_write(client_secret="new-secret")
 
     assert isinstance(write_source, ExternalDataSourceWrite)
     assert write_source.settings is not None
     assert write_source.settings.credentials is not None
-    assert write_source.settings.credentials.client_secret is None
+    assert write_source.settings.credentials.client_secret == "new-secret"
 
 
 def test_credentials_write_repr_masks_secret() -> None:
@@ -68,4 +83,12 @@ def test_credentials_write_repr_masks_secret() -> None:
     result = repr(creds)
 
     assert "actual-secret" not in result
-    assert "***" in result
+    assert "<redacted>" in result
+
+
+def test_credentials_write_str_masks_secret() -> None:
+    creds = OneLakeCredentialsWrite("cid", "tid", "actual-secret")
+    result = str(creds)
+
+    assert "actual-secret" not in result
+    assert "<redacted>" in result

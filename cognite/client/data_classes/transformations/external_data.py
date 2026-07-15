@@ -82,17 +82,19 @@ class OneLakeCredentialsWrite(CogniteResource):
         client_secret (str): Azure client secret
     """
 
-    def __init__(self, client_id: str, tenant_id: str, client_secret: str | None = None) -> None:
+    def __init__(self, client_id: str, tenant_id: str, client_secret: str) -> None:
         self.client_id = client_id
         self.tenant_id = tenant_id
         self.client_secret = client_secret
 
     def __repr__(self) -> str:
-        secret_display = "***" if self.client_secret is not None else None
         return (
             f"OneLakeCredentialsWrite(client_id={self.client_id!r}, tenant_id={self.tenant_id!r},"
-            f" client_secret={secret_display!r})"
+            f" client_secret=<redacted>)"
         )
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -104,7 +106,7 @@ class OneLakeCredentialsWrite(CogniteResource):
 
 
 class OneLakeDataSourceSettings(CogniteResource):
-    """Response model for OneLake connection settings (no ``client_secret``).
+    """Response model for OneLake connection settings.
 
     Args:
         credentials (OneLakeCredentials | None): Azure credentials (client ID and tenant ID only).
@@ -121,13 +123,10 @@ class OneLakeDataSourceSettings(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        credentials = None
-        if (creds_raw := resource.get("credentials")) is not None:
-            credentials = OneLakeCredentials._load(creds_raw)
-        location_description = None
-        if (loc_raw := resource.get("locationDescription")) is not None:
-            location_description = OneLakeLocationDescription._load(loc_raw)
-        return cls(credentials=credentials, location_description=location_description)
+        return cls(
+            credentials=OneLakeCredentials._load_if(resource.get("credentials")),
+            location_description=OneLakeLocationDescription._load_if(resource.get("locationDescription")),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
@@ -140,7 +139,7 @@ class OneLakeDataSourceSettings(CogniteResource):
 
 
 class OneLakeDataSourceSettingsWrite(CogniteResource):
-    """Upsert model for OneLake connection settings registered in CDF (includes ``client_secret``).
+    """Upsert model for OneLake connection settings registered in CDF.
 
     Args:
         credentials (OneLakeCredentialsWrite | None): Azure credentials for ``upsert()``.
@@ -157,13 +156,10 @@ class OneLakeDataSourceSettingsWrite(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        credentials = None
-        if (creds_raw := resource.get("credentials")) is not None:
-            credentials = OneLakeCredentialsWrite._load(creds_raw)
-        location_description = None
-        if (loc_raw := resource.get("locationDescription")) is not None:
-            location_description = OneLakeLocationDescription._load(loc_raw)
-        return cls(credentials=credentials, location_description=location_description)
+        return cls(
+            credentials=OneLakeCredentialsWrite._load_if(resource.get("credentials")),
+            location_description=OneLakeLocationDescription._load_if(resource.get("locationDescription")),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
@@ -208,13 +204,11 @@ class ExternalDataSource(ExternalDataSourceCore):
     read data from OneLake tables via ``ext_onelake()`` SQL, but writing transform output to OneLake
     is not supported.
 
-    The ``clientSecret`` field is **never** returned by the API.
-
     Args:
         external_id (str): External ID of the data source.
         name (str | None): Human-readable name.
         data_set_id (int | None): Data set ID for ACL scoping.
-        settings (OneLakeDataSourceSettings | None): Connection settings (no client secret).
+        settings (OneLakeDataSourceSettings | None): Connection settings.
         format (str | None): Backend format identifier (always ``"one_lake"`` for OneLake sources).
         created_time (int | None): Time the resource was created (milliseconds since epoch).
         last_updated_time (int | None): Time the resource was last updated (milliseconds since epoch).
@@ -245,9 +239,7 @@ class ExternalDataSource(ExternalDataSourceCore):
                 UserWarning,
                 stacklevel=2,
             )
-        settings = None
-        if (settings_raw := resource.get("settings")) is not None:
-            settings = OneLakeDataSourceSettings._load(settings_raw)
+        settings = OneLakeDataSourceSettings._load_if(resource.get("settings"))
         return cls(
             external_id=resource["externalId"],
             name=resource.get("name"),
@@ -258,21 +250,27 @@ class ExternalDataSource(ExternalDataSourceCore):
             last_updated_time=resource.get("lastUpdatedTime"),
         )
 
-    def as_write(self) -> ExternalDataSourceWrite:
+    def as_write(self, client_secret: str | None = None) -> ExternalDataSourceWrite:
         """Return an upsert model for updating this source in CDF.
 
-        ``client_secret`` cannot be reconstructed from the read model (the API never returns it).
-        The returned object has ``client_secret=None`` on its credentials — supply a new secret on
-        ``upsert()`` when updating credentials.
+        Args:
+            client_secret (str | None): Required when the read model includes credentials, because the API
+                does not return ``client_secret``. Omit when only metadata (name, data set, location) changes.
         """
         settings_write: OneLakeDataSourceSettingsWrite | None = None
         if self.settings is not None:
             creds_write: OneLakeCredentialsWrite | None = None
             if self.settings.credentials is not None:
+                if client_secret is None:
+                    raise ValueError(
+                        "client_secret is required to convert credentials to a write model because the API "
+                        "does not return it. Pass client_secret to as_write(), or use "
+                        "ExternalDataSourceWrite.onelake()."
+                    )
                 creds_write = OneLakeCredentialsWrite(
                     client_id=self.settings.credentials.client_id,
                     tenant_id=self.settings.credentials.tenant_id,
-                    client_secret=None,
+                    client_secret=client_secret,
                 )
             settings_write = OneLakeDataSourceSettingsWrite(
                 credentials=creds_write,
@@ -298,8 +296,6 @@ class ExternalDataSourceWrite(ExternalDataSourceCore):
     OneLake external data sources are **read-only from a transform perspective** — transforms can
     read data from OneLake tables via ``ext_onelake()`` SQL, but writing transform output to OneLake
     is not supported.
-
-    The ``format`` field is always ``"one_lake"`` and is injected automatically on serialization.
 
     Args:
         external_id (str): External ID of the data source.
@@ -388,9 +384,7 @@ class ExternalDataSourceWrite(ExternalDataSourceCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        settings = None
-        if (settings_raw := resource.get("settings")) is not None:
-            settings = OneLakeDataSourceSettingsWrite._load(settings_raw)
+        settings = OneLakeDataSourceSettingsWrite._load_if(resource.get("settings"))
         return cls(
             external_id=resource["externalId"],
             name=resource.get("name"),
@@ -416,9 +410,13 @@ class ExternalDataSourceList(
 
     _RESOURCE = ExternalDataSource
 
-    def as_write(self) -> ExternalDataSourceWriteList:
-        """Return upsert models for each source (``client_secret`` will be ``None`` on each)."""
-        return ExternalDataSourceWriteList([item.as_write() for item in self.data])
+    def as_write(self, client_secret: str | None = None) -> ExternalDataSourceWriteList:
+        """Return upsert models for each source.
+
+        Args:
+            client_secret (str | None): Passed through to :meth:`ExternalDataSource.as_write` for each item.
+        """
+        return ExternalDataSourceWriteList([item.as_write(client_secret=client_secret) for item in self.data])
 
 
 class ExternalDataSourceWriteList(CogniteResourceList[ExternalDataSourceWrite], ExternalIDTransformerMixin):
