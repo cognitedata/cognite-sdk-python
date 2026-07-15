@@ -11,9 +11,11 @@ from cognite.client.data_classes.data_modeling import (
     ContainerId,
     MappedPropertyApply,
     RecordViewApply,
+    View,
     ViewApply,
     ViewList,
 )
+from cognite.client.exceptions import CogniteAPIError
 from tests.tests_unit.test_api.test_data_modeling.conftest import make_test_view
 from tests.utils import get_url, jsgz_load
 
@@ -92,6 +94,43 @@ class TestViewsApiForRecordViews:
     @pytest.fixture
     def views_url_pattern(self, async_client: AsyncCogniteClient) -> re.Pattern:
         return re.compile("^" + re.escape(get_url(async_client.data_modeling.views, "/models/views")))
+
+    def test_apply_single_record_view(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        views_url_pattern: re.Pattern,
+    ) -> None:
+        record_view = make_record_view_apply()
+        httpx_mock.add_response(
+            method="POST", url=views_url_pattern, status_code=200, json={"items": [RECORD_VIEW_RESPONSE]}
+        )
+
+        result = cognite_client.data_modeling.views.apply(record_view)
+
+        assert isinstance(result, View)
+        assert not isinstance(result, ViewList)
+
+    def test_apply_record_view_failure(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        views_url_pattern: re.Pattern,
+    ) -> None:
+        real_error_message = (
+            "Cannot update view 'sp:rv/v1', Referenced container does not exist: 'sp:recordContainer/v1'."
+        )
+        record_view = make_record_view_apply()
+        httpx_mock.add_response(
+            method="POST", url=views_url_pattern, status_code=400, json={"error": {"message": real_error_message}}
+        )
+
+        with pytest.raises(CogniteAPIError) as error:
+            cognite_client.data_modeling.views.apply(record_view)
+
+        assert error.value.message == real_error_message
+        assert error.value.failed == [record_view]
+        assert error.value.code == 400
 
     def test_apply_mixed_batch_warns_and_sends_alpha_header(
         self,

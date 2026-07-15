@@ -3,10 +3,11 @@ from __future__ import annotations
 import asyncio
 from collections import defaultdict
 from collections.abc import AsyncIterator, Sequence
-from typing import TYPE_CHECKING, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
+from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
@@ -25,6 +26,14 @@ from cognite.client.utils._experimental import FeaturePreviewWarning
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
+
+
+class _ViewOrRecordViewApplyAdapter(CogniteResource):
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> ViewApply | RecordViewApply:  # type: ignore[override]
+        if "streamId" in resource:
+            return RecordViewApply._load(resource)
+        return ViewApply._load(resource)
 
 
 class ViewsAPI(APIClient):
@@ -368,7 +377,7 @@ class ViewsAPI(APIClient):
             list_cls=ViewList,
             resource_cls=View,
             items=view,
-            input_resource_cls=ViewApply,
+            input_resource_cls=_ViewOrRecordViewApplyAdapter,
             headers=headers,
             override_semaphore=self._get_semaphore("write_schema"),
         )
