@@ -327,7 +327,7 @@ class View(ViewCore):
     @property
     def is_record_view(self) -> bool:
         """Whether this view is used for Records"""
-        return self.stream_id is not None
+        return bool(self.stream_id)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
