@@ -324,6 +324,11 @@ class View(ViewCore):
             stream_id=resource.get("streamId"),
         )
 
+    @property
+    def is_record_view(self) -> bool:
+        """Whether this view is used for Records"""
+        return self.stream_id is not None
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "properties" in output:
@@ -337,7 +342,7 @@ class View(ViewCore):
         Returns:
             ViewApply: The view apply.
         """
-        if self.stream_id is not None:
+        if self.is_record_view:
             raise ValueError("This view is a record view (stream_id is set); use as_record_view_apply() instead.")
 
         properties: dict[str, ViewPropertyApply] | None = None

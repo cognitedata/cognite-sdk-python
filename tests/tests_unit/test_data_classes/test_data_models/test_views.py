@@ -94,11 +94,13 @@ class TestViewRecordFields:
         view = View._load(payload)
         assert view.stream_id == ["my-stream"]
         assert view.used_for == "record"
+        assert view.is_record_view is True
         assert view.dump() == {**payload, "implements": []}
 
     def test_load_without_stream_id_leaves_it_none(self) -> None:
         view = make_test_view("sp", "v", "v1")
         assert view.stream_id is None
+        assert view.is_record_view is False
         assert "streamId" not in view.dump()
 
     def test_as_apply_raises_when_stream_id_set(self) -> None:
