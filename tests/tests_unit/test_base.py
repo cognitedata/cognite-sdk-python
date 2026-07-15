@@ -46,6 +46,7 @@ from cognite.client.data_classes.hosted_extractors import Destination, Destinati
 from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
 from cognite.client.data_classes.sequences import SequenceUpdate
 from cognite.client.data_classes.time_series import TimeSeries, TimeSeriesList
+from cognite.client.data_classes.transformations.external_data import ExternalDataSource
 from cognite.client.data_classes.workflows import UnknownWorkflowTaskParameters, WorkflowTaskOutput
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
@@ -264,7 +265,11 @@ class TestCogniteResource:
             instance.instance_id = None
             assert instance.external_id is not None
 
-        write_format = instance.as_write()
+        if cognite_writable_cls is ExternalDataSource:
+            # Read model never includes client_secret; pass a placeholder when fake data has credentials.
+            write_format = instance.as_write(client_secret="placeholder-secret")
+        else:
+            write_format = instance.as_write()
         assert isinstance(write_format, CogniteResource)
 
     @pytest.mark.dsl
@@ -308,7 +313,10 @@ class TestCogniteResource:
                 item.instance_id = None
                 assert item.external_id is not None
 
-        write_format = resource_list.as_write()
+        if resource_cls is ExternalDataSource:
+            write_format = resource_list.as_write(client_secret="placeholder-secret")
+        else:
+            write_format = resource_list.as_write()
         assert isinstance(write_format, CogniteResourceList)
 
     @pytest.mark.dsl
