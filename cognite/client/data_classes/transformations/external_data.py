@@ -21,9 +21,9 @@ __all__ = [
     "ExternalDataSourceUsability",
     "ExternalDataSourceWrite",
     "ExternalDataSourceWriteList",
-    "OneLakeCredentialsRead",
+    "OneLakeCredentials",
     "OneLakeCredentialsWrite",
-    "OneLakeDataSourceSettingsRead",
+    "OneLakeDataSourceSettings",
     "OneLakeDataSourceSettingsWrite",
     "OneLakeLocationDescription",
 ]
@@ -49,7 +49,7 @@ class OneLakeLocationDescription(CogniteResource):
         )
 
 
-class OneLakeCredentialsRead(CogniteResource):
+class OneLakeCredentials(CogniteResource):
     """Response model for Azure credentials returned by list/get (``clientSecret`` is never included).
 
     Args:
@@ -104,17 +104,17 @@ class OneLakeCredentialsWrite(CogniteResource):
         )
 
 
-class OneLakeDataSourceSettingsRead(CogniteResource):
+class OneLakeDataSourceSettings(CogniteResource):
     """Response model for OneLake connection settings (no ``client_secret``).
 
     Args:
-        credentials (OneLakeCredentialsRead | None): Azure credentials (client ID and tenant ID only).
+        credentials (OneLakeCredentials | None): Azure credentials (client ID and tenant ID only).
         location_description (OneLakeLocationDescription | None): Fabric workspace and lakehouse identifiers.
     """
 
     def __init__(
         self,
-        credentials: OneLakeCredentialsRead | None = None,
+        credentials: OneLakeCredentials | None = None,
         location_description: OneLakeLocationDescription | None = None,
     ) -> None:
         self.credentials = credentials
@@ -124,7 +124,7 @@ class OneLakeDataSourceSettingsRead(CogniteResource):
     def _load(cls, resource: dict[str, Any]) -> Self:
         credentials = None
         if (creds_raw := resource.get("credentials")) is not None:
-            credentials = OneLakeCredentialsRead._load(creds_raw)
+            credentials = OneLakeCredentials._load(creds_raw)
         location_description = None
         if (loc_raw := resource.get("locationDescription")) is not None:
             location_description = OneLakeLocationDescription._load(loc_raw)
@@ -215,7 +215,7 @@ class ExternalDataSource(ExternalDataSourceCore):
         external_id (str): External ID of the data source.
         name (str | None): Human-readable name.
         data_set_id (int | None): Data set ID for ACL scoping.
-        settings (OneLakeDataSourceSettingsRead | None): Connection settings (no client secret).
+        settings (OneLakeDataSourceSettings | None): Connection settings (no client secret).
         format (str | None): Backend format identifier (always ``"one_lake"`` for OneLake sources).
         created_time (int | None): Time the resource was created (milliseconds since epoch).
         last_updated_time (int | None): Time the resource was last updated (milliseconds since epoch).
@@ -226,7 +226,7 @@ class ExternalDataSource(ExternalDataSourceCore):
         external_id: str,
         name: str | None = None,
         data_set_id: int | None = None,
-        settings: OneLakeDataSourceSettingsRead | None = None,
+        settings: OneLakeDataSourceSettings | None = None,
         format: str | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
@@ -248,7 +248,7 @@ class ExternalDataSource(ExternalDataSourceCore):
             )
         settings = None
         if (settings_raw := resource.get("settings")) is not None:
-            settings = OneLakeDataSourceSettingsRead._load(settings_raw)
+            settings = OneLakeDataSourceSettings._load(settings_raw)
         return cls(
             external_id=resource["externalId"],
             name=resource.get("name"),
