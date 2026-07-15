@@ -371,7 +371,7 @@ class ViewsAPI(APIClient):
                 ... )
                 >>> res = client.data_modeling.views.apply(record_view)
         """
-        views = [view] if isinstance(view, (ViewApply, RecordViewApply)) else view
+        views = [view] if isinstance(view, (ViewApply, RecordViewApply)) else list(view)
         headers = self._record_views_alpha_headers() if any(isinstance(v, RecordViewApply) for v in views) else None
         return await self._create_multiple(
             list_cls=ViewList,
