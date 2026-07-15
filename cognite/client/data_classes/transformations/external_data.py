@@ -72,9 +72,9 @@ class OneLakeCredentials(CogniteResource):
 class OneLakeCredentialsWrite(CogniteResource):
     """Upsert model for Azure credentials when registering a OneLake external data source in CDF.
 
-    ``Write`` follows the SDK read/upsert naming convention — it does **not** mean writing data into
-    OneLake. Transforms only read from OneLake via ``ext_onelake()``; this class supplies
-    ``client_secret`` for ``external_data_sources.upsert()``.
+    Note:
+        ``Write`` does **not** mean writing data into OneLake, it merely follows the naming convention
+        in the SDK for create/update-style classes.
 
     Args:
         client_id (str): Azure application (client) ID.
