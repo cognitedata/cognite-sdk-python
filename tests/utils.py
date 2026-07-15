@@ -479,9 +479,10 @@ class FakeCogniteResourceGenerator:
             if not keyword_arguments.get("is_list"):
                 keyword_arguments.pop("max_list_size", None)
         elif resource_cls is View:
-            # A View with stream_id set is a record view, which can only be converted via
+            # A View with used_for "record" can only be converted via
             # as_record_view_apply(), not as_write()/as_apply() (reserved for regular views):
-            keyword_arguments["stream_id"] = None
+            used_for = self._random.choice(["node", "edge", "all"])
+            keyword_arguments["used_for"] = used_for
         elif resource_cls is SimulatorRoutineStepArguments:
             keyword_arguments = {"data": {"reference_id": self._random_string(50), "arg2": self._random_string(50)}}
         elif resource_cls is SimulationRunWrite:

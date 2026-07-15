@@ -376,7 +376,7 @@ class ViewsAPI(APIClient):
         return await self._create_multiple(
             list_cls=ViewList,
             resource_cls=View,
-            items=view,
+            items=view if isinstance(view, (ViewApply, RecordViewApply)) else views,
             input_resource_cls=_ViewOrRecordViewApplyAdapter,
             headers=headers,
             override_semaphore=self._get_semaphore("write_schema"),

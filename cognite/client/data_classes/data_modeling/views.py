@@ -169,8 +169,7 @@ class RecordViewApply(CogniteResource):
             Views on Records only support a subset of the standard filter set.
         implements (list[ViewId] | None): References to other record views from where this view will inherit properties.
         properties (dict[str, MappedPropertyApply] | None): Mapped properties of the view. Only mapped properties
-            (no connections) referencing ``usedFor="record"`` containers are supported; a ``TypeError`` is raised
-            if any other property type is passed.
+            (no connections) referencing ``usedFor="record"`` containers are supported.
     """
 
     def __init__(
@@ -327,7 +326,7 @@ class View(ViewCore):
     @property
     def is_record_view(self) -> bool:
         """Whether this view is used for Records"""
-        return bool(self.stream_id)
+        return self.used_for == "record"
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -343,7 +342,7 @@ class View(ViewCore):
             ViewApply: The view apply.
         """
         if self.is_record_view:
-            raise ValueError("This view is a record view (stream_id is set); use as_record_view_apply() instead.")
+            raise ValueError("This view is a record view, use as_record_view_apply() instead.")
 
         properties: dict[str, ViewPropertyApply] | None = None
         if self.properties:
@@ -384,8 +383,11 @@ class View(ViewCore):
         Raises:
             ValueError: If this view is not a record view, i.e. ``stream_id`` is ``None``.
         """
-        if self.stream_id is None:
-            raise ValueError("This view is not a record view (stream_id is None); use as_apply() instead.")
+        if self.used_for != "record":
+            raise ValueError("This view is not a record view, use as_apply() instead.")
+
+        if not self.stream_id:
+            raise ValueError("This record view has no stream_id set; cannot convert to RecordViewApply.")
 
         properties: dict[str, MappedPropertyApply] | None = None
         if self.properties:

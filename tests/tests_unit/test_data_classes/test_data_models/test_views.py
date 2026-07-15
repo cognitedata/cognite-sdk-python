@@ -103,9 +103,9 @@ class TestViewRecordFields:
         assert view.is_record_view is False
         assert "streamId" not in view.dump()
 
-    def test_as_apply_raises_when_stream_id_set(self) -> None:
+    def test_as_apply_raises_when_used_for_record(self) -> None:
         view = make_test_view("sp", "rv", "v1")
-        view.stream_id = ["my-stream"]
+        view.used_for = "record"
 
         with pytest.raises(ValueError, match="as_record_view_apply"):
             view.as_apply()
@@ -113,6 +113,7 @@ class TestViewRecordFields:
     def test_as_record_view_apply_returns_record_view_apply(self) -> None:
         view = make_test_view("sp", "rv", "v1")
         view.stream_id = ["my-stream"]
+        view.used_for = "record"
 
         result = view.as_record_view_apply()
 
