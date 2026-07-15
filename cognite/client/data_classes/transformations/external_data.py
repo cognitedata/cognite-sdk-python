@@ -79,8 +79,7 @@ class OneLakeCredentialsWrite(CogniteResource):
     Args:
         client_id (str): Azure application (client) ID.
         tenant_id (str): Azure tenant (directory) ID.
-        client_secret (str | None): Azure client secret. Required for upsert; ``None`` when
-            reconstructed from a read model via ``as_write()`` because the API never returns it.
+        client_secret (str): Azure client secret
     """
 
     def __init__(self, client_id: str, tenant_id: str, client_secret: str | None = None) -> None:
