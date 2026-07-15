@@ -99,7 +99,7 @@ class OneLakeCredentialsWrite(CogniteResource):
         return cls(
             client_id=resource["clientId"],
             tenant_id=resource["tenantId"],
-            client_secret=resource.get("clientSecret"),
+            client_secret=resource["clientSecret"],
         )
 
 
