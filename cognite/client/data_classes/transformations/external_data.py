@@ -254,8 +254,9 @@ class ExternalDataSource(ExternalDataSourceCore):
         """Return an upsert model for updating this source in CDF.
 
         Args:
-            client_secret (str | None): Required when the read model includes credentials, because the API
-                does not return ``client_secret``. Omit when only metadata (name, data set, location) changes.
+            client_secret (str | None): Required when the read model includes credentials, because the API does not return ``client_secret``. Omit when only metadata (name, data set, location) changes.
+        Returns:
+            ExternalDataSourceWrite: Upsert model for this source.
         """
         settings_write: OneLakeDataSourceSettingsWrite | None = None
         if self.settings is not None:
@@ -415,6 +416,8 @@ class ExternalDataSourceList(
 
         Args:
             client_secret (str | None): Passed through to :meth:`ExternalDataSource.as_write` for each item.
+        Returns:
+            ExternalDataSourceWriteList: Upsert models for each source in the list.
         """
         return ExternalDataSourceWriteList([item.as_write(client_secret=client_secret) for item in self.data])
 
