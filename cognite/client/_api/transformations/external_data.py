@@ -50,7 +50,7 @@ class TransformationExternalDataAPI(APIClient):
         return await self._list(
             method="GET",
             list_cls=ExternalDataSourceList,
-            resource_cls=ExternalDataSource,
+            resource_cls=ExternalDataSource,  # type: ignore[type-abstract]
             limit=limit,
         )
 
@@ -95,9 +95,9 @@ class TransformationExternalDataAPI(APIClient):
                 >>> res = client.transformations.external_data_sources.upsert(source)
         """
         return await self._create_multiple(
-            items=source,
+            items=source,  # type: ignore[arg-type]
             list_cls=ExternalDataSourceList,
-            resource_cls=ExternalDataSource,
+            resource_cls=ExternalDataSource,  # type: ignore[type-abstract]
             input_resource_cls=ExternalDataSourceWrite,
         )
 
