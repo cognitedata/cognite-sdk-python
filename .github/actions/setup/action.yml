@@ -19,12 +19,14 @@ runs:
         cache: 'pip'
         cache-dependency-path: '**/poetry.lock'
 
-    - name: Setup cache for poetry
-      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-      with:
-        path: |
-          ~/.cache/pypoetry/cache
-        key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ inputs.python_version }}-${{ inputs.extras }}
+    # Temporarily disabled: suspected contributor to intermittent corrupted-package
+    # installs in CI (SyntaxErrors from truncated numpy files).
+    # - name: Setup cache for poetry
+    #   uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+    #   with:
+    #     path: |
+    #       ~/.cache/pypoetry/cache
+    #     key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ inputs.python_version }}-${{ inputs.extras }}
 
     - name: Install dependencies
       shell: bash
