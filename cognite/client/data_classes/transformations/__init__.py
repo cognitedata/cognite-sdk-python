@@ -26,41 +26,19 @@ from cognite.client.data_classes.transformations.common import (
     TransformationBlockedInfo,
     TransformationDestination,
 )
-from cognite.client.data_classes.transformations.external_data import (
-    ExternalDataSource as ExternalDataSource,
-)
-from cognite.client.data_classes.transformations.external_data import (
-    ExternalDataSourceList as ExternalDataSourceList,
-)
-from cognite.client.data_classes.transformations.external_data import (
-    ExternalDataSourceUsability as ExternalDataSourceUsability,
-)
-from cognite.client.data_classes.transformations.external_data import (
-    ExternalDataSourceWrite as ExternalDataSourceWrite,
-)
-from cognite.client.data_classes.transformations.external_data import (
-    ExternalDataSourceWriteList as ExternalDataSourceWriteList,
-)
-from cognite.client.data_classes.transformations.external_data import (
-    OneLakeCredentials as OneLakeCredentials,
-)
-from cognite.client.data_classes.transformations.external_data import (
-    OneLakeCredentialsWrite as OneLakeCredentialsWrite,
-)
-from cognite.client.data_classes.transformations.external_data import (
-    OneLakeDataSourceSettings as OneLakeDataSourceSettings,
-)
-from cognite.client.data_classes.transformations.external_data import (
-    OneLakeDataSourceSettingsWrite as OneLakeDataSourceSettingsWrite,
-)
-from cognite.client.data_classes.transformations.external_data import (
-    OneLakeExternalDataSource as OneLakeExternalDataSource,
-)
-from cognite.client.data_classes.transformations.external_data import (
-    OneLakeExternalDataSourceWrite as OneLakeExternalDataSourceWrite,
-)
-from cognite.client.data_classes.transformations.external_data import (
-    OneLakeLocationDescription as OneLakeLocationDescription,
+from cognite.client.data_classes.transformations.external_data import (  # noqa: F401
+    ExternalDataSource,
+    ExternalDataSourceList,
+    ExternalDataSourceUsability,
+    ExternalDataSourceWrite,
+    ExternalDataSourceWriteList,
+    OneLakeCredentials,
+    OneLakeCredentialsWrite,
+    OneLakeDataSourceSettings,
+    OneLakeDataSourceSettingsWrite,
+    OneLakeExternalDataSource,
+    OneLakeExternalDataSourceWrite,
+    OneLakeLocationDescription,
 )
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
