@@ -67,7 +67,7 @@ Other improvements:
 * Read data classes now have correct types (no longer ``Optional`` on required fields)
 * More specific exceptions are now always raised when appropriate (``CogniteNotFoundError``, ``CogniteDuplicatedError``)
 
-For a complete list of changes, see the `Migration Guide <https://github.com/cognitedata/cognite-sdk-python/blob/master/MIGRATION_GUIDE.md>`_.
+For a complete list of changes, see the `Migration Guide <https://raw.githubusercontent.com/cognitedata/cognite-sdk-python/master/MIGRATION_GUIDE.md>`_.
 
 The synchronous ``CogniteClient`` remains fully supported and now wraps the async client internally.
 
