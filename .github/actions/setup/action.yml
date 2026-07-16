@@ -19,78 +19,19 @@ runs:
         cache: 'pip'
         cache-dependency-path: '**/poetry.lock'
 
-    # Temporarily disabled: suspected contributor to intermittent corrupted-package
-    # installs in CI (SyntaxErrors from truncated numpy files).
-    # - name: Setup cache for poetry
-    #   uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-    #   with:
-    #     path: |
-    #       ~/.cache/pypoetry/cache
-    #     key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ inputs.python_version }}-${{ inputs.extras }}
+    - name: Setup cache for poetry
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: |
+          ~/.cache/pypoetry/cache
+        key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ inputs.python_version }}-${{ inputs.extras }}
 
-    - name: Install dependencies (self-healing)
+    - name: Install dependencies
       shell: bash
       run: |
-        venv_python() {
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            echo "$GITHUB_WORKSPACE/.venv/Scripts/python.exe"
-          else
-            echo "$GITHUB_WORKSPACE/.venv/bin/python"
-          fi
-        }
-
-        attempt() {
-          python -m pip install --upgrade pip poetry || return 1
-          poetry config virtualenvs.in-project true || return 1
-          poetry install --no-interaction --no-ansi ${{ inputs.extras }} || return 1
-
-          local py site_packages
-          py="$(venv_python)"
-          site_packages="$("$py" -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')" || return 1
-
-          # Byte-compile every installed .py file -- the same check Python performs on
-          # import, and it reproduces the exact "SyntaxError: unterminated triple-quoted
-          # string" failure class caused by truncated/corrupted wheel downloads or
-          # extraction, without needing to know which package is actually installed.
-          "$py" -m compileall -q -j0 "$site_packages"
-        }
-
-        clean() {
-          echo "::warning::Post-install verification failed; wiping venv and package caches, then retrying once with a clean re-download."
-          rm -rf "$GITHUB_WORKSPACE/.venv"
-          python -m pip cache purge || true
-          poetry_cache_dir="$(poetry config cache-dir 2>/dev/null || true)"
-          if [ -n "$poetry_cache_dir" ]; then
-            rm -rf "$poetry_cache_dir"
-          fi
-        }
-
-        echo "::group::Install attempt 1"
-        if attempt; then
-          echo "::endgroup::"
-          echo "Dependencies installed and verified successfully."
-        else
-          echo "::endgroup::"
-          clean
-          echo "::group::Install attempt 2 (after clean retry)"
-          if attempt; then
-            echo "::endgroup::"
-            echo "Dependencies installed and verified successfully after clean retry."
-          else
-            echo "::endgroup::"
-            echo "::error::Dependency install/verification failed again after a clean retry. This looks like persistent corruption (bad wheel download/extraction), not a one-off transient blip."
-            echo "::group::Diagnostics"
-            py="$(venv_python)"
-            "$py" -m pip list || true
-            echo "poetry cache-dir: $(poetry config cache-dir 2>/dev/null || echo unknown)"
-            site_packages="$("$py" -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])' 2>/dev/null || true)"
-            if [ -n "$site_packages" ]; then
-              "$py" -m compileall -j0 "$site_packages" || true
-            fi
-            echo "::endgroup::"
-            exit 1
-          fi
-        fi
+        python -m pip install --upgrade pip poetry
+        poetry config virtualenvs.in-project true
+        poetry install --no-interaction --no-ansi ${{ inputs.extras }}
 
     - name: Add virtualenv to PATH
       shell: bash
