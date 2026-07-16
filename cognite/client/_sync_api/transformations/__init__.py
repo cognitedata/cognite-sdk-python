@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8bca411648596701cde79f2c9e6f2a88
+e545d766fa2f6a8b3d5946accd494c89
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._sync_api.transformations.external_data import SyncTransformationExternalDataAPI
 from cognite.client._sync_api.transformations.jobs import SyncTransformationJobsAPI
 from cognite.client._sync_api.transformations.notifications import SyncTransformationNotificationsAPI
 from cognite.client._sync_api.transformations.schedules import SyncTransformationSchedulesAPI
@@ -41,6 +42,7 @@ class SyncTransformationsAPI(SyncAPIClient):
         self.schedules = SyncTransformationSchedulesAPI(async_client)
         self.schema = SyncTransformationSchemaAPI(async_client)
         self.notifications = SyncTransformationNotificationsAPI(async_client)
+        self.external_data_sources = SyncTransformationExternalDataAPI(async_client)
 
     @overload
     def __call__(
