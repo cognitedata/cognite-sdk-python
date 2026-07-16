@@ -313,6 +313,7 @@ class TestCogniteResource:
         resource_cls = writable_list_cls._RESOURCE
         instance_generator = FakeCogniteResourceGenerator(seed=52, async_client=cognite_async_mock_client_placeholder)
         # TODO(doctrino): Why not have gen. create the list directly?
+        resource_list: WriteableCogniteResourceList[Any, Any]
         if writable_list_cls is ExternalDataSourceList:
             resource_list = ExternalDataSourceList([instance_generator.create_instance(OneLakeExternalDataSource)])
         else:
@@ -328,8 +329,9 @@ class TestCogniteResource:
             # Files and time series with instance ID can not be created through "old APIs". Doing as_write with
             # instance_id set raises an error, so we clear it here:
             for item in resource_list:
-                item.instance_id = None
-                assert item.external_id is not None
+                if isinstance(item, (FileMetadata, TimeSeries)):
+                    item.instance_id = None
+                    assert item.external_id is not None
 
         if isinstance(resource_list, ExternalDataSourceList):
             for item in resource_list:

@@ -429,6 +429,7 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
     """
 
     _FORMAT: ClassVar[str] = ONE_LAKE_FORMAT
+    settings: OneLakeDataSourceSettingsWrite | None
 
     def __init__(
         self,
@@ -482,11 +483,14 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
                 name=resource.get("name"),
                 data_set_id=resource.get("dataSetId"),
             )
-        return cls.with_settings(
-            external_id=resource["externalId"],
-            name=resource.get("name"),
-            data_set_id=resource.get("dataSetId"),
-            settings=settings,
+        return cast(
+            Self,
+            cls.with_settings(
+                external_id=resource["externalId"],
+                name=resource.get("name"),
+                data_set_id=resource.get("dataSetId"),
+                settings=settings,
+            ),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
