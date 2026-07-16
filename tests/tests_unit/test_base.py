@@ -46,7 +46,11 @@ from cognite.client.data_classes.hosted_extractors import Destination, Destinati
 from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
 from cognite.client.data_classes.sequences import SequenceUpdate
 from cognite.client.data_classes.time_series import TimeSeries, TimeSeriesList
-from cognite.client.data_classes.transformations.external_data import ExternalDataSource, ExternalDataSourceList
+from cognite.client.data_classes.transformations.external_data import (
+    ExternalDataSource,
+    ExternalDataSourceList,
+    UnknownExternalDataSource,
+)
 from cognite.client.data_classes.workflows import UnknownWorkflowTaskParameters, WorkflowTaskOutput
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
@@ -264,6 +268,11 @@ class TestCogniteResource:
             # instance_id set raises an error, so we clear it here:
             instance.instance_id = None
             assert instance.external_id is not None
+
+        if isinstance(instance, UnknownExternalDataSource):
+            with pytest.raises(ValueError, match="unknown external data source format"):
+                instance.as_write()
+            return
 
         if isinstance(instance, ExternalDataSource):
             if instance.settings is not None and instance.settings.credentials is not None:

@@ -39,6 +39,7 @@ from cognite.client.data_classes.transformations.external_data import (  # noqa:
     OneLakeExternalDataSource,
     OneLakeExternalDataSourceWrite,
     OneLakeLocationDescription,
+    UnknownExternalDataSource,
 )
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule

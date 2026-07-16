@@ -8,6 +8,7 @@ from cognite.client.data_classes.transformations.external_data import (
     OneLakeCredentialsWrite,
     OneLakeExternalDataSource,
     OneLakeExternalDataSourceWrite,
+    UnknownExternalDataSource,
 )
 
 
@@ -43,17 +44,31 @@ def test_one_lake_load_returns_subclass() -> None:
     source = ExternalDataSource._load(raw)
 
     assert isinstance(source, OneLakeExternalDataSource)
+    assert source.format == "one_lake"
 
 
-def test_read_load_unknown_format_warns_not_raises() -> None:
+def test_read_load_unknown_format_returns_unknown_subclass() -> None:
     raw = {"externalId": "x", "format": "delta_sharing", "settings": {}}
+    source = ExternalDataSource._load(raw)
 
-    with pytest.warns(UserWarning, match="Unknown external data source format"):
-        source = ExternalDataSource._load(raw)
-
+    assert isinstance(source, UnknownExternalDataSource)
     assert source.external_id == "x"
     assert source.format == "delta_sharing"
-    assert not isinstance(source, OneLakeExternalDataSource)
+    assert source.dump(camel_case=True) == raw
+
+
+def test_read_load_requires_format() -> None:
+    raw = {"externalId": "x", "settings": {}}
+
+    with pytest.raises(KeyError, match="format"):
+        ExternalDataSource._load(raw)
+
+
+def test_unknown_as_write_raises() -> None:
+    source = UnknownExternalDataSource(external_id="x", format="delta_sharing")
+
+    with pytest.raises(ValueError, match="unknown external data source format"):
+        source.as_write()
 
 
 def test_as_write_raises_without_client_secret() -> None:
