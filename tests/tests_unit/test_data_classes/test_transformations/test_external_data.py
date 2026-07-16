@@ -5,21 +5,23 @@ import pytest
 from cognite.client.data_classes.transformations.external_data import (
     ExternalDataSource,
     OneLakeCredentialsWrite,
+    OneLakeDataSourceSettingsWrite,
     OneLakeExternalDataSource,
     OneLakeExternalDataSourceWrite,
+    OneLakeLocationDescription,
     UnknownExternalDataSource,
 )
 
 
-def test_onelake_write_init_structure() -> None:
-    source = OneLakeExternalDataSourceWrite(
-        external_id="x",
-        client_id="cid",
-        tenant_id="tid",
-        client_secret="sec",
-        workspace_name="ws",
-        container_name="cn",
+def _onelake_write_settings() -> OneLakeDataSourceSettingsWrite:
+    return OneLakeDataSourceSettingsWrite(
+        credentials=OneLakeCredentialsWrite("cid", "tid", "sec"),
+        location_description=OneLakeLocationDescription("ws", "cn"),
     )
+
+
+def test_onelake_write_init_structure() -> None:
+    source = OneLakeExternalDataSourceWrite(external_id="x", settings=_onelake_write_settings())
 
     assert source.external_id == "x"
     assert source.settings is not None
@@ -31,14 +33,7 @@ def test_onelake_write_init_structure() -> None:
 
 
 def test_write_dump_always_includes_format() -> None:
-    source = OneLakeExternalDataSourceWrite(
-        external_id="x",
-        client_id="cid",
-        tenant_id="tid",
-        client_secret="sec",
-        workspace_name="ws",
-        container_name="cn",
-    )
+    source = OneLakeExternalDataSourceWrite(external_id="x", settings=_onelake_write_settings())
     dumped = source.dump(camel_case=True)
 
     assert "format" in dumped

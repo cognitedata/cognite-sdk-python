@@ -273,7 +273,7 @@ class OneLakeExternalDataSource(ExternalDataSource):
                     raise ValueError(
                         "client_secret is required to convert credentials to a write model because the API "
                         "does not return it. Pass client_secret to as_write(), or construct "
-                        "OneLakeExternalDataSourceWrite with credentials."
+                        "OneLakeExternalDataSourceWrite with settings containing credentials."
                     )
                 creds_write = OneLakeCredentialsWrite(
                     client_id=self.settings.credentials.client_id,
@@ -396,15 +396,9 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
 
     Args:
         external_id (str): External ID for the data source. Must be unique.
-        client_id (str | None): Azure application (client) ID.
-        tenant_id (str | None): Azure tenant (directory) ID.
-        client_secret (str | None): Azure client secret.
-        workspace_name (str | None): Fabric workspace GUID or name.
-        container_name (str | None): Fabric lakehouse GUID or name.
+        settings (OneLakeDataSourceSettingsWrite | None): OneLake credentials and location.
         name (str | None): Human-readable name.
         data_set_id (int | None): Data set ID for ACL scoping.
-        settings (OneLakeDataSourceSettingsWrite | None): Pre-built settings tree; used by
-            ``as_write()`` for partial upserts when credential/location fields are omitted.
 
     Examples:
 
@@ -412,18 +406,27 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
 
             >>> from cognite.client import CogniteClient
             >>> from cognite.client.data_classes.transformations import (
+            ...     OneLakeCredentialsWrite,
+            ...     OneLakeDataSourceSettingsWrite,
             ...     OneLakeExternalDataSourceWrite,
+            ...     OneLakeLocationDescription,
             ... )
             >>> client = CogniteClient()
             >>> source = OneLakeExternalDataSourceWrite(
             ...     external_id="fabric-lakehouse-prod",
             ...     name="Production lakehouse",
-            ...     client_id="<azure-app-id>",
-            ...     tenant_id="<azure-tenant-uuid>",
-            ...     client_secret="<secret>",
-            ...     workspace_name="<fabric-workspace-guid>",
-            ...     container_name="<fabric-lakehouse-guid>",
             ...     data_set_id=123456,
+            ...     settings=OneLakeDataSourceSettingsWrite(
+            ...         credentials=OneLakeCredentialsWrite(
+            ...             client_id="<azure-app-id>",
+            ...             tenant_id="<azure-tenant-uuid>",
+            ...             client_secret="<secret>",
+            ...         ),
+            ...         location_description=OneLakeLocationDescription(
+            ...             workspace_name="<fabric-workspace-guid>",
+            ...             container_name="<fabric-lakehouse-guid>",
+            ...         ),
+            ...     ),
             ... )
             >>> client.transformations.external_data_sources.upsert(source)
     """
@@ -434,59 +437,20 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
     def __init__(
         self,
         external_id: str,
-        client_id: str | None = None,
-        tenant_id: str | None = None,
-        client_secret: str | None = None,
-        workspace_name: str | None = None,
-        container_name: str | None = None,
+        settings: OneLakeDataSourceSettingsWrite | None = None,
         name: str | None = None,
         data_set_id: int | None = None,
-        *,
-        settings: OneLakeDataSourceSettingsWrite | None = None,
     ) -> None:
         super().__init__(external_id=external_id, name=name, data_set_id=data_set_id)
-        if settings is not None:
-            self.settings = settings
-        elif (
-            client_id is not None
-            and tenant_id is not None
-            and client_secret is not None
-            and workspace_name is not None
-            and container_name is not None
-        ):
-            self.settings = OneLakeDataSourceSettingsWrite(
-                credentials=OneLakeCredentialsWrite(
-                    client_id=client_id,
-                    tenant_id=tenant_id,
-                    client_secret=client_secret,
-                ),
-                location_description=OneLakeLocationDescription(
-                    workspace_name=workspace_name,
-                    container_name=container_name,
-                ),
-            )
-        else:
-            self.settings = None
+        self.settings = settings
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        settings = OneLakeDataSourceSettingsWrite._load_if(resource.get("settings"))
-        if settings is not None and settings.credentials is not None and settings.location_description is not None:
-            return cls(
-                external_id=resource["externalId"],
-                client_id=settings.credentials.client_id,
-                tenant_id=settings.credentials.tenant_id,
-                client_secret=settings.credentials.client_secret,
-                workspace_name=settings.location_description.workspace_name,
-                container_name=settings.location_description.container_name,
-                name=resource.get("name"),
-                data_set_id=resource.get("dataSetId"),
-            )
         return cls(
             external_id=resource["externalId"],
             name=resource.get("name"),
             data_set_id=resource.get("dataSetId"),
-            settings=settings,
+            settings=OneLakeDataSourceSettingsWrite._load_if(resource.get("settings")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
