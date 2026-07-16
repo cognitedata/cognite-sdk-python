@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from typing import Any, ClassVar, NoReturn, cast
 
 from typing_extensions import Self
@@ -158,7 +159,7 @@ class OneLakeDataSourceSettingsWrite(CogniteResource):
         return result
 
 
-class ExternalDataSource(WriteableCogniteResource["ExternalDataSourceWrite"]):
+class ExternalDataSource(WriteableCogniteResource["ExternalDataSourceWrite"], ABC):
     """An external data source (API read model — returned by list/get).
 
     Format-specific subclasses (e.g. :class:`OneLakeExternalDataSource`) hold typed settings.
@@ -195,6 +196,7 @@ class ExternalDataSource(WriteableCogniteResource["ExternalDataSourceWrite"]):
             return OneLakeExternalDataSource._load(resource)
         return UnknownExternalDataSource._load(resource)
 
+    @abstractmethod
     def as_write(self, client_secret: str | None = None) -> ExternalDataSourceWrite:
         """Return an upsert model for updating this source in CDF.
 
@@ -203,10 +205,6 @@ class ExternalDataSource(WriteableCogniteResource["ExternalDataSourceWrite"]):
         Returns:
             ExternalDataSourceWrite: Upsert model for this source.
         """
-        raise NotImplementedError(
-            "as_write() is only supported on format-specific external data source subclasses; "
-            "list/get responses are loaded as OneLakeExternalDataSource or UnknownExternalDataSource."
-        )
 
 
 class OneLakeExternalDataSource(ExternalDataSource):
@@ -286,7 +284,7 @@ class OneLakeExternalDataSource(ExternalDataSource):
                 credentials=creds_write,
                 location_description=self.settings.location_description,
             )
-        return OneLakeExternalDataSourceWrite.with_settings(
+        return OneLakeExternalDataSourceWrite(
             external_id=self.external_id,
             name=self.name,
             data_set_id=self.data_set_id,
@@ -398,13 +396,15 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
 
     Args:
         external_id (str): External ID for the data source. Must be unique.
-        client_id (str): Azure application (client) ID.
-        tenant_id (str): Azure tenant (directory) ID.
-        client_secret (str): Azure client secret.
-        workspace_name (str): Fabric workspace GUID or name.
-        container_name (str): Fabric lakehouse GUID or name.
+        client_id (str | None): Azure application (client) ID.
+        tenant_id (str | None): Azure tenant (directory) ID.
+        client_secret (str | None): Azure client secret.
+        workspace_name (str | None): Fabric workspace GUID or name.
+        container_name (str | None): Fabric lakehouse GUID or name.
         name (str | None): Human-readable name.
         data_set_id (int | None): Data set ID for ACL scoping.
+        settings (OneLakeDataSourceSettingsWrite | None): Pre-built settings tree; used by
+            ``as_write()`` for partial upserts when credential/location fields are omitted.
 
     Examples:
 
@@ -434,40 +434,39 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
     def __init__(
         self,
         external_id: str,
-        client_id: str,
-        tenant_id: str,
-        client_secret: str,
-        workspace_name: str,
-        container_name: str,
+        client_id: str | None = None,
+        tenant_id: str | None = None,
+        client_secret: str | None = None,
+        workspace_name: str | None = None,
+        container_name: str | None = None,
         name: str | None = None,
         data_set_id: int | None = None,
+        *,
+        settings: OneLakeDataSourceSettingsWrite | None = None,
     ) -> None:
         super().__init__(external_id=external_id, name=name, data_set_id=data_set_id)
-        self.settings = OneLakeDataSourceSettingsWrite(
-            credentials=OneLakeCredentialsWrite(
-                client_id=client_id,
-                tenant_id=tenant_id,
-                client_secret=client_secret,
-            ),
-            location_description=OneLakeLocationDescription(
-                workspace_name=workspace_name,
-                container_name=container_name,
-            ),
-        )
-
-    @classmethod
-    def with_settings(
-        cls,
-        external_id: str,
-        name: str | None = None,
-        data_set_id: int | None = None,
-        settings: OneLakeDataSourceSettingsWrite | None = None,
-    ) -> OneLakeExternalDataSourceWrite:
-        """Build a write model from metadata and/or partial OneLake settings (used by ``as_write()``)."""
-        instance = cls.__new__(cls)
-        ExternalDataSourceWrite.__init__(instance, external_id, name, data_set_id)
-        instance.settings = settings
-        return instance
+        if settings is not None:
+            self.settings = settings
+        elif (
+            client_id is not None
+            and tenant_id is not None
+            and client_secret is not None
+            and workspace_name is not None
+            and container_name is not None
+        ):
+            self.settings = OneLakeDataSourceSettingsWrite(
+                credentials=OneLakeCredentialsWrite(
+                    client_id=client_id,
+                    tenant_id=tenant_id,
+                    client_secret=client_secret,
+                ),
+                location_description=OneLakeLocationDescription(
+                    workspace_name=workspace_name,
+                    container_name=container_name,
+                ),
+            )
+        else:
+            self.settings = None
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -483,14 +482,11 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
                 name=resource.get("name"),
                 data_set_id=resource.get("dataSetId"),
             )
-        return cast(
-            Self,
-            cls.with_settings(
-                external_id=resource["externalId"],
-                name=resource.get("name"),
-                data_set_id=resource.get("dataSetId"),
-                settings=settings,
-            ),
+        return cls(
+            external_id=resource["externalId"],
+            name=resource.get("name"),
+            data_set_id=resource.get("dataSetId"),
+            settings=settings,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

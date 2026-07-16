@@ -47,7 +47,7 @@ def test_write_dump_always_includes_format() -> None:
 
 
 def test_base_write_has_no_settings_field() -> None:
-    source = OneLakeExternalDataSourceWrite.with_settings(external_id="x", settings=None)
+    source = OneLakeExternalDataSourceWrite(external_id="x", settings=None)
     dumped = source.dump(camel_case=True)
 
     assert dumped["externalId"] == "x"

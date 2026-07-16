@@ -47,7 +47,6 @@ from cognite.client.data_classes.postgres_gateway import TableList, User, UserCr
 from cognite.client.data_classes.sequences import SequenceUpdate
 from cognite.client.data_classes.time_series import TimeSeries, TimeSeriesList
 from cognite.client.data_classes.transformations.external_data import (
-    ExternalDataSource,
     ExternalDataSourceList,
     OneLakeExternalDataSource,
     UnknownExternalDataSource,
@@ -279,11 +278,6 @@ class TestCogniteResource:
             if instance.settings is not None and instance.settings.credentials is not None:
                 instance.settings.credentials = None
 
-        if type(instance) is ExternalDataSource:
-            with pytest.raises(NotImplementedError, match="format-specific"):
-                instance.as_write()
-            return
-
         write_format = instance.as_write()
         assert isinstance(write_format, CogniteResource)
 
@@ -329,9 +323,8 @@ class TestCogniteResource:
             # Files and time series with instance ID can not be created through "old APIs". Doing as_write with
             # instance_id set raises an error, so we clear it here:
             for item in resource_list:
-                if isinstance(item, (FileMetadata, TimeSeries)):
-                    item.instance_id = None
-                    assert item.external_id is not None
+                item.instance_id = None  # type: ignore[union-attr]
+                assert item.external_id is not None
 
         if isinstance(resource_list, ExternalDataSourceList):
             for item in resource_list:
