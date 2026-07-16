@@ -164,6 +164,13 @@ def all_acls() -> Iterator[dict[str, Any]]:
         {"timeSeriesAcl": {"actions": ["WRITE", "READ"], "scope": {"assetRootIdScope": {"rootIds": ["58"]}}}},
         {"transformationsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"transformationsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["94"]}}}},
+        {"transformationsExternalDataSourcesAcl": {"actions": ["READ", "WRITE", "USE"], "scope": {"all": {}}}},
+        {
+            "transformationsExternalDataSourcesAcl": {
+                "actions": ["READ", "WRITE", "USE"],
+                "scope": {"datasetScope": {"ids": ["94"]}},
+            }
+        },
         {"visionModelAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"wellsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"workflowOrchestrationAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},

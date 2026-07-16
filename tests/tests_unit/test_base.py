@@ -266,10 +266,10 @@ class TestCogniteResource:
             assert instance.external_id is not None
 
         if isinstance(instance, ExternalDataSource):
-            # Read model never includes client_secret; pass a placeholder when fake data has credentials.
-            write_format = instance.as_write(client_secret="placeholder-secret")
-        else:
-            write_format = instance.as_write()
+            if instance.settings is not None and instance.settings.credentials is not None:
+                instance.settings.credentials = None
+
+        write_format = instance.as_write()
         assert isinstance(write_format, CogniteResource)
 
     @pytest.mark.dsl
@@ -314,9 +314,11 @@ class TestCogniteResource:
                 assert item.external_id is not None
 
         if isinstance(resource_list, ExternalDataSourceList):
-            write_format: CogniteResourceList = resource_list.as_write(client_secret="placeholder-secret")
-        else:
-            write_format = resource_list.as_write()
+            for item in resource_list:
+                if item.settings is not None and item.settings.credentials is not None:
+                    item.settings.credentials = None
+
+        write_format: CogniteResourceList = resource_list.as_write()
         assert isinstance(write_format, CogniteResourceList)
 
     @pytest.mark.dsl

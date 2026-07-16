@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC
-from typing import Any, ClassVar
+from typing import Any, ClassVar, cast
 
 from typing_extensions import Self
 
@@ -13,20 +13,6 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-
-__all__ = [
-    "ExternalDataSource",
-    "ExternalDataSourceCore",
-    "ExternalDataSourceList",
-    "ExternalDataSourceUsability",
-    "ExternalDataSourceWrite",
-    "ExternalDataSourceWriteList",
-    "OneLakeCredentials",
-    "OneLakeCredentialsWrite",
-    "OneLakeDataSourceSettings",
-    "OneLakeDataSourceSettingsWrite",
-    "OneLakeLocationDescription",
-]
 
 
 class OneLakeLocationDescription(CogniteResource):
@@ -94,7 +80,7 @@ class OneLakeCredentialsWrite(CogniteResource):
         )
 
     def __str__(self) -> str:
-        return self.__repr__()
+        return repr(self)
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -198,18 +184,16 @@ class ExternalDataSourceCore(WriteableCogniteResource["ExternalDataSourceWrite"]
 
 
 class ExternalDataSource(ExternalDataSourceCore):
-    """A Fabric OneLake external data source (API read model — returned by list/get).
+    """An external data source (API read model — returned by list/get).
 
-    OneLake external data sources are **read-only from a transform perspective** — transforms can
-    read data from OneLake tables via ``ext_onelake()`` SQL, but writing transform output to OneLake
-    is not supported.
+    Use :class:`OneLakeExternalDataSource` for Fabric OneLake sources.
 
     Args:
         external_id (str): External ID of the data source.
         name (str | None): Human-readable name.
         data_set_id (int | None): Data set ID for ACL scoping.
         settings (OneLakeDataSourceSettings | None): Connection settings.
-        format (str | None): Backend format identifier (always ``"one_lake"`` for OneLake sources).
+        format (str | None): Backend format identifier (``"one_lake"`` for OneLake sources).
         created_time (int | None): Time the resource was created (milliseconds since epoch).
         last_updated_time (int | None): Time the resource was last updated (milliseconds since epoch).
     """
@@ -233,12 +217,13 @@ class ExternalDataSource(ExternalDataSourceCore):
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         fmt = resource.get("format")
-        if fmt is not None and fmt != cls._FORMAT:
-            warnings.warn(
-                f"Unknown external data source format: {fmt!r}. This version of the SDK may not fully support it.",
-                UserWarning,
-                stacklevel=2,
-            )
+        if fmt is None or fmt == cls._FORMAT:
+            return cast(Self, OneLakeExternalDataSource._load(resource))
+        warnings.warn(
+            f"Unknown external data source format: {fmt!r}. This version of the SDK may not fully support it.",
+            UserWarning,
+            stacklevel=2,
+        )
         settings = OneLakeDataSourceSettings._load_if(resource.get("settings"))
         return cls(
             external_id=resource["externalId"],
@@ -265,8 +250,8 @@ class ExternalDataSource(ExternalDataSourceCore):
                 if client_secret is None:
                     raise ValueError(
                         "client_secret is required to convert credentials to a write model because the API "
-                        "does not return it. Pass client_secret to as_write(), or use "
-                        "ExternalDataSourceWrite.onelake()."
+                        "does not return it. Pass client_secret to as_write(), or construct "
+                        "OneLakeExternalDataSourceWrite with credentials."
                     )
                 creds_write = OneLakeCredentialsWrite(
                     client_id=self.settings.credentials.client_id,
@@ -291,12 +276,41 @@ class ExternalDataSource(ExternalDataSourceCore):
         return result
 
 
-class ExternalDataSourceWrite(ExternalDataSourceCore):
-    """Upsert model for a Fabric OneLake external data source (``external_data_sources.upsert()``).
+class OneLakeExternalDataSource(ExternalDataSource):
+    """A Fabric OneLake external data source (API read model).
 
     OneLake external data sources are **read-only from a transform perspective** — transforms can
     read data from OneLake tables via ``ext_onelake()`` SQL, but writing transform output to OneLake
     is not supported.
+
+    Args:
+        external_id (str): External ID of the data source.
+        name (str | None): Human-readable name.
+        data_set_id (int | None): Data set ID for ACL scoping.
+        settings (OneLakeDataSourceSettings | None): Connection settings.
+        format (str | None): Backend format identifier (always ``"one_lake"``).
+        created_time (int | None): Time the resource was created (milliseconds since epoch).
+        last_updated_time (int | None): Time the resource was last updated (milliseconds since epoch).
+    """
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        settings = OneLakeDataSourceSettings._load_if(resource.get("settings"))
+        return cls(
+            external_id=resource["externalId"],
+            name=resource.get("name"),
+            data_set_id=resource.get("dataSetId"),
+            settings=settings,
+            format=resource.get("format"),
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+        )
+
+
+class ExternalDataSourceWrite(ExternalDataSourceCore):
+    """Upsert model for an external data source (``external_data_sources.upsert()``).
+
+    Use :class:`OneLakeExternalDataSourceWrite` to register a Fabric OneLake source.
 
     Args:
         external_id (str): External ID of the data source.
@@ -314,74 +328,6 @@ class ExternalDataSourceWrite(ExternalDataSourceCore):
     ) -> None:
         super().__init__(external_id=external_id, name=name, data_set_id=data_set_id)
         self.settings = settings
-
-    @classmethod
-    def onelake(
-        cls,
-        external_id: str,
-        client_id: str,
-        tenant_id: str,
-        client_secret: str,
-        workspace_name: str,
-        container_name: str,
-        name: str | None = None,
-        data_set_id: int | None = None,
-    ) -> ExternalDataSourceWrite:
-        """Create an ``ExternalDataSourceWrite`` for registering a Fabric OneLake source in CDF.
-
-        Registers Azure credentials and lakehouse location so transforms can **read** via
-        ``ext_onelake()``. Does not write data into OneLake.
-
-        Args:
-            external_id (str): External ID for the data source. Must be unique.
-            client_id (str): Azure application (client) ID.
-            tenant_id (str): Azure tenant (directory) ID.
-            client_secret (str): Azure client secret.
-            workspace_name (str): Fabric workspace GUID or name.
-            container_name (str): Fabric lakehouse GUID or name.
-            name (str | None): Human-readable name.
-            data_set_id (int | None): Data set ID for ACL scoping.
-
-        Returns:
-            ExternalDataSourceWrite: Ready to pass to ``client.transformations.external_data_sources.upsert()``.
-
-        Examples:
-
-            Register a Fabric OneLake source:
-
-                >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.transformations.external_data import (
-                ...     ExternalDataSourceWrite,
-                ... )
-                >>> client = CogniteClient()
-                >>> source = ExternalDataSourceWrite.onelake(
-                ...     external_id="fabric-lakehouse-prod",
-                ...     name="Production lakehouse",
-                ...     client_id="<azure-app-id>",
-                ...     tenant_id="<azure-tenant-uuid>",
-                ...     client_secret="<secret>",
-                ...     workspace_name="<fabric-workspace-guid>",
-                ...     container_name="<fabric-lakehouse-guid>",
-                ...     data_set_id=123456,
-                ... )
-                >>> client.transformations.external_data_sources.upsert(source)
-        """
-        return cls(
-            external_id=external_id,
-            name=name,
-            data_set_id=data_set_id,
-            settings=OneLakeDataSourceSettingsWrite(
-                credentials=OneLakeCredentialsWrite(
-                    client_id=client_id,
-                    tenant_id=tenant_id,
-                    client_secret=client_secret,
-                ),
-                location_description=OneLakeLocationDescription(
-                    workspace_name=workspace_name,
-                    container_name=container_name,
-                ),
-            ),
-        )
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -402,6 +348,89 @@ class ExternalDataSourceWrite(ExternalDataSourceCore):
         if self.settings is not None:
             result["settings"] = self.settings.dump(camel_case=camel_case)
         return result
+
+
+class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
+    """Upsert model for registering a Fabric OneLake external data source in CDF.
+
+    Registers Azure credentials and lakehouse location so transforms can **read** via
+    ``ext_onelake()``. Does not write data into OneLake.
+
+    Args:
+        external_id (str): External ID for the data source. Must be unique.
+        client_id (str): Azure application (client) ID.
+        tenant_id (str): Azure tenant (directory) ID.
+        client_secret (str): Azure client secret.
+        workspace_name (str): Fabric workspace GUID or name.
+        container_name (str): Fabric lakehouse GUID or name.
+        name (str | None): Human-readable name.
+        data_set_id (int | None): Data set ID for ACL scoping.
+
+    Examples:
+
+        Register a Fabric OneLake source:
+
+            >>> from cognite.client import CogniteClient
+            >>> from cognite.client.data_classes.transformations import (
+            ...     OneLakeExternalDataSourceWrite,
+            ... )
+            >>> client = CogniteClient()
+            >>> source = OneLakeExternalDataSourceWrite(
+            ...     external_id="fabric-lakehouse-prod",
+            ...     name="Production lakehouse",
+            ...     client_id="<azure-app-id>",
+            ...     tenant_id="<azure-tenant-uuid>",
+            ...     client_secret="<secret>",
+            ...     workspace_name="<fabric-workspace-guid>",
+            ...     container_name="<fabric-lakehouse-guid>",
+            ...     data_set_id=123456,
+            ... )
+            >>> client.transformations.external_data_sources.upsert(source)
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        client_id: str,
+        tenant_id: str,
+        client_secret: str,
+        workspace_name: str,
+        container_name: str,
+        name: str | None = None,
+        data_set_id: int | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            name=name,
+            data_set_id=data_set_id,
+            settings=OneLakeDataSourceSettingsWrite(
+                credentials=OneLakeCredentialsWrite(
+                    client_id=client_id,
+                    tenant_id=tenant_id,
+                    client_secret=client_secret,
+                ),
+                location_description=OneLakeLocationDescription(
+                    workspace_name=workspace_name,
+                    container_name=container_name,
+                ),
+            ),
+        )
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        settings = OneLakeDataSourceSettingsWrite._load_if(resource.get("settings"))
+        if settings is not None and settings.credentials is not None and settings.location_description is not None:
+            return cls(
+                external_id=resource["externalId"],
+                client_id=settings.credentials.client_id,
+                tenant_id=settings.credentials.tenant_id,
+                client_secret=settings.credentials.client_secret,
+                workspace_name=settings.location_description.workspace_name,
+                container_name=settings.location_description.container_name,
+                name=resource.get("name"),
+                data_set_id=resource.get("dataSetId"),
+            )
+        return super()._load(resource)
 
 
 class ExternalDataSourceList(

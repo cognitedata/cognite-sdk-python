@@ -6,11 +6,13 @@ from cognite.client.data_classes.transformations.external_data import (
     ExternalDataSource,
     ExternalDataSourceWrite,
     OneLakeCredentialsWrite,
+    OneLakeExternalDataSource,
+    OneLakeExternalDataSourceWrite,
 )
 
 
-def test_onelake_factory_produces_valid_structure() -> None:
-    source = ExternalDataSourceWrite.onelake(
+def test_onelake_write_init_structure() -> None:
+    source = OneLakeExternalDataSourceWrite(
         external_id="x",
         client_id="cid",
         tenant_id="tid",
@@ -18,13 +20,14 @@ def test_onelake_factory_produces_valid_structure() -> None:
         workspace_name="ws",
         container_name="cn",
     )
-    dumped = source.dump(camel_case=True)
 
-    assert dumped["format"] == "one_lake"
-    assert dumped["externalId"] == "x"
-    assert dumped["settings"]["credentials"]["clientId"] == "cid"
-    assert dumped["settings"]["credentials"]["clientSecret"] == "sec"
-    assert dumped["settings"]["locationDescription"]["workspaceName"] == "ws"
+    assert source.external_id == "x"
+    assert source.settings is not None
+    assert source.settings.credentials is not None
+    assert source.settings.credentials.client_id == "cid"
+    assert source.settings.credentials.client_secret == "sec"
+    assert source.settings.location_description is not None
+    assert source.settings.location_description.workspace_name == "ws"
 
 
 def test_write_dump_always_includes_format() -> None:
@@ -35,6 +38,13 @@ def test_write_dump_always_includes_format() -> None:
     assert dumped["format"] == "one_lake"
 
 
+def test_one_lake_load_returns_subclass() -> None:
+    raw = {"externalId": "x", "format": "one_lake", "settings": {}}
+    source = ExternalDataSource._load(raw)
+
+    assert isinstance(source, OneLakeExternalDataSource)
+
+
 def test_read_load_unknown_format_warns_not_raises() -> None:
     raw = {"externalId": "x", "format": "delta_sharing", "settings": {}}
 
@@ -43,6 +53,7 @@ def test_read_load_unknown_format_warns_not_raises() -> None:
 
     assert source.external_id == "x"
     assert source.format == "delta_sharing"
+    assert not isinstance(source, OneLakeExternalDataSource)
 
 
 def test_as_write_raises_without_client_secret() -> None:
