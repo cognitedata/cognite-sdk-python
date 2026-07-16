@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, ClassVar, cast
+from typing import Any, ClassVar, NoReturn, cast
 
 from typing_extensions import Self
 
@@ -349,7 +349,7 @@ class UnknownExternalDataSource(ExternalDataSource):
             return convert_all_keys_recursive(self._raw, camel_case=camel_case)
         return super().dump(camel_case=camel_case)
 
-    def as_write(self, client_secret: str | None = None) -> ExternalDataSourceWrite:
+    def as_write(self, client_secret: str | None = None) -> NoReturn:
         raise ValueError(
             f"Cannot convert unknown external data source format {self.format!r} to a write model in this SDK version."
         )
