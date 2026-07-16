@@ -189,11 +189,11 @@ class ExternalDataSource(WriteableCogniteResource["ExternalDataSourceWrite"]):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> ExternalDataSource:
         fmt = resource["format"]
         if fmt == ONE_LAKE_FORMAT:
-            return cast(Self, OneLakeExternalDataSource._load(resource))
-        return cast(Self, UnknownExternalDataSource._load(resource))
+            return OneLakeExternalDataSource._load(resource)
+        return UnknownExternalDataSource._load(resource)
 
     def as_write(self, client_secret: str | None = None) -> ExternalDataSourceWrite:
         """Return an upsert model for updating this source in CDF.
