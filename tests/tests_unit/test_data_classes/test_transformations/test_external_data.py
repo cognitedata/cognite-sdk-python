@@ -4,7 +4,6 @@ import pytest
 
 from cognite.client.data_classes.transformations.external_data import (
     ExternalDataSource,
-    ExternalDataSourceWrite,
     OneLakeCredentialsWrite,
     OneLakeExternalDataSource,
     OneLakeExternalDataSourceWrite,
@@ -32,11 +31,27 @@ def test_onelake_write_init_structure() -> None:
 
 
 def test_write_dump_always_includes_format() -> None:
-    source = ExternalDataSourceWrite(external_id="x")
+    source = OneLakeExternalDataSourceWrite(
+        external_id="x",
+        client_id="cid",
+        tenant_id="tid",
+        client_secret="sec",
+        workspace_name="ws",
+        container_name="cn",
+    )
     dumped = source.dump(camel_case=True)
 
     assert "format" in dumped
     assert dumped["format"] == "one_lake"
+    assert dumped["settings"]["credentials"]["clientId"] == "cid"
+
+
+def test_base_write_has_no_settings_field() -> None:
+    source = OneLakeExternalDataSourceWrite.with_settings(external_id="x", settings=None)
+    dumped = source.dump(camel_case=True)
+
+    assert dumped["externalId"] == "x"
+    assert "settings" not in dumped or dumped.get("settings") is None
 
 
 def test_one_lake_load_returns_subclass() -> None:
@@ -54,6 +69,7 @@ def test_read_load_unknown_format_returns_unknown_subclass() -> None:
     assert isinstance(source, UnknownExternalDataSource)
     assert source.external_id == "x"
     assert source.format == "delta_sharing"
+    assert not hasattr(source, "settings") or getattr(source, "settings", None) is None
     assert source.dump(camel_case=True) == raw
 
 
@@ -81,6 +97,7 @@ def test_as_write_raises_without_client_secret() -> None:
         },
     }
     read_source = ExternalDataSource._load(raw)
+    assert isinstance(read_source, OneLakeExternalDataSource)
 
     with pytest.raises(ValueError, match="client_secret is required"):
         read_source.as_write()
@@ -96,9 +113,10 @@ def test_as_write_with_client_secret() -> None:
         },
     }
     read_source = ExternalDataSource._load(raw)
+    assert isinstance(read_source, OneLakeExternalDataSource)
     write_source = read_source.as_write(client_secret="new-secret")
 
-    assert isinstance(write_source, ExternalDataSourceWrite)
+    assert isinstance(write_source, OneLakeExternalDataSourceWrite)
     assert write_source.settings is not None
     assert write_source.settings.credentials is not None
     assert write_source.settings.credentials.client_secret == "new-secret"

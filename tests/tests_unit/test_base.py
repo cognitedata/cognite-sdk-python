@@ -49,6 +49,7 @@ from cognite.client.data_classes.time_series import TimeSeries, TimeSeriesList
 from cognite.client.data_classes.transformations.external_data import (
     ExternalDataSource,
     ExternalDataSourceList,
+    OneLakeExternalDataSource,
     UnknownExternalDataSource,
 )
 from cognite.client.data_classes.workflows import UnknownWorkflowTaskParameters, WorkflowTaskOutput
@@ -274,9 +275,14 @@ class TestCogniteResource:
                 instance.as_write()
             return
 
-        if isinstance(instance, ExternalDataSource):
+        if isinstance(instance, OneLakeExternalDataSource):
             if instance.settings is not None and instance.settings.credentials is not None:
                 instance.settings.credentials = None
+
+        if type(instance) is ExternalDataSource:
+            with pytest.raises(NotImplementedError, match="format-specific"):
+                instance.as_write()
+            return
 
         write_format = instance.as_write()
         assert isinstance(write_format, CogniteResource)
@@ -307,7 +313,10 @@ class TestCogniteResource:
         resource_cls = writable_list_cls._RESOURCE
         instance_generator = FakeCogniteResourceGenerator(seed=52, async_client=cognite_async_mock_client_placeholder)
         # TODO(doctrino): Why not have gen. create the list directly?
-        resource_list = writable_list_cls([instance_generator.create_instance(resource_cls)])
+        if writable_list_cls is ExternalDataSourceList:
+            resource_list = ExternalDataSourceList([instance_generator.create_instance(OneLakeExternalDataSource)])
+        else:
+            resource_list = writable_list_cls([instance_generator.create_instance(resource_cls)])
 
         if resource_cls is FunctionSchedule:
             # FunctionSchedulesList.as_write() calls FunctionSchedule.as_write() on each item,
@@ -324,8 +333,9 @@ class TestCogniteResource:
 
         if isinstance(resource_list, ExternalDataSourceList):
             for item in resource_list:
-                if item.settings is not None and item.settings.credentials is not None:
-                    item.settings.credentials = None
+                if isinstance(item, OneLakeExternalDataSource) and item.settings is not None:
+                    if item.settings.credentials is not None:
+                        item.settings.credentials = None
 
         write_format: CogniteResourceList = resource_list.as_write()
         assert isinstance(write_format, CogniteResourceList)

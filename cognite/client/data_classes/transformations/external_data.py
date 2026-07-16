@@ -161,11 +161,64 @@ class OneLakeDataSourceSettingsWrite(CogniteResource):
 class ExternalDataSource(WriteableCogniteResource["ExternalDataSourceWrite"]):
     """An external data source (API read model — returned by list/get).
 
-    Use :class:`OneLakeExternalDataSource` for Fabric OneLake sources.
+    Format-specific subclasses (e.g. :class:`OneLakeExternalDataSource`) hold typed settings.
 
     Args:
         external_id (str): External ID of the data source.
         format (str): Backend format identifier (``"one_lake"`` for OneLake sources).
+        name (str | None): Human-readable name.
+        data_set_id (int | None): Data set ID for ACL scoping.
+        created_time (int | None): Time the resource was created (milliseconds since epoch).
+        last_updated_time (int | None): Time the resource was last updated (milliseconds since epoch).
+    """
+
+    def __init__(
+        self,
+        external_id: str,
+        format: str,
+        name: str | None = None,
+        data_set_id: int | None = None,
+        created_time: int | None = None,
+        last_updated_time: int | None = None,
+    ) -> None:
+        self.external_id = external_id
+        self.name = name
+        self.data_set_id = data_set_id
+        self.format = format
+        self.created_time = created_time
+        self.last_updated_time = last_updated_time
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        fmt = resource["format"]
+        if fmt == ONE_LAKE_FORMAT:
+            return cast(Self, OneLakeExternalDataSource._load(resource))
+        return cast(Self, UnknownExternalDataSource._load(resource))
+
+    def as_write(self, client_secret: str | None = None) -> ExternalDataSourceWrite:
+        """Return an upsert model for updating this source in CDF.
+
+        Args:
+            client_secret (str | None): Passed through on format-specific subclasses.
+        Returns:
+            ExternalDataSourceWrite: Upsert model for this source.
+        """
+        raise NotImplementedError(
+            "as_write() is only supported on format-specific external data source subclasses; "
+            "list/get responses are loaded as OneLakeExternalDataSource or UnknownExternalDataSource."
+        )
+
+
+class OneLakeExternalDataSource(ExternalDataSource):
+    """A Fabric OneLake external data source (API read model).
+
+    OneLake external data sources are **read-only from a transform perspective** — transforms can
+    read data from OneLake tables via ``ext_onelake()`` SQL, but writing transform output to OneLake
+    is not supported.
+
+    Args:
+        external_id (str): External ID of the data source.
+        format (str): Backend format identifier (always ``"one_lake"``).
         name (str | None): Human-readable name.
         data_set_id (int | None): Data set ID for ACL scoping.
         settings (OneLakeDataSourceSettings | None): Connection settings.
@@ -183,28 +236,36 @@ class ExternalDataSource(WriteableCogniteResource["ExternalDataSourceWrite"]):
         created_time: int | None = None,
         last_updated_time: int | None = None,
     ) -> None:
-        self.external_id = external_id
-        self.name = name
-        self.data_set_id = data_set_id
+        super().__init__(
+            external_id=external_id,
+            format=format,
+            name=name,
+            data_set_id=data_set_id,
+            created_time=created_time,
+            last_updated_time=last_updated_time,
+        )
         self.settings = settings
-        self.format = format
-        self.created_time = created_time
-        self.last_updated_time = last_updated_time
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        fmt = resource["format"]
-        if fmt == ONE_LAKE_FORMAT:
-            return cast(Self, OneLakeExternalDataSource._load(resource))
-        return cast(Self, UnknownExternalDataSource._load(resource))
+        settings = OneLakeDataSourceSettings._load_if(resource.get("settings"))
+        return cls(
+            external_id=resource["externalId"],
+            format=resource["format"],
+            name=resource.get("name"),
+            data_set_id=resource.get("dataSetId"),
+            settings=settings,
+            created_time=resource.get("createdTime"),
+            last_updated_time=resource.get("lastUpdatedTime"),
+        )
 
-    def as_write(self, client_secret: str | None = None) -> ExternalDataSourceWrite:
+    def as_write(self, client_secret: str | None = None) -> OneLakeExternalDataSourceWrite:
         """Return an upsert model for updating this source in CDF.
 
         Args:
             client_secret (str | None): Required when the read model includes credentials, because the API does not return ``client_secret``. Omit when only metadata (name, data set, location) changes.
         Returns:
-            ExternalDataSourceWrite: Upsert model for this source.
+            OneLakeExternalDataSourceWrite: Upsert model for this source.
         """
         settings_write: OneLakeDataSourceSettingsWrite | None = None
         if self.settings is not None:
@@ -225,7 +286,7 @@ class ExternalDataSource(WriteableCogniteResource["ExternalDataSourceWrite"]):
                 credentials=creds_write,
                 location_description=self.settings.location_description,
             )
-        return ExternalDataSourceWrite(
+        return OneLakeExternalDataSourceWrite.with_settings(
             external_id=self.external_id,
             name=self.name,
             data_set_id=self.data_set_id,
@@ -239,37 +300,6 @@ class ExternalDataSource(WriteableCogniteResource["ExternalDataSourceWrite"]):
         return result
 
 
-class OneLakeExternalDataSource(ExternalDataSource):
-    """A Fabric OneLake external data source (API read model).
-
-    OneLake external data sources are **read-only from a transform perspective** — transforms can
-    read data from OneLake tables via ``ext_onelake()`` SQL, but writing transform output to OneLake
-    is not supported.
-
-    Args:
-        external_id (str): External ID of the data source.
-        format (str): Backend format identifier (always ``"one_lake"``).
-        name (str | None): Human-readable name.
-        data_set_id (int | None): Data set ID for ACL scoping.
-        settings (OneLakeDataSourceSettings | None): Connection settings.
-        created_time (int | None): Time the resource was created (milliseconds since epoch).
-        last_updated_time (int | None): Time the resource was last updated (milliseconds since epoch).
-    """
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
-        settings = OneLakeDataSourceSettings._load_if(resource.get("settings"))
-        return cls(
-            external_id=resource["externalId"],
-            format=resource["format"],
-            name=resource.get("name"),
-            data_set_id=resource.get("dataSetId"),
-            settings=settings,
-            created_time=resource.get("createdTime"),
-            last_updated_time=resource.get("lastUpdatedTime"),
-        )
-
-
 class UnknownExternalDataSource(ExternalDataSource):
     """An external data source with a format not supported by this SDK version.
 
@@ -278,7 +308,6 @@ class UnknownExternalDataSource(ExternalDataSource):
         format (str): Backend format identifier returned by the API.
         name (str | None): Human-readable name.
         data_set_id (int | None): Data set ID for ACL scoping.
-        settings (OneLakeDataSourceSettings | None): Connection settings, if present in the payload.
         created_time (int | None): Time the resource was created (milliseconds since epoch).
         last_updated_time (int | None): Time the resource was last updated (milliseconds since epoch).
     """
@@ -289,7 +318,6 @@ class UnknownExternalDataSource(ExternalDataSource):
         format: str,
         name: str | None = None,
         data_set_id: int | None = None,
-        settings: OneLakeDataSourceSettings | None = None,
         created_time: int | None = None,
         last_updated_time: int | None = None,
     ) -> None:
@@ -298,7 +326,6 @@ class UnknownExternalDataSource(ExternalDataSource):
             format=format,
             name=name,
             data_set_id=data_set_id,
-            settings=settings,
             created_time=created_time,
             last_updated_time=last_updated_time,
         )
@@ -306,13 +333,11 @@ class UnknownExternalDataSource(ExternalDataSource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        settings = OneLakeDataSourceSettings._load_if(resource.get("settings"))
         instance = cls(
             external_id=resource["externalId"],
             format=resource["format"],
             name=resource.get("name"),
             data_set_id=resource.get("dataSetId"),
-            settings=settings,
             created_time=resource.get("createdTime"),
             last_updated_time=resource.get("lastUpdatedTime"),
         )
@@ -339,42 +364,30 @@ class ExternalDataSourceWrite(WriteableCogniteResource["ExternalDataSourceWrite"
         external_id (str): External ID of the data source.
         name (str | None): Human-readable name.
         data_set_id (int | None): Data set ID for ACL scoping.
-        settings (OneLakeDataSourceSettingsWrite | None): Connection settings including client secret.
     """
-
-    _FORMAT: ClassVar[str] = ONE_LAKE_FORMAT
 
     def __init__(
         self,
         external_id: str,
         name: str | None = None,
         data_set_id: int | None = None,
-        settings: OneLakeDataSourceSettingsWrite | None = None,
     ) -> None:
         self.external_id = external_id
         self.name = name
         self.data_set_id = data_set_id
-        self.settings = settings
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        settings = OneLakeDataSourceSettingsWrite._load_if(resource.get("settings"))
+        if resource.get("format") == ONE_LAKE_FORMAT:
+            return cast(Self, OneLakeExternalDataSourceWrite._load(resource))
         return cls(
             external_id=resource["externalId"],
             name=resource.get("name"),
             data_set_id=resource.get("dataSetId"),
-            settings=settings,
         )
 
     def as_write(self) -> ExternalDataSourceWrite:
         return self
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        result = super().dump(camel_case=camel_case)
-        result["format"] = self._FORMAT
-        if self.settings is not None:
-            result["settings"] = self.settings.dump(camel_case=camel_case)
-        return result
 
 
 class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
@@ -415,6 +428,8 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
             >>> client.transformations.external_data_sources.upsert(source)
     """
 
+    _FORMAT: ClassVar[str] = ONE_LAKE_FORMAT
+
     def __init__(
         self,
         external_id: str,
@@ -426,22 +441,32 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
         name: str | None = None,
         data_set_id: int | None = None,
     ) -> None:
-        super().__init__(
-            external_id=external_id,
-            name=name,
-            data_set_id=data_set_id,
-            settings=OneLakeDataSourceSettingsWrite(
-                credentials=OneLakeCredentialsWrite(
-                    client_id=client_id,
-                    tenant_id=tenant_id,
-                    client_secret=client_secret,
-                ),
-                location_description=OneLakeLocationDescription(
-                    workspace_name=workspace_name,
-                    container_name=container_name,
-                ),
+        super().__init__(external_id=external_id, name=name, data_set_id=data_set_id)
+        self.settings = OneLakeDataSourceSettingsWrite(
+            credentials=OneLakeCredentialsWrite(
+                client_id=client_id,
+                tenant_id=tenant_id,
+                client_secret=client_secret,
+            ),
+            location_description=OneLakeLocationDescription(
+                workspace_name=workspace_name,
+                container_name=container_name,
             ),
         )
+
+    @classmethod
+    def with_settings(
+        cls,
+        external_id: str,
+        name: str | None = None,
+        data_set_id: int | None = None,
+        settings: OneLakeDataSourceSettingsWrite | None = None,
+    ) -> OneLakeExternalDataSourceWrite:
+        """Build a write model from metadata and/or partial OneLake settings (used by ``as_write()``)."""
+        instance = cls.__new__(cls)
+        ExternalDataSourceWrite.__init__(instance, external_id, name, data_set_id)
+        instance.settings = settings
+        return instance
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -457,7 +482,19 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
                 name=resource.get("name"),
                 data_set_id=resource.get("dataSetId"),
             )
-        return super()._load(resource)
+        return cls.with_settings(
+            external_id=resource["externalId"],
+            name=resource.get("name"),
+            data_set_id=resource.get("dataSetId"),
+            settings=settings,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = super().dump(camel_case=camel_case)
+        result["format"] = self._FORMAT
+        if self.settings is not None:
+            result["settings"] = self.settings.dump(camel_case=camel_case)
+        return result
 
 
 class ExternalDataSourceList(
@@ -471,7 +508,7 @@ class ExternalDataSourceList(
         """Return upsert models for each source.
 
         Args:
-            client_secret (str | None): Passed through to :meth:`ExternalDataSource.as_write` for each item.
+            client_secret (str | None): Passed through to :meth:`OneLakeExternalDataSource.as_write` for each item.
         Returns:
             ExternalDataSourceWriteList: Upsert models for each source in the list.
         """
