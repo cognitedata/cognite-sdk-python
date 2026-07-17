@@ -547,6 +547,9 @@ class AppExternalIdScope(Capability.Scope):
     _scope_name = "appExternalIdScope"
     external_ids: list[str]
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "external_ids", [str(i) for i in self.external_ids])
+
     def as_tuples(self) -> set[tuple[str, str]]:
         return {(self._scope_name, s) for s in self.external_ids}
 
