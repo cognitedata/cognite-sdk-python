@@ -45,12 +45,12 @@ class ViewsAPI(APIClient):
         self._RETRIEVE_LIMIT = 100
         self._CREATE_LIMIT = 100
         self._warn_on_record_views = FeaturePreviewWarning(
-            api_maturity="alpha", sdk_maturity="alpha", feature_name="Views on Records"
+            api_maturity="alpha", sdk_maturity="alpha", feature_name="Views for Records"
         )
 
     def _record_views_alpha_headers(self) -> dict[str, str]:
         self._warn_on_record_views.warn()
-        return {"cdf-version": f"{self._config.api_subversion}-alpha"}
+        return self._alpha_version_header()
 
     def _get_semaphore(self, operation: Literal["read_schema", "write_schema"]) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
@@ -350,7 +350,7 @@ class ViewsAPI(APIClient):
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
 
-            Create a record-backed view (alpha feature, subject to breaking changes without prior notice):
+            Create a record-backed view; stream must already exists. Note: this is an alpha feature, subject to breaking changes without prior notice:
 
                 >>> from cognite.client.data_classes.data_modeling import (
                 ...     ContainerId,

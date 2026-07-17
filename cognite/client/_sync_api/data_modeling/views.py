@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c30001457434f54e1346f07ad6ce63f2
+4d3cd92683260890d7f9e627e7acccdc
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -301,7 +301,7 @@ class SyncViewsAPI(SyncAPIClient):
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
 
-            Create a record-backed view (alpha feature, subject to breaking changes without prior notice):
+            Create a record-backed view; stream must already exists. Note: this is an alpha feature, subject to breaking changes without prior notice:
 
                 >>> from cognite.client.data_classes.data_modeling import (
                 ...     ContainerId,

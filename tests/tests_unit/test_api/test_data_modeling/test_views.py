@@ -148,7 +148,7 @@ class TestViewsApiForRecordViews:
             json={"items": [VIEW_RESPONSE, RECORD_VIEW_RESPONSE]},
         )
 
-        with pytest.warns(FutureWarning, match="Views on Records"):
+        with pytest.warns(FutureWarning, match="Views for Records"):
             cognite_client.data_modeling.views.apply([plain_view, record_view])
 
         request = httpx_mock.get_requests()[0]
@@ -169,7 +169,7 @@ class TestViewsApiForRecordViews:
 
         cognite_client.data_modeling.views.apply(plain_view)
 
-        assert not any("Views on Records" in str(w.message) for w in recwarn.list)
+        assert not any("Views for Records" in str(w.message) for w in recwarn.list)
         request = httpx_mock.get_requests()[0]
         assert request.headers["cdf-version"] == async_client.config.api_subversion
 
@@ -182,7 +182,7 @@ class TestViewsApiForRecordViews:
     ) -> None:
         httpx_mock.add_response(method="GET", url=views_url_pattern, status_code=200, json={"items": []})
 
-        with pytest.warns(FutureWarning, match="Views on Records"):
+        with pytest.warns(FutureWarning, match="Views for Records"):
             cognite_client.data_modeling.views.list(used_for=["node", "record"])
 
         request = httpx_mock.get_requests()[0]
@@ -202,7 +202,7 @@ class TestViewsApiForRecordViews:
 
         cognite_client.data_modeling.views.list()
 
-        assert not any("Views on Records" in str(w.message) for w in recwarn.list)
+        assert not any("Views for Records" in str(w.message) for w in recwarn.list)
         request = httpx_mock.get_requests()[0]
         assert request.headers["cdf-version"] == async_client.config.api_subversion
         qs = parse_qs(urlparse(str(request.url)).query)

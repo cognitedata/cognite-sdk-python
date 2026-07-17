@@ -156,7 +156,7 @@ class RecordViewApply(CogniteResource):
 
     .. admonition:: Alpha feature
 
-        Views on Records is an alpha feature, subject to breaking changes without prior notice.
+        Views for Records is an alpha feature, subject to breaking changes without prior notice.
 
     Args:
         space (str): The workspace for the view, a unique identifier for the space.
@@ -166,7 +166,7 @@ class RecordViewApply(CogniteResource):
         description (str | None): Textual description of the view
         name (str | None): Human readable name for the view.
         filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
-            Views on Records only support a subset of the standard filter set.
+            Views for Records only support a subset of the standard filter set.
         implements (list[ViewId] | None): References to other record views from where this view will inherit properties.
         properties (dict[str, MappedPropertyApply] | None): Mapped properties of the view. Only mapped properties
             (no connections) referencing ``usedFor="record"`` containers are supported.
@@ -233,7 +233,6 @@ class RecordViewApply(CogniteResource):
         return output
 
     def as_write(self) -> RecordViewApply:
-        """Returns this RecordViewApply instance."""
         return self
 
     def referenced_containers(self) -> set[ContainerId]:
@@ -267,7 +266,7 @@ class View(ViewCore):
         used_for (ViewUsedFor): Does this view apply to nodes, edges, both, or records.
         is_global (bool): Whether this is a global view.
         stream_id (list[str] | None): External id(s) of the records stream(s) this view targets, if this is a
-            record-backed view. Views on Records is an alpha feature, subject to breaking changes without prior notice.
+            record-backed view. Views for Records is an alpha feature, subject to breaking changes without prior notice.
     """
 
     def __init__(
@@ -381,9 +380,9 @@ class View(ViewCore):
             RecordViewApply: The record view apply.
 
         Raises:
-            ValueError: If this view is not a record view, i.e. ``stream_id`` is ``None``.
+            ValueError: If this view is not a record view.
         """
-        if self.used_for != "record":
+        if not self.is_record_view:
             raise ValueError("This view is not a record view, use as_apply() instead.")
 
         if not self.stream_id:
@@ -485,7 +484,7 @@ class ViewList(WriteableCogniteResourceList[ViewApply, View]):
 
 
 class ViewFilter(CogniteFilter):
-    """Represent the filer arguments for the list endpoint.
+    """Represent the filter arguments for the list endpoint.
 
     Args:
         space (str | None): The space to query
@@ -509,13 +508,16 @@ class ViewFilter(CogniteFilter):
         self.include_inherited_properties = include_inherited_properties
         self.all_versions = all_versions
         self.include_global = include_global
-        self.used_for: Sequence[ViewUsedFor] | None
+        self.used_for = self._parse_used_for(used_for)
+
+    @staticmethod
+    def _parse_used_for(used_for: ViewUsedFor | Sequence[ViewUsedFor] | None) -> Sequence[ViewUsedFor] | None:
         if used_for is None:
-            self.used_for = None
+            return None
         elif isinstance(used_for, str):
-            self.used_for = [used_for]
+            return [used_for]
         elif isinstance(used_for, Sequence):
-            self.used_for = cast("Sequence[ViewUsedFor]", used_for)
+            return cast("Sequence[ViewUsedFor]", used_for)
         else:
             raise TypeError(f"Invalid value for 'used_for': {used_for!r}")
 

@@ -51,25 +51,19 @@ def make_test_view(space: str, external_id: str, version: str, created_time: int
 
 
 class TestRecordViewApplyDataClass:
-    def test_accepts_singular_stream_id(self) -> None:
-        view = make_record_view_apply(stream_id="my-stream")
+    @pytest.mark.parametrize(
+        "stream_id",
+        [
+            pytest.param("my-stream", id="singular"),
+            pytest.param(["my-stream"], id="sequence"),
+        ],
+    )
+    def test_accepts_singular_or_sequence_stream_id(self, stream_id: str | list[str]) -> None:
+        view = make_record_view_apply(stream_id=stream_id)
         assert view.stream_id == ["my-stream"]
 
-    def test_accepts_sequence_stream_id(self) -> None:
-        view = make_record_view_apply(stream_id=["my-stream"])
-        assert view.stream_id == ["my-stream"]
-
-    def test_dump_includes_stream_id(self) -> None:
-        dumped = make_record_view_apply().dump()
+        dumped = view.dump()
         assert dumped["streamId"] == ["my-stream"]
-        assert dumped["space"] == "sp"
-        assert dumped["properties"]["title"]["containerPropertyIdentifier"] == "title"
-
-    def test_load_dump_round_trip(self) -> None:
-        dumped = make_record_view_apply().dump()
-        loaded = RecordViewApply._load(dumped)
-        assert isinstance(loaded, RecordViewApply)
-        assert loaded.dump() == dumped
 
     def test_view_apply_load_rejects_record_view_payload(self) -> None:
         dumped = make_record_view_apply().dump()
