@@ -13,18 +13,18 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: actions/setup-python@v6
+    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
       with:
         python-version: ${{ inputs.python_version }}
 
     - name: Install poetry
-      uses: snok/install-poetry@v1
+      uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1
       with:
         virtualenvs-create: true
         virtualenvs-in-project: true
 
     - name: Cache virtualenv
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ inputs.python_version }}-${{ inputs.extras }}-${{ hashFiles('**/poetry.lock') }}
