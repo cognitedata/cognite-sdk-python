@@ -13,21 +13,25 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Install poetry
-      shell: bash
-      run: pip install --upgrade pip poetry
-
-    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+    - uses: actions/setup-python@v6
       with:
         python-version: ${{ inputs.python_version }}
-        cache: 'poetry'
-        cache-dependency-path: '**/poetry.lock'
+
+    - name: Install poetry
+      uses: snok/install-poetry@v1
+      with:
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+
+    - name: Cache virtualenv
+      uses: actions/cache@v6
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-${{ inputs.python_version }}-${{ inputs.extras }}-${{ hashFiles('**/poetry.lock') }}
 
     - name: Install dependencies
       shell: bash
-      run: |
-        poetry config virtualenvs.in-project true
-        poetry install --no-interaction --no-ansi ${{ inputs.extras }}
+      run: poetry install --no-interaction --no-ansi ${{ inputs.extras }}
 
     - name: Add virtualenv to PATH
       shell: bash
