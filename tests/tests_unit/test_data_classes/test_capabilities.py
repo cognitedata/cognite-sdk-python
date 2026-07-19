@@ -46,7 +46,16 @@ def all_acls() -> Iterator[dict[str, Any]]:
         {"assetsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["372"]}}}},
         {"appConfigAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"appConfigAcl": {"actions": ["READ", "WRITE"], "scope": {"appScope": {"apps": ["SEARCH"]}}}},
+        {"appHostingAcl": {"actions": ["READ", "WRITE", "RUN"], "scope": {"all": {}}}},
+        {
+            "appHostingAcl": {
+                "actions": ["READ"],
+                "scope": {"appExternalIdScope": {"externalIds": ["my-app", "other-app"]}},
+            }
+        },
         {"auditlogAcl": {"actions": ["READ"], "scope": {"all": {}}}},
+        {"chartsAdminAcl": {"actions": ["READ", "UPDATE", "DELETE"], "scope": {"all": {}}}},
+        {"cogUnitsAcl": {"actions": ["READ"], "scope": {"all": {}}}},
         {"dataModelInstancesAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         {"dataModelInstancesAcl": {"actions": ["READ"], "scope": {"spaceScope": {"externalIds": ["maintain"]}}}},
         {
@@ -141,6 +150,8 @@ def all_acls() -> Iterator[dict[str, Any]]:
         {"sequencesAcl": {"actions": ["READ"], "scope": {"all": {}}}},
         {"sequencesAcl": {"actions": ["WRITE"], "scope": {"datasetScope": {"ids": ["2332579", "372"]}}}},
         {"sessionsAcl": {"actions": ["LIST", "CREATE", "DELETE"], "scope": {"all": {}}}},
+        {"simulatorsAcl": {"actions": ["READ", "WRITE", "DELETE", "RUN", "MANAGE"], "scope": {"all": {}}}},
+        {"simulatorsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["123", "456"]}}}},
         {"streamsAcl": {"actions": ["READ"], "scope": {"all": {}}}},
         {"streamsAcl": {"actions": ["CREATE", "DELETE"], "scope": {"all": {}}}},
         {"streamRecordsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
@@ -246,6 +257,12 @@ class TestCapabilities:
                 "streamRecordsAcl": {
                     "actions": ["READ", "WRITE"],
                     "scope": {"spaceIdScope": {"spaceIds": ["analytics-space", "prod-space"]}},
+                }
+            },
+            {
+                "appHostingAcl": {
+                    "actions": ["READ", "RUN"],
+                    "scope": {"appExternalIdScope": {"externalIds": ["my-app", "other-app"]}},
                 }
             },
         ],
