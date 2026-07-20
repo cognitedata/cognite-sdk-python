@@ -139,3 +139,6 @@ class TransformationSchemaColumn(CogniteResource):
 
 class TransformationSchemaColumnList(CogniteResourceList[TransformationSchemaColumn]):
     _RESOURCE = TransformationSchemaColumn
+
+
+TransformationSchemaColumn._LIST_CLASS = TransformationSchemaColumnList

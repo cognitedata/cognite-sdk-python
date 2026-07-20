@@ -350,9 +350,15 @@ class AnnotationWriteList(CogniteResourceList[AnnotationWrite]):
     _RESOURCE = AnnotationWrite
 
 
+AnnotationWrite._LIST_CLASS = AnnotationWriteList
+
+
 class AnnotationList(WriteableCogniteResourceList[AnnotationWrite, Annotation], IdTransformerMixin):
     _RESOURCE = Annotation
 
     def as_write(self) -> AnnotationWriteList:
         """Returns this AnnotationList in its write version."""
         return AnnotationWriteList([ann.as_write() for ann in self.data])
+
+
+Annotation._LIST_CLASS = AnnotationList
