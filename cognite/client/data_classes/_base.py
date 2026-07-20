@@ -11,6 +11,7 @@ from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Generic,
     Literal,
     Protocol,
@@ -77,6 +78,12 @@ class CogniteResource(ABC):
     """The CogniteResource is the main data class in the SDK and is used to add serialization and deserialization, and the to_pandas method,
     which together with _repr_html_ makes it easy to visualize data in a tabular format in e.g. Jupyter notebooks.
     """
+
+    # Certain methods (looking at you to_pandas) need to know the corresponding resource list class to avoid duplicating logic.
+    # Not all resource types have a list class counterpart, so this is annotated as optional. We enforce that subclasses get
+    # this attribute set by in test_meta.py (the allow-list lives there).
+    # Set the _LIST_CLASS after both classes are defined (the list class has a _RESOURCE attribute pointing back):
+    _LIST_CLASS: ClassVar[type[CogniteResourceList] | None] = None
 
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()
