@@ -86,7 +86,7 @@ class RecordsAggregate(CogniteResource):
 
 
 class _PropertyAggregate(RecordsAggregate):
-    def __init__(self, property: Sequence[str]) -> None:
+    def __init__(self, property: list[str] | tuple[str, ...]) -> None:
         self.property = list(property)
 
     def _dump_body(self) -> dict[str, Any]:
@@ -104,7 +104,7 @@ class Count(RecordsAggregate):
 
     _aggregate_name = "count"
 
-    def __init__(self, property: Sequence[str] | None = None) -> None:
+    def __init__(self, property: list[str] | tuple[str, ...] | None = None) -> None:
         self.property = list(property) if property is not None else None
 
     def _dump_body(self) -> dict[str, Any]:
@@ -144,7 +144,12 @@ class UniqueValues(_NestedAggregate):
 
     _aggregate_name = "uniqueValues"
 
-    def __init__(self, property: Sequence[str], aggregates: Mapping[str, Any] | None = None, size: int | None = None):
+    def __init__(
+        self,
+        property: list[str] | tuple[str, ...],
+        aggregates: Mapping[str, Any] | None = None,
+        size: int | None = None,
+    ):
         super().__init__(aggregates)
         self.property = list(property)
         self.size = size
@@ -164,7 +169,7 @@ class NumberHistogram(_NestedAggregate):
 
     def __init__(
         self,
-        property: Sequence[str],
+        property: list[str] | tuple[str, ...],
         interval: float,
         aggregates: Mapping[str, Any] | None = None,
         hard_bounds: Mapping[str, float] | None = None,
@@ -189,7 +194,7 @@ class TimeHistogram(_NestedAggregate):
 
     def __init__(
         self,
-        property: Sequence[str],
+        property: list[str] | tuple[str, ...],
         *,
         calendar_interval: str | None = None,
         fixed_interval: str | None = None,
