@@ -263,7 +263,10 @@ class RecordsAPI(APIClient):
 
         Examples:
 
-            Aggregate average temperature using typed helpers:
+            The examples below aggregate over a stream of padel game statistics records, going
+            from a simple metric to a filtered count to a nested per-player, per-day breakdown.
+
+            Find the average points scored across all games, using a typed helper:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.data_modeling.records import Avg
@@ -271,50 +274,63 @@ class RecordsAPI(APIClient):
                 >>> res = client.data_modeling.records.aggregate(
                 ...     stream_id="my-stream",
                 ...     aggregates={
-                ...         "avg_temp": Avg(["my-space", "sensor", "temperature"]),
-                ...     },
-                ... )
-
-            Count records with a time range filter:
-
-                >>> from cognite.client.data_classes.data_modeling.records import Count, TimeRange
-                >>> res = client.data_modeling.records.aggregate(
-                ...     stream_id="my-stream",
-                ...     aggregates={"total": Count()},
-                ...     last_updated_time=TimeRange(gte=1705341600000),
-                ... )
-
-            Daily time histogram with nested metric aggregates:
-
-                >>> from cognite.client.data_classes.data_modeling.records import (
-                ...     Max,
-                ...     Min,
-                ...     TimeHistogram,
-                ... )
-                >>> res = client.data_modeling.records.aggregate(
-                ...     stream_id="my-stream",
-                ...     aggregates={
-                ...         "by_day": TimeHistogram(
-                ...             ["my-space", "sensor", "timestamp"],
-                ...             calendar_interval="1d",
-                ...             aggregates={
-                ...                 "min_temp": Min(["my-space", "sensor", "temperature"]),
-                ...                 "max_temp": Max(["my-space", "sensor", "temperature"]),
-                ...             },
+                ...         "avg_points_scored": Avg(
+                ...             property=["paddle", "game_statistics", "points_scored"]
                 ...         ),
                 ...     },
                 ... )
 
-            Unique values with sub-aggregation:
+            Count the total number of games, and how many of them have a recorded score, only
+            considering games updated after a given time:
 
-                >>> from cognite.client.data_classes.data_modeling.records import Sum, UniqueValues
+                >>> from cognite.client.data_classes.data_modeling.records import Count, TimeRange
                 >>> res = client.data_modeling.records.aggregate(
                 ...     stream_id="my-stream",
                 ...     aggregates={
-                ...         "by_region": UniqueValues(
-                ...             ["my-space", "sensor", "region"],
-                ...             aggregates={"total_output": Sum(["my-space", "sensor", "output"])},
-                ...             size=10,
+                ...         "total_games": Count(),
+                ...         "games_with_score": Count(
+                ...             property=["paddle", "game_statistics", "points_scored"]
+                ...         ),
+                ...     },
+                ...     last_updated_time=TimeRange(gt=1759276800000),
+                ... )
+
+            Group games by day, then by player, and for each player-day compute their total,
+            highest, and average points scored, alongside the single highest score across all
+            games:
+
+                >>> from cognite.client.data_classes.data_modeling.records import (
+                ...     Avg,
+                ...     Max,
+                ...     Sum,
+                ...     TimeHistogram,
+                ...     UniqueValues,
+                ... )
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={
+                ...         "my_groups_by_1d_range": TimeHistogram(
+                ...             property=["paddle", "game_statistics", "game_time"],
+                ...             calendar_interval="1d",
+                ...             aggregates={
+                ...                 "my_groups_by_player_name": UniqueValues(
+                ...                     property=["paddle", "game_statistics", "player_name"],
+                ...                     aggregates={
+                ...                         "my_player_daily_scores_sum": Sum(
+                ...                             property=["paddle", "game_statistics", "points_scored"]
+                ...                         ),
+                ...                         "my_player_daily_scores_maximum": Max(
+                ...                             property=["paddle", "game_statistics", "points_scored"]
+                ...                         ),
+                ...                     },
+                ...                 ),
+                ...                 "my_daily_scores_average": Avg(
+                ...                     property=["paddle", "game_statistics", "points_scored"]
+                ...                 ),
+                ...             },
+                ...         ),
+                ...         "my_scores_maximum_across_all_games": Max(
+                ...             property=["paddle", "game_statistics", "points_scored"]
                 ...         ),
                 ...     },
                 ... )
