@@ -111,7 +111,7 @@ class TestToPandas:
 
         exp_df = pd.DataFrame(
             {1: 2.0, 2: 4.0, 3: 6.0},
-            index=np.array([1234 * 1_000_000], dtype="datetime64[ns]"),
+            index=np.array([1234], dtype="datetime64[ms]"),
         )
         exp_df.columns = pd.Index([123, "foo", NodeId(space="s", external_id="x")], name="identifier")
         pd.testing.assert_frame_equal(df, exp_df)
