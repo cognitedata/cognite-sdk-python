@@ -58,14 +58,15 @@ __all__ = [
 
 
 def _dump_aggregate_value(value: Any) -> Any:
-    if isinstance(value, Mapping):
-        return {key: _dump_aggregate_value(val) for key, val in value.items()}
-    if isinstance(value, list | tuple):
-        return [_dump_aggregate_value(item) for item in value]
-    dump = getattr(value, "dump", None)
-    if callable(dump):
-        return _dump_aggregate_value(dump())
-    return value
+    match value:
+        case Mapping() as m:
+            return {key: _dump_aggregate_value(val) for key, val in m.items()}
+        case [*items]:
+            return [_dump_aggregate_value(item) for item in items]
+        case RecordsAggregate() as agg:
+            return _dump_aggregate_value(agg.dump())
+        case _:
+            return value
 
 
 class RecordsAggregate(CogniteResource):
