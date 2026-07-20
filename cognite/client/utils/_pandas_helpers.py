@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from cognite.client.data_classes import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList
-    from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
+    from cognite.client.data_classes._base import CogniteResource, T_CogniteResource, T_CogniteResourceList
     from cognite.client.data_classes.data_modeling.ids import NodeId
     from cognite.client.data_classes.datapoints import (
         NumpyDatetime64NSArray,
@@ -398,3 +398,36 @@ def _create_timestamp_index(
             return pd.to_datetime(timestamps, utc=True).as_unit("ms").tz_convert(convert_tz_for_pandas(timezone))
         case _:
             raise TypeError("Timestamps must be either list[int] or numpy.ndarray")
+
+
+def squeeze_single_row_list_df(df: pd.DataFrame, ignore: list[str] | None) -> pd.DataFrame:
+    """Turns the single row dataframe the list-class produces back into a single-column"""
+    if ignore:
+        df = df.drop(columns=[c for c in ignore if c in df.columns])
+    # For historical reasons, we need to do an astype(object) here. It undoes pandas dtype inference
+    # (e.g. numpy.bool_ instead of bool) so values keep their native Python types:
+    return df.astype(object).iloc[0].rename("value").to_frame()
+
+
+def base_resource_to_pandas_fallback(
+    resource: CogniteResource,
+    camel_case: bool,
+    ignore: list[str] | None,
+    convert_timestamps: bool,
+    expand_metadata: bool,
+    metadata_prefix: str,
+) -> pd.DataFrame:
+    pd = local_import("pandas")
+    dumped = resource.dump(camel_case=camel_case)
+
+    for element in ignore or []:
+        dumped.pop(element, None)
+
+    if convert_timestamps:
+        for k in TIME_ATTRIBUTES.intersection(dumped):
+            dumped[k] = pd.Timestamp(dumped[k], unit="ms")
+
+    if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
+        dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})
+
+    return pd.Series(dumped).to_frame(name="value")
