@@ -154,6 +154,9 @@ class WorkflowList(WriteableCogniteResourceList[WorkflowUpsert, Workflow], Exter
         return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
 
 
+Workflow._LIST_CLASS = WorkflowList
+
+
 # Note on 'str': forward compatibility when new task types are added in the API that the SDK does not yet know about
 ValidTaskType = (
     Literal[

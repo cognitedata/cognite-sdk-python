@@ -192,6 +192,7 @@ class Group(GroupCore):
             members=resource.get("members"),
         )
 
+
 class GroupWrite(GroupCore):
     """Groups are used to give principals the capabilities to access CDF resources. One principal
     can be a member in multiple groups and one group can have multiple members.
@@ -517,6 +518,9 @@ class SessionList(CogniteResourceList[Session], IdTransformerMixin):
     _RESOURCE = Session
 
 
+Session._LIST_CLASS = SessionList
+
+
 class RevokedSession(CogniteResource):
     """A session that has been revoked.
 
@@ -563,6 +567,9 @@ class RevokedSession(CogniteResource):
 
 class RevokedSessionList(CogniteResourceList[RevokedSession], IdTransformerMixin):
     _RESOURCE = RevokedSession
+
+
+RevokedSession._LIST_CLASS = RevokedSessionList
 
 
 class ClientCredentials(CogniteResource):
