@@ -333,7 +333,9 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        df = type(self)._LIST_CLASS([self]).to_pandas(
+        list_cls = type(self)._LIST_CLASS
+        assert list_cls is not None
+        df = list_cls([self]).to_pandas(
             camel_case=camel_case,
             expand_metadata=expand_metadata,
             metadata_prefix=metadata_prefix,

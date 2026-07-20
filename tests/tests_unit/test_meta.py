@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from cognite.client._api_client import APIClient
 from cognite.client._api.iam.groups import _GroupListAdapter
+from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
@@ -184,9 +184,8 @@ def test_list_class_resource_back_reference(list_cls: type, list_classes_without
     resource_cls = list_cls.__dict__["_RESOURCE"]
     if isinstance(resource_cls, tuple):
         return
-    assert list_cls._RESOURCE._LIST_CLASS is list_cls, (
-        f"{resource_cls.__name__}._LIST_CLASS should be {list_cls.__name__}, "
-        f"got {resource_cls._LIST_CLASS}"
+    assert resource_cls._LIST_CLASS is list_cls, (
+        f"{resource_cls.__name__}._LIST_CLASS should be {list_cls.__name__}, got {resource_cls._LIST_CLASS}"
     )
 
 
@@ -195,23 +194,21 @@ def test_standalone_to_pandas_allowlist() -> None:
     # These are intentional exceptions — domain-specific data shapes where the standard
     # "delegate to list type" pattern doesn't apply. Adding a new class here requires justification.
     expected_standalone = {
-        Datapoint,           # Time series datapoint — tabular layout, not a standard resource
+        Datapoint,  # Time series datapoint — tabular layout, not a standard resource
         DiagramConvertItem,  # Embedded inside DiagramConvertResults, no standalone list type
-        DiagramDetectItem,   # Embedded inside DiagramDetectResults, no standalone list type
-        Instance,            # Abstract base; delegates at runtime via type(self)._LIST_CLASS
-        RowCore,             # Raw table row — its to_pandas pivots columns, not a standard layout
+        DiagramDetectItem,  # Embedded inside DiagramDetectResults, no standalone list type
+        Instance,  # Abstract base; delegates at runtime via type(self)._LIST_CLASS
+        RowCore,  # Raw table row — its to_pandas pivots columns, not a standard layout
         SubscriptionDatapoints,  # Datapoint subscription batch item, no standalone list type
-        TypeInformation,     # DM type metadata embedded in query results, not a standard resource
-        VisionResource,      # Abstract base for annotation geometry types (Point, Polygon, etc.)
+        TypeInformation,  # DM type metadata embedded in query results, not a standard resource
+        VisionResource,  # Abstract base for annotation geometry types (Point, Polygon, etc.)
     }
     import cognite.client.utils._auxiliary as aux
 
     actual_standalone = {
         cls
-        for cls in aux.all_subclasses(CogniteResource)
-        if cls.__module__.startswith("cognite.client")
-        and "to_pandas" in cls.__dict__
-        and cls._LIST_CLASS is None
+        for cls in aux.all_subclasses(CogniteResource)  # type: ignore[type-abstract]
+        if cls.__module__.startswith("cognite.client") and "to_pandas" in cls.__dict__ and cls._LIST_CLASS is None
     }
     unexpected = actual_standalone - expected_standalone
     assert not unexpected, (

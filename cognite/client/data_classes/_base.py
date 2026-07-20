@@ -41,7 +41,6 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
 
 
-
 def basic_instance_dump(obj: Any, camel_case: bool) -> dict[str, Any]:
     dumped = {k: v for k, v in vars(obj).items() if v is not None and not k.startswith("_")}
     if camel_case:

@@ -456,7 +456,8 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
             pd.DataFrame: The dataframe.
         """
         list_cls = type(self)._LIST_CLASS
-        df = list_cls([self]).to_pandas(
+        assert list_cls is not None
+        df = list_cls([self]).to_pandas(  # type: ignore[call-arg]
             camel_case=camel_case,
             convert_timestamps=convert_timestamps,
             expand_properties=expand_properties,
