@@ -270,6 +270,9 @@ class FilesAPI(APIClient):
         Returns:
             FileMetadata | None: Requested file metadata or None if it does not exist.
 
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve>` instead.
+
         Examples:
 
             Get file metadata by instance id:
@@ -306,6 +309,9 @@ class FilesAPI(APIClient):
 
         Returns:
             FileMetadataList: The requested file metadatas.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve>` instead.
 
         Examples:
 
@@ -508,6 +514,9 @@ class FilesAPI(APIClient):
 
         Returns:
             FileMetadata: No description.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.upload_content <cognite.client.AsyncCogniteClient.data_modeling.files.upload_content>` instead.
 
         Examples:
 
@@ -749,6 +758,9 @@ class FilesAPI(APIClient):
 
         Returns:
             FileMetadata: No description.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.upload_content_bytes <cognite.client.AsyncCogniteClient.data_modeling.files.upload_content_bytes>` instead.
 
         Examples:
 
@@ -1177,6 +1189,9 @@ class FilesAPI(APIClient):
 
         Returns:
             dict[int, str] | dict[str, str] | dict[NodeId, str] | dict[int | str | NodeId, str]: Dictionary containing download urls.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve_download_urls <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve_download_urls>` instead.
 
         Examples:
 
