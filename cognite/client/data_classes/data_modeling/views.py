@@ -449,6 +449,9 @@ class ViewApplyList(CogniteResourceList[ViewApply]):
         return referenced_containers
 
 
+ViewApply._LIST_CLASS = ViewApplyList
+
+
 class ViewList(WriteableCogniteResourceList[ViewApply, View]):
     _RESOURCE = View
 
@@ -481,6 +484,9 @@ class ViewList(WriteableCogniteResourceList[ViewApply, View]):
         for view in self:
             referenced_containers.update(view.referenced_containers())
         return referenced_containers
+
+
+View._LIST_CLASS = ViewList
 
 
 class ViewFilter(CogniteFilter):

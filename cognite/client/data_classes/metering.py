@@ -62,3 +62,6 @@ class MeteringDataList(CogniteResourceList[MeteringData]):
     def as_ids(self) -> list[str]:
         """Returns a list of meter IDs."""
         return [item.as_id() for item in self]
+
+
+MeteringData._LIST_CLASS = MeteringDataList

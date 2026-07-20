@@ -574,6 +574,9 @@ class InstanceAggregationResultList(CogniteResourceList[InstanceAggregationResul
     _RESOURCE = InstanceAggregationResult
 
 
+InstanceAggregationResult._LIST_CLASS = InstanceAggregationResultList
+
+
 class InspectionResults(CogniteResource):
     def __init__(self, involved_views: list[ViewId] | None, involved_containers: list[ContainerId] | None) -> None:
         self.involved_views = involved_views
@@ -653,6 +656,9 @@ class InstanceInspectResult(CogniteResource):
 
 class InstanceInspectResultList(CogniteResourceList[InstanceInspectResult]):
     _RESOURCE = InstanceInspectResult
+
+
+InstanceInspectResult._LIST_CLASS = InstanceInspectResultList
 
 
 @dataclass
@@ -1033,6 +1039,9 @@ class NodeApplyResultList(CogniteResourceList[NodeApplyResult]):
         return [result.as_id() for result in self]
 
 
+NodeApplyResult._LIST_CLASS = NodeApplyResultList
+
+
 class NodeApplyList(CogniteResourceList[NodeApply]):
     _RESOURCE = NodeApply
 
@@ -1044,6 +1053,9 @@ class NodeApplyList(CogniteResourceList[NodeApply]):
             list[NodeId]: A list of node ids.
         """
         return [node.as_id() for node in self]
+
+
+NodeApply._LIST_CLASS = NodeApplyList
 
 
 T_Instance = TypeVar("T_Instance", bound=Instance)
@@ -1215,6 +1227,9 @@ class NodeList(DataModelingInstancesList[NodeApply, T_Node]):
         return output
 
 
+Node._LIST_CLASS = NodeList
+
+
 class NodeListWithCursor(NodeList[T_Node]):
     def __init__(
         self,
@@ -1251,6 +1266,9 @@ class EdgeApplyResultList(CogniteResourceList[EdgeApplyResult]):
         return [edge.as_id() for edge in self]
 
 
+EdgeApplyResult._LIST_CLASS = EdgeApplyResultList
+
+
 class EdgeApplyList(CogniteResourceList[EdgeApply]):
     _RESOURCE = EdgeApply
 
@@ -1262,6 +1280,9 @@ class EdgeApplyList(CogniteResourceList[EdgeApply]):
             list[EdgeId]: A list of edge ids.
         """
         return [edge.as_id() for edge in self]
+
+
+EdgeApply._LIST_CLASS = EdgeApplyList
 
 
 T_Edge = TypeVar("T_Edge", bound=Edge)
@@ -1315,6 +1336,9 @@ class EdgeList(DataModelingInstancesList[EdgeApply, T_Edge]):
         if self.debug:
             output["debug"] = self.debug.dump(camel_case)
         return output
+
+
+Edge._LIST_CLASS = EdgeList
 
 
 class EdgeListWithCursor(EdgeList):

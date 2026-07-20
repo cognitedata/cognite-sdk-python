@@ -176,6 +176,9 @@ class ContextualizationJobList(CogniteResourceListWithClientRef[Contextualizatio
     _RESOURCE = ContextualizationJob
 
 
+ContextualizationJob._LIST_CLASS = ContextualizationJobList
+
+
 class EntityMatchingModel(CogniteResourceWithClientRef):
     """Entity matching model. See the `fit` method for the meaning of these fields."""
 
@@ -395,6 +398,9 @@ class EntityMatchingModelList(CogniteResourceListWithClientRef[EntityMatchingMod
     _RESOURCE = EntityMatchingModel
 
 
+EntityMatchingModel._LIST_CLASS = EntityMatchingModelList
+
+
 class FileReference:
     def __init__(
         self,
@@ -450,6 +456,9 @@ class DiagramConvertPage(CogniteResource):
 
 class DiagramConvertPageList(CogniteResourceList[DiagramConvertPage]):
     _RESOURCE = DiagramConvertPage
+
+
+DiagramConvertPage._LIST_CLASS = DiagramConvertPageList
 
 
 class DiagramConvertItem(CogniteResource):
@@ -1338,6 +1347,9 @@ class ResourceReference(CogniteResource):
 
 class ResourceReferenceList(CogniteResourceList[ResourceReference], IdTransformerMixin):
     _RESOURCE = ResourceReference
+
+
+ResourceReference._LIST_CLASS = ResourceReferenceList
 
 
 class DirectionWeights(CogniteResource):
