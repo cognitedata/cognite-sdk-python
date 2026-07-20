@@ -645,6 +645,9 @@ class FunctionScheduleWriteList(CogniteResourceList[FunctionScheduleWrite]):
     _RESOURCE = FunctionScheduleWrite
 
 
+FunctionScheduleWrite._LIST_CLASS = FunctionScheduleWriteList
+
+
 class FunctionSchedulesList(
     WriteableCogniteResourceList[FunctionScheduleWrite, FunctionSchedule],
     InternalIdTransformerMixin,
@@ -656,8 +659,14 @@ class FunctionSchedulesList(
         return FunctionScheduleWriteList([f.as_write() for f in self.data])
 
 
+FunctionSchedule._LIST_CLASS = FunctionSchedulesList
+
+
 class FunctionWriteList(CogniteResourceList[FunctionWrite], ExternalIDTransformerMixin):
     _RESOURCE = FunctionWrite
+
+
+FunctionWrite._LIST_CLASS = FunctionWriteList
 
 
 class FunctionList(WriteableCogniteResourceList[FunctionWrite, Function], IdTransformerMixin):
@@ -666,6 +675,9 @@ class FunctionList(WriteableCogniteResourceList[FunctionWrite, Function], IdTran
     def as_write(self) -> FunctionWriteList:
         """Returns a writeable version of this function."""
         return FunctionWriteList([f.as_write() for f in self.data])
+
+
+Function._LIST_CLASS = FunctionList
 
 
 class FunctionCall(CogniteResourceWithClientRef):
@@ -781,6 +793,9 @@ class FunctionCallList(CogniteResourceList[FunctionCall], InternalIdTransformerM
     _RESOURCE = FunctionCall
 
 
+FunctionCall._LIST_CLASS = FunctionCallList
+
+
 class FunctionCallLogEntry(CogniteResource):
     """A log entry for a function call.
 
@@ -822,6 +837,9 @@ class FunctionCallLog(CogniteResourceList[FunctionCallLogEntry]):
             str: new-line delimited log entries.
         """
         return "\n".join(entry._format(with_timestamps) for entry in self)
+
+
+FunctionCallLogEntry._LIST_CLASS = FunctionCallLog
 
 
 class FunctionsLimits(CogniteResource):

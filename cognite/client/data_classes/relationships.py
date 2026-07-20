@@ -433,9 +433,15 @@ class RelationshipWriteList(CogniteResourceList[RelationshipWrite], ExternalIDTr
     _RESOURCE = RelationshipWrite
 
 
+RelationshipWrite._LIST_CLASS = RelationshipWriteList
+
+
 class RelationshipList(WriteableCogniteResourceList[RelationshipWrite, Relationship], ExternalIDTransformerMixin):
     _RESOURCE = Relationship
 
     def as_write(self) -> RelationshipWriteList:
         """Returns this RelationshipList in its write version."""
         return RelationshipWriteList([item.as_write() for item in self.data])
+
+
+Relationship._LIST_CLASS = RelationshipList

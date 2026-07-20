@@ -123,11 +123,17 @@ class SourceWriteList(CogniteResourceList[SourceWrite], ExternalIDTransformerMix
     _RESOURCE = SourceWrite
 
 
+SourceWrite._LIST_CLASS = SourceWriteList
+
+
 class SourceList(WriteableCogniteResourceList[SourceWrite, Source], ExternalIDTransformerMixin):
     _RESOURCE = Source
 
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write")
+
+
+Source._LIST_CLASS = SourceList
 
 
 class EventHubSourceWrite(SourceWrite):

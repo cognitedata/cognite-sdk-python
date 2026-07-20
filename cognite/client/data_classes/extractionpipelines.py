@@ -420,6 +420,9 @@ class ExtractionPipelineWriteList(CogniteResourceList[ExtractionPipelineWrite], 
     _RESOURCE = ExtractionPipelineWrite
 
 
+ExtractionPipelineWrite._LIST_CLASS = ExtractionPipelineWriteList
+
+
 class ExtractionPipelineList(
     WriteableCogniteResourceList[ExtractionPipelineWrite, ExtractionPipeline], IdTransformerMixin
 ):
@@ -427,6 +430,9 @@ class ExtractionPipelineList(
 
     def as_write(self) -> ExtractionPipelineWriteList:
         return ExtractionPipelineWriteList([x.as_write() for x in self.data])
+
+
+ExtractionPipeline._LIST_CLASS = ExtractionPipelineList
 
 
 class ExtractionPipelineRunCore(WriteableCogniteResource["ExtractionPipelineRunWrite"], ABC):
@@ -572,6 +578,9 @@ class ExtractionPipelineRunWriteList(CogniteResourceList[ExtractionPipelineRunWr
     _RESOURCE = ExtractionPipelineRunWrite
 
 
+ExtractionPipelineRunWrite._LIST_CLASS = ExtractionPipelineRunWriteList
+
+
 class ExtractionPipelineRunList(
     WriteableCogniteResourceList[ExtractionPipelineRunWrite, ExtractionPipelineRun], IdTransformerMixin
 ):
@@ -579,6 +588,9 @@ class ExtractionPipelineRunList(
 
     def as_write(self) -> ExtractionPipelineRunWriteList:
         return ExtractionPipelineRunWriteList([x.as_write() for x in self.data])
+
+
+ExtractionPipelineRun._LIST_CLASS = ExtractionPipelineRunList
 
 
 class StringFilter(CogniteFilter):
@@ -749,8 +761,14 @@ class ExtractionPipelineConfigRevisionList(
     _RESOURCE = ExtractionPipelineConfigRevision
 
 
+ExtractionPipelineConfigRevision._LIST_CLASS = ExtractionPipelineConfigRevisionList
+
+
 class ExtractionPipelineConfigWriteList(CogniteResourceList[ExtractionPipelineConfigWrite], ExternalIDTransformerMixin):
     _RESOURCE = ExtractionPipelineConfigWrite
+
+
+ExtractionPipelineConfigWrite._LIST_CLASS = ExtractionPipelineConfigWriteList
 
 
 class ExtractionPipelineConfigList(
@@ -760,3 +778,6 @@ class ExtractionPipelineConfigList(
 
     def as_write(self) -> ExtractionPipelineConfigWriteList:
         return ExtractionPipelineConfigWriteList([x.as_write() for x in self.data])
+
+
+ExtractionPipelineConfig._LIST_CLASS = ExtractionPipelineConfigList

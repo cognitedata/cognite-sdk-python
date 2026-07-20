@@ -550,12 +550,18 @@ class FileMetadataWriteList(CogniteResourceList[FileMetadataWrite], ExternalIDTr
     _RESOURCE = FileMetadataWrite
 
 
+FileMetadataWrite._LIST_CLASS = FileMetadataWriteList
+
+
 class FileMetadataList(WriteableCogniteResourceList[FileMetadataWrite, FileMetadata], IdTransformerMixin):
     _RESOURCE = FileMetadata
 
     def as_write(self) -> FileMetadataWriteList:
         """Returns this FileMetadataList in its writing format."""
         return FileMetadataWriteList([item.as_write() for item in self.data])
+
+
+FileMetadata._LIST_CLASS = FileMetadataList
 
 
 class FileMultipartUploadSession(
