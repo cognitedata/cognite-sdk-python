@@ -446,15 +446,17 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            ignore (list[str] | None): List of column keys to skip when converting to a data frame.
+            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
             camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect properties if expanded.
             convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect properties.
-            expand_properties (bool): Expand the properties into separate columns.
-            remove_property_prefix (bool): Attempt to remove the view ID prefix from column names of expanded properties. Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
+            expand_properties (bool): Expand the properties into separate rows.
+            remove_property_prefix (bool): Attempt to remove the view ID prefix from row names of expanded properties (in index). Requires data to be from a single view and that all property names do not conflict with base properties (e.g. 'space' or 'type'). In such cases, a warning is issued and the prefix is kept.
 
         Returns:
             pd.DataFrame: The dataframe.
         """
+        # Instance's list class has a properties-aware to_pandas() (different signature than the base
+        # CogniteResourceList), so we delegate to it directly rather than through CogniteResource.to_pandas().
         list_cls = type(self)._LIST_CLASS
         assert list_cls is not None
         df = list_cls([self]).to_pandas(  # type: ignore[call-arg]
@@ -465,7 +467,9 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         )
         if ignore:
             df = df.drop(columns=[c for c in ignore if c in df.columns])
-        return df
+        # astype(object) undoes pandas' per-column dtype inference (e.g. numpy.bool_ instead of bool)
+        # so values keep their native Python types.
+        return df.astype(object).iloc[0].rename("value").to_frame()
 
     @abstractmethod
     def as_apply(self) -> InstanceApply:

@@ -322,34 +322,31 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            expand_metadata (bool): Expand the metadata into separate columns (default: False).
-            metadata_prefix (str): Prefix to use for the metadata columns, if expanded.
-            expand_aggregates (bool): Expand the aggregates into separate columns (default: False).
-            aggregates_prefix (str): Prefix to use for the aggregates columns, if expanded.
-            ignore (list[str] | None): List of column keys to skip when converting to a data frame.
+            expand_metadata (bool): Expand the metadata into separate rows (default: False).
+            metadata_prefix (str): Prefix to use for the metadata rows, if expanded.
+            expand_aggregates (bool): Expand the aggregates into separate rows (default: False).
+            aggregates_prefix (str): Prefix to use for the aggregates rows, if expanded.
+            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
             camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata if expanded.
             convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        list_cls = type(self)._LIST_CLASS
-        assert list_cls is not None
-        df = list_cls([self]).to_pandas(
-            camel_case=camel_case,
+        df = super().to_pandas(
             expand_metadata=expand_metadata,
             metadata_prefix=metadata_prefix,
+            ignore=ignore,
+            camel_case=camel_case,
             convert_timestamps=convert_timestamps,
         )
-        if ignore:
-            df = df.drop(columns=[c for c in ignore if c in df.columns])
-        if not (expand_aggregates and "aggregates" in df.columns):
+        if not (expand_aggregates and "aggregates" in df.index):
             return df
 
         pd = local_import("pandas")
-        aggregates = convert_dict_to_case(df.pop("aggregates").iloc[0], camel_case)
-        agg_df = pd.DataFrame([aggregates]).add_prefix(aggregates_prefix)
-        return pd.concat([df, agg_df], axis=1).reset_index(drop=True)
+        col = df.squeeze()
+        aggregates = convert_dict_to_case(col.pop("aggregates"), camel_case)
+        return pd.concat((col, pd.Series(aggregates).add_prefix(aggregates_prefix))).to_frame(name="value")
 
 
 class AssetWrite(WriteableCogniteResource["AssetWrite"]):

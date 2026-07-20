@@ -32,7 +32,7 @@ from cognite.client.utils._auxiliary import load_resource_to_dict, load_yaml_or_
 from cognite.client.utils._identifier import IdentifierSequence, InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_camel_case, to_camel_case
-from cognite.client.utils._time import convert_and_isoformat_time_attrs
+from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
 from cognite.client.utils.useful_types import is_sequence_not_str
 
 if TYPE_CHECKING:
@@ -160,28 +160,44 @@ class CogniteResource(ABC):
         """Convert the instance into a pandas DataFrame.
 
         Args:
-            expand_metadata (bool): Expand the metadata into separate columns (default: False).
-            metadata_prefix (str): Prefix to use for the metadata columns, if expanded.
-            ignore (list[str] | None): List of column keys to skip when converting to a data frame.
+            expand_metadata (bool): Expand the metadata into separate rows (default: False).
+            metadata_prefix (str): Prefix to use for the metadata rows, if expanded.
+            ignore (list[str] | None): List of row keys to skip when converting to a data frame. Is applied before expansions.
             camel_case (bool): Convert attribute names to camel case (e.g. `externalId` instead of `external_id`). Does not affect custom data like metadata if expanded.
             convert_timestamps (bool): Convert known attributes storing CDF timestamps (milliseconds since epoch) to datetime. Does not affect custom data like metadata.
 
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        if (list_cls := type(self)._LIST_CLASS) is None:
-            raise NotImplementedError(
-                f"{type(self).__name__} has no list class (_LIST_CLASS is None). Override to_pandas() directly."
+        pd = local_import("pandas")
+
+        if (list_cls := type(self)._LIST_CLASS) is not None:
+            # Delegate to the list class so the timestamp/metadata conversion logic only lives in one place.
+            df = list_cls([self]).to_pandas(
+                camel_case=camel_case,
+                expand_metadata=expand_metadata,
+                metadata_prefix=metadata_prefix,
+                convert_timestamps=convert_timestamps,
             )
-        df = list_cls([self]).to_pandas(
-            camel_case=camel_case,
-            expand_metadata=expand_metadata,
-            metadata_prefix=metadata_prefix,
-            convert_timestamps=convert_timestamps,
-        )
-        if ignore:
-            df = df.drop(columns=[c for c in ignore if c in df.columns])
-        return df
+            if ignore:
+                df = df.drop(columns=[c for c in ignore if c in df.columns])
+            # astype(object) undoes pandas' per-column dtype inference (e.g. numpy.bool_ instead of bool)
+            # so values keep their native Python types, matching the plain dict/Series path below.
+            return df.astype(object).iloc[0].rename("value").to_frame()
+
+        dumped = self.dump(camel_case=camel_case)
+
+        for element in ignore or []:
+            dumped.pop(element, None)
+
+        if convert_timestamps:
+            for k in TIME_ATTRIBUTES.intersection(dumped):
+                dumped[k] = pd.Timestamp(dumped[k], unit="ms")
+
+        if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
+            dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})
+
+        return pd.Series(dumped).to_frame(name="value")
 
     def _repr_html_(self) -> str:
         from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
