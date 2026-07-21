@@ -263,8 +263,15 @@ class RecordsAPI(APIClient):
 
         Examples:
 
-            The examples below aggregate over a stream of padel game statistics records, going
-            from a simple metric to a filtered count to a nested per-player, per-day breakdown.
+            The examples below aggregate over a stream of padel game statistics records; each
+            example builds on the previous one.
+
+            The property paths used below:
+
+                >>> game_time = ["paddle", "game_statistics", "game_time"]
+                >>> player_name = ["paddle", "game_statistics", "player_name"]
+                >>> points_scored = ["paddle", "game_statistics", "points_scored"]
+
 
             Find the average points scored across all games, using a typed helper:
 
@@ -273,12 +280,9 @@ class RecordsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.records.aggregate(
                 ...     stream_id="my-stream",
-                ...     aggregates={
-                ...         "avg_points_scored": Avg(
-                ...             property=["paddle", "game_statistics", "points_scored"]
-                ...         ),
-                ...     },
+                ...     aggregates={"avg_points_scored": Avg(points_scored)},
                 ... )
+
 
             Count the total number of games, and how many of them have a recorded score, only
             considering games updated after a given time:
@@ -288,12 +292,11 @@ class RecordsAPI(APIClient):
                 ...     stream_id="my-stream",
                 ...     aggregates={
                 ...         "total_games": Count(),
-                ...         "games_with_score": Count(
-                ...             property=["paddle", "game_statistics", "points_scored"]
-                ...         ),
+                ...         "games_with_score": Count(points_scored),
                 ...     },
                 ...     last_updated_time=TimeRange(gt=1759276800000),
                 ... )
+
 
             Group games by day, then by player, and for each player-day compute their total,
             highest, and average points scored, alongside the single highest score across all
@@ -310,27 +313,47 @@ class RecordsAPI(APIClient):
                 ...     stream_id="my-stream",
                 ...     aggregates={
                 ...         "my_groups_by_1d_range": TimeHistogram(
-                ...             property=["paddle", "game_statistics", "game_time"],
+                ...             property=game_time,
                 ...             calendar_interval="1d",
                 ...             aggregates={
                 ...                 "my_groups_by_player_name": UniqueValues(
-                ...                     property=["paddle", "game_statistics", "player_name"],
+                ...                     property=player_name,
                 ...                     aggregates={
-                ...                         "my_player_daily_scores_sum": Sum(
-                ...                             property=["paddle", "game_statistics", "points_scored"]
-                ...                         ),
-                ...                         "my_player_daily_scores_maximum": Max(
-                ...                             property=["paddle", "game_statistics", "points_scored"]
-                ...                         ),
+                ...                         "my_player_daily_scores_sum": Sum(points_scored),
+                ...                         "my_player_daily_scores_maximum": Max(points_scored),
                 ...                     },
                 ...                 ),
-                ...                 "my_daily_scores_average": Avg(
-                ...                     property=["paddle", "game_statistics", "points_scored"]
-                ...                 ),
+                ...                 "my_daily_scores_average": Avg(points_scored),
                 ...             },
                 ...         ),
-                ...         "my_scores_maximum_across_all_games": Max(
-                ...             property=["paddle", "game_statistics", "points_scored"]
+                ...         "my_scores_maximum_across_all_games": Max(points_scored),
+                ...     },
+                ... )
+
+
+            Bucket games by day and smooth the daily count with a 7-day moving average, using the
+            ``MovingFunctions`` enum so the pipeline function name cannot be mistyped:
+
+                >>> from cognite.client.data_classes.data_modeling.records import (
+                ...     Count,
+                ...     MovingFunction,
+                ...     MovingFunctions,
+                ...     TimeHistogram,
+                ... )
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={
+                ...         "games_per_day": TimeHistogram(
+                ...             property=game_time,
+                ...             calendar_interval="1d",
+                ...             aggregates={
+                ...                 "games": Count(),
+                ...                 "games_7d_avg": MovingFunction(
+                ...                     buckets_path="games",
+                ...                     window=7,
+                ...                     function=MovingFunctions.UNWEIGHTED_AVG,
+                ...                 ),
+                ...             },
                 ...         ),
                 ...     },
                 ... )
