@@ -7,7 +7,6 @@ from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import filters
-from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, TypeInformation
 from cognite.client.data_classes.data_modeling.records import (
@@ -43,6 +42,7 @@ from cognite.client.data_classes.data_modeling.records import (
     TimeHistogram,
     TimeRange,
     UniqueValues,
+    UnknownRecordsAggregate,
 )
 from tests.utils import jsgz_load
 
@@ -748,10 +748,13 @@ class TestRecordsAggregateBuilders:
             assert type(reloaded) is type(builder)
             assert reloaded.dump() == builder.dump()
 
-    def test_load_unknown_aggregate_falls_back_to_unknown_resource(self) -> None:
+    def test_load_unknown_aggregate_falls_back_to_unknown_records_aggregate(self) -> None:
+        # Unknown/newer aggregate types round-trip via UnknownRecordsAggregate (a real
+        # RecordsAggregate) rather than crashing, so the SDK can lag the API.
         payload = {"futureAggregate": {"property": ["sp", "c", "x"]}}
         loaded = RecordsAggregate.load(payload)
-        assert isinstance(loaded, UnknownCogniteResource)
+        assert isinstance(loaded, UnknownRecordsAggregate)
+        assert isinstance(loaded, RecordsAggregate)
         assert loaded.dump() == payload
 
 

@@ -5,14 +5,13 @@ from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, ClassVar, Literal, cast
+from typing import Any, ClassVar, Literal
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
-    UnknownCogniteResource,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -60,6 +59,7 @@ __all__ = [
     "TimeHistogram",
     "TimeRange",
     "UniqueValues",
+    "UnknownRecordsAggregate",
 ]
 
 
@@ -148,7 +148,7 @@ class RecordsAggregate(CogniteResource):
             return Filters(filters=body["filters"], aggregates=body.get("aggregates"))
         if name == "movingFunction":
             return MovingFunction(buckets_path=body["bucketsPath"], window=body["window"], function=body["function"])
-        return cast(RecordsAggregate, UnknownCogniteResource(resource))
+        return UnknownRecordsAggregate(resource)
 
 
 class _PropertyAggregate(RecordsAggregate):
@@ -341,6 +341,24 @@ class MovingFunction(RecordsAggregate):
 
     def _dump_body(self) -> dict[str, Any]:
         return {"bucketsPath": self.buckets_path, "window": self.window, "function": self.function.value}
+
+
+class UnknownRecordsAggregate(RecordsAggregate):
+    """Fallback for aggregate request shapes this SDK version does not model yet.
+
+    Preserves the raw request body verbatim so an unknown or newer aggregate type still round-trips
+    through :meth:`dump`/:meth:`load` instead of failing. The request builders' :meth:`dump` is
+    always camelCase, so the payload is returned as-is regardless of ``camel_case``.
+    """
+
+    def __init__(self, raw: dict[str, Any]) -> None:
+        self._raw = raw
+
+    def _dump_body(self) -> dict[str, Any]:  # never called: dump is overridden
+        raise NotImplementedError
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return dict(self._raw)
 
 
 class RecordIdSequence(IdentifierSequenceCore[RecordId]):
