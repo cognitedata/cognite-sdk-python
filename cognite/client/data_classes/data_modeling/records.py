@@ -25,16 +25,12 @@ from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_
 __all__ = [
     "Avg",
     "Count",
-    "FilterAggregateResult",
     "Filters",
     "Max",
-    "MetricAggregateResult",
     "Min",
     "MovingFunction",
-    "MovingFunctionAggregateResult",
     "MovingFunctions",
     "NumberHistogram",
-    "NumberHistogramAggregateResult",
     "Record",
     "RecordContainerId",
     "RecordId",
@@ -50,15 +46,19 @@ __all__ = [
     "RecordsAggregateResult",
     "RecordsAggregation",
     "RecordsBucket",
+    "RecordsFilterAggregateResult",
+    "RecordsMetricAggregateResult",
+    "RecordsMovingFunctionAggregateResult",
+    "RecordsNumberHistogramAggregateResult",
+    "RecordsTimeHistogramAggregateResult",
+    "RecordsUniqueValuesAggregateResult",
+    "RecordsUnknownAggregateResult",
     "Sum",
     "SyncRecord",
     "SyncRecordList",
     "TimeHistogram",
-    "TimeHistogramAggregateResult",
     "TimeRange",
     "UniqueValues",
-    "UniqueValuesAggregateResult",
-    "UnknownAggregateResult",
 ]
 
 
@@ -410,18 +410,18 @@ class RecordsAggregateResult(CogniteResource):
         assert len(resource) == 1, f"expected exactly one aggregate result key, got {sorted(resource)}"
         key = next(iter(resource))
         if key in _METRIC_AGGREGATE_KEYS:
-            return MetricAggregateResult._load(resource)
+            return RecordsMetricAggregateResult._load(resource)
         if key == "fnValue":
-            return MovingFunctionAggregateResult._load(resource)
+            return RecordsMovingFunctionAggregateResult._load(resource)
         if (result_cls := _BUCKET_RESULT_BY_KEY.get(key)) is not None:
             return result_cls._load(resource)
-        return UnknownAggregateResult._load(resource)
+        return RecordsUnknownAggregateResult._load(resource)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
 
-class MetricAggregateResult(RecordsAggregateResult):
+class RecordsMetricAggregateResult(RecordsAggregateResult):
     """Metric aggregate result such as ``avg``, ``count``, ``min``, ``max``, or ``sum``."""
 
     def __init__(self, aggregate: str, value: Any) -> None:
@@ -437,7 +437,7 @@ class MetricAggregateResult(RecordsAggregateResult):
         return {self.aggregate: self.value}
 
 
-class MovingFunctionAggregateResult(RecordsAggregateResult):
+class RecordsMovingFunctionAggregateResult(RecordsAggregateResult):
     def __init__(self, fn_value: float) -> None:
         self.fn_value = fn_value
 
@@ -449,7 +449,7 @@ class MovingFunctionAggregateResult(RecordsAggregateResult):
         return {"fnValue" if camel_case else "fn_value": self.fn_value}
 
 
-class UnknownAggregateResult(RecordsAggregateResult):
+class RecordsUnknownAggregateResult(RecordsAggregateResult):
     """Fallback for aggregate result shapes the SDK does not model yet.
 
     Preserves the raw payload verbatim so nothing is lost, snake-casing the API keys on request.
@@ -506,7 +506,7 @@ class RecordsBucket(CogniteResource):
         return output
 
 
-class _BucketAggregateResult(RecordsAggregateResult):
+class _RecordsBucketAggregateResult(RecordsAggregateResult):
     _buckets_key: ClassVar[str]
 
     def __init__(self, buckets: Sequence[RecordsBucket]) -> None:
@@ -525,31 +525,31 @@ class _BucketAggregateResult(RecordsAggregateResult):
         return {key: [bucket.dump(camel_case=camel_case) for bucket in self._buckets]}
 
 
-class UniqueValuesAggregateResult(_BucketAggregateResult):
+class RecordsUniqueValuesAggregateResult(_RecordsBucketAggregateResult):
     _buckets_key = "uniqueValueBuckets"
 
 
-class NumberHistogramAggregateResult(_BucketAggregateResult):
+class RecordsNumberHistogramAggregateResult(_RecordsBucketAggregateResult):
     _buckets_key = "numberHistogramBuckets"
 
 
-class TimeHistogramAggregateResult(_BucketAggregateResult):
+class RecordsTimeHistogramAggregateResult(_RecordsBucketAggregateResult):
     _buckets_key = "timeHistogramBuckets"
 
 
-class FilterAggregateResult(_BucketAggregateResult):
+class RecordsFilterAggregateResult(_RecordsBucketAggregateResult):
     _buckets_key = "filterBuckets"
 
 
 _METRIC_AGGREGATE_KEYS: frozenset[str] = frozenset({"avg", "count", "min", "max", "sum"})
 
-_BUCKET_RESULT_BY_KEY: dict[str, type[_BucketAggregateResult]] = {
+_BUCKET_RESULT_BY_KEY: dict[str, type[_RecordsBucketAggregateResult]] = {
     result_cls._buckets_key: result_cls
     for result_cls in (
-        UniqueValuesAggregateResult,
-        NumberHistogramAggregateResult,
-        TimeHistogramAggregateResult,
-        FilterAggregateResult,
+        RecordsUniqueValuesAggregateResult,
+        RecordsNumberHistogramAggregateResult,
+        RecordsTimeHistogramAggregateResult,
+        RecordsFilterAggregateResult,
     )
 }
 

@@ -12,23 +12,26 @@ from cognite.client.data_classes.data_modeling.instances import InstanceSort, Ty
 from cognite.client.data_classes.data_modeling.records import (
     Avg,
     Count,
-    FilterAggregateResult,
     Filters,
     Max,
-    MetricAggregateResult,
     Min,
     MovingFunction,
-    MovingFunctionAggregateResult,
     MovingFunctions,
     NumberHistogram,
-    NumberHistogramAggregateResult,
     Record,
     RecordContainerId,
     RecordId,
     RecordList,
     RecordsAggregation,
+    RecordsFilterAggregateResult,
+    RecordsMetricAggregateResult,
+    RecordsMovingFunctionAggregateResult,
+    RecordsNumberHistogramAggregateResult,
     RecordSource,
     RecordSourceSelector,
+    RecordsTimeHistogramAggregateResult,
+    RecordsUniqueValuesAggregateResult,
+    RecordsUnknownAggregateResult,
     RecordTargetUnit,
     RecordTargetUnits,
     RecordWrite,
@@ -36,11 +39,8 @@ from cognite.client.data_classes.data_modeling.records import (
     SyncRecord,
     SyncRecordList,
     TimeHistogram,
-    TimeHistogramAggregateResult,
     TimeRange,
     UniqueValues,
-    UniqueValuesAggregateResult,
-    UnknownAggregateResult,
 )
 from tests.utils import jsgz_load
 
@@ -462,32 +462,32 @@ class TestRecordsAPIAggregate:
         )
 
         avg_temp = loaded["avg_temp"]
-        assert isinstance(avg_temp, MetricAggregateResult)
+        assert isinstance(avg_temp, RecordsMetricAggregateResult)
         assert avg_temp.aggregate == "avg"
         assert avg_temp.value == 22.5
 
         by_region = loaded["by_region"]
-        assert isinstance(by_region, UniqueValuesAggregateResult)
+        assert isinstance(by_region, RecordsUniqueValuesAggregateResult)
         assert by_region.buckets[0].value == "north"
         max_temp = by_region.buckets[0].results["max_temp"]
-        assert isinstance(max_temp, MetricAggregateResult)
+        assert isinstance(max_temp, RecordsMetricAggregateResult)
         assert max_temp.value == 30.0
 
         by_number = loaded["by_number"]
-        assert isinstance(by_number, NumberHistogramAggregateResult)
+        assert isinstance(by_number, RecordsNumberHistogramAggregateResult)
         assert by_number.buckets[0].interval_start == 0.0
 
         by_time = loaded["by_time"]
-        assert isinstance(by_time, TimeHistogramAggregateResult)
+        assert isinstance(by_time, RecordsTimeHistogramAggregateResult)
         moving = by_time.buckets[0].results["moving"]
-        assert isinstance(moving, MovingFunctionAggregateResult)
+        assert isinstance(moving, RecordsMovingFunctionAggregateResult)
         assert moving.fn_value == 7.5
 
         by_filter = loaded["by_filter"]
-        assert isinstance(by_filter, FilterAggregateResult)
+        assert isinstance(by_filter, RecordsFilterAggregateResult)
         assert by_filter.buckets[0].count == 4
 
-        assert isinstance(loaded["future"], UnknownAggregateResult)
+        assert isinstance(loaded["future"], RecordsUnknownAggregateResult)
         assert loaded["future"].dump() == {"futureAggregateResult": 1}
 
     def test_aggregate_results_dump_honors_camel_case(self) -> None:
