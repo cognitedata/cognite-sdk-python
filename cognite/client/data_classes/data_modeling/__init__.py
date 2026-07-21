@@ -153,6 +153,7 @@ from cognite.client.data_classes.data_modeling.records import (
     TimeRange,
     UniqueValues,
     UniqueValuesAggregateResult,
+    UnknownAggregateResult,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
 from cognite.client.data_classes.data_modeling.streams import (
@@ -346,6 +347,7 @@ __all__ = [
     "UniqueValuesAggregateResult",
     "UniquenessConstraint",
     "UniquenessConstraintApply",
+    "UnknownAggregateResult",
     "VersionedDataModelingId",
     "View",
     "ViewApply",

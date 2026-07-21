@@ -38,6 +38,7 @@ from cognite.client.data_classes.data_modeling.records import (
     TimeRange,
     UniqueValues,
     UniqueValuesAggregateResult,
+    UnknownAggregateResult,
 )
 from tests.utils import jsgz_load
 
@@ -484,7 +485,93 @@ class TestRecordsAPIAggregate:
         assert isinstance(by_filter, FilterAggregateResult)
         assert by_filter.buckets[0].count == 4
 
+        assert isinstance(loaded["future"], UnknownAggregateResult)
         assert loaded["future"].dump() == {"futureAggregateResult": 1}
+
+    def test_aggregate_results_dump_honors_camel_case(self) -> None:
+        loaded = RecordsAggregation._load(
+            {
+                "aggregates": {
+                    "avg_temp": {"avg": 22.5},
+                    "moving": {"fnValue": 7.5},
+                    "by_time": {
+                        "timeHistogramBuckets": [
+                            {
+                                "intervalStart": "2024-05-16T00:00:00Z",
+                                "count": 3,
+                                "aggregates": {"moving": {"fnValue": 1.5}},
+                            }
+                        ]
+                    },
+                    "future": {"futureAggregateResult": 1},
+                }
+            }
+        )
+
+        # camel_case=True round-trips the API payload unchanged.
+        assert loaded["avg_temp"].dump() == {"avg": 22.5}
+        assert loaded["moving"].dump() == {"fnValue": 7.5}
+        assert loaded["by_time"].dump() == {
+            "timeHistogramBuckets": [
+                {
+                    "intervalStart": "2024-05-16T00:00:00Z",
+                    "count": 3,
+                    "aggregates": {"moving": {"fnValue": 1.5}},
+                }
+            ]
+        }
+        assert loaded["future"].dump() == {"futureAggregateResult": 1}
+
+        # camel_case=False snake-cases every API key while leaving client-defined IDs untouched.
+        assert loaded["moving"].dump(camel_case=False) == {"fn_value": 7.5}
+        assert loaded["by_time"].dump(camel_case=False) == {
+            "time_histogram_buckets": [
+                {
+                    "interval_start": "2024-05-16T00:00:00Z",
+                    "count": 3,
+                    "aggregates": {"moving": {"fn_value": 1.5}},
+                }
+            ]
+        }
+        assert loaded["future"].dump(camel_case=False) == {"future_aggregate_result": 1}
+
+    def test_aggregate_dump_preserves_client_defined_ids(self) -> None:
+        # The keys under "aggregates" are chosen by the caller (see the aggregate() examples), so
+        # they are user data, not API fields: dump() must echo them back verbatim regardless of
+        # camel_case. Only the API-defined field names inside each result get converted.
+        loaded = RecordsAggregation._load(
+            {
+                "aggregates": {
+                    "myTopLevelAvg": {"avg": 22.5},
+                    "myTimeGroups": {
+                        "timeHistogramBuckets": [
+                            {
+                                "intervalStart": "2024-05-16T00:00:00Z",
+                                "count": 3,
+                                "aggregates": {"myNestedMoving": {"fnValue": 1.5}},
+                            }
+                        ]
+                    },
+                    "myFutureShape": {"futureAggregateResult": 1},
+                }
+            }
+        )
+
+        assert loaded.dump(camel_case=False) == {
+            "aggregates": {
+                "myTopLevelAvg": {"avg": 22.5},
+                "myTimeGroups": {
+                    "time_histogram_buckets": [
+                        {
+                            "interval_start": "2024-05-16T00:00:00Z",
+                            "count": 3,
+                            "aggregates": {"myNestedMoving": {"fn_value": 1.5}},
+                        }
+                    ]
+                },
+                "myFutureShape": {"future_aggregate_result": 1},
+            }
+        }
 
 
 class TestRecordsAPIFilter:
