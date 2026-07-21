@@ -16,8 +16,10 @@ from cognite.client.data_classes.data_modeling.records import (
     Filters,
     Max,
     MetricAggregateResult,
+    Min,
     MovingFunction,
     MovingFunctionAggregateResult,
+    MovingFunctions,
     NumberHistogram,
     NumberHistogramAggregateResult,
     Record,
@@ -572,6 +574,155 @@ class TestRecordsAPIAggregate:
                 "myFutureShape": {"future_aggregate_result": 1},
             }
         }
+
+
+class TestRecordsAggregateBuilders:
+    """Dump-only aggregate request builders.
+
+    RecordsAggregate has no load/_load (aggregates are request-only bodies), so the dump output is
+    the contract worth pinning down. Each test asserts a builder serializes to the exact request
+    body the API expects.
+    """
+
+    def test_metric_aggregates_dump_name_and_property(self) -> None:
+        prop = ["sp", "c", "temp"]
+        assert Avg(prop).dump() == {"avg": {"property": prop}}
+        assert Min(prop).dump() == {"min": {"property": prop}}
+        assert Max(prop).dump() == {"max": {"property": prop}}
+        assert Sum(prop).dump() == {"sum": {"property": prop}}
+
+    def test_metric_aggregate_accepts_tuple_property(self) -> None:
+        assert Avg(("sp", "c", "temp")).dump() == {"avg": {"property": ["sp", "c", "temp"]}}
+
+    def test_count_without_property_dumps_empty_body(self) -> None:
+        assert Count().dump() == {"count": {}}
+
+    def test_count_with_property(self) -> None:
+        assert Count(["sp", "c", "temp"]).dump() == {"count": {"property": ["sp", "c", "temp"]}}
+
+    def test_unique_values_minimal(self) -> None:
+        assert UniqueValues(["sp", "c", "region"]).dump() == {"uniqueValues": {"property": ["sp", "c", "region"]}}
+
+    def test_unique_values_with_size_and_nested_aggregates(self) -> None:
+        agg = UniqueValues(
+            ["sp", "c", "region"],
+            aggregates={"max_temp": Max(["sp", "c", "temp"])},
+            size=5,
+        )
+        assert agg.dump() == {
+            "uniqueValues": {
+                "property": ["sp", "c", "region"],
+                "aggregates": {"max_temp": {"max": {"property": ["sp", "c", "temp"]}}},
+                "size": 5,
+            }
+        }
+
+    def test_number_histogram_minimal(self) -> None:
+        assert NumberHistogram(["sp", "c", "salary"], interval=1000).dump() == {
+            "numberHistogram": {"property": ["sp", "c", "salary"], "interval": 1000}
+        }
+
+    def test_number_histogram_with_bounds_and_nested_aggregates(self) -> None:
+        agg = NumberHistogram(
+            ["sp", "c", "salary"],
+            interval=1000,
+            aggregates={"sum_salary": Sum(["sp", "c", "salary"])},
+            hard_bounds={"min": 0, "max": 10000},
+        )
+        assert agg.dump() == {
+            "numberHistogram": {
+                "property": ["sp", "c", "salary"],
+                "interval": 1000,
+                "aggregates": {"sum_salary": {"sum": {"property": ["sp", "c", "salary"]}}},
+                "hardBounds": {"min": 0, "max": 10000},
+            }
+        }
+
+    def test_time_histogram_calendar_interval(self) -> None:
+        assert TimeHistogram(["sp", "c", "ts"], calendar_interval="1d").dump() == {
+            "timeHistogram": {"property": ["sp", "c", "ts"], "calendarInterval": "1d"}
+        }
+
+    def test_time_histogram_fixed_interval_and_bounds(self) -> None:
+        agg = TimeHistogram(
+            ["sp", "c", "ts"],
+            fixed_interval="12h",
+            hard_bounds={"min": "2024-01-01", "max": "2024-02-01"},
+        )
+        assert agg.dump() == {
+            "timeHistogram": {
+                "property": ["sp", "c", "ts"],
+                "fixedInterval": "12h",
+                "hardBounds": {"min": "2024-01-01", "max": "2024-02-01"},
+            }
+        }
+
+    def test_time_histogram_requires_exactly_one_interval(self) -> None:
+        match = "Exactly one of calendar_interval or fixed_interval"
+        with pytest.raises(ValueError, match=match):
+            TimeHistogram(["sp", "c", "ts"])  # neither
+        with pytest.raises(ValueError, match=match):
+            TimeHistogram(["sp", "c", "ts"], calendar_interval="1d", fixed_interval="12h")  # both
+
+    def test_filters_with_filter_objects_and_raw_dicts(self) -> None:
+        agg = Filters(
+            filters=[filters.Range(["createdTime"], gte=1), {"matchAll": {}}],
+            aggregates={"total": Count()},
+        )
+        assert agg.dump() == {
+            "filters": {
+                "filters": [
+                    {"range": {"property": ["createdTime"], "gte": 1}},
+                    {"matchAll": {}},
+                ],
+                "aggregates": {"total": {"count": {}}},
+            }
+        }
+
+    def test_moving_function(self) -> None:
+        agg = MovingFunction(buckets_path="_count", window=3, function="MovingFunctions.unweightedAvg")
+        assert agg.dump() == {
+            "movingFunction": {
+                "bucketsPath": "_count",
+                "window": 3,
+                "function": "MovingFunctions.unweightedAvg",
+            }
+        }
+
+    def test_moving_function_accepts_enum_and_dumps_plain_string(self) -> None:
+        # The MovingFunctions enum guards against typos; either the enum or the raw literal works,
+        # and both dump to the plain wire string.
+        from_enum = MovingFunction("_count", 3, function=MovingFunctions.UNWEIGHTED_AVG)
+        from_str = MovingFunction("_count", 3, function="MovingFunctions.unweightedAvg")
+        assert from_enum.dump() == from_str.dump()
+        assert from_enum.dump()["movingFunction"]["function"] == "MovingFunctions.unweightedAvg"
+
+    def test_moving_function_rejects_unknown_function(self) -> None:
+        with pytest.raises(ValueError):
+            MovingFunction("_count", 3, function="MovingFunctions.median")  # type: ignore[arg-type]
+
+    def test_nested_aggregates_accept_raw_dicts(self) -> None:
+        # Values under `aggregates` may be typed builders or raw dicts; both dump through.
+        agg = UniqueValues(["sp", "c", "region"], aggregates={"raw": {"count": {}}})
+        assert agg.dump() == {
+            "uniqueValues": {
+                "property": ["sp", "c", "region"],
+                "aggregates": {"raw": {"count": {}}},
+            }
+        }
+
+    def test_dump_is_always_camel_case(self) -> None:
+        # Request builders always emit camelCase keys; the camel_case flag is a no-op for them.
+        agg = TimeHistogram(["sp", "c", "ts"], calendar_interval="1d")
+        expected = {"timeHistogram": {"property": ["sp", "c", "ts"], "calendarInterval": "1d"}}
+        assert agg.dump(camel_case=True) == expected
+        assert agg.dump(camel_case=False) == expected
+
+    def test_eq_and_repr(self) -> None:
+        assert Avg(["sp", "c", "temp"]) == Avg(["sp", "c", "temp"])
+        assert Avg(["sp", "c", "temp"]) != Avg(["sp", "c", "other"])
+        assert Avg(["sp", "c", "temp"]) != Max(["sp", "c", "temp"])
+        assert "Avg" in repr(Avg(["sp", "c", "temp"]))
 
 
 class TestRecordsAPIFilter:

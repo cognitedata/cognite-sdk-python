@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
+from enum import Enum
 from typing import Any, ClassVar, Literal
 
 from typing_extensions import Self
@@ -30,6 +32,7 @@ __all__ = [
     "Min",
     "MovingFunction",
     "MovingFunctionAggregateResult",
+    "MovingFunctions",
     "NumberHistogram",
     "NumberHistogramAggregateResult",
     "Record",
@@ -91,20 +94,27 @@ def _dump_aggregate_results(
     }
 
 
-class RecordsAggregate(CogniteResource):
-    """Base class for typed Records aggregate request builders."""
+class RecordsAggregate(ABC):
+    """Base class for typed Records aggregate request builders.
+
+    Aggregates are request-only bodies: they serialize into an aggregate request via :meth:`dump`
+    and are never loaded from API responses (hence no ``load``/``_load``).
+    """
 
     _aggregate_name: ClassVar[str]
 
-    @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError(f"{cls.__name__} is a request builder and cannot be loaded from API responses")
-
+    @abstractmethod
     def _dump_body(self) -> dict[str, Any]:
         raise NotImplementedError
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {self._aggregate_name: _dump_aggregate_value(self._dump_body())}
+
+    def __eq__(self, other: Any) -> bool:
+        return type(self) is type(other) and self.dump() == other.dump()
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({self.dump()})"
 
 
 class _PropertyAggregate(RecordsAggregate):
@@ -263,6 +273,16 @@ class Filters(_NestedAggregate):
         return self._add_aggregates(body)
 
 
+class MovingFunctions(str, Enum):
+    """Pipeline functions available to :class:`MovingFunction`."""
+
+    MAX = "MovingFunctions.max"
+    MIN = "MovingFunctions.min"
+    SUM = "MovingFunctions.sum"
+    UNWEIGHTED_AVG = "MovingFunctions.unweightedAvg"
+    LINEAR_WEIGHTED_AVG = "MovingFunctions.linearWeightedAvg"
+
+
 class MovingFunction(RecordsAggregate):
     """Pipeline aggregate over a parent histogram bucket series."""
 
@@ -272,7 +292,8 @@ class MovingFunction(RecordsAggregate):
         self,
         buckets_path: str,
         window: int,
-        function: Literal[
+        function: MovingFunctions
+        | Literal[
             "MovingFunctions.max",
             "MovingFunctions.min",
             "MovingFunctions.sum",
@@ -282,10 +303,10 @@ class MovingFunction(RecordsAggregate):
     ) -> None:
         self.buckets_path = buckets_path
         self.window = window
-        self.function = function
+        self.function = MovingFunctions(function)
 
     def _dump_body(self) -> dict[str, Any]:
-        return {"bucketsPath": self.buckets_path, "window": self.window, "function": self.function}
+        return {"bucketsPath": self.buckets_path, "window": self.window, "function": self.function.value}
 
 
 class RecordIdSequence(IdentifierSequenceCore[RecordId]):
@@ -384,16 +405,17 @@ class RecordsAggregateResult(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> RecordsAggregateResult:
-        # Each aggregate result carries exactly one top-level key
+        # Dispatcher: each aggregate result carries exactly one top-level key that selects the
+        # concrete result type. Each subclass implements its own _load returning Self.
         assert len(resource) == 1, f"expected exactly one aggregate result key, got {sorted(resource)}"
         key = next(iter(resource))
         if key in _METRIC_AGGREGATE_KEYS:
-            return MetricAggregateResult(aggregate=key, value=resource[key])
+            return MetricAggregateResult._load(resource)
         if key == "fnValue":
-            return MovingFunctionAggregateResult(fn_value=resource[key])
+            return MovingFunctionAggregateResult._load(resource)
         if (result_cls := _BUCKET_RESULT_BY_KEY.get(key)) is not None:
             return result_cls._load(resource)
-        return UnknownAggregateResult(resource)
+        return UnknownAggregateResult._load(resource)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
@@ -406,6 +428,11 @@ class MetricAggregateResult(RecordsAggregateResult):
         self.aggregate = aggregate
         self.value = value
 
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        key = next(iter(resource))
+        return cls(aggregate=key, value=resource[key])
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {self.aggregate: self.value}
 
@@ -413,6 +440,10 @@ class MetricAggregateResult(RecordsAggregateResult):
 class MovingFunctionAggregateResult(RecordsAggregateResult):
     def __init__(self, fn_value: float) -> None:
         self.fn_value = fn_value
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(fn_value=resource["fnValue"])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"fnValue" if camel_case else "fn_value": self.fn_value}
@@ -426,6 +457,10 @@ class UnknownAggregateResult(RecordsAggregateResult):
 
     def __init__(self, raw_result: dict[str, Any]) -> None:
         self._raw_result = raw_result
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(resource)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if camel_case:
@@ -831,10 +866,6 @@ class SyncRecordList(CogniteResourceList[SyncRecord]):
         self.cursor = cursor
         self.has_next = has_next
         self.typing = typing
-
-    @classmethod
-    def _load_response(cls, response: dict[str, Any]) -> Self:
-        return cls._load_raw_api_response([response])
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:
