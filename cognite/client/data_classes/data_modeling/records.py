@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
     CogniteResource,
     CogniteResourceList,
+    UnknownCogniteResource,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
@@ -94,11 +95,11 @@ def _dump_aggregate_results(
     }
 
 
-class RecordsAggregate(ABC):
+class RecordsAggregate(CogniteResource):
     """Base class for typed Records aggregate request builders.
 
-    Aggregates are request-only bodies: they serialize into an aggregate request via :meth:`dump`
-    and are never loaded from API responses (hence no ``load``/``_load``).
+    Aggregates are request bodies: they serialize via :meth:`dump` and can be loaded back from that
+    same representation via :meth:`load`, so an aggregate spec round-trips through a config file.
     """
 
     _aggregate_name: ClassVar[str]
@@ -110,11 +111,44 @@ class RecordsAggregate(ABC):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {self._aggregate_name: _dump_aggregate_value(self._dump_body())}
 
-    def __eq__(self, other: Any) -> bool:
-        return type(self) is type(other) and self.dump() == other.dump()
-
-    def __repr__(self) -> str:
-        return f"{type(self).__name__}({self.dump()})"
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> RecordsAggregate:
+        # A dumped aggregate has a single top-level key naming the aggregate type; dispatch on it.
+        # Nested `aggregates` are kept as their dumped form (dicts), which dump() handles verbatim.
+        name = next(iter(resource))
+        body = resource[name]
+        if name == "avg":
+            return Avg(body["property"])
+        if name == "min":
+            return Min(body["property"])
+        if name == "max":
+            return Max(body["property"])
+        if name == "sum":
+            return Sum(body["property"])
+        if name == "count":
+            return Count(body.get("property"))
+        if name == "uniqueValues":
+            return UniqueValues(body["property"], aggregates=body.get("aggregates"), size=body.get("size"))
+        if name == "numberHistogram":
+            return NumberHistogram(
+                body["property"],
+                interval=body["interval"],
+                aggregates=body.get("aggregates"),
+                hard_bounds=body.get("hardBounds"),
+            )
+        if name == "timeHistogram":
+            return TimeHistogram(
+                body["property"],
+                calendar_interval=body.get("calendarInterval"),
+                fixed_interval=body.get("fixedInterval"),
+                aggregates=body.get("aggregates"),
+                hard_bounds=body.get("hardBounds"),
+            )
+        if name == "filters":
+            return Filters(filters=body["filters"], aggregates=body.get("aggregates"))
+        if name == "movingFunction":
+            return MovingFunction(buckets_path=body["bucketsPath"], window=body["window"], function=body["function"])
+        return cast(RecordsAggregate, UnknownCogniteResource(resource))
 
 
 class _PropertyAggregate(RecordsAggregate):

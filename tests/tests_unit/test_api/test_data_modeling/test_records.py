@@ -7,6 +7,7 @@ from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import filters
+from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, TypeInformation
 from cognite.client.data_classes.data_modeling.records import (
@@ -22,6 +23,7 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordContainerId,
     RecordId,
     RecordList,
+    RecordsAggregate,
     RecordsAggregation,
     RecordsFilterAggregateResult,
     RecordsMetricAggregateResult,
@@ -718,11 +720,39 @@ class TestRecordsAggregateBuilders:
         assert agg.dump(camel_case=True) == expected
         assert agg.dump(camel_case=False) == expected
 
-    def test_eq_and_repr(self) -> None:
+    def test_eq(self) -> None:
         assert Avg(["sp", "c", "temp"]) == Avg(["sp", "c", "temp"])
         assert Avg(["sp", "c", "temp"]) != Avg(["sp", "c", "other"])
         assert Avg(["sp", "c", "temp"]) != Max(["sp", "c", "temp"])
-        assert "Avg" in repr(Avg(["sp", "c", "temp"]))
+
+    def test_load_roundtrips_every_builder(self) -> None:
+        # v7 makes load public so request builders round-trip through config files: the reloaded
+        # object is the same type and dumps identically to the original.
+        prop = ["sp", "c", "temp"]
+        builders: list[RecordsAggregate] = [
+            Avg(prop),
+            Min(prop),
+            Max(prop),
+            Sum(prop),
+            Count(),
+            Count(prop),
+            UniqueValues(["sp", "c", "region"], aggregates={"m": Max(prop)}, size=5),
+            NumberHistogram(prop, interval=10, hard_bounds={"min": 0, "max": 100}),
+            TimeHistogram(["sp", "c", "ts"], calendar_interval="1d"),
+            TimeHistogram(["sp", "c", "ts"], fixed_interval="12h"),
+            Filters(filters=[filters.Range(["createdTime"], gte=1)], aggregates={"n": Count()}),
+            MovingFunction(buckets_path="games", window=7, function=MovingFunctions.UNWEIGHTED_AVG),
+        ]
+        for builder in builders:
+            reloaded = RecordsAggregate.load(builder.dump())
+            assert type(reloaded) is type(builder)
+            assert reloaded.dump() == builder.dump()
+
+    def test_load_unknown_aggregate_falls_back_to_unknown_resource(self) -> None:
+        payload = {"futureAggregate": {"property": ["sp", "c", "x"]}}
+        loaded = RecordsAggregate.load(payload)
+        assert isinstance(loaded, UnknownCogniteResource)
+        assert loaded.dump() == payload
 
 
 class TestRecordsAPIFilter:
