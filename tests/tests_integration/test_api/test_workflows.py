@@ -656,9 +656,10 @@ class TestWorkflowExecutions:
         listed = cognite_client.workflows.executions.list(
             workflow_version_ids=workflow_execution_list[0].as_workflow_id()
         )
-        # Compare by ID: cancel() can return before fields like end_time are
-        # finalized server-side, so full-object equality is flaky.
-        assert {e.id for e in listed} == {e.id for e in workflow_execution_list}
+        # Subset (not equality) check by ID: other tests in this class create additional
+        # executions against the same shared, session-scoped workflow version, and
+        # cancel() can return before fields like end_time are finalized server-side.
+        assert {e.id for e in workflow_execution_list} <= {e.id for e in listed}
 
     def test_list_workflow_executions_by_status(
         self,

@@ -731,7 +731,7 @@ class TestRequirementsParser:
 
     def test_validate_requirements_browser_skips_validation_and_warns(self) -> None:
         invalid_reqs = ["num py==1.23.0"]
-        with patch("cognite.client._api.functions._RUNNING_IN_BROWSER", True):
+        with patch("cognite.client._api.functions._RUNNING_IN_PYODIDE", True):
             with pytest.warns(UserWarning, match="browser environment"):
                 parsed = _validate_and_parse_requirements(invalid_reqs)
         assert parsed == invalid_reqs

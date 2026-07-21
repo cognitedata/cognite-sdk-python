@@ -15,7 +15,7 @@ from typing_extensions import assert_never
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import (
-    _RUNNING_IN_BROWSER,
+    _RUNNING_IN_PYODIDE,
     DEFAULT_LIMIT_READ,
     FILE_DEFAULT_MULTIPART_SIZE,
     FILE_MAX_MULTIPART_COUNT,
@@ -270,6 +270,9 @@ class FilesAPI(APIClient):
         Returns:
             FileMetadata | None: Requested file metadata or None if it does not exist.
 
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve>` instead.
+
         Examples:
 
             Get file metadata by instance id:
@@ -306,6 +309,9 @@ class FilesAPI(APIClient):
 
         Returns:
             FileMetadataList: The requested file metadatas.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve>` instead.
 
         Examples:
 
@@ -509,6 +515,9 @@ class FilesAPI(APIClient):
         Returns:
             FileMetadata: No description.
 
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.upload_content <cognite.client.AsyncCogniteClient.data_modeling.files.upload_content>` instead.
+
         Examples:
 
             Upload file content using instance_id:
@@ -703,7 +712,7 @@ class FilesAPI(APIClient):
         size = path.stat().st_size
         # Pyodide's File System Access API sometimes lies: stat may report st_size=0 even when there's readable
         # bytes on disk (that can be read normally...) Fall back to seek/tell, which reads the true size:
-        if _RUNNING_IN_BROWSER and size == 0:
+        if _RUNNING_IN_PYODIDE and size == 0:
             with path.open("rb") as fh:
                 fh.seek(0, os.SEEK_END)
                 return fh.tell()
@@ -749,6 +758,9 @@ class FilesAPI(APIClient):
 
         Returns:
             FileMetadata: No description.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.upload_content_bytes <cognite.client.AsyncCogniteClient.data_modeling.files.upload_content_bytes>` instead.
 
         Examples:
 
@@ -1177,6 +1189,9 @@ class FilesAPI(APIClient):
 
         Returns:
             dict[int, str] | dict[str, str] | dict[NodeId, str] | dict[int | str | NodeId, str]: Dictionary containing download urls.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve_download_urls <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve_download_urls>` instead.
 
         Examples:
 

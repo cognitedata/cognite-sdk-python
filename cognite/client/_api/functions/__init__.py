@@ -20,7 +20,7 @@ from cognite.client._api.functions.calls import FunctionCallsAPI
 from cognite.client._api.functions.schedules import FunctionSchedulesAPI
 from cognite.client._api.functions.utils import _get_function_internal_id
 from cognite.client._api_client import APIClient
-from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
+from cognite.client._constants import _RUNNING_IN_PYODIDE, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Function,
     FunctionCall,
@@ -786,7 +786,7 @@ def validate_function_folder(root_path: str, function_path: str, skip_folder_val
 
     if not skip_folder_validation:
         module_path = ".".join(Path(function_path).with_suffix("").parts)
-        if not _RUNNING_IN_BROWSER:
+        if not _RUNNING_IN_PYODIDE:
             # We do an actual import to verify the files (this is done in a separate process)
             _check_imports(root_path, module_path)
         else:
@@ -879,7 +879,7 @@ def _validate_and_parse_requirements(requirements: list[str]) -> list[str]:
     Returns:
         list[str]: The parsed requirements
     """
-    if _RUNNING_IN_BROWSER:
+    if _RUNNING_IN_PYODIDE:
         warnings.warn(
             "Running in a browser environment, skipping client-side validation of requirements.",
             UserWarning,

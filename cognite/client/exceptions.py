@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from httpx import Request as HttpxRequest
 
-from cognite.client._constants import _RUNNING_IN_BROWSER
+from cognite.client._constants import _RUNNING_IN_PYODIDE
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._async_helpers import async_timed_cache
 from cognite.client.utils._url import resolve_url
@@ -396,7 +396,7 @@ class CogniteModelFailedError(CogniteException):
 class CogniteAuthorizationError(CogniteAPIError): ...
 
 
-if _RUNNING_IN_BROWSER:
+if _RUNNING_IN_PYODIDE:
     from pyodide.ffi import JsException  # type: ignore [import-not-found]
 else:
 

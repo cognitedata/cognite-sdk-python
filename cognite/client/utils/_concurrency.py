@@ -17,7 +17,7 @@ from typing import (
 
 from typing_extensions import assert_never
 
-from cognite.client._constants import _RUNNING_IN_BROWSER
+from cognite.client._constants import _RUNNING_IN_PYODIDE
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import no_op
 
@@ -756,7 +756,7 @@ def _get_event_loop_executor() -> EventLoopThreadExecutor:
     with _EXECUTOR_INIT_LOCK:
         if _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON is None:
             ex_cls = EventLoopThreadExecutor
-            if _RUNNING_IN_BROWSER:
+            if _RUNNING_IN_PYODIDE:
                 ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
             _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
             _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON.start()
