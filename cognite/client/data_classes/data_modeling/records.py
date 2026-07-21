@@ -364,19 +364,15 @@ class RecordsAggregateResult(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> RecordsAggregateResult:
-        for aggregate in ("avg", "count", "min", "max", "sum"):
-            if aggregate in resource:
-                return MetricAggregateResult(aggregate=aggregate, value=resource[aggregate], raw_result=resource)
-        if "fnValue" in resource:
-            return MovingFunctionAggregateResult(fn_value=resource["fnValue"], raw_result=resource)
-        for result_cls in (
-            UniqueValuesAggregateResult,
-            NumberHistogramAggregateResult,
-            TimeHistogramAggregateResult,
-            FilterAggregateResult,
-        ):
-            if result_cls._buckets_key in resource:
-                return result_cls._load(resource)
+        # Each aggregate result carries exactly one top-level key
+        assert len(resource) == 1, f"expected exactly one aggregate result key, got {sorted(resource)}"
+        key = next(iter(resource))
+        if key in _METRIC_AGGREGATE_KEYS:
+            return MetricAggregateResult(aggregate=key, value=resource[key], raw_result=resource)
+        if key == "fnValue":
+            return MovingFunctionAggregateResult(fn_value=resource[key], raw_result=resource)
+        if (result_cls := _BUCKET_RESULT_BY_KEY.get(key)) is not None:
+            return result_cls._load(resource)
         return cls(resource)
 
     def __init__(self, raw_result: dict[str, Any]) -> None:
@@ -455,6 +451,19 @@ class TimeHistogramAggregateResult(_BucketAggregateResult):
 
 class FilterAggregateResult(_BucketAggregateResult):
     _buckets_key = "filterBuckets"
+
+
+_METRIC_AGGREGATE_KEYS: frozenset[str] = frozenset({"avg", "count", "min", "max", "sum"})
+
+_BUCKET_RESULT_BY_KEY: dict[str, type[_BucketAggregateResult]] = {
+    result_cls._buckets_key: result_cls
+    for result_cls in (
+        UniqueValuesAggregateResult,
+        NumberHistogramAggregateResult,
+        TimeHistogramAggregateResult,
+        FilterAggregateResult,
+    )
+}
 
 
 class RecordsAggregation(CogniteResource):
