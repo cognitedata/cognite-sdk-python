@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c1c634c5d73b6fec4504505828fe6661
+a0109a175e3d0ad1e2cfda71a357f57d
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -16,6 +16,7 @@ from cognite.client.data_classes.data_modeling.instances import InstanceSort
 from cognite.client.data_classes.data_modeling.records import (
     RecordId,
     RecordList,
+    RecordsAggregate,
     RecordsAggregation,
     RecordSourceSelector,
     RecordTargetUnit,
@@ -163,7 +164,7 @@ class SyncRecordsAPI(SyncAPIClient):
 
     def aggregate(
         self,
-        aggregates: Mapping[str, Any],
+        aggregates: Mapping[str, RecordsAggregate | dict[str, Any]],
         *,
         stream_id: str,
         last_updated_time: TimeRange | None = None,
@@ -175,7 +176,8 @@ class SyncRecordsAPI(SyncAPIClient):
         `Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_.
 
         Args:
-            aggregates (Mapping[str, Any]): Aggregate request tree keyed by client-defined aggregate IDs.
+            aggregates (Mapping[str, RecordsAggregate | dict[str, Any]]): Aggregate request tree keyed
+                by client-defined aggregate IDs.
             stream_id (str): External ID of the stream to aggregate from.
             last_updated_time (TimeRange | None): Filter records by last-updated time.
                 **Required** for immutable streams (must include a lower bound).

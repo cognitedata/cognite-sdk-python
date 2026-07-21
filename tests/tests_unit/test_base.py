@@ -38,9 +38,12 @@ from cognite.client.data_classes.data_modeling import (
     NodeListWithCursor,
 )
 from cognite.client.data_classes.data_modeling.records import (
+    Filters,
+    NumberHistogram,
     RecordsAggregateResult,
     RecordsBucket,
     TimeHistogram,
+    UniqueValues,
 )
 from cognite.client.data_classes.datapoints import DatapointsArray, SyntheticDatapoints
 from cognite.client.data_classes.datapoints_subscriptions import SubscriptionDatapoints
@@ -192,13 +195,18 @@ class TestCogniteResource:
                     # UnknownWorkflowTaskParameters: Requires task_type which is only available in the parent object's
                     # full response payload
                     UnknownWorkflowTaskParameters,
-                    # RecordsAggregateResult/RecordsBucket have non-standard constructors, and
-                    # TimeHistogram rejects the fake generator's calendar+fixed interval combo
-                    # (its load/dump round-trip is covered in test_records.py instead).
+                    # RecordsAggregateResult/RecordsBucket have non-standard constructors. The
+                    # nested-aggregate builders (Filters/NumberHistogram/TimeHistogram/UniqueValues)
+                    # take a `RecordsAggregate | dict` map the fake generator can't synthesize
+                    # (abstract union), and TimeHistogram also has an interval guard; their
+                    # load/dump round-trip is covered in test_records.py instead.
                     *all_concrete_subclasses(RecordsAggregateResult),
                     RecordsAggregateResult,
                     RecordsBucket,
+                    Filters,
+                    NumberHistogram,
                     TimeHistogram,
+                    UniqueValues,
                 },
             )
         ],
@@ -233,7 +241,10 @@ class TestCogniteResource:
                     *all_concrete_subclasses(RecordsAggregateResult),
                     RecordsAggregateResult,
                     RecordsBucket,
+                    Filters,
+                    NumberHistogram,
                     TimeHistogram,
+                    UniqueValues,
                 },
             )
         ],
@@ -341,7 +352,10 @@ class TestCogniteResource:
                     *all_concrete_subclasses(RecordsAggregateResult),
                     RecordsAggregateResult,
                     RecordsBucket,
+                    Filters,
+                    NumberHistogram,
                     TimeHistogram,
+                    UniqueValues,
                 },
             )
         ],
@@ -382,7 +396,10 @@ class TestCogniteResource:
                     *all_concrete_subclasses(RecordsAggregateResult),
                     RecordsAggregateResult,
                     RecordsBucket,
+                    Filters,
+                    NumberHistogram,
                     TimeHistogram,
+                    UniqueValues,
                 },
             )
         ],
@@ -436,7 +453,10 @@ class TestCogniteResource:
                     *all_concrete_subclasses(RecordsAggregateResult),
                     RecordsAggregateResult,
                     RecordsBucket,
+                    Filters,
+                    NumberHistogram,
                     TimeHistogram,
+                    UniqueValues,
                 },
             )
         ],

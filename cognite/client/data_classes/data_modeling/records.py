@@ -196,7 +196,7 @@ class Sum(_PropertyAggregate):
 
 
 class _NestedAggregate(RecordsAggregate):
-    def __init__(self, aggregates: Mapping[str, Any] | None = None) -> None:
+    def __init__(self, aggregates: Mapping[str, RecordsAggregate | dict[str, Any]] | None = None) -> None:
         self.aggregates = aggregates
 
     def _add_aggregates(self, body: dict[str, Any]) -> dict[str, Any]:
@@ -213,7 +213,7 @@ class UniqueValues(_NestedAggregate):
     def __init__(
         self,
         property: list[str] | tuple[str, ...],
-        aggregates: Mapping[str, Any] | None = None,
+        aggregates: Mapping[str, RecordsAggregate | dict[str, Any]] | None = None,
         size: int | None = None,
     ):
         super().__init__(aggregates)
@@ -237,7 +237,7 @@ class NumberHistogram(_NestedAggregate):
         self,
         property: list[str] | tuple[str, ...],
         interval: float,
-        aggregates: Mapping[str, Any] | None = None,
+        aggregates: Mapping[str, RecordsAggregate | dict[str, Any]] | None = None,
         hard_bounds: Mapping[str, float] | None = None,
     ) -> None:
         super().__init__(aggregates)
@@ -264,7 +264,7 @@ class TimeHistogram(_NestedAggregate):
         *,
         calendar_interval: str | None = None,
         fixed_interval: str | None = None,
-        aggregates: Mapping[str, Any] | None = None,
+        aggregates: Mapping[str, RecordsAggregate | dict[str, Any]] | None = None,
         hard_bounds: Mapping[str, str] | None = None,
     ) -> None:
         if (calendar_interval is None) == (fixed_interval is None):
@@ -295,7 +295,7 @@ class Filters(_NestedAggregate):
     def __init__(
         self,
         filters: Sequence[Filter | dict[str, Any]],
-        aggregates: Mapping[str, Any] | None = None,
+        aggregates: Mapping[str, RecordsAggregate | dict[str, Any]] | None = None,
     ) -> None:
         super().__init__(aggregates)
         self.filters = filters

@@ -11,6 +11,7 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordId,
     RecordIdSequence,
     RecordList,
+    RecordsAggregate,
     RecordsAggregation,
     RecordSourceSelector,
     RecordTargetUnit,
@@ -239,7 +240,7 @@ class RecordsAPI(APIClient):
 
     async def aggregate(
         self,
-        aggregates: Mapping[str, Any],
+        aggregates: Mapping[str, RecordsAggregate | dict[str, Any]],
         *,
         stream_id: str,
         last_updated_time: TimeRange | None = None,
@@ -250,7 +251,8 @@ class RecordsAPI(APIClient):
         """`Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_.
 
         Args:
-            aggregates (Mapping[str, Any]): Aggregate request tree keyed by client-defined aggregate IDs.
+            aggregates (Mapping[str, RecordsAggregate | dict[str, Any]]): Aggregate request tree keyed
+                by client-defined aggregate IDs.
             stream_id (str): External ID of the stream to aggregate from.
             last_updated_time (TimeRange | None): Filter records by last-updated time.
                 **Required** for immutable streams (must include a lower bound).
