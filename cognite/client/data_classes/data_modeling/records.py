@@ -398,12 +398,17 @@ class MovingFunctionAggregateResult(RecordsAggregateResult):
 
 
 class RecordsBucket(CogniteResource):
-    def __init__(self, raw_bucket: dict[str, Any]) -> None:
-        self._raw_bucket = raw_bucket
-        self.count = raw_bucket["count"]
-        self.value = raw_bucket.get("value")
-        self.interval_start = raw_bucket.get("intervalStart")
-        self.aggregates = raw_bucket.get("aggregates", {})
+    def __init__(
+        self,
+        count: int,
+        value: Any = None,
+        interval_start: float | str | None = None,
+        aggregates: dict[str, Any] | None = None,
+    ) -> None:
+        self.count = count
+        self.value = value
+        self.interval_start = interval_start
+        self.aggregates = aggregates or {}
         self.results = {
             aggregate_id: RecordsAggregateResult._load(result)
             for aggregate_id, result in self.aggregates.items()
@@ -412,10 +417,22 @@ class RecordsBucket(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(resource)
+        return cls(
+            count=resource["count"],
+            value=resource.get("value"),
+            interval_start=resource.get("intervalStart"),
+            aggregates=resource.get("aggregates"),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return self._raw_bucket
+        output: dict[str, Any] = {"count": self.count}
+        if self.value is not None:
+            output["value"] = self.value
+        if self.interval_start is not None:
+            output["intervalStart" if camel_case else "interval_start"] = self.interval_start
+        if self.aggregates:
+            output["aggregates"] = _dump_aggregate_value(self.aggregates)
+        return output
 
 
 class _BucketAggregateResult(RecordsAggregateResult):
