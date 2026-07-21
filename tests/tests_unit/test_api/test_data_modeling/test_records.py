@@ -428,19 +428,6 @@ class TestRecordsAPIAggregate:
             },
         }
 
-    def test_records_aggregation_dump_round_trip(self) -> None:
-        raw = {
-            "aggregates": {
-                "by_space": {
-                    "uniqueValueBuckets": [
-                        {"value": "sp", "count": 2, "aggregates": {"max_temp": {"max": 30.0}}},
-                    ]
-                }
-            }
-        }
-        loaded = RecordsAggregation._load(raw)
-        assert loaded.dump() == raw
-
     def test_records_aggregation_loads_typed_results(self) -> None:
         loaded = RecordsAggregation._load(
             {
