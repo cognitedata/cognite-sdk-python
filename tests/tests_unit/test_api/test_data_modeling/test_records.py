@@ -10,7 +10,7 @@ from cognite.client.data_classes import filters
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, TypeInformation
 from cognite.client.data_classes.data_modeling.records import (
-    Avg,
+    Average,
     Count,
     Filters,
     Max,
@@ -358,7 +358,7 @@ class TestRecordsAPIAggregate:
                     ["sp", "container-x", "timestamp"],
                     calendar_interval="1d",
                     aggregates={
-                        "avg_temp": Avg(["sp", "container-x", "temp"]),
+                        "avg_temp": Average(["sp", "container-x", "temp"]),
                         "moving_count": MovingFunction(
                             buckets_path="_count",
                             window=3,
@@ -588,13 +588,13 @@ class TestRecordsAggregateBuilders:
 
     def test_metric_aggregates_dump_name_and_property(self) -> None:
         prop = ["sp", "c", "temp"]
-        assert Avg(prop).dump() == {"avg": {"property": prop}}
+        assert Average(prop).dump() == {"avg": {"property": prop}}
         assert Min(prop).dump() == {"min": {"property": prop}}
         assert Max(prop).dump() == {"max": {"property": prop}}
         assert Sum(prop).dump() == {"sum": {"property": prop}}
 
     def test_metric_aggregate_accepts_tuple_property(self) -> None:
-        assert Avg(("sp", "c", "temp")).dump() == {"avg": {"property": ["sp", "c", "temp"]}}
+        assert Average(("sp", "c", "temp")).dump() == {"avg": {"property": ["sp", "c", "temp"]}}
 
     def test_count_without_property_dumps_empty_body(self) -> None:
         assert Count().dump() == {"count": {}}
@@ -721,16 +721,16 @@ class TestRecordsAggregateBuilders:
         assert agg.dump(camel_case=False) == expected
 
     def test_eq(self) -> None:
-        assert Avg(["sp", "c", "temp"]) == Avg(["sp", "c", "temp"])
-        assert Avg(["sp", "c", "temp"]) != Avg(["sp", "c", "other"])
-        assert Avg(["sp", "c", "temp"]) != Max(["sp", "c", "temp"])
+        assert Average(["sp", "c", "temp"]) == Average(["sp", "c", "temp"])
+        assert Average(["sp", "c", "temp"]) != Average(["sp", "c", "other"])
+        assert Average(["sp", "c", "temp"]) != Max(["sp", "c", "temp"])
 
     def test_load_roundtrips_every_builder(self) -> None:
         # v7 makes load public so request builders round-trip through config files: the reloaded
         # object is the same type and dumps identically to the original.
         prop = ["sp", "c", "temp"]
         builders: list[RecordsAggregate] = [
-            Avg(prop),
+            Average(prop),
             Min(prop),
             Max(prop),
             Sum(prop),

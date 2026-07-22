@@ -278,11 +278,11 @@ class RecordsAPI(APIClient):
             Find the average points scored across all games, using a typed helper:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling.records import Avg
+                >>> from cognite.client.data_classes.data_modeling.records import Average
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.records.aggregate(
                 ...     stream_id="my-stream",
-                ...     aggregates={"avg_points_scored": Avg(points_scored)},
+                ...     aggregates={"avg_points_scored": Average(points_scored)},
                 ... )
 
 
@@ -305,7 +305,7 @@ class RecordsAPI(APIClient):
             games:
 
                 >>> from cognite.client.data_classes.data_modeling.records import (
-                ...     Avg,
+                ...     Average,
                 ...     Max,
                 ...     Sum,
                 ...     TimeHistogram,
@@ -325,7 +325,7 @@ class RecordsAPI(APIClient):
                 ...                         "my_player_daily_scores_maximum": Max(points_scored),
                 ...                     },
                 ...                 ),
-                ...                 "my_daily_scores_average": Avg(points_scored),
+                ...                 "my_daily_scores_average": Average(points_scored),
                 ...             },
                 ...         ),
                 ...         "my_scores_maximum_across_all_games": Max(points_scored),

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-a0109a175e3d0ad1e2cfda71a357f57d
+b24d174ece0a93fee285c7a4e78766b0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -203,11 +203,11 @@ class SyncRecordsAPI(SyncAPIClient):
             Find the average points scored across all games, using a typed helper:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling.records import Avg
+                >>> from cognite.client.data_classes.data_modeling.records import Average
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.records.aggregate(
                 ...     stream_id="my-stream",
-                ...     aggregates={"avg_points_scored": Avg(points_scored)},
+                ...     aggregates={"avg_points_scored": Average(points_scored)},
                 ... )
 
 
@@ -230,7 +230,7 @@ class SyncRecordsAPI(SyncAPIClient):
             games:
 
                 >>> from cognite.client.data_classes.data_modeling.records import (
-                ...     Avg,
+                ...     Average,
                 ...     Max,
                 ...     Sum,
                 ...     TimeHistogram,
@@ -250,7 +250,7 @@ class SyncRecordsAPI(SyncAPIClient):
                 ...                         "my_player_daily_scores_maximum": Max(points_scored),
                 ...                     },
                 ...                 ),
-                ...                 "my_daily_scores_average": Avg(points_scored),
+                ...                 "my_daily_scores_average": Average(points_scored),
                 ...             },
                 ...         ),
                 ...         "my_scores_maximum_across_all_games": Max(points_scored),

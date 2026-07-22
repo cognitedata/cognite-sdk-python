@@ -23,7 +23,7 @@ from cognite.client.utils._identifier import IdentifierSequenceCore, RecordId
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 
 __all__ = [
-    "Avg",
+    "Average",
     "Count",
     "Filters",
     "Max",
@@ -118,7 +118,7 @@ class RecordsAggregate(CogniteResource):
         name = next(iter(resource))
         body = resource[name]
         if name == "avg":
-            return Avg(body["property"])
+            return Average(body["property"])
         if name == "min":
             return Min(body["property"])
         if name == "max":
@@ -159,7 +159,7 @@ class _PropertyAggregate(RecordsAggregate):
         return {"property": self.property}
 
 
-class Avg(_PropertyAggregate):
+class Average(_PropertyAggregate):
     """Average aggregate over a container property."""
 
     _aggregate_name = "avg"
