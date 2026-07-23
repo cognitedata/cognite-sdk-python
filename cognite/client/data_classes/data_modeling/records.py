@@ -21,6 +21,7 @@ from cognite.client.data_classes.data_modeling.instances import TypeInformation
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._identifier import IdentifierSequenceCore, RecordId
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
+from cognite.client.utils.useful_types import SequenceNotStr
 
 __all__ = [
     "Average",
@@ -152,7 +153,7 @@ class RecordsAggregate(CogniteResource):
 
 
 class _PropertyAggregate(RecordsAggregate):
-    def __init__(self, property: list[str] | tuple[str, ...]) -> None:
+    def __init__(self, property: SequenceNotStr[str]) -> None:
         self.property = list(property)
 
     def _dump_body(self) -> dict[str, Any]:
@@ -170,7 +171,7 @@ class Count(RecordsAggregate):
 
     _aggregate_name = "count"
 
-    def __init__(self, property: list[str] | tuple[str, ...] | None = None) -> None:
+    def __init__(self, property: SequenceNotStr[str] | None = None) -> None:
         self.property = list(property) if property is not None else None
 
     def _dump_body(self) -> dict[str, Any]:
@@ -212,7 +213,7 @@ class UniqueValues(_NestedAggregate):
 
     def __init__(
         self,
-        property: list[str] | tuple[str, ...],
+        property: SequenceNotStr[str],
         aggregates: Mapping[str, RecordsAggregate | dict[str, Any]] | None = None,
         size: int | None = None,
     ):
@@ -235,7 +236,7 @@ class NumberHistogram(_NestedAggregate):
 
     def __init__(
         self,
-        property: list[str] | tuple[str, ...],
+        property: SequenceNotStr[str],
         interval: float,
         aggregates: Mapping[str, RecordsAggregate | dict[str, Any]] | None = None,
         hard_bounds: Mapping[str, float] | None = None,
@@ -260,7 +261,7 @@ class TimeHistogram(_NestedAggregate):
 
     def __init__(
         self,
-        property: list[str] | tuple[str, ...],
+        property: SequenceNotStr[str],
         *,
         calendar_interval: str | None = None,
         fixed_interval: str | None = None,
