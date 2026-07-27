@@ -136,7 +136,11 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
                 ...     external_ids=["revision1", "revision2"]
                 ... )
         """
-        return run_sync(self.__async_client.simulators.models.revisions.retrieve(ids=ids, external_ids=external_ids))
+        return run_sync(
+            self.__async_client.simulators.models.revisions.retrieve(  # type: ignore [call-overload]
+                ids=ids, external_ids=external_ids
+            )
+        )
 
     @overload
     def __call__(
