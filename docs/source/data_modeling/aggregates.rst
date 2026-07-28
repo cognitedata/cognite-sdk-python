@@ -26,8 +26,8 @@ after any single one of them. Properties are referenced by their full container 
 .. note::
 
     These are not the same classes as the identically named ones in
-    ``cognite.client.data_classes.aggregations``, which belong to the deprecated
-    ``instances.aggregate`` endpoint and reference view properties by identifier instead.
+    ``cognite.client.data_classes.aggregations``, which belong to the ``instances.aggregate``
+    endpoint and reference view properties by identifier instead.
 
 Aggregate data classes
 ^^^^^^^^^^^^^^^^^^^^^^

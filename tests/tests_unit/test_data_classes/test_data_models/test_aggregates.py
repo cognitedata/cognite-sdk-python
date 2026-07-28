@@ -200,31 +200,31 @@ class TestAggregateBuilders:
         assert loaded.dump() == payload
 
 
-class TestCoexistenceWithLegacyAggregations:
-    """The legacy ``data_classes.aggregations`` module is deprecated but still public.
+class TestCoexistenceWithTheAggregationsModule:
+    """``data_classes.aggregations`` defines its own ``Average``, ``Count``, ``Min``, ``Max`` and
+    ``Sum`` for ``instances.aggregate``, with different property semantics.
 
-    Both modules define ``Average``, ``Count``, ``Min``, ``Max`` and ``Sum`` for different endpoints,
-    which is only safe as long as neither leaks into a namespace holding the other. These tests pin
-    that down; see ``design.md`` for the full rationale.
+    Sharing those names across the two modules is only safe as long as neither leaks into a namespace
+    holding the other, so these tests pin the reachability of both.
     """
 
-    def test_dm_aggregations_attribute_is_the_legacy_module(self) -> None:
+    def test_dm_aggregations_attribute_is_the_instances_module(self) -> None:
         # Guards against anyone adding cognite/client/data_classes/data_modeling/aggregations.py:
         # importing such a submodule would rebind this attribute and break `dm.aggregations.Average`.
-        from cognite.client.data_classes import aggregations as legacy
+        from cognite.client.data_classes import aggregations
         from cognite.client.data_classes import data_modeling as dm
         from cognite.client.data_classes.data_modeling import instances
 
-        assert dm.aggregations is legacy
-        assert dm.Aggregation is legacy.Aggregation
-        assert dm.AggregatedValue is legacy.AggregatedValue
+        assert dm.aggregations is aggregations
+        assert dm.Aggregation is aggregations.Aggregation
+        assert dm.AggregatedValue is aggregations.AggregatedValue
         # An incidental re-export rather than a declared one, hence getattr - but it is public today
-        # and must keep pointing at the legacy class.
-        assert getattr(instances, "AggregatedNumberedValue") is legacy.AggregatedNumberedValue
+        # and must keep pointing at the same class.
+        assert getattr(instances, "AggregatedNumberedValue") is aggregations.AggregatedNumberedValue
 
     def test_aggregates_are_not_exported_into_namespaces(self) -> None:
-        # The module is deliberately reachable only by its own path, so the names it shares with the
-        # legacy module can never collide.
+        # This module is deliberately reachable only by its own path, so the names it shares with
+        # data_classes.aggregations can never collide.
         from cognite.client import data_classes as dc
         from cognite.client.data_classes import data_modeling as dm
 
@@ -234,9 +234,9 @@ class TestCoexistenceWithLegacyAggregations:
 
     def test_the_two_aggregate_families_are_disjoint(self) -> None:
         # Both families dispatch on the same wire keys, so load() must stay family-scoped.
-        from cognite.client.data_classes import aggregations as legacy
+        from cognite.client.data_classes import aggregations
 
-        assert not issubclass(Aggregate, legacy.Aggregation)
-        assert not issubclass(legacy.Aggregation, Aggregate)
-        assert type(legacy.Aggregation.load({"avg": {"property": "height"}})) is legacy.Average
+        assert not issubclass(Aggregate, aggregations.Aggregation)
+        assert not issubclass(aggregations.Aggregation, Aggregate)
+        assert type(aggregations.Aggregation.load({"avg": {"property": "height"}})) is aggregations.Average
         assert type(Aggregate.load({"avg": {"property": ["sp", "c", "temp"]}})) is Average

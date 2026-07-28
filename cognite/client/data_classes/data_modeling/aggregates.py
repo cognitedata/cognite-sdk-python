@@ -5,10 +5,10 @@ named after any single endpoint: Records uses them today, and the upcoming data 
 endpoint - which is modelled on the Records one - will reuse them.
 
 Nothing in this module is exported through ``cognite.client.data_classes.data_modeling``. That
-namespace already re-exports the legacy :mod:`cognite.client.data_classes.aggregations` module, which
-is scheduled for deprecation but still defines its own ``Average``, ``Count``, ``Min``, ``Max`` and
-``Sum`` for ``instances.aggregate``. Keeping this module reachable only by its own path is what lets
-the two families share those names without either shadowing the other. Import it as::
+namespace already re-exports :mod:`cognite.client.data_classes.aggregations`, which defines its own
+``Average``, ``Count``, ``Min``, ``Max`` and ``Sum`` for ``instances.aggregate``. Keeping this module
+reachable only by its own path is what lets the two families share those names without either
+shadowing the other. Import it as::
 
     from cognite.client.data_classes.data_modeling import aggregates as aggs
 
