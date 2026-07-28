@@ -1,12 +1,13 @@
 """
 ===============================================================================
-e831776638a38a3743ec412fd1dbe6c7
+d0d05414cffeb1d03e474a7d862e6fb7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
@@ -35,6 +36,12 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
+
+MAX_RETRIES = 5
+REQUIREMENTS_FILE_NAME = "requirements.txt"
+REQUIREMENTS_REG = re.compile("(\\[\\/?requirements\\]){1}$", flags=re.M)
+UNCOMMENTED_LINE_REG = re.compile("^[^\\#]]*.*")
+ALLOWED_HANDLE_ARGS = frozenset({"data", "client", "secrets", "function_call_info"})
 
 
 class SyncFunctionsAPI(SyncAPIClient):
@@ -168,7 +175,7 @@ class SyncFunctionsAPI(SyncAPIClient):
             env_vars (dict[str, str] | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
             cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
             memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            runtime (RunTime | None): The function runtime. Valid values are ["py310", "py311", "py312", "py313", `None`], and `None` translates to the API default which will change over time. The runtime "py313" resolves to the latest version of the Python 3.13 series.
+            runtime (RunTime | None): The function runtime. Valid values are ["py311", "py312", "py313", `None`], and `None` translates to the API default which will change over time. The runtime "py313" resolves to the latest version of the Python 3.13 series.
             metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/use_functions#additional-arguments>`_
             extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/use_functions#additional-arguments>`_
