@@ -16,6 +16,7 @@ from cognite.client.data_classes.agents import (
     QueryTimeSeriesDatapointsAgentToolUpsert,
     SummarizeDocumentAgentToolUpsert,
 )
+from cognite.client.data_classes.agents.agent_tools import InstanceSpaces
 from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._text import random_string
 
@@ -28,7 +29,20 @@ def permanent_agent(cognite_client: CogniteClient) -> Agent:
         name="Permanent Agent",
         description="This agent is used for permanent testing purposes.",
         instructions="Instructions for the permanent agent.",
-        model="azure/gpt-4o",
+        # NOTE: This model will eventually be retired and need updating again. To list native models
+        # sorted by retirement date (pick one near the top), use the (alpha) services availability endpoint:
+        #   res = client.get(
+        #       f"/api/v1/projects/{client.config.project}/ai/services/availability",
+        #       headers={"cdf-version": "20230101-alpha"},
+        #   ).json()
+        #   sorted(
+        #       [model for model in res["languageModels"] if model["native"]],
+        #       key=lambda model: model["earliestRetirementDate"],
+        #       reverse=True,
+        #   )
+        # Or pick one manually from:
+        # https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_language_models
+        model="gcp/claude-4.5-haiku",  # Note: Should be a fast and cheap like haiku or flash
         tools=[
             QueryKnowledgeGraphAgentToolUpsert(
                 name="find_assets",
@@ -49,8 +63,7 @@ def permanent_agent(cognite_client: CogniteClient) -> Agent:
         ],
     )
     existing = cognite_client.agents.retrieve(external_ids=agent.external_id, ignore_unknown_ids=True)
-    if existing:
-        # If the agent already exists, return it without creating a new one
+    if existing and existing.model == agent.model:
         return existing
     return cognite_client.agents.upsert(agent)
 
@@ -68,7 +81,6 @@ class TestAgentsAPI:
             external_id=f"test_minimal_agent_{random_string(10)}",
             name="Minimal Test Agent",
             description="A minimal test agent without tools.",
-            model="azure/gpt-4o",
             instructions="This is a test agent for integration testing.",
             tools=[
                 QueryKnowledgeGraphAgentToolUpsert(
@@ -83,7 +95,7 @@ class TestAgentsAPI:
                                 view_external_ids=["CogniteAsset"],
                             )
                         ],
-                        instance_spaces=None,
+                        instance_spaces=InstanceSpaces(type="all"),
                         version="v2",
                     ),
                 ),
@@ -105,6 +117,10 @@ class TestAgentsAPI:
         created_agent: Agent | None = None
         try:
             created_agent = cognite_client.agents.upsert(agent)
+            # Let the server pick model and runtime_version (both default to the
+            # latest) so this test doesn't need bumping on retirements/releases.
+            agent.model = created_agent.model
+            agent.runtime_version = created_agent.runtime_version
             assert created_agent.as_write() == agent
 
             retrieved_agent = cognite_client.agents.retrieve(external_ids=created_agent.external_id)

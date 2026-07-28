@@ -1,110 +1,73 @@
 Identity and access management
 ==============================
+.. currentmodule:: cognite.client
+
 Compare access rights (capabilities)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Verify my capabilities
-~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.IAMAPI.verify_capabilities
+.. autosummary::
+   :methods:
+   :toctree: generated/ 
+   :template: custom-automethods-template.rst
 
-Compare capabilities
-~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.IAMAPI.compare_capabilities
+   AsyncCogniteClient.iam
 
 Principals
 ^^^^^^^^^^^
+.. autosummary::
+   :methods:
+   :toctree: generated/ 
+   :template: custom-automethods-template.rst
 
-Get the current caller's principal
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.org_apis.principals.PrincipalsAPI.me
+   AsyncCogniteClient.iam.principals
 
-Retrieve a principal
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.org_apis.principals.PrincipalsAPI.retrieve
-
-List principals
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.org_apis.principals.PrincipalsAPI.list
 
 Tokens
 ^^^^^^
-Inspect the token currently used by the client
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.TokenAPI.inspect
+.. autosummary::
+   :methods:
+   :toctree: generated/ 
+   :template: custom-automethods-template.rst
+
+   AsyncCogniteClient.iam.token
 
 Groups
 ^^^^^^
-List groups
-~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/ 
+   :template: custom-automethods-template.rst
 
-Create groups
-~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.create
-
-Delete groups
-~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.GroupsAPI.delete
+   AsyncCogniteClient.iam.groups
 
 
 Security categories
 ^^^^^^^^^^^^^^^^^^^
-List security categories
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/ 
+   :template: custom-automethods-template.rst
 
-Create security categories
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.create
-
-Delete security categories
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SecurityCategoriesAPI.delete
+   AsyncCogniteClient.iam.security_categories
 
 
 Sessions
 ^^^^^^^^^^^^^^^^^^^
-List sessions
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/ 
+   :template: custom-automethods-template.rst
 
-Create a session
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.create
-
-Retrieve a session
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.retrieve
-
-Revoke a session
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.SessionsAPI.revoke
+   AsyncCogniteClient.iam.sessions
 
 
 User Profiles
 ^^^^^^^^^^^^^^^^^^^
-Enable user profiles for project
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.UserProfilesAPI.enable
+.. autosummary::
+   :methods:
+   :toctree: generated/ 
+   :template: custom-automethods-template.rst
 
-Disable user profiles for project
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.UserProfilesAPI.disable
-
-Get my own user profile
-~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.UserProfilesAPI.me
-
-List user profiles
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.UserProfilesAPI.list
-
-Retrieve one or more user profiles
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.UserProfilesAPI.retrieve
-
-Search for user profiles
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-.. automethod:: cognite.client._api.iam.UserProfilesAPI.search
+   AsyncCogniteClient.iam.user_profiles
 
 
 Data classes

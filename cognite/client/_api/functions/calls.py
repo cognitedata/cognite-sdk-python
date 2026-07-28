@@ -1,35 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
+from cognite.client._api.functions.utils import _get_function_identifier, _get_function_internal_id
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes import FunctionCall, FunctionCallList, FunctionCallLog
+from cognite.client.data_classes import (
+    FunctionCall,
+    FunctionCallList,
+    FunctionCallLog,
+)
 from cognite.client.data_classes.functions import FunctionCallsFilter
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-
-
-def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identifier) -> int:
-    primitive = identifier.as_primitive()
-    if identifier.is_id:
-        return primitive
-
-    if identifier.is_external_id:
-        function = cognite_client.functions.retrieve(external_id=primitive)
-        if function:
-            return function.id
-
-    raise ValueError(f'Function with external ID "{primitive}" is not found')
-
-
-def _get_function_identifier(function_id: int | None, function_external_id: str | None) -> Identifier:
-    identifier = IdentifierSequence.load(function_id, function_external_id, id_name="function")
-    if identifier.is_singleton():
-        return identifier[0]
-    raise ValueError("Exactly one of function_id and function_external_id must be specified")
+from cognite.client.utils._identifier import IdentifierSequence
 
 
 class FunctionCallsAPI(APIClient):
@@ -37,7 +17,7 @@ class FunctionCallsAPI(APIClient):
     _RESOURCE_PATH_RESPONSE = "/functions/{}/calls/{}/response"
     _RESOURCE_PATH_LOGS = "/functions/{}/calls/{}/logs"
 
-    def list(
+    async def list(
         self,
         function_id: int | None = None,
         function_external_id: str | None = None,
@@ -47,7 +27,9 @@ class FunctionCallsAPI(APIClient):
         end_time: dict[str, int] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionCallList:
-        """`List all calls associated with a specific function id. <https://developer.cognite.com/api#tag/Function-calls/operation/listFunctionCalls>`_ Either function_id or function_external_id must be specified.
+        """`List all calls associated with a specific function id <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/listFunctionCalls>`_.
+
+        Either function_id or function_external_id must be specified.
 
         Args:
             function_id (int | None): ID of the function on which the calls were made.
@@ -65,8 +47,9 @@ class FunctionCallsAPI(APIClient):
 
             List function calls:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> calls = client.functions.calls.list(function_id=1)
 
             List function calls directly on a function object:
@@ -76,7 +59,7 @@ class FunctionCallsAPI(APIClient):
 
         """
         identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        function_id = await _get_function_internal_id(self._cognite_client, identifier)
         filter = FunctionCallsFilter(
             status=status,
             schedule_id=schedule_id,
@@ -84,7 +67,7 @@ class FunctionCallsAPI(APIClient):
             end_time=end_time,
         ).dump(camel_case=True)
         resource_path = self._RESOURCE_PATH.format(function_id)
-        return self._list(
+        return await self._list(
             method="POST",
             resource_path=resource_path,
             filter=filter,
@@ -93,13 +76,13 @@ class FunctionCallsAPI(APIClient):
             list_cls=FunctionCallList,
         )
 
-    def retrieve(
+    async def retrieve(
         self,
         call_id: int,
         function_id: int | None = None,
         function_external_id: str | None = None,
     ) -> FunctionCall | None:
-        """`Retrieve a single function call by id. <https://developer.cognite.com/api#tag/Function-calls/operation/byIdsFunctionCalls>`_
+        """`Retrieve a single function call by id <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/byIdsFunctionCalls>`_.
 
         Args:
             call_id (int): ID of the call.
@@ -113,8 +96,9 @@ class FunctionCallsAPI(APIClient):
 
             Retrieve single function call by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> call = client.functions.calls.retrieve(call_id=2, function_id=1)
 
             Retrieve function call directly on a function object:
@@ -123,24 +107,24 @@ class FunctionCallsAPI(APIClient):
                 >>> call = func.retrieve_call(id=2)
         """
         identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        function_id = await _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH.format(function_id)
 
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             resource_path=resource_path,
             identifiers=IdentifierSequence.load(ids=call_id).as_singleton(),
             resource_cls=FunctionCall,
             list_cls=FunctionCallList,
         )
 
-    def get_response(
+    async def get_response(
         self,
         call_id: int,
         function_id: int | None = None,
         function_external_id: str | None = None,
     ) -> dict[str, object] | None:
-        """`Retrieve the response from a function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCallResponse>`_
+        """`Retrieve the response from a function call <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/getFunctionCallResponse>`_.
 
         Args:
             call_id (int): ID of the call.
@@ -154,8 +138,9 @@ class FunctionCallsAPI(APIClient):
 
             Retrieve function call response by call ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> response = client.functions.calls.get_response(call_id=2, function_id=1)
 
             Retrieve function call response directly on a call object:
@@ -165,18 +150,19 @@ class FunctionCallsAPI(APIClient):
 
         """
         identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        function_id = await _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH_RESPONSE.format(function_id, call_id)
-        return self._get(resource_path).json().get("response")
+        response = await self._get(resource_path, semaphore=self._get_semaphore("read"))
+        return response.json().get("response")
 
-    def get_logs(
+    async def get_logs(
         self,
         call_id: int,
         function_id: int | None = None,
         function_external_id: str | None = None,
     ) -> FunctionCallLog:
-        """`Retrieve logs for function call. <https://developer.cognite.com/api#tag/Function-calls/operation/getFunctionCalls>`_
+        """`Retrieve logs for function call <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/getFunctionCalls>`_.
 
         Args:
             call_id (int): ID of the call.
@@ -190,8 +176,9 @@ class FunctionCallsAPI(APIClient):
 
             Retrieve function call logs by call ID:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> logs = client.functions.calls.get_logs(call_id=2, function_id=1)
 
             Retrieve function call logs directly on a call object:
@@ -201,7 +188,8 @@ class FunctionCallsAPI(APIClient):
 
         """
         identifier = _get_function_identifier(function_id, function_external_id)
-        function_id = _get_function_internal_id(self._cognite_client, identifier)
+        function_id = await _get_function_internal_id(self._cognite_client, identifier)
 
         resource_path = self._RESOURCE_PATH_LOGS.format(function_id, call_id)
-        return FunctionCallLog._load(self._get(resource_path).json()["items"])
+        response = await self._get(resource_path, semaphore=self._get_semaphore("read"))
+        return FunctionCallLog._load(response.json()["items"])

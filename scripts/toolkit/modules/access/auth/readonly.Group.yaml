@@ -238,6 +238,11 @@ capabilities:
       - READ
       scope:
         all: {}
+  - subscribeSignalsAcl:
+      actions:
+      - READ
+      scope:
+        all: {}
   - templateGroupsAcl:
       actions:
       - READ

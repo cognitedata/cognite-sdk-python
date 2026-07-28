@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import ast
+import asyncio
 import importlib
 import os
 import re
 import sys
 import textwrap
-import time
-from collections.abc import Callable, Iterator, Sequence
+import warnings
+from collections.abc import AsyncIterator, Callable, Sequence
 from inspect import getdoc, getsource, signature
 from multiprocessing import Process, Queue
 from pathlib import Path
@@ -17,10 +18,12 @@ from zipfile import ZipFile
 
 from cognite.client._api.functions.calls import FunctionCallsAPI
 from cognite.client._api.functions.schedules import FunctionSchedulesAPI
+from cognite.client._api.functions.utils import _get_function_internal_id
 from cognite.client._api_client import APIClient
-from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
+from cognite.client._constants import _RUNNING_IN_PYODIDE, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Function,
+    FunctionCall,
     FunctionFilter,
     FunctionList,
     FunctionsLimits,
@@ -28,25 +31,21 @@ from cognite.client.data_classes import (
 )
 from cognite.client.data_classes.functions import (
     HANDLER_FILE_NAME,
-    FunctionCall,
     FunctionHandle,
     FunctionsStatus,
     FunctionStatus,
     FunctionWrite,
     RunTime,
 )
-from cognite.client.utils._auxiliary import (
-    is_unlimited,
-    split_into_chunks,
-)
-from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._auxiliary import is_unlimited, split_into_chunks
+from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._session import create_session_and_return_nonce
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
@@ -58,19 +57,6 @@ UNCOMMENTED_LINE_REG = re.compile(r"^[^\#]]*.*")
 ALLOWED_HANDLE_ARGS = frozenset({"data", "client", "secrets", "function_call_info"})
 
 
-def _get_function_internal_id(cognite_client: CogniteClient, identifier: Identifier) -> int:
-    primitive = identifier.as_primitive()
-    if identifier.is_id:
-        return primitive
-
-    if identifier.is_external_id:
-        function = cognite_client.functions.retrieve(external_id=primitive)
-        if function:
-            return function.id
-
-    raise ValueError(f'Function with external ID "{primitive}" is not found')
-
-
 class FunctionsAPI(APIClient):
     _RESOURCE_PATH = "/functions"
     _RESOURCE_PATH_CALL = "/functions/{}/call"
@@ -79,7 +65,7 @@ class FunctionsAPI(APIClient):
         self,
         config: ClientConfig,
         api_version: str | None,
-        cognite_client: CogniteClient,
+        cognite_client: AsyncCogniteClient,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self.calls = FunctionCallsAPI(config, api_version, cognite_client)
@@ -99,7 +85,7 @@ class FunctionsAPI(APIClient):
         created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
         metadata: dict[str, str] | None = None,
         limit: int | None = None,
-    ) -> Iterator[Function]: ...
+    ) -> AsyncIterator[Function]: ...
 
     @overload
     def __call__(
@@ -113,9 +99,9 @@ class FunctionsAPI(APIClient):
         created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
         metadata: dict[str, str] | None = None,
         limit: int | None = None,
-    ) -> Iterator[FunctionList]: ...
+    ) -> AsyncIterator[FunctionList]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         name: str | None = None,
@@ -126,7 +112,7 @@ class FunctionsAPI(APIClient):
         created_time: dict[Literal["min", "max"], int] | TimestampRange | None = None,
         metadata: dict[str, str] | None = None,
         limit: int | None = None,
-    ) -> Iterator[Function] | Iterator[FunctionList]:
+    ) -> AsyncIterator[Function] | AsyncIterator[FunctionList]:
         """Iterate over functions.
 
         Args:
@@ -140,12 +126,12 @@ class FunctionsAPI(APIClient):
             metadata (dict[str, str] | None): No description.
             limit (int | None): Maximum number of functions to return. Defaults to yielding all functions.
 
-        Returns:
-            Iterator[Function] | Iterator[FunctionList]: An iterator over functions.
-        """
+        Yields:
+            Function | FunctionList: An iterator over functions.
+        """  # noqa: DOC404
         # The _list_generator method is not used as the /list endpoint does not
         # respond with a cursor (pagination is not supported)
-        functions = self.list(
+        functions = await self.list(
             name=name,
             owner=owner,
             file_id=file_id,
@@ -156,17 +142,13 @@ class FunctionsAPI(APIClient):
             limit=limit,
         )
         if chunk_size is None:
-            return iter(functions)
-        return (
-            FunctionList(chunk, cognite_client=self._cognite_client)
-            for chunk in split_into_chunks(functions.data, chunk_size)
-        )
+            for fn in functions:
+                yield fn
+        else:
+            for chunk in split_into_chunks(functions, chunk_size):
+                yield FunctionList(chunk)
 
-    def __iter__(self) -> Iterator[Function]:
-        """Iterate over all functions."""
-        return self()
-
-    def create(
+    async def create(
         self,
         name: str | FunctionWrite,
         folder: str | None = None,
@@ -187,7 +169,7 @@ class FunctionsAPI(APIClient):
         skip_folder_validation: bool = False,
         data_set_id: int | None = None,
     ) -> Function:
-        '''`When creating a function, <https://developer.cognite.com/api#tag/Functions/operation/postFunctions>`_
+        """`When creating a function, <https://api-docs.cognite.com/20230101/tag/Functions/operation/postFunctions>`_
         the source code can be specified in one of three ways:
 
         - Via the `folder` argument, which is the path to the folder where the source code is located. `function_path` must point to a python file in the folder within which a function named `handle` must be defined.
@@ -215,12 +197,12 @@ class FunctionsAPI(APIClient):
             owner (str | None): Owner of this function. Typically used to know who created it.
             secrets (dict[str, str] | None): Additional secrets as key/value pairs. These can e.g. password to simulators or other data sources. Keys must be lowercase characters, numbers or dashes (-) and at most 15 characters. You can create at most 30 secrets, all keys must be unique.
             env_vars (dict[str, str] | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
-            cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            runtime (RunTime | None): The function runtime. Valid values are ["py310", "py311", "py312", `None`], and `None` translates to the API default which will change over time. The runtime "py312" resolves to the latest version of the Python 3.12 series.
+            cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
+            runtime (RunTime | None): The function runtime. Valid values are ["py310", "py311", "py312", "py313", `None`], and `None` translates to the API default which will change over time. The runtime "py313" resolves to the latest version of the Python 3.13 series.
             metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
-            index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
-            extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/#additional-arguments>`_
+            index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/use_functions#additional-arguments>`_
+            extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/use_functions#additional-arguments>`_
             skip_folder_validation (bool): When creating a function using the 'folder' argument, pass True to skip the extra validation step that attempts to import the module. Skipping can be useful when your function requires several heavy packages to already be installed locally. Defaults to False.
             data_set_id (int | None): Data set to upload the function code to. Note: Does not affect the function itself.
 
@@ -231,17 +213,18 @@ class FunctionsAPI(APIClient):
 
             Create function with source code in folder:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> function = client.functions.create(
-                ...     name="myfunction",
-                ...     folder="path/to/code",
-                ...     function_path="path/to/function.py")
+                ...     name="myfunction", folder="path/to/code", function_path="path/to/function.py"
+                ... )
 
             Create function with file_id from already uploaded source code:
 
                 >>> function = client.functions.create(
-                ...     name="myfunction", file_id=123, function_path="path/to/function.py")
+                ...     name="myfunction", file_id=123, function_path="path/to/function.py"
+                ... )
 
             Create function with predefined function object named `handle`:
 
@@ -250,11 +233,11 @@ class FunctionsAPI(APIClient):
             Create function with predefined function object named `handle` with dependencies:
 
                 >>> def handle(client, data):
-                >>>     """
+                >>>     '''
                 >>>     [requirements]
                 >>>     numpy
                 >>>     [/requirements]
-                >>>     """
+                >>>     '''
                 >>>     pass
                 >>>
                 >>> function = client.functions.create(name="myfunction", function_handle=handle)
@@ -262,36 +245,45 @@ class FunctionsAPI(APIClient):
             .. note:
                 When using a predefined function object, you can list dependencies between the tags `[requirements]` and `[/requirements]` in the function's docstring.
                 The dependencies will be parsed and validated in accordance with requirement format specified in `PEP 508 <https://peps.python.org/pep-0508/>`_.
-        '''
+
+            .. note:
+                Only the source code of the handle function itself is deployed. Non-builtin type
+                annotations (e.g. ``client: CogniteClient``) will cause a ``NameError`` at deploy
+                time. Either omit the annotation or use string form (e.g. ``client: "CogniteClient"``).
+        """
         if isinstance(name, FunctionWrite):
             function_input = name
         else:
-            function_input = self._create_function_obj(
-                name,
-                folder,
-                file_id,
-                function_path,
-                function_handle,
-                external_id,
-                description,
-                owner,
-                secrets,
-                env_vars,
-                cpu,
-                memory,
-                runtime,
-                metadata,
-                index_url,
-                extra_index_urls,
-                skip_folder_validation,
-                data_set_id,
+            function_input = await self._create_function_obj(
+                name=name,
+                folder=folder,
+                file_id=file_id,
+                function_path=function_path,
+                function_handle=function_handle,
+                external_id=external_id,
+                description=description,
+                owner=owner,
+                secrets=secrets,
+                env_vars=env_vars,
+                cpu=cpu,
+                memory=memory,
+                runtime=runtime,
+                metadata=metadata,
+                index_url=index_url,
+                extra_index_urls=extra_index_urls,
+                skip_folder_validation=skip_folder_validation,
+                data_set_id=data_set_id,
             )
 
         # The exactly_one_is_not_none check ensures that function is not None
-        res = self._post(self._RESOURCE_PATH, json={"items": [function_input.dump(camel_case=True)]})
-        return Function._load(res.json()["items"][0], cognite_client=self._cognite_client)
+        res = await self._post(
+            self._RESOURCE_PATH,
+            json={"items": [function_input.dump(camel_case=True)]},
+            semaphore=self._get_semaphore("write"),
+        )
+        return Function._load(res.json()["items"][0]).set_client_ref(self._cognite_client)
 
-    def _create_function_obj(
+    async def _create_function_obj(
         self,
         name: str,
         folder: str | None = None,
@@ -317,18 +309,18 @@ class FunctionsAPI(APIClient):
         # without having uploaded the code to the files API.
         if folder:
             validate_function_folder(folder, function_path, skip_folder_validation)
-            file_id = self._zip_and_upload_folder(folder, name, external_id, data_set_id)
+            file_id = await self._zip_and_upload_folder(folder, name, external_id, data_set_id)
         elif function_handle:
             _validate_function_handle(function_handle)
-            file_id = self._zip_and_upload_handle(function_handle, name, external_id, data_set_id)
+            file_id = await self._zip_and_upload_handle(function_handle, name, external_id, data_set_id)
         assert_type(cpu, "cpu", [float], allow_none=True)
         assert_type(memory, "memory", [float], allow_none=True)
         sleep_time = 1.0  # seconds
         for i in range(MAX_RETRIES):
-            file = self._cognite_client.files.retrieve(id=file_id)
+            file = await self._cognite_client.files.retrieve(id=file_id)
             if file and file.uploaded:
                 break
-            time.sleep(sleep_time)
+            await asyncio.sleep(sleep_time)
             sleep_time *= 2
         else:
             raise RuntimeError("Could not retrieve file from files API")
@@ -351,12 +343,12 @@ class FunctionsAPI(APIClient):
         )
         return function
 
-    def delete(
+    async def delete(
         self,
         id: int | Sequence[int] | None = None,
         external_id: str | SequenceNotStr[str] | None = None,
     ) -> None:
-        """`Delete one or more functions. <https://developer.cognite.com/api#tag/Functions/operation/deleteFunctions>`_
+        """`Delete one or more functions <https://api-docs.cognite.com/20230101/tag/Functions/operation/deleteFunctions>`_.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids.
@@ -366,16 +358,17 @@ class FunctionsAPI(APIClient):
 
             Delete functions by id or external id::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.functions.delete(id=[1,2,3], external_id="function3")
         """
-        self._delete_multiple(
+        await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
         )
 
-    def list(
+    async def list(
         self,
         name: str | None = None,
         owner: str | None = None,
@@ -386,7 +379,7 @@ class FunctionsAPI(APIClient):
         metadata: dict[str, str] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> FunctionList:
-        """`List all functions. <https://developer.cognite.com/api#tag/Functions/operation/listFunctions>`_
+        """`List all functions <https://api-docs.cognite.com/20230101/tag/Functions/operation/listFunctions>`_.
 
         Args:
             name (str | None): The name of the function.
@@ -405,8 +398,9 @@ class FunctionsAPI(APIClient):
 
             List functions::
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> functions_list = client.functions.list()
         """
         if is_unlimited(limit):
@@ -425,15 +419,16 @@ class FunctionsAPI(APIClient):
 
         # The _list method is not used as the /list endpoint does not
         # respond with a cursor (pagination is not supported)
-        res = self._post(
+        res = await self._post(
             url_path=f"{self._RESOURCE_PATH}/list",
             json={"filter": filter, "limit": limit},
+            semaphore=self._get_semaphore("read"),
         )
 
-        return FunctionList._load(res.json()["items"], cognite_client=self._cognite_client)
+        return FunctionList._load(res.json()["items"])._maybe_set_client_ref(self._cognite_client)
 
-    def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
-        """`Retrieve a single function by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
+    async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Function | None:
+        """`Retrieve a single function by id <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_.
 
         Args:
             id (int | None): ID
@@ -446,8 +441,9 @@ class FunctionsAPI(APIClient):
 
             Get function by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.functions.retrieve(id=1)
 
             Get function by external id:
@@ -455,15 +451,15 @@ class FunctionsAPI(APIClient):
                 >>> res = client.functions.retrieve(external_id="abc")
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
-        return self._retrieve_multiple(identifiers=identifier, resource_cls=Function, list_cls=FunctionList)
+        return await self._retrieve_multiple(identifiers=identifier, resource_cls=Function, list_cls=FunctionList)
 
-    def retrieve_multiple(
+    async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
         external_ids: SequenceNotStr[str] | None = None,
         ignore_unknown_ids: bool = False,
     ) -> FunctionList:
-        """`Retrieve multiple functions by id. <https://developer.cognite.com/api#tag/Functions/operation/byIdsFunctions>`_
+        """`Retrieve multiple functions by id <https://api-docs.cognite.com/20230101/tag/Functions/operation/byIdsFunctions>`_.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -477,8 +473,9 @@ class FunctionsAPI(APIClient):
 
             Get function by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.functions.retrieve_multiple(ids=[1, 2, 3])
 
             Get functions by external id:
@@ -487,14 +484,14 @@ class FunctionsAPI(APIClient):
         """
         assert_type(ids, "id", [Sequence], allow_none=True)
         assert_type(external_ids, "external_id", [Sequence], allow_none=True)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             identifiers=IdentifierSequence.load(ids=ids, external_ids=external_ids),
             resource_cls=Function,
             list_cls=FunctionList,
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
-    def call(
+    async def call(
         self,
         id: int | None = None,
         external_id: str | None = None,
@@ -502,7 +499,7 @@ class FunctionsAPI(APIClient):
         wait: bool = True,
         nonce: str | None = None,
     ) -> FunctionCall:
-        """`Call a function by its ID or external ID. <https://developer.cognite.com/api#tag/Function-calls/operation/postFunctionsCall>`_.
+        """`Call a function by its ID or external ID <https://api-docs.cognite.com/20230101/tag/Function-calls/operation/postFunctionsCall>`_.
 
         Args:
             id (int | None): ID
@@ -521,8 +518,9 @@ class FunctionsAPI(APIClient):
 
             Call a function by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> call = client.functions.call(id=1)
 
             Call a function directly on the `Function` object:
@@ -531,21 +529,21 @@ class FunctionsAPI(APIClient):
                 >>> call = func.call()
         """
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()[0]
-        id = _get_function_internal_id(self._cognite_client, identifier)
-        nonce = nonce or create_session_and_return_nonce(self._cognite_client, api_name="Functions API")
+        id = await _get_function_internal_id(self._cognite_client, identifier)
+        nonce = nonce or await create_session_and_return_nonce(self._cognite_client, api_name="Functions API")
 
         if data is None:
             data = {}
         url = self._RESOURCE_PATH_CALL.format(id)
-        res = self._post(url, json={"data": data, "nonce": nonce})
+        res = await self._post(url, json={"data": data, "nonce": nonce}, semaphore=self._get_semaphore("write"))
 
-        function_call = FunctionCall._load(res.json(), cognite_client=self._cognite_client)
+        function_call = FunctionCall._load(res.json()).set_client_ref(self._cognite_client)
         if wait:
-            function_call.wait()
+            await function_call.wait_async()
         return function_call
 
-    def limits(self) -> FunctionsLimits:
-        """`Get service limits. <https://developer.cognite.com/api#tag/Functions/operation/functionsLimits>`_.
+    async def limits(self) -> FunctionsLimits:
+        """`Get service limits <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_.
 
         Returns:
             FunctionsLimits: A function limits object.
@@ -554,16 +552,17 @@ class FunctionsAPI(APIClient):
 
             Call a function by id:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> limits = client.functions.limits()
         """
-        res = self._get(self._RESOURCE_PATH + "/limits")
+        res = await self._get(self._RESOURCE_PATH + "/limits", semaphore=self._get_semaphore("read"))
         return FunctionsLimits.load(res.json())
 
-    def _zip_and_upload_folder(
+    async def _zip_and_upload_folder(
         self,
-        folder: str,
+        folder: Path | str,
         name: str,
         external_id: str | None = None,
         data_set_id: int | None = None,
@@ -582,7 +581,7 @@ class FunctionsAPI(APIClient):
                             zf.write(Path(root, filename))
 
                 overwrite = bool(external_id)
-                file = self._cognite_client.files.upload_bytes(
+                file = await self._cognite_client.files.upload_bytes(
                     zip_path.read_bytes(),
                     name=f"{name}.zip",
                     external_id=external_id,
@@ -593,7 +592,7 @@ class FunctionsAPI(APIClient):
         finally:
             os.chdir(current_dir)
 
-    def _zip_and_upload_handle(
+    async def _zip_and_upload_handle(
         self,
         function_handle: Callable,
         name: str,
@@ -621,7 +620,7 @@ class FunctionsAPI(APIClient):
                     zf.write(requirements_path, arcname=REQUIREMENTS_FILE_NAME)
 
             overwrite = bool(external_id)
-            file = self._cognite_client.files.upload_bytes(
+            file = await self._cognite_client.files.upload_bytes(
                 zip_path.read_bytes(),
                 name=f"{name}.zip",
                 external_id=external_id,
@@ -652,8 +651,11 @@ class FunctionsAPI(APIClient):
                 + " were given."
             )
 
-    def activate(self) -> FunctionsStatus:
-        """`Activate functions for the Project. <https://developer.cognite.com/api#tag/Functions/operation/postFunctionsStatus>`_.
+    async def activate(self) -> FunctionsStatus:
+        """`Activate functions for the Project <https://api-docs.cognite.com/20230101/tag/Functions/operation/postFunctionsStatus>`_.
+
+        Note:
+            May take some time to take effect (hours).
 
         Returns:
             FunctionsStatus: A function activation status.
@@ -662,15 +664,16 @@ class FunctionsAPI(APIClient):
 
             Call activate:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> status = client.functions.activate()
         """
-        res = self._post(self._RESOURCE_PATH + "/status")
+        res = await self._post(self._RESOURCE_PATH + "/status", semaphore=self._get_semaphore("write"))
         return FunctionsStatus.load(res.json())
 
-    def status(self) -> FunctionsStatus:
-        """`Functions activation status for the Project. <https://developer.cognite.com/api#tag/Functions/operation/getFunctionsStatus>`_.
+    async def status(self) -> FunctionsStatus:
+        """`Functions activation status for the Project <https://api-docs.cognite.com/20230101/tag/Functions/operation/getFunctionsStatus>`_.
 
         Returns:
             FunctionsStatus: A function activation status.
@@ -679,11 +682,12 @@ class FunctionsAPI(APIClient):
 
             Call status:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> status = client.functions.status()
         """
-        res = self._get(self._RESOURCE_PATH + "/status")
+        res = await self._get(self._RESOURCE_PATH + "/status", semaphore=self._get_semaphore("read"))
         return FunctionsStatus.load(res.json())
 
 
@@ -782,7 +786,7 @@ def validate_function_folder(root_path: str, function_path: str, skip_folder_val
 
     if not skip_folder_validation:
         module_path = ".".join(Path(function_path).with_suffix("").parts)
-        if not _RUNNING_IN_BROWSER:
+        if not _RUNNING_IN_PYODIDE:
             # We do an actual import to verify the files (this is done in a separate process)
             _check_imports(root_path, module_path)
         else:
@@ -875,7 +879,16 @@ def _validate_and_parse_requirements(requirements: list[str]) -> list[str]:
     Returns:
         list[str]: The parsed requirements
     """
-    constructors = local_import("pip._internal.req.constructors")
+    if _RUNNING_IN_PYODIDE:
+        warnings.warn(
+            "Running in a browser environment, skipping client-side validation of requirements.",
+            UserWarning,
+            stacklevel=2,
+        )
+        return [r for r in requirements if r.strip()]
+    else:
+        constructors = local_import("pip._internal.req.constructors")
+
     install_req_from_line = constructors.install_req_from_line
     parsed_reqs: list[str] = []
     for req in requirements:

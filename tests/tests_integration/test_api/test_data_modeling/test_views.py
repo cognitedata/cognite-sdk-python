@@ -5,11 +5,11 @@ from typing import Any, cast
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_modeling import (
     ContainerApply,
     ContainerId,
-    ContainerProperty,
+    ContainerPropertyApply,
     DataModel,
     DirectRelation,
     DirectRelationReference,
@@ -150,9 +150,7 @@ class TestViewsAPI:
         assert not cognite_client.data_modeling.views.retrieve(("myNonExistingSpace", "myImaginaryView", "v0"))
 
     def test_iterate(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
-        for containers in cognite_client.data_modeling.views(
-            chunk_size=2, limit=-1, space=integration_test_space.space
-        ):
+        for containers in cognite_client.data_modeling.views(chunk_size=2, space=integration_test_space.space):
             assert isinstance(containers, ViewList)
 
     def test_apply_invalid_view(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
@@ -179,7 +177,11 @@ class TestViewsAPI:
         assert "One or more spaces do not exist" in error.value.message
 
     def test_apply_failed_and_successful_task(
-        self, cognite_client: CogniteClient, integration_test_space: Space, monkeypatch: Any
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        integration_test_space: Space,
+        monkeypatch: Any,
     ) -> None:
         valid_view = ViewApply(
             space=integration_test_space.space,
@@ -211,7 +213,7 @@ class TestViewsAPI:
                 ),
             },
         )
-        monkeypatch.setattr(cognite_client.data_modeling.views, "_CREATE_LIMIT", 1)
+        monkeypatch.setattr(async_client.data_modeling.views, "_CREATE_LIMIT", 1)
 
         try:
             with pytest.raises(CogniteAPIError) as error:
@@ -243,8 +245,8 @@ class TestViewsAPI:
             name="Critic",
             description="This is a test container, and should not persist.",
             properties={
-                "reviews": ContainerProperty(type=Text(is_list=True)),
-                "person": ContainerProperty(
+                "reviews": ContainerPropertyApply(type=Text(is_list=True)),
+                "person": ContainerPropertyApply(
                     type=DirectRelation(
                         container=ContainerId(
                             space=integration_test_space.space,

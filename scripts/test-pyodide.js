@@ -32,24 +32,42 @@ const server = http.createServer((req, res) => {
 // Start the server and listen on the defined port. Then try to install the SDK in Python
 server.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}. Now trying to install sdk.`);
-  
+
   async function test_cognite_sdk() {
     let pyodide = await loadPyodide();
     await pyodide.loadPackage("micropip");
     const micropip = pyodide.pyimport("micropip");
-    // Read packages to install from environment variable as JSON
 
+    // authlib 1.7+ requires cryptography>=45.0.1, which has no pure-Python wheel.
+    // Older Pyodide releases (e.g. stlite's 0.26.2) only ship cryptography 43.x,
+    // so micropip resolution fails. On those runtimes, preload Pyodide's bundled
+    // cryptography and cap authlib below 1.7 to satisfy the transitive requirement.
+    // Pyodide >= 0.29 ships cryptography>=45.0.1, so the workaround is skipped there
+    // (and for the 314.x line / Python 3.14).
+    const [pyMajor, pyMinor] = pyodide.version.split(".").map(Number);
+    const needsCryptographyWorkaround = pyMajor === 0 && pyMinor < 29;
+    if (needsCryptographyWorkaround) {
+      console.log(`Applying cryptography workaround for Pyodide ${pyodide.version}`);
+      await pyodide.loadPackage(["cryptography", "ssl"]);
+      await micropip.install("authlib<1.7");
+    }
+
+    // Read packages to install from environment variable as JSON
     const packages = JSON.parse(process.env.PACKAGES);
     for (const pkg of packages) {
       await micropip.install(pkg);
     }
     await pyodide.runPythonAsync("from cognite.client import CogniteClient");
-    
+
     return pyodide.runPythonAsync('"Python SDK successfully installed and imported!"');
   }
 
   test_cognite_sdk().then((result) => {
     console.log("Response from Python =", result);
     server.close();
+  }).catch((err) => {
+    console.error("Pyodide test failed:", err && err.stack ? err.stack : err);
+    server.close();
+    process.exit(1);
   });
 });

@@ -6,64 +6,199 @@
 Cognite Python SDK Documentation
 ================================
 
-This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF). The package is tightly integrated with pandas, and helps you work easily and efficiently with data in Cognite Data Fusion (CDF).
+This is the Cognite Python SDK for developers and data scientists working with Cognite Data Fusion (CDF).
+The package is tightly integrated with pandas, and helps you work easily and efficiently with data in
+Cognite Data Fusion (CDF).
 
 .. contents::
    :local:
 
 Installation
 ^^^^^^^^^^^^
-To install this package:
+To install or upgrade this package:
+
+**pip:**
 
 .. code-block:: bash
 
-   pip install cognite-sdk
+   pip install --upgrade cognite-sdk
 
-To upgrade the version of this package:
+**poetry:**
 
 .. code-block:: bash
 
-   pip install cognite-sdk --upgrade
+   poetry add cognite-sdk
+
+**uv:**
+
+.. code-block:: bash
+
+   uv add cognite-sdk
+
+To install with optional dependencies:
 
 .. code-block:: bash
 
    pip install "cognite-sdk[pandas, geo]"
 
+Available extras:
+
+- **numpy**: numpy
+- **pandas**: pandas
+- **geo**: geopandas, shapely
+- **sympy**: sympy
+- **all**: *all of the above*
+
+
+What's new in v8
+^^^^^^^^^^^^^^^^
+The SDK v8 introduces **full async support** with the new ``AsyncCogniteClient``. This enables:
+
+* Native ``async/await`` patterns for all API operations
+* Non-blocking concurrent operations directly in Notebooks (including browser-based via Pyodide) and UI frameworks like Streamlit
+* Significantly faster file uploads on Windows (new underlying HTTP client, ``httpx``)
+* Async variants for all helper/utility methods on data classes (e.g., ``Function`` now has ``call_async``)
+
+Other improvements:
+
+* Simpler client instantiation: pass either ``cluster`` or ``base_url``
+* Typed instance apply classes (e.g., ``CogniteAssetApply``) now work correctly with patch updates (``replace=False``)
+* Better pandas DataFrame columns for datapoints: now uses ``MultiIndex`` for identifiers, aggregates, units, etc.
+* Read data classes now have correct types (no longer ``Optional`` on required fields)
+* More specific exceptions are now always raised when appropriate (``CogniteNotFoundError``, ``CogniteDuplicatedError``)
+
+For a complete list of changes, see the `Migration Guide <https://github.com/cognitedata/cognite-sdk-python/blob/master/MIGRATION_GUIDE.md>`_.
+
+The synchronous ``CogniteClient`` remains fully supported and now wraps the async client internally.
+
+.. code-block:: python
+
+   # Async client (new in v8!)
+   from cognite.client import AsyncCogniteClient
+
+   async def main():
+       client = AsyncCogniteClient()
+       tss = await client.time_series.list()
+
+   # Sync client (still supported)
+   from cognite.client import CogniteClient
+
+   client = CogniteClient()
+   tss = client.time_series.list()
+
+See the :doc:`quickstart` for configuration examples.
 
 Contents
 ^^^^^^^^
+
 .. toctree::
+   :maxdepth: 1
+   :caption: Getting Started
+
    quickstart
    settings
    credential_providers
    cognite_client
    extensions_and_optional_dependencies
    identity_and_access_management
-   data_modeling
-   agents
-   ai
-   assets
-   events
-   files
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Data Modeling
+
+   data_modeling/data_models
+   data_modeling/spaces
+   data_modeling/views
+   data_modeling/containers
+   data_modeling/instances
+   data_modeling/files
+   data_modeling/time_series
+   data_modeling/statistics
+   data_modeling/streams
+   data_modeling/records
+   data_modeling/graphql
+   data_modeling/core_data_model
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Core Data
+
    time_series
    sequences
-   geospatial
+   files
    3d
-   contextualization
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Documents
+
+   ai
    documents
+
+.. toctree::
+   :maxdepth: 1
+   :caption: AI Agents
+
+   agents
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Contextualization
+
+   contextualization
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Data Lifecycle
+
    data_ingestion
-   hosted_extractors
-   postgres_gateway
    data_organization
    transformations
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Compute and Automation
+
    functions
-   simulators
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Integrations
+
+   hosted_extractors
+   postgres_gateway
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Workflows
+
    data_workflows
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Specialized
+
+   simulators
    unit_catalog
+   geospatial
+   limits
+   metering
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Legacy
+
+   assets
+   events
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Reference
+
    filters
    deprecated
-   base_data_classes
    exceptions
-   utils
    testing
+   utils
+   base_data_classes
    appendix

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from cognite.client.utils._logging import (
     _configure_logger_for_debug_mode,
     _disable_debug_logging,
@@ -6,7 +8,7 @@ from cognite.client.utils._logging import (
 
 
 class TestDebugLoggingState:
-    def test_debug_logging_toggle_on_off(self):
+    def test_debug_logging_toggle_on_off(self) -> None:
         assert not _is_debug_logging_enabled(), "should be disabled by default"
 
         _configure_logger_for_debug_mode()

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
-from cognite.client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_modeling import (
     ContainerId,
     DataModel,
@@ -29,7 +29,10 @@ def cdf_data_models(
     movie_model: DataModel[View],
     empty_model: DataModel[ViewId],
 ) -> DataModelList[ViewId]:
-    return DataModelList[ViewId]([movie_model, empty_model])
+    # TODO(doctrino): Mypy correctly points out that movie_model has inline views, while fixture output says
+    # they are just (view) IDs. We do an incorrect cast here to silence mypy, but we should fix this properly.
+    movie_model2 = cast("DataModel[ViewId]", movie_model)
+    return DataModelList[ViewId]([movie_model2, empty_model])
 
 
 class TestDataModelsAPI:
@@ -148,7 +151,7 @@ class TestDataModelsAPI:
         )
 
     def test_iterate(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
-        for containers in cognite_client.data_modeling.data_models(chunk_size=2, limit=-1):
+        for containers in cognite_client.data_modeling.data_models(chunk_size=2):
             assert isinstance(containers, DataModelList)
 
     def test_list_expand_inline_views(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
@@ -172,7 +175,11 @@ class TestDataModelsAPI:
         assert "One or more spaces do not exist" in error.value.message
 
     def test_apply_failed_and_successful_task(
-        self, cognite_client: CogniteClient, integration_test_space: Space, monkeypatch: Any
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        integration_test_space: Space,
+        monkeypatch: Any,
     ) -> None:
         valid_data_model = DataModelApply(
             space=integration_test_space.space,
@@ -184,7 +191,7 @@ class TestDataModelsAPI:
             external_id="IntegrationTestDataModel2",
             version="v1",
         )
-        monkeypatch.setattr(cognite_client.data_modeling.data_models, "_CREATE_LIMIT", 1)
+        monkeypatch.setattr(async_client.data_modeling.data_models, "_CREATE_LIMIT", 1)
 
         try:
             with pytest.raises(CogniteAPIError) as error:

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from cognite.client.data_classes import filters
@@ -10,7 +12,7 @@ from cognite.client.data_classes.datapoints_subscriptions import (
 
 
 class TestDataPointSubscription:
-    def test_raises_value_error_on_invalid_filter(self):
+    def test_raises_value_error_on_invalid_filter(self) -> None:
         f = filters
         nested_filter = f.Nested(
             scope=("some", "direct_relation", "property"), filter=f.Equals(property=["node", "name"], value="ACME")
@@ -86,7 +88,7 @@ class TestTimeSeriesID:
 
     def test_time_series_id_list_with_broken_references(self) -> None:
         """Test that TimeSeriesIDList can handle a mix of resolved and broken references."""
-        items = [
+        items: list[dict] = [
             {"id": 123, "externalId": "ts_1"},
             {"externalId": "broken_ref"},  # No id - broken reference
             {"id": 456, "externalId": "ts_2"},

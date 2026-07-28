@@ -5,30 +5,28 @@ from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, cast, final
+from typing import Any, ClassVar, Literal, TypeAlias, cast, final
+from zoneinfo import ZoneInfo
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CogniteResource,
     CogniteResourceList,
     ExternalIDTransformerMixin,
     InternalIdTransformerMixin,
-    UnknownCogniteObject,
+    UnknownCogniteResource,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling.query import Query, ResultSetExpression, Select
+from cognite.client.data_classes.data_modeling.records import RecordContainerId
+from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.simulators.runs import (
     SimulationInputOverride,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_snake_case
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-from zoneinfo import ZoneInfo
 
 TaskStatus: TypeAlias = Literal[
     "in_progress",
@@ -45,10 +43,17 @@ WorkflowStatus: TypeAlias = Literal["completed", "failed", "running", "terminate
 
 
 class WorkflowCore(WriteableCogniteResource["WorkflowUpsert"], ABC):
-    def __init__(self, external_id: str, description: str | None = None, data_set_id: int | None = None) -> None:
+    def __init__(
+        self,
+        external_id: str,
+        description: str | None = None,
+        data_set_id: int | None = None,
+        max_concurrent_executions: int | None = None,
+    ) -> None:
         self.external_id = external_id
         self.description = description
         self.data_set_id = data_set_id
+        self.max_concurrent_executions = max_concurrent_executions
 
 
 class WorkflowUpsert(WorkflowCore):
@@ -64,14 +69,18 @@ class WorkflowUpsert(WorkflowCore):
                             If a dataSetId is provided, any operations on this workflow, or its versions, executions,
                             and triggers will require appropriate access to the data set. More information on data sets
                             and their configuration can be found here: https://docs.cognite.com/cdf/data_governance/concepts/datasets/
+        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to the
+                            project limit if not specified or explicitly set to None. Values exceeding the project limit
+                            are dynamically capped at runtime.
     """
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             external_id=resource["externalId"],
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
+            max_concurrent_executions=resource.get("maxConcurrentExecutions"),
         )
 
     def as_write(self) -> WorkflowUpsert:
@@ -81,7 +90,7 @@ class WorkflowUpsert(WorkflowCore):
 
 class Workflow(WorkflowCore):
     """
-    This class represents a workflow. This is the reading version, used when reading or listing workflows.
+    This class represents a workflow. This is the read version, used when reading or listing workflows.
 
     Args:
         external_id (str): The external ID provided by the client. Must be unique for the resource type.
@@ -89,6 +98,9 @@ class Workflow(WorkflowCore):
         last_updated_time (int): The time when the workflow was last updated. Unix timestamp in milliseconds.
         description (str | None): Description of the workflow. Defaults to None.
         data_set_id (int | None): The id of the data set this workflow belongs to.
+        max_concurrent_executions (int | None): Maximum concurrent executions for this workflow. Defaults to the
+                            project limit if not specified or explicitly set to None. Values exceeding the project limit
+                            are dynamically capped at runtime.
     """
 
     def __init__(
@@ -98,19 +110,21 @@ class Workflow(WorkflowCore):
         last_updated_time: int,
         description: str | None = None,
         data_set_id: int | None = None,
+        max_concurrent_executions: int | None = None,
     ) -> None:
-        super().__init__(external_id, description, data_set_id)
+        super().__init__(external_id, description, data_set_id, max_concurrent_executions)
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             external_id=resource["externalId"],
             description=resource.get("description"),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             data_set_id=resource.get("dataSetId"),
+            max_concurrent_executions=resource.get("maxConcurrentExecutions"),
         )
 
     def as_write(self) -> WorkflowUpsert:
@@ -119,6 +133,7 @@ class Workflow(WorkflowCore):
             external_id=self.external_id,
             description=self.description,
             data_set_id=self.data_set_id,
+            max_concurrent_executions=self.max_concurrent_executions,
         )
 
 
@@ -136,38 +151,56 @@ class WorkflowList(WriteableCogniteResourceList[WorkflowUpsert, Workflow], Exter
         return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
 
 
-ValidTaskType = Literal["function", "transformation", "cdf", "dynamic", "subworkflow", "simulation"]
+# Note on 'str': forward compatibility when new task types are added in the API that the SDK does not yet know about
+ValidTaskType = (
+    Literal[
+        "function",
+        "transformation",
+        "cdf",
+        "dynamic",
+        "subworkflow",
+        "simulation",
+    ]
+    | str
+)
 
 
-class WorkflowTaskParameters(CogniteObject, ABC):
+class WorkflowTaskParameters(CogniteResource, ABC):
     task_type: ClassVar[ValidTaskType]
 
     @classmethod
-    def load_parameters(cls, data: dict) -> WorkflowTaskParameters:
-        type_ = data.get("type", data.get("taskType"))
-        parameters = data.get("parameters", data.get("input"))
-        if parameters is None:
+    def load_parameters(cls, data: dict[str, Any]) -> WorkflowTaskParameters:
+        if (type_ := data.get("type", data.get("taskType"))) is None:
             raise ValueError(
-                "You must provide parameter data either with key "
-                "'parameter' or 'input', with parameter taking precedence."
+                "Missing task type. The task type must be specified with the key 'type' or 'taskType', "
+                "'type' taking precedence."
             )
+        if (parameters := data.get("parameters", data.get("input"))) is None:
+            raise ValueError(
+                "Missing parameter data. The parameter data must be specified with the key 'parameters' or 'input', "
+                "'parameters' taking precedence."
+            )
+        match type_:
+            case "function":
+                return FunctionTaskParameters._load(parameters)
+            case "transformation":
+                return TransformationTaskParameters._load(parameters)
+            case "cdf":
+                return CDFTaskParameters._load(parameters)
+            case "dynamic":
+                return DynamicTaskParameters._load(parameters)
 
-        if type_ == "function":
-            return FunctionTaskParameters._load(parameters)
-        elif type_ == "transformation":
-            return TransformationTaskParameters._load(parameters)
-        elif type_ == "cdf":
-            return CDFTaskParameters._load(parameters)
-        elif type_ == "dynamic":
-            return DynamicTaskParameters._load(parameters)
-        elif type_ == "subworkflow" and "tasks" in parameters["subworkflow"]:
-            return SubworkflowTaskParameters._load(parameters)
-        elif type_ == "subworkflow" and "workflowExternalId" in parameters["subworkflow"]:
-            return SubworkflowReferenceParameters._load(parameters)
-        elif type_ == "simulation":
-            return SimulationTaskParameters._load(parameters)
-        else:
-            raise ValueError(f"Unknown task type: {type_}. Expected {ValidTaskType}")
+            case "subworkflow" if "tasks" in parameters["subworkflow"]:
+                return SubworkflowTaskParameters._load(parameters)
+
+            case "subworkflow" if "workflowExternalId" in parameters["subworkflow"]:
+                return SubworkflowReferenceParameters._load(parameters)
+            case "simulation":
+                return SimulationTaskParameters._load(parameters)
+            case str():
+                return UnknownWorkflowTaskParameters._load(type_, parameters)
+            case _:
+                raise ValueError(f"Invalid (task) type: {type_!r}, must be string")
 
 
 class FunctionTaskParameters(WorkflowTaskParameters):
@@ -193,7 +226,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         For example, if you have a workflow containing two tasks, and the external_id of the first task is `task1` then,
         you can specify the data for the second task as follows:
 
-            >>> from cognite.client.data_classes  import WorkflowTask, FunctionTaskParameters
+            >>> from cognite.client.data_classes import WorkflowTask, FunctionTaskParameters
             >>> task = WorkflowTask(
             ...     external_id="task2",
             ...     parameters=FunctionTaskParameters(
@@ -201,7 +234,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             ...         data={
             ...             "workflow_data": "${workflow.input}",
             ...             "task1_input": "${task1.input}",
-            ...             "task1_output": "${task1.output}"
+            ...             "task1_output": "${task1.output}",
             ...         },
             ...     ),
             ... )
@@ -220,7 +253,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         self.is_async_complete = is_async_complete
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> FunctionTaskParameters:
+    def _load(cls, resource: dict) -> FunctionTaskParameters:
         function: dict[str, Any] = resource["function"]
 
         return cls(
@@ -237,12 +270,41 @@ class FunctionTaskParameters(WorkflowTaskParameters):
         if self.data:
             function["data"] = self.data
 
-        output: dict[str, Any] = {
-            "function": function,
-        }
+        output: dict[str, Any] = {"function": function}
         if self.is_async_complete is not None:
             output["isAsyncComplete" if camel_case else "is_async_complete"] = self.is_async_complete
         return output
+
+
+class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
+    """Fallback for task types not yet added to the SDK for forward-compatibility with the API
+
+    We don't know what the task_type will be, so we use a property instead of the class variable.
+    """
+
+    def __init__(self, task_type: str, data: dict[str, Any]) -> None:
+        self._task_type = task_type
+        self.data = data
+
+    @property
+    def task_type(self) -> str:  # type: ignore [override]
+        return self._task_type
+
+    @classmethod
+    def _load(cls, task_type: str, parameters: dict[str, Any]) -> Self:  # type: ignore [override]
+        return cls(task_type, parameters)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        if not camel_case:
+            # We can not automatically convert to snake case, as we don't know if there is user data
+            # in the output that should be left untouched (this has caused issues in the past):
+            warnings.warn(
+                "Dumping with snake case is not supported as this task output class is unknown. "
+                "Please update the SDK to the latest version, or file an issue on Github.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return self.data
 
 
 _SIMULATORS_WARNING = FeaturePreviewWarning(
@@ -276,7 +338,7 @@ class SimulationTaskParameters(WorkflowTaskParameters):
         _SIMULATORS_WARNING.warn()
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> SimulationTaskParameters:
+    def _load(cls, resource: dict) -> SimulationTaskParameters:
         simulation: dict[str, Any] = resource["simulation"]
 
         return cls(
@@ -322,11 +384,12 @@ class TransformationTaskParameters(WorkflowTaskParameters):
         self.use_transformation_credentials = use_transformation_credentials
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TransformationTaskParameters:
+    def _load(cls, resource: dict) -> TransformationTaskParameters:
+        data = resource[cls.task_type]
         return cls(
-            resource[cls.task_type]["externalId"],
-            resource[cls.task_type].get("concurrencyPolicy", "fail"),
-            resource[cls.task_type].get("useTransformationCredentials", False),
+            data["externalId"],
+            data.get("concurrencyPolicy", "fail"),
+            data.get("useTransformationCredentials", False),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -385,7 +448,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
         self.request_timeout_in_millis = request_timeout_in_millis
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         cdf_request: dict[str, Any] = resource["cdfRequest"]
 
         return cls(
@@ -421,7 +484,7 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
         self.tasks = tasks
 
     @classmethod
-    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         subworkflow: dict[str, Any] = resource[cls.task_type]
 
         return cls(
@@ -450,7 +513,7 @@ class SubworkflowReferenceParameters(WorkflowTaskParameters):
         self.version = version
 
     @classmethod
-    def _load(cls: type[Self], resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         subworkflow: dict[str, Any] = resource[cls.task_type]
 
         return cls(workflow_external_id=subworkflow["workflowExternalId"], version=subworkflow["version"])
@@ -493,7 +556,7 @@ class DynamicTaskParameters(WorkflowTaskParameters):
         self.tasks = tasks
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         dynamic: dict[str, Any] = resource[cls.task_type]
 
         # can either be a reference string (i.e., in case of WorkflowDefinitions)
@@ -501,9 +564,7 @@ class DynamicTaskParameters(WorkflowTaskParameters):
             return cls(dynamic["tasks"])
 
         # or can be resolved to a list of Tasks (i.e., during or after execution)
-        return cls(
-            [WorkflowTask._load(task) for task in dynamic["tasks"]],
-        )
+        return cls([WorkflowTask._load(task) for task in dynamic["tasks"]])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
@@ -556,12 +617,13 @@ class WorkflowTask(CogniteResource):
         return self.parameters.task_type
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTask:
+    def _load(cls, resource: dict) -> WorkflowTask:
         return cls(
             external_id=resource["externalId"],
             parameters=WorkflowTaskParameters.load_parameters(resource),
             name=resource.get("name"),
             description=resource.get("description"),
+            # TODO: Either these are required in the response, or we should update typing to Optional
             # Allow default to come from the API.
             retries=resource.get("retries"),  # type: ignore[arg-type]
             timeout=resource.get("timeout"),  # type: ignore[arg-type]
@@ -586,37 +648,40 @@ class WorkflowTask(CogniteResource):
         if self.description:
             output["description"] = self.description
         if self.depends_on:
-            output[("dependsOn" if camel_case else "depends_on")] = [
-                {("externalId" if camel_case else "external_id"): dependency} for dependency in self.depends_on
-            ]
+            xid = "externalId" if camel_case else "external_id"
+            output["dependsOn" if camel_case else "depends_on"] = [{xid: dependency} for dependency in self.depends_on]
         return output
 
 
-class WorkflowTaskOutput(ABC):
+class WorkflowTaskOutput(CogniteResource, ABC):
     task_type: ClassVar[str]
 
     @classmethod
     @abstractmethod
-    def load(cls, data: dict) -> Self:
+    def _load(cls, data: dict[str, Any]) -> Self:
         raise NotImplementedError
 
     @classmethod
-    def load_output(cls, data: dict) -> WorkflowTaskOutput:
-        task_type = data["taskType"]
-        if task_type == "function":
-            return FunctionTaskOutput.load(data)
-        elif task_type == "transformation":
-            return TransformationTaskOutput.load(data)
-        elif task_type == "cdf":
-            return CDFTaskOutput.load(data)
-        elif task_type == "dynamic":
-            return DynamicTaskOutput.load(data)
-        elif task_type == "subworkflow":
-            return SubworkflowTaskOutput.load(data)
-        elif task_type == "simulation":
-            return SimulationTaskOutput.load(data)
-        else:
-            raise ValueError(f"Unknown task type: {task_type}")
+    def load_output(cls, data: dict[str, Any]) -> WorkflowTaskOutput:
+        if (task_type := data.get("taskType")) is None:
+            raise ValueError("Missing taskType key in output data")
+        match task_type:
+            case "function":
+                return FunctionTaskOutput._load(data)
+            case "transformation":
+                return TransformationTaskOutput._load(data)
+            case "cdf":
+                return CDFTaskOutput._load(data)
+            case "dynamic":
+                return DynamicTaskOutput._load(data)
+            case "subworkflow":
+                return SubworkflowTaskOutput._load(data)
+            case "simulation":
+                return SimulationTaskOutput._load(data)
+            case str():
+                return UnknownWorkflowTaskOutput._load(data)
+            case task_type:
+                raise ValueError(f"Invalid taskType: {task_type!r}, must be str")
 
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -642,7 +707,7 @@ class FunctionTaskOutput(WorkflowTaskOutput):
         self.response = response
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> FunctionTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> FunctionTaskOutput:
         output = data["output"]
         return cls(output.get("callId"), output.get("functionId"), output.get("response"))
 
@@ -652,6 +717,37 @@ class FunctionTaskOutput(WorkflowTaskOutput):
             "functionId" if camel_case else "function_id": self.function_id,
             "response": self.response,
         }
+
+
+class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
+    """Fallback for output types not yet added to the SDK for forward-compatibility with the API
+
+    We don't know what the task_type will be, so we use a property instead of the class variable.
+    """
+
+    def __init__(self, task_type: str, output: dict[str, Any]) -> None:
+        self._task_type = task_type
+        self.output = output
+
+    @property
+    def task_type(self) -> str:  # type: ignore [override]
+        return self._task_type
+
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> Self:
+        return cls(data["taskType"], data.get("output") or {})
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        if not camel_case:
+            # We can not automatically convert to snake case, as we don't know if there is user data
+            # in the output that should be left untouched (this has caused issues in the past):
+            warnings.warn(
+                "Dumping with snake case is not supported as this task output class is unknown. "
+                "Please update the SDK to the latest version, or file an issue on Github.",
+                UserWarning,
+                stacklevel=2,
+            )
+        return self.output
 
 
 class SimulationTaskOutput(WorkflowTaskOutput):
@@ -680,7 +776,7 @@ class SimulationTaskOutput(WorkflowTaskOutput):
         self.status_message = status_message
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> SimulationTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> SimulationTaskOutput:
         output = data["output"]
         return cls(
             run_id=output.get("runId"),
@@ -710,12 +806,12 @@ class TransformationTaskOutput(WorkflowTaskOutput):
         self.job_id = job_id
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> TransformationTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> TransformationTaskOutput:
         output = data["output"]
         return cls(output.get("jobId"))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {("jobId" if camel_case else "job_id"): self.job_id}
+        return {"jobId" if camel_case else "job_id": self.job_id}
 
 
 class CDFTaskOutput(WorkflowTaskOutput):
@@ -723,25 +819,25 @@ class CDFTaskOutput(WorkflowTaskOutput):
     The CDF Request output is used to specify the output of a CDF Request.
 
     Args:
-        response (str | dict | None): The response of the CDF Request. Will be a JSON object if content-type is application/json, otherwise will be a string.
+        response (str | dict[str, Any] | None): The response of the CDF Request. Will be a JSON object if content-type is application/json, otherwise will be a string.
         status_code (int | None): The status code of the CDF Request.
     """
 
     task_type: ClassVar[str] = "cdf"
 
-    def __init__(self, response: str | dict | None, status_code: int | None) -> None:
+    def __init__(self, response: str | dict[str, Any] | None, status_code: int | None) -> None:
         self.response = response
         self.status_code = status_code
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> CDFTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> CDFTaskOutput:
         output = data["output"]
         return cls(output.get("response"), output.get("statusCode"))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "response": self.response,
-            ("statusCode" if camel_case else "status_code"): self.status_code,
+            "statusCode" if camel_case else "status_code": self.status_code,
         }
 
 
@@ -755,7 +851,7 @@ class DynamicTaskOutput(WorkflowTaskOutput):
     def __init__(self) -> None: ...
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> DynamicTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> DynamicTaskOutput:
         return cls()
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -772,14 +868,14 @@ class SubworkflowTaskOutput(WorkflowTaskOutput):
     def __init__(self) -> None: ...
 
     @classmethod
-    def load(cls, data: dict[str, Any]) -> SubworkflowTaskOutput:
+    def _load(cls, data: dict[str, Any]) -> SubworkflowTaskOutput:
         return cls()
 
-    def dump(self, camel_case: bool = False) -> dict[str, Any]:
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {}
 
 
-class WorkflowTaskExecution(CogniteObject):
+class WorkflowTaskExecution(CogniteResource):
     """
     This class represents a task execution.
 
@@ -822,7 +918,7 @@ class WorkflowTaskExecution(CogniteObject):
         return self.input.task_type
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTaskExecution:
+    def _load(cls, resource: dict) -> WorkflowTaskExecution:
         return cls(
             id=resource["id"],
             external_id=resource["externalId"],
@@ -839,7 +935,7 @@ class WorkflowTaskExecution(CogniteObject):
         output: dict[str, Any] = super().dump(camel_case)
         output["input"] = self.input.dump(camel_case)
         output["status"] = self.status.upper()
-        output[("taskType" if camel_case else "task_type")] = self.task_type
+        output["taskType" if camel_case else "task_type"] = self.task_type
         # API uses isAsyncComplete and asyncComplete inconsistently:
         if self.task_type == "function":
             if (is_async_complete := output["input"].get("isAsyncComplete")) is not None:
@@ -872,7 +968,7 @@ class WorkflowDefinitionCore(WriteableCogniteResource["WorkflowDefinitionUpsert"
         self.description = description
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             tasks=[WorkflowTask._load(task) for task in resource["tasks"]],
             description=resource.get("description"),
@@ -899,15 +995,11 @@ class WorkflowDefinitionUpsert(WorkflowDefinitionCore):
                             the description when updating it.
     """
 
-    def __init__(
-        self,
-        tasks: list[WorkflowTask],
-        description: str | None = None,
-    ) -> None:
+    def __init__(self, tasks: list[WorkflowTask], description: str | None = None) -> None:
         super().__init__(tasks, description)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowDefinitionUpsert:
+    def _load(cls, resource: dict) -> WorkflowDefinitionUpsert:
         return cls(
             tasks=[WorkflowTask._load(task) for task in resource["tasks"]],
             description=resource.get("description"),
@@ -946,7 +1038,7 @@ class WorkflowDefinition(WorkflowDefinitionCore):
         self.hash_ = hash_
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowDefinition:
+    def _load(cls, resource: dict) -> WorkflowDefinition:
         return cls(
             hash_=resource["hash"],
             tasks=[WorkflowTask._load(task) for task in resource["tasks"]],
@@ -1009,12 +1101,11 @@ class WorkflowVersionUpsert(WorkflowVersionCore):
         self.workflow_definition = workflow_definition
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        workflow_definition: dict[str, Any] = resource["workflowDefinition"]
+    def _load(cls, resource: dict) -> Self:
         return cls(
             workflow_external_id=resource["workflowExternalId"],
             version=resource["version"],
-            workflow_definition=WorkflowDefinitionUpsert._load(workflow_definition),
+            workflow_definition=WorkflowDefinitionUpsert._load(resource["workflowDefinition"]),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -1055,12 +1146,11 @@ class WorkflowVersion(WorkflowVersionCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowVersion:
-        workflow_definition: dict[str, Any] = resource["workflowDefinition"]
+    def _load(cls, resource: dict) -> WorkflowVersion:
         return cls(
             workflow_external_id=resource["workflowExternalId"],
             version=resource["version"],
-            workflow_definition=WorkflowDefinition._load(workflow_definition),
+            workflow_definition=WorkflowDefinition._load(resource["workflowDefinition"]),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
         )
@@ -1151,15 +1241,12 @@ class WorkflowExecution(CogniteResource):
         return WorkflowVersionId(workflow_external_id=self.workflow_external_id, version=self.version)
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowExecution:
+    def _load(cls, resource: dict) -> WorkflowExecution:
         return cls(
             id=resource["id"],
             workflow_external_id=resource["workflowExternalId"],
             version=resource.get("version"),
-            status=cast(
-                WorkflowStatus,
-                to_snake_case(resource["status"]),
-            ),
+            status=cast(WorkflowStatus, to_snake_case(resource["status"])),
             created_time=resource["createdTime"],
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
@@ -1222,15 +1309,12 @@ class WorkflowExecutionDetailed(WorkflowExecution):
         self.metadata = metadata
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowExecutionDetailed:
+    def _load(cls, resource: dict) -> WorkflowExecutionDetailed:
         return cls(
             id=resource["id"],
             workflow_external_id=resource["workflowExternalId"],
             version=resource.get("version"),
-            status=cast(
-                WorkflowStatus,
-                to_snake_case(resource["status"]),
-            ),
+            status=cast(WorkflowStatus, to_snake_case(resource["status"])),
             created_time=resource["createdTime"],
             start_time=resource.get("startTime"),
             end_time=resource.get("endTime"),
@@ -1243,10 +1327,10 @@ class WorkflowExecutionDetailed(WorkflowExecution):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
-        output[("workflowDefinition" if camel_case else "workflow_definition")] = self.workflow_definition.dump(
+        output["workflowDefinition" if camel_case else "workflow_definition"] = self.workflow_definition.dump(
             camel_case
         )
-        output[("executedTasks" if camel_case else "executed_tasks")] = [
+        output["executedTasks" if camel_case else "executed_tasks"] = [
             task.dump(camel_case) for task in self.executed_tasks
         ]
         if self.input:
@@ -1276,7 +1360,7 @@ class WorkflowVersionId:
 
     Args:
         workflow_external_id (str): The external ID of the workflow.
-        version (str, optional): The version of the workflow. Defaults to None.
+        version (str | None): The version of the workflow. Defaults to None.
     """
 
     workflow_external_id: str
@@ -1284,13 +1368,6 @@ class WorkflowVersionId:
 
     def as_tuple(self) -> tuple[str, str | None]:
         return self.workflow_external_id, self.version
-
-    def as_primitive(self) -> tuple[str, str | None]:
-        warnings.warn(
-            "as_primitive() is deprecated, use as_tuple instead. Will be removed in the next major release.",
-            DeprecationWarning,
-        )
-        return self.as_tuple()
 
     @classmethod
     def load(cls, resource: dict) -> Self:
@@ -1357,7 +1434,7 @@ class WorkflowIds(UserList):
         return [workflow_id.dump(camel_case, as_external_id_key=as_external_id) for workflow_id in self.data]
 
 
-class WorkflowTriggerRule(CogniteObject, ABC):
+class WorkflowTriggerRule(CogniteResource, ABC):
     """This is the base class for all workflow trigger rules."""
 
     _trigger_type: ClassVar[str]
@@ -1373,16 +1450,16 @@ class WorkflowTriggerRule(CogniteObject, ABC):
         return dumped
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         trigger_type = resource["triggerType"]
         if trigger_type in _TRIGGER_RULE_BY_TYPE:
             return cast(Self, _TRIGGER_RULE_BY_TYPE[trigger_type]._load_trigger(resource))
         # If more triggers are added in the future, this ensures that the SDK does not break.
-        return cast(Self, UnknownCogniteObject(resource))
+        return cast(Self, UnknownCogniteResource(resource))
 
     @classmethod
     @abstractmethod
-    def _load_trigger(cls, data: dict) -> Self:
+    def _load_trigger(cls, data: dict[str, Any]) -> Self:
         raise NotImplementedError
 
 
@@ -1401,11 +1478,11 @@ class WorkflowTriggerDataModelingQuery(Query):
     ) -> None:
         super().__init__(with_, select)
         # Parameters and cursors are not supported for workflow trigger queries:
-        self.parameters = None
+        self.parameters = None  # type: ignore [assignment]
         self.cursors = None  # type: ignore [assignment]
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             with_={k: ResultSetExpression.load(v) for k, v in resource["with"].items()},
             select={k: Select.load(v) for k, v in resource["select"].items()},
@@ -1438,7 +1515,7 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
         return item
 
     @classmethod
-    def _load_trigger(cls, data: dict) -> WorkflowScheduledTriggerRule:
+    def _load_trigger(cls, data: dict[str, Any]) -> WorkflowScheduledTriggerRule:
         # Convert timezone to ZoneInfo
         timezone = ZoneInfo(data["timezone"]) if "timezone" in data else None
         return cls(cron_expression=data["cronExpression"], timezone=timezone)
@@ -1467,7 +1544,7 @@ class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
         self.batch_timeout = batch_timeout
 
     @classmethod
-    def _load_trigger(cls, data: dict) -> WorkflowDataModelingTriggerRule:
+    def _load_trigger(cls, data: dict[str, Any]) -> WorkflowDataModelingTriggerRule:
         return cls(
             data_modeling_query=WorkflowTriggerDataModelingQuery.load(data["dataModelingQuery"]),
             batch_size=data.get("batchSize"),
@@ -1481,6 +1558,88 @@ class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
             "batch_size": self.batch_size,
             "batch_timeout": self.batch_timeout,
         }
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
+
+
+class WorkflowRecordStreamSourceSelector(CogniteResource):
+    """Selects which container properties to include in a record stream trigger's workflow input.
+
+    Args:
+        source (RecordContainerId): The container to select properties from.
+        properties (list[str]): Property identifiers to return; use ``["*"]`` to return all.
+    """
+
+    def __init__(self, source: RecordContainerId, properties: list[str]) -> None:
+        self.source = source
+        self.properties = properties
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> WorkflowRecordStreamSourceSelector:
+        return cls(source=RecordContainerId.load(resource["source"]), properties=resource["properties"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"source": self.source.dump(camel_case=camel_case), "properties": self.properties}
+
+
+class WorkflowRecordStreamTriggerRule(WorkflowTriggerRule):
+    """
+    This class represents a record stream trigger rule.
+
+    Args:
+        stream_external_id (str): The external ID of the stream to subscribe to for record changes.
+        batch_size (int): The maximum number of records to pass to a workflow execution.
+        batch_timeout (int): The maximum time in seconds to wait for the batch to be filled.
+        filter (Filter | None): Optional filter to limit which records trigger the workflow.
+        sources (list[WorkflowRecordStreamSourceSelector] | None): Optional containers and properties to include in
+            the workflow input.
+        initialize_cursor (str | None): Where record stream syncing starts when no cursor exists yet,
+            as a relative duration like ``"6h-ago"``. If omitted, syncing starts from the current time (``"0d-ago"``).
+    """
+
+    _trigger_type = "recordStream"
+
+    def __init__(
+        self,
+        stream_external_id: str,
+        batch_size: int,
+        batch_timeout: int,
+        filter: Filter | None = None,
+        sources: list[WorkflowRecordStreamSourceSelector] | None = None,
+        initialize_cursor: str | None = None,
+    ) -> None:
+        self.stream_external_id = stream_external_id
+        self.batch_size = batch_size
+        self.batch_timeout = batch_timeout
+        self.filter = filter
+        self.sources = sources
+        self.initialize_cursor = initialize_cursor
+
+    @classmethod
+    def _load_trigger(cls, data: dict[str, Any]) -> WorkflowRecordStreamTriggerRule:
+        return cls(
+            stream_external_id=data["streamExternalId"],
+            batch_size=data["batchSize"],
+            batch_timeout=data["batchTimeout"],
+            filter=Filter._load_if(data.get("filter")),
+            sources=[WorkflowRecordStreamSourceSelector._load(source) for source in (data.get("sources") or [])],
+            initialize_cursor=data.get("initializeCursor"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item: dict[str, Any] = {
+            "trigger_type": self.trigger_type,
+            "stream_external_id": self.stream_external_id,
+            "batch_size": self.batch_size,
+            "batch_timeout": self.batch_timeout,
+        }
+        if self.filter is not None:
+            item["filter"] = self.filter.dump()
+        if self.sources:
+            item["sources"] = [source.dump(camel_case=camel_case) for source in self.sources]
+        if self.initialize_cursor is not None:
+            item["initialize_cursor"] = self.initialize_cursor
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
@@ -1501,25 +1660,15 @@ class WorkflowTriggerCore(WriteableCogniteResource["WorkflowTriggerUpsert"], ABC
         trigger_rule (WorkflowTriggerRule): The trigger rule of the workflow version trigger.
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
-        input (dict | None): The input data of the workflow version trigger. Defaults to None.
-        metadata (dict | None): Application specific metadata. Defaults to None.
     """
 
     def __init__(
-        self,
-        external_id: str,
-        trigger_rule: WorkflowTriggerRule,
-        workflow_external_id: str,
-        workflow_version: str,
-        input: dict | None = None,
-        metadata: dict | None = None,
+        self, external_id: str, trigger_rule: WorkflowTriggerRule, workflow_external_id: str, workflow_version: str
     ) -> None:
         self.external_id = external_id
         self.trigger_rule = trigger_rule
         self.workflow_external_id = workflow_external_id
         self.workflow_version = workflow_version
-        self.input = input
-        self.metadata = metadata
 
 
 class WorkflowTriggerUpsert(WorkflowTriggerCore):
@@ -1535,6 +1684,24 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
         metadata (dict | None): Application specific metadata. Defaults to None.
     """
 
+    def __init__(
+        self,
+        external_id: str,
+        trigger_rule: WorkflowTriggerRule,
+        workflow_external_id: str,
+        workflow_version: str,
+        input: dict | None = None,
+        metadata: dict | None = None,
+    ) -> None:
+        super().__init__(
+            external_id=external_id,
+            trigger_rule=trigger_rule,
+            workflow_external_id=workflow_external_id,
+            workflow_version=workflow_version,
+        )
+        self.input = input
+        self.metadata = metadata
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item: dict[str, Any] = {
             "external_id": self.external_id,
@@ -1552,7 +1719,7 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
         return item
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerUpsert:
+    def _load(cls, resource: dict) -> WorkflowTriggerUpsert:
         return cls(
             external_id=resource["externalId"],
             workflow_external_id=resource["workflowExternalId"],
@@ -1567,9 +1734,6 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
         return self
 
 
-WorkflowTriggerCreate = WorkflowTriggerUpsert
-
-
 class WorkflowTrigger(WorkflowTriggerCore):
     """
     This class represents a workflow trigger.
@@ -1580,10 +1744,10 @@ class WorkflowTrigger(WorkflowTriggerCore):
         workflow_external_id (str): The external ID of the workflow.
         workflow_version (str): The version of the workflow.
         is_paused (bool): Whether the trigger is paused.
-        input (dict | None): The input data passed to the workflow when an execution is started. Defaults to None.
-        metadata (dict | None): Application specific metadata. Defaults to None.
-        created_time (int | None): The time when the workflow version trigger was created. Unix timestamp in milliseconds. Defaults to None.
-        last_updated_time (int | None): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds. Defaults to None.
+        created_time (int): The time when the workflow version trigger was created. Unix timestamp in milliseconds.
+        last_updated_time (int): The time when the workflow version trigger was last updated. Unix timestamp in milliseconds.
+        input (dict | None): The input data passed to the workflow when an execution is started.
+        metadata (dict | None): Application specific metadata.
     """
 
     def __init__(
@@ -1593,19 +1757,19 @@ class WorkflowTrigger(WorkflowTriggerCore):
         workflow_external_id: str,
         workflow_version: str,
         is_paused: bool,
+        created_time: int,
+        last_updated_time: int,
         input: dict | None = None,
         metadata: dict | None = None,
-        created_time: int | None = None,
-        last_updated_time: int | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
             trigger_rule=trigger_rule,
             workflow_external_id=workflow_external_id,
             workflow_version=workflow_version,
-            input=input,
-            metadata=metadata,
         )
+        self.input = input or {}
+        self.metadata = metadata or {}
         self.created_time = created_time
         self.last_updated_time = last_updated_time
         self.is_paused = is_paused
@@ -1616,22 +1780,20 @@ class WorkflowTrigger(WorkflowTriggerCore):
             "trigger_rule": self.trigger_rule.dump(camel_case=camel_case),
             "workflow_external_id": self.workflow_external_id,
             "workflow_version": self.workflow_version,
+            "created_time": self.created_time,
+            "last_updated_time": self.last_updated_time,
+            "is_paused": self.is_paused,
         }
         if self.input:
             item["input"] = self.input
         if self.metadata:
             item["metadata"] = self.metadata
-        if self.created_time:
-            item["created_time"] = self.created_time
-        if self.last_updated_time:
-            item["last_updated_time"] = self.last_updated_time
-        item["is_paused"] = self.is_paused
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTrigger:
+    def _load(cls, resource: dict) -> WorkflowTrigger:
         return cls(
             external_id=resource["externalId"],
             workflow_external_id=resource["workflowExternalId"],
@@ -1639,8 +1801,8 @@ class WorkflowTrigger(WorkflowTriggerCore):
             trigger_rule=WorkflowTriggerRule._load(resource["triggerRule"]),
             input=resource.get("input"),
             metadata=resource.get("metadata"),
-            created_time=resource.get("createdTime"),
-            last_updated_time=resource.get("lastUpdatedTime"),
+            created_time=resource["createdTime"],
+            last_updated_time=resource["lastUpdatedTime"],
             is_paused=resource["isPaused"],
         )
 
@@ -1714,7 +1876,7 @@ class WorkflowTriggerRun(CogniteResource):
         return item
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> WorkflowTriggerRun:
+    def _load(cls, resource: dict) -> WorkflowTriggerRun:
         return cls(
             external_id=resource["externalId"],
             fire_time=resource["fireTime"],

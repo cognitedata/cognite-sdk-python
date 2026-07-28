@@ -70,16 +70,18 @@ class TestFromAlias:
             ("megavolt ampere hr", "enerGY", "energy:megav-a-hr"),
         ),
     )
-    def test_lookup_unit_from_alias(self, cognite_client, alias, quantity, expected_xid):
+    def test_lookup_unit_from_alias(
+        self, cognite_client: CogniteClient, alias: str, quantity: str | None, expected_xid: str
+    ) -> None:
         unit = cognite_client.units.from_alias(alias, quantity)
         assert unit.external_id == expected_xid
 
-    def test_lookup_unit_from_alias_unknown_quantity(self, cognite_client):
+    def test_lookup_unit_from_alias_unknown_quantity(self, cognite_client: CogniteClient) -> None:
         match = re.escape("Unknown quantity='Not Energy'. Did you mean one of: ['Energy']? All known quantities: [")
         with pytest.raises(ValueError, match=match):
             cognite_client.units.from_alias("cubic decimetre per minute", "Not Energy")
 
-    def test_lookup_ambiguous(self, cognite_client):
+    def test_lookup_ambiguous(self, cognite_client: CogniteClient) -> None:
         match = re.escape("Ambiguous alias, matches all of: ['capacitance:farad', 'temperature:deg_f']")
         with pytest.raises(ValueError, match=match):
             cognite_client.units.from_alias("F", None)
@@ -89,7 +91,7 @@ class TestFromAlias:
         units = cognite_client.units.from_alias("F", None, return_ambiguous=True)
         assert units.as_external_ids() == ["capacitance:farad", "temperature:deg_f"]
 
-    def test_lookup_closest_match__only_alias(self, cognite_client):
+    def test_lookup_closest_match__only_alias(self, cognite_client: CogniteClient) -> None:
         # Ensure it fails without 'closest matches':
         match = re.escape("Unknown alias='c mol', did you mean one of: ['")
         with pytest.raises(ValueError, match=match):
@@ -99,7 +101,7 @@ class TestFromAlias:
         assert len(units) > 1
         assert "amount_of_substance:centimol" in units.as_external_ids()
 
-    def test_lookup_closest_match_alias_and_quantity(self, cognite_client):
+    def test_lookup_closest_match_alias_and_quantity(self, cognite_client: CogniteClient) -> None:
         # Ensure it fails without 'closest matches':
         match = re.escape("Unknown alias='imp force' for known quantity='Force'. Did you mean one of: ['")
         with pytest.raises(ValueError, match=match):

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from abc import ABC
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import auto
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal
 
 from typing_extensions import Self
 
-from cognite.client.data_classes import Datapoints
 from cognite.client.data_classes._base import (
     CogniteListUpdate,
     CognitePrimitiveUpdate,
@@ -22,21 +22,20 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling import NodeId
+from cognite.client.data_classes.datapoints import Datapoint
 from cognite.client.data_classes.filters import _BASIC_FILTERS as _FILTERS_SUPPORTED
 from cognite.client.data_classes.filters import Filter, _validate_filter
-from cognite.client.utils import _json
+from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import exactly_one_is_not_none
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
-
-ExternalId: TypeAlias = str
+    import pandas as pd
 
 
 class DatapointSubscriptionCore(WriteableCogniteResource["DataPointSubscriptionWrite"], ABC):
     def __init__(
         self,
-        external_id: ExternalId,
+        external_id: str,
         partition_count: int,
         filter: Filter | None,
         name: str | None,
@@ -62,7 +61,7 @@ class DatapointSubscription(DatapointSubscriptionCore):
         This is the read version of a subscription, used when reading subscriptions from CDF.
 
     Args:
-        external_id (ExternalId): Externally provided ID for the subscription. Must be unique.
+        external_id (str): Externally provided ID for the subscription. Must be unique.
         partition_count (int): The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead.
         created_time (int): Time when the subscription was created in CDF in milliseconds since Jan 1, 1970.
         last_updated_time (int): Time when the subscription was last updated in CDF in milliseconds since Jan 1, 1970.
@@ -75,11 +74,11 @@ class DatapointSubscription(DatapointSubscriptionCore):
 
     def __init__(
         self,
-        external_id: ExternalId,
+        external_id: str,
         partition_count: int,
         created_time: int,
         last_updated_time: int,
-        time_series_count: int | None,
+        time_series_count: int | None = None,
         filter: Filter | None = None,
         name: str | None = None,
         description: str | None = None,
@@ -91,11 +90,11 @@ class DatapointSubscription(DatapointSubscriptionCore):
         self.last_updated_time = last_updated_time
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict) -> Self:
         return cls(
             external_id=resource["externalId"],
             partition_count=resource["partitionCount"],
-            filter=Filter.load(resource["filter"]) if "filter" in resource else None,
+            filter=Filter._load_if(resource.get("filter")),
             name=resource.get("name"),
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
@@ -125,7 +124,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
     Args:
         external_id (str): Externally provided ID for the subscription. Must be unique.
         partition_count (int): The maximum effective parallelism of this subscription (the number of clients that can read from it concurrently) will be limited to this number, but a higher partition count will cause a higher time overhead. The partition count must be between 1 and 100. CAVEAT: This cannot change after the subscription has been created.
-        time_series_ids (list[ExternalId] | None): List of (external) ids of time series that this subscription will listen to. Not compatible with filter.
+        time_series_ids (list[str] | None): List of (external) ids of time series that this subscription will listen to. Not compatible with filter.
         instance_ids(list[NodeId] | None): List of instance ids of time series that this subscription will listen to. Not compatible with filter.
         filter (Filter | None): A filter DSL (Domain Specific Language) to define advanced filter queries. Not compatible with time_series_ids.
         name (str | None): No description.
@@ -137,7 +136,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         self,
         external_id: str,
         partition_count: int,
-        time_series_ids: list[ExternalId] | None = None,
+        time_series_ids: list[str] | None = None,
         instance_ids: list[NodeId] | None = None,
         filter: Filter | None = None,
         name: str | None = None,
@@ -152,14 +151,13 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
         self.instance_ids = instance_ids
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> Self:
-        filter = Filter.load(resource["filter"]) if "filter" in resource else None
+    def _load(cls, resource: dict) -> Self:
         return cls(
             external_id=resource["externalId"],
             partition_count=resource["partitionCount"],
             time_series_ids=resource.get("timeSeriesIds"),
             instance_ids=[NodeId.load(item) for item in resource["instanceIds"]] if "instanceIds" in resource else None,
-            filter=filter,
+            filter=Filter._load_if(resource.get("filter")),
             name=resource.get("name"),
             description=resource.get("description"),
             data_set_id=resource.get("dataSetId"),
@@ -174,10 +172,6 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
     def as_write(self) -> DataPointSubscriptionWrite:
         """Returns this DatapointSubscription instance"""
         return self
-
-
-# TODO: Remove this in next major release
-DataPointSubscriptionCreate = DataPointSubscriptionWrite
 
 
 class DataPointSubscriptionUpdate(CogniteUpdate):
@@ -265,12 +259,12 @@ class TimeSeriesID(CogniteResource):
     Args:
         id (int | None): A server-generated ID for the object. May be None if the time series
             reference is broken (e.g., the time series was deleted or its external_id was changed).
-        external_id (ExternalId | None): The external ID provided by the client. Must be unique for the resource type.
+        external_id (str | None): The external ID provided by the client. Must be unique for the resource type.
         instance_id (NodeId | None): The ID of an instance in Cognite Data Models.
     """
 
     def __init__(
-        self, id: int | None = None, external_id: ExternalId | None = None, instance_id: NodeId | None = None
+        self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -292,11 +286,11 @@ class TimeSeriesID(CogniteResource):
         return f"TimeSeriesID({', '.join(parts)})"
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None) -> TimeSeriesID:
+    def _load(cls, resource: dict) -> TimeSeriesID:
         return cls(
             id=resource.get("id"),
             external_id=resource.get("externalId"),
-            instance_id=NodeId.load(resource["instanceId"]) if "instanceId" in resource else None,
+            instance_id=NodeId._load_if(resource.get("instanceId")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -329,26 +323,20 @@ class DataDeletion:
 @dataclass
 class DatapointsUpdate:
     time_series: TimeSeriesID
-    upserts: Datapoints
+    upserts: SubscriptionDatapoints
     deletes: list[DataDeletion]
 
     @classmethod
     def load(
         cls, data: dict[str, Any], include_status: bool = False, ignore_bad_datapoints: bool = True
     ) -> DatapointsUpdate:
-        identifier = TimeSeriesID._load(data["timeSeries"])
-        is_string = data["timeSeries"]["isString"]
-        for dp in data["upserts"]:
-            if include_status:
-                dp.setdefault("status", {"code": 0, "symbol": "Good"})  # Not returned from API by default
-            if not ignore_bad_datapoints:
-                # Bad data can have value missing (we translate to None):
-                dp.setdefault("value", None)
-                if not is_string:
-                    dp["value"] = _json.convert_to_float(dp["value"])
         return cls(
-            time_series=identifier,
-            upserts=Datapoints._load({**identifier.dump(), "isString": is_string, "datapoints": data["upserts"]}),
+            time_series=TimeSeriesID._load(data["timeSeries"]),
+            upserts=SubscriptionDatapoints._load(
+                data,
+                include_status=include_status,
+                ignore_bad_datapoints=ignore_bad_datapoints,
+            ),
             deletes=[DataDeletion.load(value) for value in data["deletes"]],
         )
 
@@ -359,6 +347,119 @@ class DatapointsUpdate:
         if self.deletes is not None:
             resource["deletes"] = [d.dump(camel_case) for d in self.deletes]
         return resource
+
+
+class SubscriptionDatapoints(CogniteResource):
+    """Datapoints from a subscription update, flattened from the nested API response.
+
+    The API returns time series metadata (id, isString, type, etc.) separately from the datapoints array.
+    This class combines them into a single object for easier consumption.
+    """
+
+    def __init__(
+        self,
+        id: int,
+        is_string: bool,
+        type: Literal["numeric", "string", "state"],
+        timestamp: list[int],
+        value: list[str] | list[float],
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+        status_code: list[int] | None = None,
+        status_symbol: list[str] | None = None,
+    ) -> None:
+        self.id = id
+        self.is_string = is_string
+        self.type = type
+        self.timestamp = timestamp
+        self.value = value
+        self.external_id = external_id
+        self.instance_id = instance_id
+        self.status_code = status_code
+        self.status_symbol = status_symbol
+
+    @classmethod
+    def _load(  # type: ignore [override]
+        cls,
+        data: dict[str, Any],
+        include_status: bool,
+        ignore_bad_datapoints: bool,
+    ) -> Self:
+        # The API response is -quite- involved... in order to load correctly, we need a lot of info...
+        ts_obj, dps_obj = data["timeSeries"], data["upserts"]
+        is_string = ts_obj["isString"]
+        if include_status or not ignore_bad_datapoints:  # Prepare all dps only when necessary
+            for dp in dps_obj:
+                if include_status:
+                    # Not returned from API by default:
+                    dp.setdefault("status", {"code": 0, "symbol": "Good"})
+                if not ignore_bad_datapoints:
+                    # Bad data can have value missing (we translate to None):
+                    dp.setdefault("value", None)
+                    if not is_string:
+                        dp["value"] = _json.convert_to_float(dp["value"])
+
+        status_code: list[int] | None = None
+        status_symbol: list[str] | None = None
+        if include_status:
+            status_code = [dp["status"]["code"] for dp in dps_obj]
+            status_symbol = [dp["status"]["symbol"] for dp in dps_obj]
+
+        return cls(
+            id=ts_obj["id"],
+            is_string=ts_obj["isString"],
+            type=ts_obj["type"],
+            timestamp=[dp["timestamp"] for dp in dps_obj],
+            value=[dp["value"] for dp in dps_obj],
+            external_id=ts_obj.get("externalId"),
+            instance_id=NodeId._load_if(ts_obj.get("instanceId")),
+            status_code=status_code,
+            status_symbol=status_symbol,
+        )
+
+    def __iter__(self) -> Iterator[Datapoint]:
+        if self.status_code and self.status_symbol:
+            for ts, val, code, symbol in zip(self.timestamp, self.value, self.status_code, self.status_symbol):
+                yield Datapoint(timestamp=ts, value=val, status_code=code, status_symbol=symbol)  # type: ignore[arg-type]
+        else:
+            for ts, val in zip(self.timestamp, self.value):
+                yield Datapoint(timestamp=ts, value=val)  # type: ignore[arg-type]
+
+    def __len__(self) -> int:
+        return len(self.timestamp)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        raise NotImplementedError
+
+    def _repr_html_(self) -> str:
+        from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
+
+        return notebook_display_with_fallback(self)
+
+    def to_pandas(self, include_status: bool = True) -> pd.DataFrame:  # type: ignore [override]
+        """Convert the datapoints into a pandas DataFrame.
+
+        Args:
+            include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info as a separate level in the columns (MultiIndex).
+
+        Returns:
+            pd.DataFrame: The dataframe.
+        """
+        from cognite.client.data_classes import Datapoints
+
+        return Datapoints(
+            id=self.id,
+            is_string=self.is_string,
+            type=self.type,
+            external_id=self.external_id,
+            instance_id=self.instance_id,
+            timestamp=self.timestamp,
+            value=self.value,
+            status_code=self.status_code,
+            status_symbol=self.status_symbol,
+            # "Is step" is not returned from Dps. Subscriptions API. After conversion to pandas, it vanishies anyway:
+            is_step=None,  # type: ignore [arg-type]
+        ).to_pandas(include_status=include_status)
 
 
 @dataclass
@@ -410,9 +511,9 @@ class _DatapointSubscriptionBatchWithPartitions:
 
     Args:
         updates (list[DatapointsUpdate]): List of updates from the subscription, sorted by point in time they were applied to the time series. Every update contains a time series along with a set of changes to that time series.
-        partitions (list[DatapointSubscriptionPartition]): Which partitions/cursors to use for the next request. Map from partition index to cursor.
-        has_next (bool): Whether there is more data available at the time of the query. In rare cases, we may return true, even if there is no data available. If that is the case, just continue to query with the updated cursors, and it will eventually return false.
         subscription_changes (SubscriptionTimeSeriesUpdate): If present, this object represents changes to the subscription definition. The subscription will now start/stop listening to changes from the time series listed here.
+        has_next (bool): Whether there is more data available at the time of the query. In rare cases, we may return true, even if there is no data available. If that is the case, just continue to query with the updated cursors, and it will eventually return false.
+        partitions (list[DatapointSubscriptionPartition]): Which partitions/cursors to use for the next request. Map from partition index to cursor.
     """
 
     updates: list[DatapointsUpdate]
@@ -458,9 +559,7 @@ class DatapointSubscriptionList(
 
     def as_write(self) -> DatapointSubscriptionWriteList:
         """Returns this DatapointSubscriptionList as a DatapointSubscriptionWriteList"""
-        return DatapointSubscriptionWriteList(
-            [x.as_write() for x in self.data], cognite_client=self._get_cognite_client()
-        )
+        return DatapointSubscriptionWriteList([x.as_write() for x in self.data])
 
 
 class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):

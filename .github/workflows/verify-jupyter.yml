@@ -3,14 +3,22 @@ name: build
 
 on:
   pull_request:
-    branches: [master]
+    branches: [master, pysdk-release-v8]
 
 jobs:
   build_and_test_jupyter_pyodide:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Test against multiple Pyodide releases so breaking changes (e.g. the
+        # pyodide 314 IN_BROWSER -> IN_PYODIDE rename / Python 3.14) are caught:
+        #   0.29.0  -> Python 3.12, used by stlite and older JupyterLite
+        #   314.0.0 -> Python 3.14, used by JupyterLite 0.8.0+
+        pyodide-version: ["0.29.0", "314.0.0"]
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
-      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: '3.10'
           cache: 'pip'
@@ -21,13 +29,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: "22"
+          node-version: "24"
       - name: Install dependencies
-        run: npm install pyodide@0.27.6 # JupyterLite currently using pyodide 0.27.6
+        run: npm install pyodide@${{ matrix.pyodide-version }}
       - name: Install cognite-sdk in pyodide environment
         run: |
           whl_file=$(find dist -name "*.whl" | sed 's|^dist/||') # Find the built wheel file, remove dist/ prefix
           echo "Found built wheel file: $whl_file"
           SDK_FILE_PATH=$whl_file \
-          PACKAGES="[\"pyodide-http\", \"http://localhost:3000/dist/$whl_file\"]" \
+          PACKAGES="[\"anyio\", \"http://localhost:3000/dist/$whl_file\"]" \
           node scripts/test-pyodide.js

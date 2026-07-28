@@ -1,25 +1,24 @@
 Unit Catalog
 ======================
+.. currentmodule:: cognite.client
 
 Units
 ------------
-List Units
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.units.UnitAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Retrieve Unit
-^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.units.UnitAPI.retrieve
-
-Look up Unit from alias
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.units.UnitAPI.from_alias
+   AsyncCogniteClient.units
 
 Unit Systems
 ------------------
-List Unit System
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.units.UnitSystemAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
+
+   AsyncCogniteClient.units.systems
 
 Unit data classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

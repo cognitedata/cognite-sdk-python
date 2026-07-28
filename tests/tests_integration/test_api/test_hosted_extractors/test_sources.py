@@ -7,18 +7,23 @@ from cognite.client.data_classes.hosted_extractors import (
     EventHubSource,
     EventHubSourceUpdate,
     EventHubSourceWrite,
+    MQTT5Source,
     MQTT5SourceWrite,
-    Source,
     SourceList,
 )
-from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
+from tests.tests_integration.test_api.test_hosted_extractors.conftest import (
+    HUB_SOURCE_PREFIX,
+    MQTT_SOURCE_PREFIX,
+    UPDATE_SOURCE_PREFIX,
+)
+from tests.utils import get_or_raise
 
 
 @pytest.fixture(scope="session")
 def one_event_hub_source(cognite_client: CogniteClient, os_and_py_version: str) -> SourceList:
     my_hub = EventHubSourceWrite(
-        external_id=f"myNewHub-{os_and_py_version}",
+        external_id=f"{HUB_SOURCE_PREFIX}{os_and_py_version}",
         host="myHost",
         key_name="myKeyName",
         key_value="myKey",
@@ -33,60 +38,60 @@ def one_event_hub_source(cognite_client: CogniteClient, os_and_py_version: str) 
 class TestSources:
     def test_create_update_retrieve_delete(self, cognite_client: CogniteClient) -> None:
         my_hub = EventHubSourceWrite(
-            external_id=f"myNewHub-{random_string(10)}",
+            external_id=f"{HUB_SOURCE_PREFIX}{random_string(10)}",
             host="myHost",
             key_name="myKeyName",
             key_value="myKey",
             event_hub_name="myEventHub",
         )
-        created: EventHubSource | None = None
+        created = cognite_client.hosted_extractors.sources.create(my_hub)
         try:
-            created = cognite_client.hosted_extractors.sources.create(my_hub)
             assert isinstance(created, EventHubSource)
+
             update = EventHubSourceUpdate(external_id=my_hub.external_id).event_hub_name.set("myNewEventHub")
             updated = cognite_client.hosted_extractors.sources.update(update)
+            assert isinstance(updated, EventHubSource)
             assert updated.event_hub_name == "myNewEventHub"
+
             retrieved = cognite_client.hosted_extractors.sources.retrieve(created.external_id)
             assert retrieved is not None
+            assert isinstance(retrieved, EventHubSource)
             assert retrieved.external_id == created.external_id
             assert retrieved.event_hub_name == "myNewEventHub"
 
             cognite_client.hosted_extractors.sources.delete(created.external_id)
 
-            with pytest.raises(CogniteAPIError):
-                cognite_client.hosted_extractors.sources.retrieve(created.external_id)
-
-            cognite_client.hosted_extractors.sources.retrieve(created.external_id, ignore_unknown_ids=True)
+            assert cognite_client.hosted_extractors.sources.retrieve(created.external_id) is None
+            assert (
+                cognite_client.hosted_extractors.sources.retrieve(created.external_id, ignore_unknown_ids=True) is None
+            )
 
         finally:
-            if created:
-                cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
+            cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
 
     def test_create_update_replace_retrieve(self, cognite_client: CogniteClient) -> None:
         original = MQTT5SourceWrite(
-            external_id=f"myMqttSource-{random_string(10)}",
+            external_id=f"{MQTT_SOURCE_PREFIX}{random_string(10)}",
             host="mqtt.hsl.fi",
             port=1883,
         )
 
-        created: Source | None = None
+        created = cognite_client.hosted_extractors.sources.create(original)
         try:
-            created = cognite_client.hosted_extractors.sources.create(original)
-
             update = MQTT5SourceWrite(original.external_id, host="mqtt.hsl.fi", port=1884)
 
             updated = cognite_client.hosted_extractors.sources.update(update, mode="replace")
-
+            assert isinstance(updated, MQTT5Source)
             assert updated.port == 1884
 
             retrieved = cognite_client.hosted_extractors.sources.retrieve(created.external_id)
 
             assert retrieved is not None
+            assert isinstance(retrieved, MQTT5Source)
             assert retrieved.external_id == created.external_id
             assert retrieved.port == 1884
         finally:
-            if created:
-                cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
+            cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
 
     @pytest.mark.usefixtures("one_event_hub_source")
     def test_list(self, cognite_client: CogniteClient) -> None:
@@ -96,18 +101,16 @@ class TestSources:
 
     def test_update_using_write_object(self, cognite_client: CogniteClient) -> None:
         my_hub = EventHubSourceWrite(
-            external_id=f"to-update-{random_string(10)}",
+            external_id=f"{UPDATE_SOURCE_PREFIX}{random_string(10)}",
             host="myHost",
             key_name="myKeyName",
             key_value="myKey",
             event_hub_name="myEventHub",
         )
-        created: EventHubSource | None = None
+        created = cognite_client.hosted_extractors.sources.create(my_hub)
         try:
-            created = cognite_client.hosted_extractors.sources.create(my_hub)
-
             my_new_hub = EventHubSourceWrite(
-                external_id=created.external_id,
+                external_id=get_or_raise(created.external_id),
                 host="updatedHost",
                 key_name="updatedKeyName",
                 key_value="updatedKey",
@@ -115,8 +118,7 @@ class TestSources:
             )
 
             updated = cognite_client.hosted_extractors.sources.update(my_new_hub)
-
+            assert isinstance(updated, EventHubSource)
             assert updated.host == my_new_hub.host
         finally:
-            if created:
-                cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)
+            cognite_client.hosted_extractors.sources.delete(created.external_id, ignore_unknown_ids=True)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterator, Sequence
+from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
@@ -12,6 +12,8 @@ from cognite.client.data_classes.simulators.runs import (
     SimulationRunDataList,
     SimulationRunList,
     SimulationRunWrite,
+    SimulatorRunStatus,
+    SimulatorRunType,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -19,7 +21,7 @@ from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import CogniteClient
+    from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
 
@@ -31,7 +33,7 @@ class SimulatorRunsAPI(APIClient):
         self,
         config: ClientConfig,
         api_version: str | None,
-        cognite_client: CogniteClient,
+        cognite_client: AsyncCogniteClient,
     ) -> None:
         super().__init__(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
@@ -42,23 +44,13 @@ class SimulatorRunsAPI(APIClient):
             feature_name="Simulators",
         )
 
-    def __iter__(self) -> Iterator[SimulationRun]:
-        """Iterate over simulation runs
-
-        Fetches simulation runs as they are iterated over, so you keep a limited number of simulation runs in memory.
-
-        Returns:
-            Iterator[SimulationRun]: yields simulation runs one by one.
-        """
-        return self()
-
     @overload
     def __call__(
         self,
         chunk_size: int,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -68,15 +60,15 @@ class SimulatorRunsAPI(APIClient):
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
         sort: SimulationRunsSort | None = None,
-    ) -> Iterator[SimulationRunList]: ...
+    ) -> AsyncIterator[SimulationRunList]: ...
 
     @overload
     def __call__(
         self,
         chunk_size: None = None,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -86,14 +78,14 @@ class SimulatorRunsAPI(APIClient):
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
         sort: SimulationRunsSort | None = None,
-    ) -> Iterator[SimulationRun]: ...
+    ) -> AsyncIterator[SimulationRun]: ...
 
-    def __call__(
+    async def __call__(
         self,
         chunk_size: int | None = None,
         limit: int | None = None,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -103,7 +95,7 @@ class SimulatorRunsAPI(APIClient):
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
         sort: SimulationRunsSort | None = None,
-    ) -> Iterator[SimulationRun] | Iterator[SimulationRunList]:
+    ) -> AsyncIterator[SimulationRun] | AsyncIterator[SimulationRunList]:
         """Iterate over simulation runs
 
         Fetches simulation runs as they are iterated over, so you keep a limited number of simulation runs in memory.
@@ -111,8 +103,8 @@ class SimulatorRunsAPI(APIClient):
         Args:
             chunk_size (int | None): Number of simulation runs to return in each chunk. Defaults to yielding one simulation run a time.
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
+            status (SimulatorRunStatus | None): Filter by simulation run status
+            run_type (SimulatorRunType | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
             simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
@@ -123,10 +115,9 @@ class SimulatorRunsAPI(APIClient):
             simulation_time (TimestampRange | None): Filter by simulation time
             sort (SimulationRunsSort | None): The criteria to sort by.
 
-        Returns:
-            Iterator[SimulationRun] | Iterator[SimulationRunList]: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
-        """
-
+        Yields:
+            SimulationRun | SimulationRunList: yields Simulation Run one by one if chunk is not specified, else SimulatorRunsList objects.
+        """  # noqa: DOC404
         filter_runs = SimulatorRunsFilter(
             status=status,
             run_type=run_type,
@@ -140,7 +131,7 @@ class SimulatorRunsAPI(APIClient):
             simulation_time=simulation_time,
         )
 
-        return self._list_generator(
+        async for item in self._list_generator(
             list_cls=SimulationRunList,
             resource_cls=SimulationRun,
             method="POST",
@@ -148,13 +139,14 @@ class SimulatorRunsAPI(APIClient):
             sort=[SimulationRunsSort.load(sort).dump()] if sort else None,
             chunk_size=chunk_size,
             limit=limit,
-        )
+        ):
+            yield item
 
-    def list(
+    async def list(
         self,
         limit: int | None = DEFAULT_LIMIT_READ,
-        status: str | None = None,
-        run_type: str | None = None,
+        status: SimulatorRunStatus | None = None,
+        run_type: SimulatorRunType | None = None,
         model_external_ids: SequenceNotStr[str] | None = None,
         simulator_integration_external_ids: SequenceNotStr[str] | None = None,
         simulator_external_ids: SequenceNotStr[str] | None = None,
@@ -165,14 +157,14 @@ class SimulatorRunsAPI(APIClient):
         simulation_time: TimestampRange | None = None,
         sort: SimulationRunsSort | None = None,
     ) -> SimulationRunList:
-        """`Filter simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
+        """`Filter simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
 
         Retrieves a list of simulation runs that match the given criteria.
 
         Args:
             limit (int | None): The maximum number of simulation runs to return, pass None to return all.
-            status (str | None): Filter by simulation run status
-            run_type (str | None): Filter by simulation run type
+            status (SimulatorRunStatus | None): Filter by simulation run status
+            run_type (SimulatorRunType | None): Filter by simulation run type
             model_external_ids (SequenceNotStr[str] | None): Filter by simulator model external ids
             simulator_integration_external_ids (SequenceNotStr[str] | None): Filter by simulator integration external ids
             simulator_external_ids (SequenceNotStr[str] | None): Filter by simulator external ids
@@ -188,21 +180,25 @@ class SimulatorRunsAPI(APIClient):
 
         Examples:
             List simulation runs:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.runs.list()
+
+            Iterate over simulation runs, one-by-one:
+                >>> for run in client.simulators.runs():
+                ...     run  # do something with the simulation run
 
             Filter runs by status and simulator external ids:
                 >>> res = client.simulators.runs.list(
-                ...     simulator_external_ids=["PROSPER", "DWSIM"],
-                ...     status="success"
+                ...     simulator_external_ids=["PROSPER", "DWSIM"], status="success"
                 ... )
 
             Filter runs by time ranges:
                 >>> from cognite.client.data_classes.shared import TimestampRange
                 >>> res = client.simulators.runs.list(
-                ...     created_time=TimestampRange(min=0, max=1_700_000_000_000),
-                ...     simulation_time=TimestampRange(min=0, max=1_700_000_000_000),
+                ...     created_time=TimestampRange(min="1d-ago", max="now"),
+                ...     simulation_time=TimestampRange(min="1d-ago", max="now"),
                 ... )
         """
 
@@ -219,7 +215,7 @@ class SimulatorRunsAPI(APIClient):
             simulation_time=simulation_time,
         )
         self._warning.warn()
-        return self._list(
+        return await self._list(
             method="POST",
             limit=limit,
             resource_cls=SimulationRun,
@@ -229,19 +225,19 @@ class SimulatorRunsAPI(APIClient):
         )
 
     @overload
-    def retrieve(self, ids: int) -> SimulationRun | None: ...
+    async def retrieve(self, ids: int) -> SimulationRun | None: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
         ids: Sequence[int],
     ) -> SimulationRunList | None: ...
 
-    def retrieve(
+    async def retrieve(
         self,
         ids: int | Sequence[int],
     ) -> SimulationRun | SimulationRunList | None:
-        """`Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_by_id_simulators_runs_byids_post>`_
+        """`Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_by_id>`_
 
         Args:
             ids (int | Sequence[int]): The ID(s) of the simulation run(s) to retrieve.
@@ -251,13 +247,14 @@ class SimulatorRunsAPI(APIClient):
 
         Examples:
             Retrieve a single simulation run by id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> run = client.simulators.runs.retrieve(ids=2)
         """
         self._warning.warn()
         identifiers = IdentifierSequence.load(ids=ids)
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             resource_cls=SimulationRun,
             list_cls=SimulationRunList,
             identifiers=identifiers,
@@ -265,13 +262,15 @@ class SimulatorRunsAPI(APIClient):
         )
 
     @overload
-    def create(self, items: SimulationRunWrite) -> SimulationRun: ...
+    async def create(self, items: SimulationRunWrite) -> SimulationRun: ...
 
     @overload
-    def create(self, items: Sequence[SimulationRunWrite]) -> SimulationRunList: ...
+    async def create(self, items: Sequence[SimulationRunWrite]) -> SimulationRunList: ...
 
-    def create(self, items: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulationRunList:
-        """`Create simulation runs <https://developer.cognite.com/api#tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
+    async def create(
+        self, items: SimulationRunWrite | Sequence[SimulationRunWrite]
+    ) -> SimulationRun | SimulationRunList:
+        """`Create simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
 
         Args:
             items (SimulationRunWrite | Sequence[SimulationRunWrite]): The simulation run(s) to execute.
@@ -284,6 +283,7 @@ class SimulatorRunsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes.simulators.runs import SimulationRunWrite
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> run = [
                 ...     SimulationRunWrite(
                 ...         routine_external_id="routine1",
@@ -295,7 +295,7 @@ class SimulatorRunsAPI(APIClient):
         """
         assert_type(items, "simulation_run", [SimulationRunWrite, Sequence])
 
-        return self._create_multiple(
+        return await self._create_multiple(
             list_cls=SimulationRunList,
             resource_cls=SimulationRun,
             items=items,
@@ -303,11 +303,11 @@ class SimulatorRunsAPI(APIClient):
             resource_path=self._RESOURCE_PATH_RUN,
         )
 
-    def list_run_data(
+    async def list_run_data(
         self,
         run_id: int,
     ) -> SimulationRunDataList:
-        """`Get simulation run data <https://developer.cognite.com/api#tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+        """`Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_data>`_
 
         Retrieve data associated with a simulation run by ID.
 
@@ -319,8 +319,9 @@ class SimulatorRunsAPI(APIClient):
 
         Examples:
             Get simulation run data by run id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.simulators.runs.list_run_data(run_id=12345)
 
             Get simulation run data directly on a simulation run object:
@@ -329,10 +330,11 @@ class SimulatorRunsAPI(APIClient):
         """
         self._warning.warn()
 
-        req = self._post(
+        req = await self._post(
             url_path=f"{self._RESOURCE_PATH}/data/list",
             json={"items": [{"runId": run_id}]},
+            semaphore=self._get_semaphore("read"),
         )
 
         items = req.json().get("items", [])
-        return SimulationRunDataList._load(items, cognite_client=self._cognite_client)
+        return SimulationRunDataList._load(items)

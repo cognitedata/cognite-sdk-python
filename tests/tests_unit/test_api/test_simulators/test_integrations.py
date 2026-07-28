@@ -1,30 +1,23 @@
-import re
+from pytest_httpx import HTTPXMock
 
-from responses import RequestsMock
-
-from cognite.client import CogniteClient
-from tests.utils import jsgz_load
+from cognite.client import AsyncCogniteClient, CogniteClient
+from tests.utils import get_url, jsgz_load
 
 
 class TestIntegrations:
     def test_delete_integrations(
         self,
         cognite_client: CogniteClient,
-        rsps: RequestsMock,
+        async_client: AsyncCogniteClient,
+        httpx_mock: HTTPXMock,
     ) -> None:
-        # Arrange
-        request_body = {"items": [{"externalId": "test"}]}
-        rsps.add(
-            "POST",
-            url=re.compile(
-                re.escape(cognite_client.simulators._get_base_url_with_base_path() + "/simulators/integrations/delete")
-            ),
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.simulators, "/simulators/integrations/delete"),
             json={},
-            status=200,
+            status_code=200,
         )
-
-        # Act
         cognite_client.simulators.integrations.delete(external_ids="test")
 
-        # Assert
-        assert request_body == jsgz_load(rsps.calls[0].request.body)
+        exp_body = {"items": [{"externalId": "test"}]}
+        assert exp_body == jsgz_load(httpx_mock.get_requests()[0].content)

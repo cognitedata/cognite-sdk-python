@@ -1,9 +1,14 @@
 Quickstart
 ==========
 
-There are multiple ways that a CogniteClient can be configured to authenticate with Cognite Data Fusion (CDF). For the purpose of
+The SDK provides two client classes that you can use to easily interact with Cognite Data Fusion (CDF):
+
+* **AsyncCogniteClient** - The primary async client using native ``async/await`` patterns
+* **CogniteClient** - The synchronous client for backward compatibility
+
+Both clients share the same configuration and credential providers. For the purpose of
 this quickstart we'll demonstrate the most common/recommended patterns. More details and usage examples can be found in each respective
-section: :ref:`CogniteClient <class_client_CogniteClient>`, :ref:`ClientConfig <class_client_ClientConfig>`,
+section: :ref:`AsyncCogniteClient <class_client_AsyncCogniteClient>`, :ref:`CogniteClient <class_client_CogniteClient>`, :ref:`ClientConfig <class_client_ClientConfig>`,
 :ref:`GlobalConfig <class_client_GlobalConfig>`, and :ref:`credential_providers:Credential Providers`.
 
 .. warning::
@@ -15,11 +20,11 @@ Instantiate a new client from a configuration file
 Use this code to instantiate a client using a configuration file in order to execute API calls to Cognite Data Fusion (CDF).
 
 .. note::
-    How you read in the configuration file is up to you as the :ref:`CogniteClient <class_client_CogniteClient>` load method
-    accepts both a dictionary and a YAML/JSON string. So for the purposes of this example, we will use the yaml library to read in a yaml file and
+    How you read in the configuration file is up to you as both ``AsyncCogniteClient.load`` and ``CogniteClient.load``
+    accept both a dictionary and a YAML/JSON string. So for the purposes of this example, we will use the yaml library to read in a yaml file and
     substitute environment variables in the file string to ensure that sensitive information is not stored in the file.
 
-See :ref:`CogniteClient <class_client_CogniteClient>`, :ref:`ClientConfig <class_client_ClientConfig>`,
+See :ref:`AsyncCogniteClient <class_client_AsyncCogniteClient>`, :ref:`CogniteClient <class_client_CogniteClient>`, :ref:`ClientConfig <class_client_ClientConfig>`,
 :ref:`GlobalConfig <class_client_GlobalConfig>`, and :ref:`credential_providers:Credential Providers`
 for more information on the configuration options.
 
@@ -102,7 +107,7 @@ Use one of the credential providers such as OAuthClientCredentials to authentica
 
 .. note::
     The following example sets a global client configuration which will be used if no config is
-    explicitly passed to :ref:`cognite_client:CogniteClient`.
+    explicitly passed to ``AsyncCogniteClient`` or ``CogniteClient``.
     All examples in this documentation going forward assume that such a global configuration has been set.
 
 .. testsetup:: client_config
@@ -175,26 +180,63 @@ You can also make your own credential provider:
     )
     client = CogniteClient(cnf)
 
-Discover time series
---------------------
-For this, you will need to supply ids for the time series that you want to retrieve. You can find
-some ids by listing the available time series. Limits for listing resources default to 25, so
-the following code will return the first 25 time series resources.
+Instantiate an async client
+---------------------------
+The ``AsyncCogniteClient`` provides native ``async/await`` support for all API operations.
+This is recommended for web applications, concurrent operations, and Pyodide/browser environments.
 
 .. code:: python
 
-    from cognite.client import CogniteClient
+    import asyncio
+    from cognite.client import AsyncCogniteClient, ClientConfig
+    from cognite.client.credentials import OAuthClientCredentials
 
-    client = CogniteClient()
-    ts_list = client.time_series.list()
+    # Configuration is the same as for the sync client
+    creds = OAuthClientCredentials(
+        token_url="https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/token",
+        client_id="my-client-id",
+        client_secret=os.environ["MY_CLIENT_SECRET"],
+        scopes=["https://api.cognitedata.com/.default"]
+    )
+    cnf = ClientConfig(
+        client_name="my-async-client",
+        base_url="https://api.cognitedata.com",
+        project="my-project",
+        credentials=creds
+    )
+
+    async def main():
+        client = AsyncCogniteClient(cnf)
+
+        # All API methods are now awaitable
+        assets = await client.assets.list(limit=10)
+
+        # Run concurrent operations with asyncio.gather
+        ts_task = client.time_series.list(limit=10)
+        events_task = client.events.list(limit=10)
+        time_series, events = await asyncio.gather(ts_task, events_task)
+
+    asyncio.run(main())
 
 List available spaces in your Data Modeling project
 ---------------------------------------------------
 In the following example, we list all spaces in the project.
 
+**Async:**
+
+.. code:: python
+
+    from cognite.client import AsyncCogniteClient
+
+    async def list_spaces():
+        client = AsyncCogniteClient()
+        spaces = await client.data_modeling.spaces.list(limit=None)
+
+**Sync:**
+
 .. code:: python
 
     from cognite.client import CogniteClient
 
     client = CogniteClient()
-    spaces = client.data_modeling.spaces.list()
+    spaces = client.data_modeling.spaces.list(limit=None)

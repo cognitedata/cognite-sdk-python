@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from collections.abc import Iterator
 
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes import FileMetadata
+from cognite.client.data_classes import FileMetadataWrite
 from cognite.client.data_classes.contextualization import (
     FeatureParameters,
     JobStatus,
@@ -18,7 +20,7 @@ from cognite.client.data_classes.contextualization import (
 def file_id(cognite_client: CogniteClient, os_and_py_version: str) -> Iterator[int]:
     # Create a test file
     name = "vision_extract_test_file" + os_and_py_version
-    file = cognite_client.files.create(FileMetadata(external_id=name, name=name), overwrite=True)[0]
+    file = cognite_client.files.create(FileMetadataWrite(external_id=name, name=name), overwrite=True)[0]
     yield file.id
 
     cognite_client.files.delete(id=file.id)
@@ -36,6 +38,6 @@ class TestVisionExtractAPI:
         assert job.job_id > 0
         assert JobStatus(job.status) == JobStatus.QUEUED
         assert len(job.items) == 1
-        assert job.items[0]["fileId"] == file_id
+        assert job.items[0].file_id == file_id
         assert job.status_time > 0
         assert job.created_time > 0

@@ -10,7 +10,7 @@ from cognite.client.data_classes.data_modeling import (
     ContainerApply,
     ContainerId,
     ContainerList,
-    ContainerProperty,
+    ContainerPropertyApply,
     DataModel,
     Float64,
     MappedProperty,
@@ -18,6 +18,7 @@ from cognite.client.data_classes.data_modeling import (
     Text,
     View,
 )
+from cognite.client.data_classes.data_modeling.containers import Constraint, Index
 from cognite.client.data_classes.data_modeling.data_types import ListablePropertyType, UnitReference
 from cognite.client.exceptions import CogniteAPIError
 
@@ -40,7 +41,7 @@ def unit_pressure_container(cognite_client: CogniteClient, integration_test_spac
     unit_container = ContainerApply(
         space=integration_test_space.space,
         external_id="test_container_with_unit",
-        properties={"pressure": ContainerProperty(type=Float64(unit=UnitReference(external_id="pressure:bar")))},
+        properties={"pressure": ContainerPropertyApply(type=Float64(unit=UnitReference(external_id="pressure:bar")))},
         used_for="node",
     )
 
@@ -72,8 +73,10 @@ class TestContainersAPI:
                 if isinstance(prop.type, Text) and prop.type.max_text_size is not None:
                     assert prop.constraint_state.max_text_size is not None
             for constraint in container.constraints.values():
+                assert isinstance(constraint, Constraint)
                 assert constraint.state is not None
             for index in container.indexes.values():
+                assert isinstance(index, Index)
                 assert index.state is not None
 
     def test_delete_non_existent(self, cognite_client: CogniteClient, integration_test_space: Space) -> None:
@@ -108,7 +111,7 @@ class TestContainersAPI:
                 ContainerApply(
                     space="nonExistingSpace",
                     external_id="myContainer",
-                    properties={"name": ContainerProperty(type=Text())},
+                    properties={"name": ContainerPropertyApply(type=Text())},
                     used_for="node",
                 )
             )

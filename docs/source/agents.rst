@@ -1,25 +1,15 @@
 ======
 Agents
 ======
-Create or update an agent
-^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.agents.agents.AgentsAPI.upsert
+.. currentmodule:: cognite.client
 
-Retrieve an agent by external id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.agents.agents.AgentsAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List all agents
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.agents.agents.AgentsAPI.list
+   AsyncCogniteClient.agents
 
-Delete an agent by external id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.agents.agents.AgentsAPI.delete
-
-Chat with an agent by external id
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.agents.agents.AgentsAPI.chat
 
 Agent Data classes
 ^^^^^^^^^^^^^^^^^^
