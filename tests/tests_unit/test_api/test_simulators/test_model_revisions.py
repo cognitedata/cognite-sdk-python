@@ -20,65 +20,11 @@ TEST_MODEL_REVISION_ITEM_RESPONSE_FIELDS = {
 
 class TestModelRevisions:
     @pytest.mark.parametrize(
-        "write_input,delete_oldest,expected_request_body",
+        "delete_kw",
         [
-            pytest.param(
-                SimulatorModelRevisionWrite(
-                    external_id="sdk-test-revision",
-                    model_external_id="sdk-test-model",
-                    file_id=1,
-                ),
-                False,
-                {
-                    "deleteOldest": False,
-                    "items": [
-                        {
-                            "externalId": "sdk-test-revision",
-                            "modelExternalId": "sdk-test-model",
-                            "fileId": 1,
-                        }
-                    ],
-                },
-                id="create_model_revision_default_delete_oldest",
-            ),
-            pytest.param(
-                SimulatorModelRevisionWrite(
-                    external_id="sdk-test-revision",
-                    model_external_id="sdk-test-model",
-                    file_id=1,
-                ),
-                True,
-                {
-                    "deleteOldest": True,
-                    "items": [
-                        {
-                            "externalId": "sdk-test-revision",
-                            "modelExternalId": "sdk-test-model",
-                            "fileId": 1,
-                        }
-                    ],
-                },
-                id="create_model_revision_with_delete_oldest",
-            ),
-            pytest.param(
-                SimulatorModelRevisionWrite(
-                    external_id="sdk-test-revision",
-                    model_external_id="sdk-test-model",
-                    file_id=1,
-                ),
-                None,
-                {
-                    "deleteOldest": False,
-                    "items": [
-                        {
-                            "externalId": "sdk-test-revision",
-                            "modelExternalId": "sdk-test-model",
-                            "fileId": 1,
-                        }
-                    ],
-                },
-                id="create_model_revision_omits_delete_oldest",
-            ),
+            pytest.param({"delete_oldest": True}, id="create_model_revision_with_delete_oldest"),
+            pytest.param({"delete_oldest": False}, id="create_model_revision_without_delete_oldest"),
+            pytest.param({}, id="create_model_revision_omits_delete_oldest"),
         ],
     )
     def test_create_model_revision(
@@ -86,10 +32,13 @@ class TestModelRevisions:
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
         httpx_mock: HTTPXMock,
-        write_input: SimulatorModelRevisionWrite,
-        delete_oldest: bool | None,
-        expected_request_body: dict,
+        delete_kw: dict,
     ) -> None:
+        write_input = SimulatorModelRevisionWrite(
+            external_id="sdk-test-revision",
+            model_external_id="sdk-test-model",
+            file_id=1,
+        )
         httpx_mock.add_response(
             method="POST",
             url=get_url(async_client.simulators.models.revisions, "/simulators/models/revisions"),
@@ -104,12 +53,11 @@ class TestModelRevisions:
             status_code=201,
         )
 
-        if delete_oldest is None:
-            created_revision = cognite_client.simulators.models.revisions.create(write_input)
-        else:
-            created_revision = cognite_client.simulators.models.revisions.create(
-                write_input, delete_oldest=delete_oldest
-            )
+        created_revision = cognite_client.simulators.models.revisions.create(write_input, **delete_kw)
 
         assert isinstance(created_revision, SimulatorModelRevision)
+        expected_request_body = {
+            "deleteOldest": delete_kw.get("delete_oldest", False),
+            "items": [write_input.dump()],
+        }
         assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)
