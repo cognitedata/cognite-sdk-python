@@ -1,6 +1,6 @@
 """
 ===============================================================================
-b24d174ece0a93fee285c7a4e78766b0
+828de11d0b1ec3a690c7bce50cfeebb6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,11 +12,11 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.data_classes.data_modeling.aggregates import Aggregate
 from cognite.client.data_classes.data_modeling.instances import InstanceSort
 from cognite.client.data_classes.data_modeling.records import (
     RecordId,
     RecordList,
-    RecordsAggregate,
     RecordsAggregation,
     RecordSourceSelector,
     RecordTargetUnit,
@@ -164,7 +164,7 @@ class SyncRecordsAPI(SyncAPIClient):
 
     def aggregate(
         self,
-        aggregates: Mapping[str, RecordsAggregate | dict[str, Any]],
+        aggregates: Mapping[str, Aggregate | dict[str, Any]],
         *,
         stream_id: str,
         last_updated_time: TimeRange | None = None,
@@ -176,7 +176,7 @@ class SyncRecordsAPI(SyncAPIClient):
         `Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_.
 
         Args:
-            aggregates (Mapping[str, RecordsAggregate | dict[str, Any]]): Aggregate request tree keyed
+            aggregates (Mapping[str, Aggregate | dict[str, Any]]): Aggregate request tree keyed
                 by client-defined aggregate IDs.
             stream_id (str): External ID of the stream to aggregate from.
             last_updated_time (TimeRange | None): Filter records by last-updated time.
@@ -203,7 +203,7 @@ class SyncRecordsAPI(SyncAPIClient):
             Find the average points scored across all games, using a typed helper:
 
                 >>> from cognite.client import CogniteClient
-                >>> from cognite.client.data_classes.data_modeling.records import Average
+                >>> from cognite.client.data_classes.data_modeling.aggregates import Average
                 >>> client = CogniteClient()
                 >>> res = client.data_modeling.records.aggregate(
                 ...     stream_id="my-stream",
@@ -214,7 +214,8 @@ class SyncRecordsAPI(SyncAPIClient):
             Count the total number of games, and how many of them have a recorded score, only
             considering games updated after a given time:
 
-                >>> from cognite.client.data_classes.data_modeling.records import Count, TimeRange
+                >>> from cognite.client.data_classes.data_modeling.aggregates import Count
+                >>> from cognite.client.data_classes.data_modeling.records import TimeRange
                 >>> res = client.data_modeling.records.aggregate(
                 ...     stream_id="my-stream",
                 ...     aggregates={
@@ -229,7 +230,7 @@ class SyncRecordsAPI(SyncAPIClient):
             highest, and average points scored, alongside the single highest score across all
             games:
 
-                >>> from cognite.client.data_classes.data_modeling.records import (
+                >>> from cognite.client.data_classes.data_modeling.aggregates import (
                 ...     Average,
                 ...     Max,
                 ...     Sum,
@@ -261,7 +262,7 @@ class SyncRecordsAPI(SyncAPIClient):
             Bucket games by day and smooth the daily count with a 7-day moving average, using the
             ``MovingFunctions`` enum so the pipeline function name cannot be mistyped:
 
-                >>> from cognite.client.data_classes.data_modeling.records import (
+                >>> from cognite.client.data_classes.data_modeling.aggregates import (
                 ...     Count,
                 ...     MovingFunction,
                 ...     MovingFunctions,

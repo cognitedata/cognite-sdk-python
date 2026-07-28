@@ -37,14 +37,13 @@ from cognite.client.data_classes.data_modeling import (
     EdgeListWithCursor,
     NodeListWithCursor,
 )
-from cognite.client.data_classes.data_modeling.records import (
+from cognite.client.data_classes.data_modeling.aggregates import (
     Filters,
     NumberHistogram,
-    RecordsAggregateResult,
-    RecordsBucket,
     TimeHistogram,
     UniqueValues,
 )
+from cognite.client.data_classes.data_modeling.records import RecordsAggregateResult, RecordsBucket
 from cognite.client.data_classes.datapoints import DatapointsArray, SyntheticDatapoints
 from cognite.client.data_classes.datapoints_subscriptions import SubscriptionDatapoints
 from cognite.client.data_classes.events import EventList
@@ -197,7 +196,7 @@ class TestCogniteResource:
                     UnknownWorkflowTaskParameters,
                     # RecordsAggregateResult/RecordsBucket have non-standard constructors. The
                     # nested-aggregate builders (Filters/NumberHistogram/TimeHistogram/UniqueValues)
-                    # take a `RecordsAggregate | dict` map the fake generator can't synthesize
+                    # take an `Aggregate | dict` map the fake generator can't synthesize
                     # (abstract union), and TimeHistogram also has an interval guard; their
                     # load/dump round-trip is covered in test_records.py instead.
                     *all_concrete_subclasses(RecordsAggregateResult),

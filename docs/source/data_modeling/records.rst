@@ -15,3 +15,6 @@ Records data classes
 .. automodule:: cognite.client.data_classes.data_modeling.records
     :members:
     :show-inheritance:
+
+The aggregate classes passed to ``records.aggregate`` are shared with the other data modeling
+aggregate endpoints and are documented in :doc:`aggregates`.
