@@ -220,7 +220,7 @@ class TestCoexistenceWithLegacyAggregations:
         assert dm.AggregatedValue is legacy.AggregatedValue
         # An incidental re-export rather than a declared one, hence getattr - but it is public today
         # and must keep pointing at the legacy class.
-        assert getattr(instances, "AggregatedNumberedValue") is legacy.AggregatedNumberedValue  # noqa: B009
+        assert getattr(instances, "AggregatedNumberedValue") is legacy.AggregatedNumberedValue
 
     def test_aggregates_are_not_exported_into_namespaces(self) -> None:
         # The module is deliberately reachable only by its own path, so the names it shares with the

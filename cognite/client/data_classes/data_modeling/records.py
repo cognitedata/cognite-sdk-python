@@ -17,35 +17,9 @@ from cognite.client.data_classes.data_modeling.aggregates import _dump_aggregate
 from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.data_classes.data_modeling.instances import TypeInformation
-from cognite.client.utils._identifier import IdentifierSequenceCore, RecordId
+from cognite.client.utils._identifier import IdentifierSequenceCore
+from cognite.client.utils._identifier import RecordId as RecordId  # explicit re-export
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
-
-__all__ = [
-    "Record",
-    "RecordContainerId",
-    "RecordId",
-    "RecordIdSequence",
-    "RecordList",
-    "RecordSource",
-    "RecordSourceSelector",
-    "RecordTargetUnit",
-    "RecordTargetUnits",
-    "RecordWrite",
-    "RecordWriteList",
-    "RecordsAggregateResult",
-    "RecordsAggregation",
-    "RecordsBucket",
-    "RecordsFilterAggregateResult",
-    "RecordsMetricAggregateResult",
-    "RecordsMovingFunctionAggregateResult",
-    "RecordsNumberHistogramAggregateResult",
-    "RecordsTimeHistogramAggregateResult",
-    "RecordsUniqueValuesAggregateResult",
-    "RecordsUnknownAggregateResult",
-    "SyncRecord",
-    "SyncRecordList",
-    "TimeRange",
-]
 
 
 def _dump_aggregate_results(
