@@ -91,6 +91,13 @@ class InstanceId:
 
 @dataclass(frozen=True)
 class RecordId(InstanceId):
+    """Identifier for a record in a stream.
+
+    Args:
+        space (str): Space the record belongs to.
+        external_id (str): External ID of the record.
+    """
+
     def as_dict(self, camel_case: bool = True) -> dict[str, str]:
         return self.dump(camel_case=camel_case)
 

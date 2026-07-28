@@ -22,7 +22,6 @@ __all__ = [
     "Record",
     "RecordContainerId",
     "RecordId",
-    "RecordIdSequence",
     "RecordList",
     "RecordSource",
     "RecordSourceSelector",
