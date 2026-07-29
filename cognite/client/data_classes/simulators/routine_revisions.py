@@ -86,7 +86,7 @@ class SimulatorRoutineInput(CogniteResource, ABC):
         elif is_timeseries is not None:
             type_ = "timeseries"
         else:
-            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+            return UnknownCogniteResource(resource)  # type: ignore[return-value]
 
         input_class = _INPUT_CLASS_BY_TYPE.get(type_)
         if input_class is None:
