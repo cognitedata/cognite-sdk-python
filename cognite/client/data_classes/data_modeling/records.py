@@ -16,24 +16,8 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.data_classes.data_modeling.instances import TypeInformation
-from cognite.client.utils._identifier import IdentifierSequenceCore, RecordId
-
-__all__ = [
-    "Record",
-    "RecordContainerId",
-    "RecordId",
-    "RecordIdSequence",
-    "RecordList",
-    "RecordSource",
-    "RecordSourceSelector",
-    "RecordTargetUnit",
-    "RecordTargetUnits",
-    "RecordWrite",
-    "RecordWriteList",
-    "SyncRecord",
-    "SyncRecordList",
-    "TimeRange",
-]
+from cognite.client.utils._identifier import IdentifierSequenceCore
+from cognite.client.utils._identifier import RecordId as RecordId  # explicit re-export
 
 
 class RecordIdSequence(IdentifierSequenceCore[RecordId]):
