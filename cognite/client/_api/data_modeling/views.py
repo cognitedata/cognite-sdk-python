@@ -350,7 +350,7 @@ class ViewsAPI(APIClient):
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
 
-            Create a record-backed view; stream must already exists. Note: this is an alpha feature, subject to breaking changes without prior notice:
+            Create a record-backed view (the stream must already exist). This is an `alpha feature <https://api-docs.cognite.com/20230101-alpha/tag/Views/operation/ApplyViews>`_, subject to breaking changes without prior notice:
 
                 >>> from cognite.client.data_classes.data_modeling import (
                 ...     ContainerId,
@@ -376,7 +376,7 @@ class ViewsAPI(APIClient):
         return await self._create_multiple(
             list_cls=ViewList,
             resource_cls=View,
-            items=view if isinstance(view, (ViewApply, RecordViewApply)) else views,
+            items=view,
             input_resource_cls=_ViewOrRecordViewApplyAdapter,
             headers=headers,
             override_semaphore=self._get_semaphore("write_schema"),
