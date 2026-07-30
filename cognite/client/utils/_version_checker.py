@@ -36,7 +36,8 @@ def check_client_is_running_latest_version() -> None:
             if version.parse(__version__) < newest_version:
                 warnings.warn(
                     f"You are using version={__version__!r} of the SDK, however version={newest_version.public!r} is "
-                    "available. To suppress this warning, either upgrade or do the following:\n"
+                    "available. To suppress this warning, upgrade the package, set the environment variable "
+                    "COGNITE_DISABLE_PYPI_VERSION_CHECK to a truthy value (e.g. 1 or true), or do the following:\n"
                     ">>> from cognite.client.config import global_config\n"
                     ">>> global_config.disable_pypi_version_check = True",
                     stacklevel=3,
