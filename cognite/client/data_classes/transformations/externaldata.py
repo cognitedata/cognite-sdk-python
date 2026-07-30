@@ -416,7 +416,8 @@ class ExternalDataSourceUsability(CogniteResource):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         key = "externalId" if camel_case else "external_id"
-        output[key] = {key: output.pop(key)}
+        if key in output:
+            output[key] = {key: output[key]}
         return output
 
 
