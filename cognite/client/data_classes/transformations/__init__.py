@@ -26,6 +26,20 @@ from cognite.client.data_classes.transformations.common import (
     TransformationBlockedInfo,
     TransformationDestination,
 )
+from cognite.client.data_classes.transformations.externaldata import (  # noqa: F401
+    ExternalDataSource,
+    ExternalDataSourceList,
+    ExternalDataSourceUsability,
+    ExternalDataSourceWrite,
+    ExternalDataSourceWriteList,
+    OneLakeCredentials,
+    OneLakeCredentialsWrite,
+    OneLakeExternalDataSource,
+    OneLakeExternalDataSourceWrite,
+    OneLakeLocationDescription,
+    OneLakeSettings,
+    OneLakeSettingsWrite,
+)
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
 from cognite.client.data_classes.transformations.schema import TransformationSchemaColumnList
