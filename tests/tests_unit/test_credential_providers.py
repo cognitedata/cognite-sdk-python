@@ -18,7 +18,7 @@ from cognite.client.credentials import (
     OAuthInteractive,
     Token,
 )
-from cognite.client.exceptions import CogniteAuthError
+from cognite.client.exceptions import CogniteAuthError, CogniteOAuthError
 
 
 class TestCredentialProvider:
@@ -388,21 +388,165 @@ class TestOAuthInteractive:
         }
     )
 
+    @staticmethod
+    def _mock_app(
+        mock_public_client: MagicMock, accounts: list[dict[str, str]], signed_in_as: str = "jane@doe.com"
+    ) -> MagicMock:
+        app = mock_public_client()
+        # MSAL matches the username case insensitively, as accounts from Entra ID may contain mixed case:
+        app.get_accounts.side_effect = lambda username=None: (
+            accounts if username is None else [acc for acc in accounts if acc["username"].lower() == username.lower()]
+        )
+        app.acquire_token_silent.return_value = {"access_token": "silent_token", "expires_in": 1000}
+        app.acquire_token_interactive.return_value = {
+            "access_token": "interactive_token",
+            "expires_in": 1000,
+            "id_token_claims": {"preferred_username": signed_in_as},
+        }
+        return app
+
     @patch("cognite.client.credentials.PublicClientApplication")
     @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
     def test_access_token_generated(self, mock_public_client: MagicMock, expires_in: int | str) -> None:
-        mock_public_client().acquire_token_silent.return_value = {
-            "access_token": "azure_token",
-            "expires_in": expires_in,
-        }
+        app = self._mock_app(mock_public_client, [{"username": "jane@doe.com"}])
+        app.acquire_token_silent.return_value = {"access_token": "azure_token", "expires_in": expires_in}
+
         creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS)
         creds._refresh_access_token()
         assert creds.authorization_header() == ("Authorization", "Bearer azure_token")
 
     @patch("cognite.client.credentials.PublicClientApplication")
+    def test_single_cached_account_is_reused_silently(self, mock_public_client: MagicMock) -> None:
+        app = self._mock_app(mock_public_client, [{"username": "jane@doe.com"}])
+
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS)
+        assert creds.authorization_header() == ("Authorization", "Bearer silent_token")
+        app.acquire_token_interactive.assert_not_called()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_no_cached_account_signs_in_without_a_prompt(self, mock_public_client: MagicMock) -> None:
+        app = self._mock_app(mock_public_client, [])
+
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS)
+        assert creds.authorization_header() == ("Authorization", "Bearer interactive_token")
+        app.acquire_token_silent.assert_not_called()
+        assert app.acquire_token_interactive.call_args.kwargs["prompt"] is None
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_several_cached_accounts_lets_the_user_select(self, mock_public_client: MagicMock) -> None:
+        app = self._mock_app(mock_public_client, [{"username": "jane@doe.com"}, {"username": "john@doe.com"}])
+
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS)
+        assert creds.authorization_header() == ("Authorization", "Bearer interactive_token")
+        app.acquire_token_silent.assert_not_called()
+        assert app.acquire_token_interactive.call_args.kwargs["prompt"] == "select_account"
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_selected_account_is_refreshed_silently(self, mock_public_client: MagicMock) -> None:
+        app = self._mock_app(mock_public_client, [{"username": "jane@doe.com"}, {"username": "john@doe.com"}])
+
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS)
+        assert creds._refresh_access_token()[0] == "interactive_token"
+        assert creds._refresh_access_token()[0] == "silent_token"
+
+        app.acquire_token_interactive.assert_called_once()
+        assert app.acquire_token_silent.call_args.kwargs["account"] == {"username": "jane@doe.com"}
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_signing_in_again_stays_on_the_same_account(self, mock_public_client: MagicMock) -> None:
+        app = self._mock_app(mock_public_client, [{"username": "jane@doe.com"}, {"username": "john@doe.com"}])
+        app.acquire_token_silent.return_value = None
+
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS)
+        assert creds._refresh_access_token()[0] == "interactive_token"
+        assert creds._refresh_access_token()[0] == "interactive_token"
+
+        assert app.acquire_token_interactive.call_count == 2
+        assert app.acquire_token_interactive.call_args.kwargs["login_hint"] == "jane@doe.com"
+        assert app.acquire_token_interactive.call_args.kwargs["prompt"] is None
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_login_hint_picks_account_among_several(self, mock_public_client: MagicMock) -> None:
+        app = self._mock_app(mock_public_client, [{"username": "jane@doe.com"}, {"username": "john@doe.com"}])
+
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS, login_hint="john@doe.com")
+        assert creds.authorization_header() == ("Authorization", "Bearer silent_token")
+        app.acquire_token_interactive.assert_not_called()
+        assert app.acquire_token_silent.call_args.kwargs["account"] == {"username": "john@doe.com"}
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_login_hint_without_matching_account_goes_interactive(self, mock_public_client: MagicMock) -> None:
+        app = self._mock_app(mock_public_client, [{"username": "jane@doe.com"}], signed_in_as="john@doe.com")
+
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS, login_hint="john@doe.com")
+        assert creds.authorization_header() == ("Authorization", "Bearer interactive_token")
+        app.acquire_token_silent.assert_not_called()
+        assert app.acquire_token_interactive.call_args.kwargs["login_hint"] == "john@doe.com"
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_explicit_prompt_applies_to_the_first_sign_in_only(self, mock_public_client: MagicMock) -> None:
+        app = self._mock_app(mock_public_client, [{"username": "jane@doe.com"}])
+
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS, prompt="select_account")
+        assert creds._refresh_access_token()[0] == "interactive_token"
+        app.acquire_token_silent.assert_not_called()
+        assert app.acquire_token_interactive.call_args.kwargs["prompt"] == "select_account"
+
+        assert creds._refresh_access_token()[0] == "silent_token"
+        app.acquire_token_interactive.assert_called_once()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_sign_in_is_not_repeated_when_the_idp_omits_the_username(self, mock_public_client: MagicMock) -> None:
+        app = self._mock_app(mock_public_client, [{"username": "jane@doe.com"}])
+        app.acquire_token_interactive.return_value = {"access_token": "interactive_token", "expires_in": 1000}
+
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS, prompt="login")
+        assert creds._refresh_access_token()[0] == "interactive_token"
+        assert creds._refresh_access_token()[0] == "silent_token"
+
+        app.acquire_token_interactive.assert_called_once()
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_a_failed_sign_in_is_not_remembered(self, mock_public_client: MagicMock) -> None:
+        app = self._mock_app(mock_public_client, [{"username": "jane@doe.com"}])
+        app.acquire_token_interactive.return_value = {"error": "access_denied", "error_description": "nope"}
+
+        creds = OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS, prompt="login")
+        with pytest.raises(CogniteOAuthError):
+            creds._refresh_access_token()
+        with pytest.raises(CogniteOAuthError):
+            creds._refresh_access_token()
+
+        assert app.acquire_token_interactive.call_count == 2
+        assert app.acquire_token_interactive.call_args.kwargs["prompt"] == "login"
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    @pytest.mark.parametrize("prompt", ("select-account", "none"))
+    def test_invalid_prompt_raises(self, mock_public_client: MagicMock, prompt: str) -> None:
+        with pytest.raises(ValueError, match=r"^'prompt' must be one of"):
+            OAuthInteractive(**self.DEFAULT_PROVIDER_ARGS, prompt=prompt)  # type: ignore [arg-type]
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_default_for_entra_id_passes_on_account_selection(self, mock_public_client: MagicMock) -> None:
+        creds = OAuthInteractive.default_for_entra_id(
+            tenant_id="xyz", client_id="abcd", cdf_cluster="greenfield", prompt="select_account", login_hint="jane@doe"
+        )
+        assert creds.prompt == "select_account"
+        assert creds.login_hint == "jane@doe"
+
+    @patch("cognite.client.credentials.PublicClientApplication")
     def test_load(self, mock_public_client: MagicMock) -> None:
         creds = OAuthInteractive.load(dict(self.DEFAULT_PROVIDER_ARGS))
         assert isinstance(creds, OAuthInteractive)
+        assert creds.prompt is None
+        assert creds.login_hint is None
+
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_load_with_account_selection(self, mock_public_client: MagicMock) -> None:
+        config = dict(self.DEFAULT_PROVIDER_ARGS, prompt="select_account", login_hint="jane@doe.com")
+        creds = OAuthInteractive.load(config)
+        assert creds.prompt == "select_account"
+        assert creds.login_hint == "jane@doe.com"
 
     @patch("cognite.client.credentials.PublicClientApplication")
     def test_create_from_credential_provider(self, mock_public_client: MagicMock) -> None:

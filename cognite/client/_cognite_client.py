@@ -35,7 +35,12 @@ from cognite.client._api.vision import VisionAPI
 from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
-from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
+from cognite.client.credentials import (
+    CredentialProvider,
+    InteractivePrompt,
+    OAuthClientCredentials,
+    OAuthInteractive,
+)
 from cognite.client.utils._auxiliary import load_resource_to_dict
 
 if TYPE_CHECKING:
@@ -318,6 +323,8 @@ class AsyncCogniteClient:
         tenant_id: str,
         client_id: str,
         client_name: str | None = None,
+        prompt: InteractivePrompt | None = None,
+        login_hint: str | None = None,
     ) -> AsyncCogniteClient:
         """
         Create an AsyncCogniteClient with default configuration using the interactive flow.
@@ -334,11 +341,15 @@ class AsyncCogniteClient:
             tenant_id (str): The Azure tenant ID.
             client_id (str): The Azure client ID.
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
+            prompt (InteractivePrompt | None): What the browser asks you the first time you sign in, e.g. ``"select_account"`` to pick which account to use. See the note on account selection in :class:`~cognite.client.credentials.OAuthInteractive`. Default: None
+            login_hint (str | None): Username (e.g. email) of the account to sign in with. See the note on account selection in :class:`~cognite.client.credentials.OAuthInteractive`. Default: None
 
         Returns:
             AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
-        credentials = OAuthInteractive.default_for_entra_id(tenant_id, client_id, cdf_cluster)
+        credentials = OAuthInteractive.default_for_entra_id(
+            tenant_id, client_id, cdf_cluster, prompt=prompt, login_hint=login_hint
+        )
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod

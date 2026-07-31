@@ -13,7 +13,7 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Literal, Protocol, get_args, runtime_checkable
 
 import requests
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
@@ -26,6 +26,10 @@ if TYPE_CHECKING:
 
 
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
+
+# A subset of the OpenID Connect 'prompt' parameter, see OAuthInteractive for what each value does:
+InteractivePrompt = Literal["select_account", "login", "consent"]
+_VALID_INTERACTIVE_PROMPTS = frozenset(get_args(InteractivePrompt))
 
 
 @runtime_checkable
@@ -649,6 +653,34 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         redirect_port (int): Redirect port defaults to 53000.
         token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
+        prompt (InteractivePrompt | None): What the browser asks you the first time you sign in, e.g. ``"select_account"`` to pick which account to use. See the note on account selection below. Default: None
+        login_hint (str | None): Username (e.g. email) of the account to sign in with. See the note on account selection below. Default: None
+
+    Note:
+        Tokens are cached between sessions, so you are only sent to the browser when no usable token is
+        found. With both ``prompt`` and ``login_hint`` left as None, what happens then depends on how
+        many accounts the cache holds:
+
+        * One account: it is reused silently, and you are not asked anything.
+        * Several accounts: the browser opens with an account picker, since we cannot know which one you meant.
+        * No account: the browser opens and signs you in the usual way.
+
+        Pass ``login_hint`` to name the account up front. A matching cached account is then reused
+        silently, and if there is no match, the browser opens with the username already filled in. This
+        is what you want when a script or notebook has to run as a specific account without asking
+        anyone, e.g. when the account is given by config rather than chosen by a human.
+
+        Pass ``prompt`` to always be sent to the browser, even when a cached account could have been
+        reused. This is how you get away from the account you used last time. The values are a subset
+        of the OpenID Connect ``prompt`` parameter:
+
+        * ``"select_account"``: pick which account to use, also when only one is cached.
+        * ``"login"``: sign in from scratch, entering your credentials again even if your session is still valid.
+        * ``"consent"``: on top of signing in, approve once more the permissions the application asks for.
+
+        ``prompt`` only applies until you are signed in. After that we stay on the account you ended up
+        with and refresh its token silently, so a long-running session is not interrupted every time the
+        access token expires.
 
     Examples:
 
@@ -657,6 +689,24 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             ...     authority_url="https://login.microsoftonline.com/xyz",
             ...     client_id="abcd",
             ...     scopes=["https://greenfield.cognitedata.com/.default"],
+            ... )
+
+        If you are signed in with several accounts and want to choose which one to use:
+
+            >>> oauth_provider = OAuthInteractive(
+            ...     authority_url="https://login.microsoftonline.com/xyz",
+            ...     client_id="abcd",
+            ...     scopes=["https://greenfield.cognitedata.com/.default"],
+            ...     prompt="select_account",
+            ... )
+
+        ...or skip the prompt entirely by naming the account you want to use:
+
+            >>> oauth_provider = OAuthInteractive(
+            ...     authority_url="https://login.microsoftonline.com/xyz",
+            ...     client_id="abcd",
+            ...     scopes=["https://greenfield.cognitedata.com/.default"],
+            ...     login_hint="jane.doe@example.com",
             ... )
     """
 
@@ -668,12 +718,20 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         redirect_port: int = 53000,
         token_cache_path: Path | None = None,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
+        prompt: InteractivePrompt | None = None,
+        login_hint: str | None = None,
     ) -> None:
+        if prompt is not None and prompt not in _VALID_INTERACTIVE_PROMPTS:
+            raise ValueError(f"'prompt' must be one of {sorted(_VALID_INTERACTIVE_PROMPTS)} or None, not {prompt!r}")
         super().__init__(token_expiry_leeway_seconds)
         self.__authority_url = authority_url
         self.__client_id = client_id
         self.__scopes = scopes
         self.__redirect_port = redirect_port
+        self.__prompt = prompt
+        self.__login_hint = login_hint
+        self.__has_signed_in = False
+        self.__signed_in_username: str | None = None
 
         self._token_cache_path = self._resolve_token_cache_path(token_cache_path, client_id)
         self.__app = self._create_client_app(self._token_cache_path, client_id, authority_url)
@@ -701,18 +759,49 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
     def scopes(self) -> list[str]:
         return self.__scopes
 
+    @property
+    def prompt(self) -> InteractivePrompt | None:
+        return self.__prompt
+
+    @property
+    def login_hint(self) -> str | None:
+        return self.__login_hint
+
     def _refresh_access_token(self) -> tuple[str, float]:
-        # Try the in-memory token cache silently (MSAL checks AT first, then RT automatically).
-        # Falls through to interactive flow if nothing usable is found.
         credentials = None
-        if accounts := self.__app.get_accounts():
-            credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
+        # Once signed in, we keep refreshing that same account and drop the prompt, so that a
+        # long-running session is not sent back to the browser every time the token expires:
+        login_hint = self.__signed_in_username or self.__login_hint
+        prompt = None if self.__has_signed_in else self.__prompt
 
-        # If we're unable to find (or acquire a new) access token, we initiate the interactive auth flow:
+        if prompt is None:
+            # Try the token cache silently (MSAL checks the access token first, then the refresh token
+            # automatically). If several accounts match, we can't know which one is wanted, so we fall
+            # through to the interactive flow and let the user pick:
+            accounts = self.__app.get_accounts(username=login_hint)
+            if len(accounts) == 1:
+                credentials = self.__app.acquire_token_silent(scopes=self.__scopes, account=accounts[0])
+            elif len(accounts) > 1:
+                prompt = "select_account"
+
+        # Nothing usable in the cache (or the user asked to be prompted), so we initiate the interactive flow:
         if credentials is None:
-            credentials = self.__app.acquire_token_interactive(scopes=self.__scopes, port=self.__redirect_port)
-
+            credentials = self.__app.acquire_token_interactive(
+                scopes=self.__scopes,
+                port=self.__redirect_port,
+                prompt=prompt,
+                login_hint=login_hint,
+            )
         self._verify_credentials(credentials)
+
+        # Remember who signed in so later refreshes target the same account. MSAL adds 'id_token_claims'
+        # as the decoded id token; 'preferred_username' is the Entra ID claim for the username and 'upn'
+        # the ADFS 2019 equivalent. See https://learn.microsoft.com/en-us/entra/identity-platform/id-token-claims-reference
+        self.__has_signed_in = True
+        claims = credentials.get("id_token_claims") or {}
+        if username := claims.get("preferred_username") or claims.get("upn"):
+            self.__signed_in_username = username
+
         return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
     @classmethod
@@ -746,6 +835,8 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             token_expiry_leeway_seconds=int(
                 loaded.get("token_expiry_leeway_seconds", _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT)
             ),
+            prompt=loaded.get("prompt"),
+            login_hint=loaded.get("login_hint"),
         )
 
     @classmethod
@@ -755,6 +846,8 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         client_id: str,
         cdf_cluster: str,
         token_expiry_leeway_seconds: int = _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT,
+        prompt: InteractivePrompt | None = None,
+        login_hint: str | None = None,
         **token_custom_args: Any,
     ) -> OAuthInteractive:
         """
@@ -770,6 +863,8 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             client_id (str): Your application's client id.
             cdf_cluster (str): The CDF cluster where the CDF project is located.
             token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
+            prompt (InteractivePrompt | None): What the browser asks you the first time you sign in, e.g. ``"select_account"`` to pick which account to use. See the note on account selection in :class:`.OAuthInteractive`. Default: None
+            login_hint (str | None): Username (e.g. email) of the account to sign in with. See the note on account selection in :class:`.OAuthInteractive`. Default: None
             **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
 
         Returns:
@@ -780,6 +875,8 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
             client_id=client_id,
             scopes=[f"https://{cdf_cluster}.cognitedata.com/.default"],
             token_expiry_leeway_seconds=token_expiry_leeway_seconds,
+            prompt=prompt,
+            login_hint=login_hint,
             **token_custom_args,
         )
 
