@@ -243,9 +243,7 @@ class TestCogniteResource:
             for cls in all_concrete_subclasses(WriteableCogniteResource)
             # Hosted extractors does not support the as_write method
             # External data sources cannot be converted to write, as the API never returns the client secret
-            if cls not in {Destination, User, UserCreated}
-            and not issubclass(cls, Source)
-            and not issubclass(cls, ExternalDataSource)
+            if cls not in {Destination, User, UserCreated} and not issubclass(cls, Source | ExternalDataSource)
         ],
     )
     def test_writable_as_write(

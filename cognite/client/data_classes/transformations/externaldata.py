@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, NoReturn, cast
+from typing import Any, ClassVar, NoReturn
 
 from typing_extensions import Self
 
@@ -169,7 +169,7 @@ class ExternalDataSourceWrite(CogniteResource, ABC):
         raise NotImplementedError
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> ExternalDataSourceWrite:
         format_ = resource.get("format")
         if format_ is None and hasattr(cls, "_format"):
             format_ = cls._format
@@ -178,8 +178,11 @@ class ExternalDataSourceWrite(CogniteResource, ABC):
         try:
             source_cls = _EXTERNAL_DATA_SOURCE_WRITE_CLASS_BY_FORMAT[format_]
         except KeyError:
-            raise TypeError(f"Unknown external data source format: {format_}")
-        return cast(Self, source_cls._load_data_source(resource))
+            raise TypeError(
+                f"Unknown external data source format: {format_}. You may need to upgrade the SDK to a "
+                "version that supports this format."
+            )
+        return source_cls._load_data_source(resource)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
@@ -204,6 +207,7 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
 
         Construct a Fabric OneLake source for upsert:
 
+            >>> import os
             >>> from cognite.client.data_classes.transformations.externaldata import (
             ...     OneLakeCredentialsWrite,
             ...     OneLakeExternalDataSourceWrite,
@@ -218,7 +222,7 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
             ...         credentials=OneLakeCredentialsWrite(
             ...             client_id="<azure-app-id>",
             ...             tenant_id="<azure-tenant-uuid>",
-            ...             client_secret="<secret>",
+            ...             client_secret=os.environ["ONELAKE_CLIENT_SECRET"],
             ...         ),
             ...         location_description=OneLakeLocationDescription(
             ...             workspace_id="<fabric-workspace-guid>",
@@ -294,7 +298,7 @@ class ExternalDataSource(WriteableCogniteResource[ExternalDataSourceWrite], ABC)
         raise NotImplementedError
 
     @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> ExternalDataSource:
         format_ = resource.get("format")
         if format_ is None and hasattr(cls, "_format"):
             format_ = cls._format
@@ -303,7 +307,7 @@ class ExternalDataSource(WriteableCogniteResource[ExternalDataSourceWrite], ABC)
         source_class = _EXTERNAL_DATA_SOURCE_CLASS_BY_FORMAT.get(format_)
         if source_class is None:
             return UnknownCogniteResource(resource)  # type: ignore[return-value]
-        return cast(Self, source_class._load_data_source(resource))
+        return source_class._load_data_source(resource)
 
     def as_write(self) -> NoReturn:
         raise TypeError(

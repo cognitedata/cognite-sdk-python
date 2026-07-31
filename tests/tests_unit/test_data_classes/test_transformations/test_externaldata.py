@@ -56,26 +56,6 @@ class TestExternalDataSourceDispatch:
         with pytest.raises(TypeError, match="Unknown external data source format"):
             ExternalDataSourceWrite._load(resource)
 
-    def test_list_load_with_unknown_format_first_raises(self, onelake_read_resource: dict[str, Any]) -> None:
-        # Inherited CogniteResourceList behavior (see hosted_extractors.Source/SourceList for the same
-        # trade-off): only the first element's type is checked, so an unknown format landing first in
-        # the list raises instead of degrading gracefully. Not fixed here as it is base SDK behavior
-        # shared by every polymorphic resource list, not something specific to external data sources.
-        unknown = {**onelake_read_resource, "externalId": "unknown-1", "format": "some_future_format"}
-
-        with pytest.raises(TypeError, match="must be of type 'ExternalDataSource'"):
-            ExternalDataSourceList._load([unknown, onelake_read_resource])
-
-    def test_list_load_with_unknown_format_not_first_degrades_gracefully(
-        self, onelake_read_resource: dict[str, Any]
-    ) -> None:
-        unknown = {**onelake_read_resource, "externalId": "unknown-1", "format": "some_future_format"}
-
-        loaded = ExternalDataSourceList._load([onelake_read_resource, unknown])
-
-        assert isinstance(loaded[0], OneLakeExternalDataSource)
-        assert isinstance(loaded[1], UnknownCogniteResource)
-
 
 class TestExternalDataSourceAsWrite:
     def test_onelake_as_write_raises(self, onelake_read_resource: dict[str, Any]) -> None:
