@@ -8,6 +8,9 @@ build:
   tools:
     python: "3.10"
   jobs:
+    post_checkout:
+      # Publish docs for the latest release, not for unreleased commits on master
+      - bash ./scripts/rtd_checkout_released_version.sh
     post_create_environment:
       - pip install poetry
     post_install:

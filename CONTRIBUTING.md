@@ -177,7 +177,13 @@ make html
 Open `build/html/index.html` to look at the result.
 
 Documentation will be automatically generated from the google-style docstrings in the source code.
-It is then built and released when changes are merged into master.
+
+The [published documentation](https://cognite-sdk-python.readthedocs-hosted.com) always describes the most
+recent release, never unreleased changes on master: Read the Docs runs
+`scripts/rtd_checkout_released_version.sh` before building, which checks out the release tag matching
+`.release-please-manifest.json`. Your merged docstring changes therefore go live when the release-please
+PR that includes them is merged. Read the Docs also builds a preview for every pull request, and that
+preview does build your branch as-is.
 
 ### Release version conventions
 
