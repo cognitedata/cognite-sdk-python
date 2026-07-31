@@ -81,11 +81,17 @@ class SimulatorRoutineInput(CogniteObject, ABC):
         if isinstance(resource, SimulatorRoutineInput):
             return cast(Self, resource)
 
-        is_constant = resource.get("value")
-        is_timeseries = resource.get("sourceExternalId")
-        type_ = "constant" if is_constant else "timeseries" if is_timeseries else None
-        if type_ is None:
+        is_constant = resource.get("value") is not None
+        is_timeseries = resource.get("sourceExternalId") is not None
+        if is_constant and is_timeseries:
+            raise ValueError("Invalid routine input, cannot contain both 'value' and 'sourceExternalId'")
+        elif is_constant:
+            type_ = "constant"
+        elif is_timeseries:
+            type_ = "timeseries"
+        else:
             return UnknownCogniteObject(resource)  # type: ignore[return-value]
+
         input_class = _INPUT_CLASS_BY_TYPE.get(type_)
         if input_class is None:
             return UnknownCogniteObject(resource)  # type: ignore[return-value]
