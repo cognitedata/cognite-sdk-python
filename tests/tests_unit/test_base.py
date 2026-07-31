@@ -46,6 +46,7 @@ from cognite.client.data_classes.hosted_extractors import Destination, Destinati
 from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
 from cognite.client.data_classes.sequences import SequenceUpdate
 from cognite.client.data_classes.time_series import TimeSeries, TimeSeriesList
+from cognite.client.data_classes.transformations.externaldata import ExternalDataSource, ExternalDataSourceList
 from cognite.client.data_classes.workflows import UnknownWorkflowTaskParameters, WorkflowTaskOutput
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
@@ -241,7 +242,8 @@ class TestCogniteResource:
             # Hosted extractors does not support the as_write method
             for cls in all_concrete_subclasses(WriteableCogniteResource)
             # Hosted extractors does not support the as_write method
-            if cls not in {Destination, User, UserCreated} and not issubclass(cls, Source)
+            # External data sources cannot be converted to write, as the API never returns the client secret
+            if cls not in {Destination, User, UserCreated} and not issubclass(cls, Source | ExternalDataSource)
         ],
     )
     def test_writable_as_write(
@@ -282,6 +284,7 @@ class TestCogniteResource:
                 UserList,
                 UserCreatedList,
                 TableList,
+                ExternalDataSourceList,
             }
         ],
     )
