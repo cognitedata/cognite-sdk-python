@@ -151,7 +151,7 @@ class Function(FunctionCore):
         env_vars (dict[str, str] | None): User specified environment variables on the function ((key, value) pairs).
         cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
         memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-        runtime (RunTime | None): Runtime of the function. Allowed values are ["py310", "py311", "py312", "py313", "py314"]. The runtime "py313" resolves to the latest version of the Python 3.13 series.
+        runtime (RunTime | None): Runtime of the function. Allowed values are ["py310", "py311", "py312", "py313", "py314"]. The runtime "py314" resolves to the latest version of the Python 3.14 series.
         runtime_version (str | None): The complete specification of the function runtime with major, minor and patch version numbers.
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
         error (dict | None): Dictionary with keys "message" and "trace", which is populated if deployment fails.
