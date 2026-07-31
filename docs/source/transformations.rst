@@ -53,6 +53,9 @@ Data classes
 .. automodule:: cognite.client.data_classes.transformations
     :members:
     :show-inheritance:
+.. automodule:: cognite.client.data_classes.transformations.externaldata
+    :members:
+    :show-inheritance:
 .. automodule:: cognite.client.data_classes.transformations.schedules
     :members:
     :show-inheritance:
