@@ -13,6 +13,34 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.11.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.10.0...cognite-sdk-python-v8.11.0) (2026-07-31)
+
+
+### Features
+
+* **ACLs:** Add missing acls: simulatorsAcl, cogUnitsAcl, appHostingAcl, chartsAdminAcl ([#2693](https://github.com/cognitedata/cognite-sdk-python/issues/2693)) ([a290589](https://github.com/cognitedata/cognite-sdk-python/commit/a290589c2aa99fbd3250e7f0003a67e4988d432b))
+* **agents:** support expanded reasoning response in agent chat ([#2634](https://github.com/cognitedata/cognite-sdk-python/issues/2634)) ([d364faa](https://github.com/cognitedata/cognite-sdk-python/commit/d364faaecf8f4033a90a2af13f460663e5d8c24a))
+* **alpha:** record view CRUD support ([#2722](https://github.com/cognitedata/cognite-sdk-python/issues/2722)) ([b60a3a8](https://github.com/cognitedata/cognite-sdk-python/commit/b60a3a8a073c80e522f1c47622e9b84d1ef818f5))
+* **records:** filter endpoint ([#2699](https://github.com/cognitedata/cognite-sdk-python/issues/2699)) ([cfc7a20](https://github.com/cognitedata/cognite-sdk-python/commit/cfc7a20de3598832ff4dd60af11fbd7916d7a142))
+* **records:** sync endpoint ([#2698](https://github.com/cognitedata/cognite-sdk-python/issues/2698)) ([200c1a7](https://github.com/cognitedata/cognite-sdk-python/commit/200c1a7c01b92701259c0ff225c5019571bf2ff5))
+* **SimInt:** Add `delete_oldest` option to model revision creation ([#2725](https://github.com/cognitedata/cognite-sdk-python/issues/2725)) ([6af5345](https://github.com/cognitedata/cognite-sdk-python/commit/6af53454d1864085e91988add479ad401f68aabc))
+* Support include_llm_prompt flag in DebugParameters ([#2707](https://github.com/cognitedata/cognite-sdk-python/issues/2707)) ([8d966f6](https://github.com/cognitedata/cognite-sdk-python/commit/8d966f660bada1172f7003a3e43331b1cf316746))
+* support multimodal input in agent chat ([#2717](https://github.com/cognitedata/cognite-sdk-python/issues/2717)) ([502abda](https://github.com/cognitedata/cognite-sdk-python/commit/502abdafa104b8109c57b744a0fa799ecf5a3b68))
+* **transformations:** add external data source data classes ([#2729](https://github.com/cognitedata/cognite-sdk-python/issues/2729)) ([4f449dd](https://github.com/cognitedata/cognite-sdk-python/commit/4f449dd71203caa1ae2938bf839ae115737222cc))
+
+
+### Bug Fixes
+
+* **data workflow tests:** cancel running workflow executions before delete ([#2703](https://github.com/cognitedata/cognite-sdk-python/issues/2703)) ([dc9ead1](https://github.com/cognitedata/cognite-sdk-python/commit/dc9ead1c22c61f4f97d9621f2cfa7b026fa57d01))
+* Retrieving routine revision with zero valued input or empty time series external ID in the configuration ([#2470](https://github.com/cognitedata/cognite-sdk-python/issues/2470)) ([5a2ac55](https://github.com/cognitedata/cognite-sdk-python/commit/5a2ac556ce501e530c5de194adc25d3c830d769c))
+* support Pyodide 314 IN_PYODIDE rename for browser detection ([#2711](https://github.com/cognitedata/cognite-sdk-python/issues/2711)) ([7d5e3df](https://github.com/cognitedata/cognite-sdk-python/commit/7d5e3df1a74e429f772c982c8700cf8ffd440291))
+* **tests:** use real function id in workflow version list fixture ([#2733](https://github.com/cognitedata/cognite-sdk-python/issues/2733)) ([74fc9df](https://github.com/cognitedata/cognite-sdk-python/commit/74fc9dfb19be2f8c4dc8f3562c32dfb3cc626b0d))
+
+
+### Documentation
+
+* **Files:** Add tip section to FilesAPI methods regarding "Data Modeling Files API" ([#2692](https://github.com/cognitedata/cognite-sdk-python/issues/2692)) ([8b99b98](https://github.com/cognitedata/cognite-sdk-python/commit/8b99b98b0c1db805b90029ea7221a44cd90ffce0))
+
 ## [8.10.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.9.0...cognite-sdk-python-v8.10.0) (2026-06-22)
 
 
