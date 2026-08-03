@@ -234,7 +234,9 @@ def async_workflow_version(
     yield from _new_async_workflow_version(cognite_client, new_workflow, a_function)
 
 
-def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersionList]:
+def _new_workflow_version_list(
+    cognite_client: CogniteClient, new_workflow: Workflow, a_function: Function
+) -> Iterator[WorkflowVersionList]:
     version_1 = WorkflowVersionUpsert(
         workflow_external_id=new_workflow.external_id,
         version="1",
@@ -262,7 +264,7 @@ def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Work
                             WorkflowTask(
                                 external_id="s1-task1",
                                 parameters=FunctionTaskParameters(
-                                    external_id="non-existing-function",
+                                    external_id=get_or_raise(a_function.external_id),
                                     data={"a": 3, "b": 4},
                                     is_async_complete=True,
                                 ),
@@ -299,15 +301,17 @@ def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Work
 
 
 @pytest.fixture(scope="session")
-def workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersionList]:
-    yield from _new_workflow_version_list(cognite_client, new_workflow)
+def workflow_version_list(
+    cognite_client: CogniteClient, new_workflow: Workflow, a_function: Function
+) -> Iterator[WorkflowVersionList]:
+    yield from _new_workflow_version_list(cognite_client, new_workflow, a_function)
 
 
 @pytest.fixture
 def workflow_version_list_test_scoped(
-    cognite_client: CogniteClient, new_workflow_test_scoped: Workflow
+    cognite_client: CogniteClient, new_workflow_test_scoped: Workflow, a_function: Function
 ) -> Iterator[WorkflowVersionList]:
-    yield from _new_workflow_version_list(cognite_client, new_workflow_test_scoped)
+    yield from _new_workflow_version_list(cognite_client, new_workflow_test_scoped, a_function)
 
 
 def _new_workflow_execution_list(

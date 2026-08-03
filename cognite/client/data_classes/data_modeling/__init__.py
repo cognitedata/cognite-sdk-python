@@ -120,17 +120,6 @@ from cognite.client.data_classes.data_modeling.query import (
     UnionAll,
 )
 from cognite.client.data_classes.data_modeling.spaces import Space, SpaceApply, SpaceApplyList, SpaceList
-from cognite.client.data_classes.data_modeling.streams import (
-    Stream,
-    StreamLifecycleSettings,
-    StreamLimit,
-    StreamLimitSettings,
-    StreamList,
-    StreamSettings,
-    StreamTemplate,
-    StreamTemplateWriteSettings,
-    StreamWrite,
-)
 from cognite.client.data_classes.data_modeling.sync import SubscriptionContext
 from cognite.client.data_classes.data_modeling.views import (
     ConnectionDefinition,
@@ -142,6 +131,7 @@ from cognite.client.data_classes.data_modeling.views import (
     MultiEdgeConnectionApply,
     MultiReverseDirectRelation,
     MultiReverseDirectRelationApply,
+    RecordViewApply,
     SingleHopConnectionDefinition,
     View,
     ViewApply,
@@ -242,6 +232,7 @@ __all__ = [
     "Query",
     "QueryResult",
     "QuerySync",
+    "RecordViewApply",
     "RequiresConstraint",
     "RequiresConstraintApply",
     "ResultSetExpression",
@@ -256,15 +247,6 @@ __all__ = [
     "SpaceApply",
     "SpaceApplyList",
     "SpaceList",
-    "Stream",
-    "StreamLifecycleSettings",
-    "StreamLimit",
-    "StreamLimitSettings",
-    "StreamList",
-    "StreamSettings",
-    "StreamTemplate",
-    "StreamTemplateWriteSettings",
-    "StreamWrite",
     "SubscriptionContext",
     "Text",
     "TimeSeriesReference",
