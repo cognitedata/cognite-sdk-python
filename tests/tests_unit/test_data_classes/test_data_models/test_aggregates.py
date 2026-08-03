@@ -18,6 +18,7 @@ from cognite.client.data_classes.data_modeling.aggregates import (
     UniqueValues,
     UnknownAggregate,
 )
+from cognite.client.utils._text import to_camel_case
 
 
 class TestAggregateBuilders:
@@ -124,7 +125,7 @@ class TestAggregateBuilders:
         }
 
     def test_moving_function(self) -> None:
-        agg = MovingFunction(buckets_path="_count", window=3, function="MovingFunctions.unweightedAvg")
+        agg = MovingFunction(buckets_path="_count", window=3, function=MovingFunctions.UNWEIGHTED_AVG)
         assert agg.dump() == {
             "movingFunction": {
                 "bucketsPath": "_count",
@@ -133,11 +134,12 @@ class TestAggregateBuilders:
             }
         }
 
-    def test_moving_function_accepts_enum_and_dumps_plain_string(self) -> None:
-        # The MovingFunctions enum guards against typos; either the enum or the raw literal works,
-        # and both dump to the plain wire string.
+    def test_moving_function_coerces_raw_wire_string(self) -> None:
+        # `function` is typed as the enum, but MovingFunctions is a str enum, so an untyped caller
+        # passing the wire string still lands on the same enum member rather than a bare str.
         from_enum = MovingFunction("_count", 3, function=MovingFunctions.UNWEIGHTED_AVG)
-        from_str = MovingFunction("_count", 3, function="MovingFunctions.unweightedAvg")
+        from_str = MovingFunction("_count", 3, function="MovingFunctions.unweightedAvg")  # type: ignore[arg-type]
+        assert from_str.function is MovingFunctions.UNWEIGHTED_AVG
         assert from_enum.dump() == from_str.dump()
         assert from_enum.dump()["movingFunction"]["function"] == "MovingFunctions.unweightedAvg"
 
@@ -198,6 +200,34 @@ class TestAggregateBuilders:
         assert isinstance(loaded, UnknownAggregate)
         assert isinstance(loaded, Aggregate)
         assert loaded.dump() == payload
+
+
+class TestMovingFunctionsEnum:
+    """The wire values are spelled out per member, so nothing but a test catches a typo in one.
+
+    A misspelled value is not caught by the type checker (both sides are ``str``) and not caught by
+    any dump assertion either, since ``dump()`` just echoes ``.value`` — it would only surface as a
+    400 from the API. Hence pinning both halves of every value.
+    """
+
+    def test_every_value_carries_the_namespace_prefix(self) -> None:
+        for member in MovingFunctions:
+            assert member.value.startswith("MovingFunctions."), f"{member.name} is missing the prefix"
+
+    def test_every_value_matches_its_member_name(self) -> None:
+        # Guards the half the prefix check cannot: MovingFunctions.unweigthedAvg would pass above.
+        for member in MovingFunctions:
+            _, _, suffix = member.value.partition(".")
+            assert suffix == to_camel_case(member.name.lower()), f"{member.name} does not match {suffix!r}"
+
+    def test_members_cover_the_documented_functions(self) -> None:
+        assert {member.value for member in MovingFunctions} == {
+            "MovingFunctions.max",
+            "MovingFunctions.min",
+            "MovingFunctions.sum",
+            "MovingFunctions.unweightedAvg",
+            "MovingFunctions.linearWeightedAvg",
+        }
 
 
 class TestCoexistenceWithTheAggregationsModule:

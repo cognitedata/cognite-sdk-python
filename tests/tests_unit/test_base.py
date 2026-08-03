@@ -38,12 +38,14 @@ from cognite.client.data_classes.data_modeling import (
     NodeListWithCursor,
 )
 from cognite.client.data_classes.data_modeling.aggregates import (
+    Bucket,
     Filters,
     NumberHistogram,
+    Result,
     TimeHistogram,
     UniqueValues,
 )
-from cognite.client.data_classes.data_modeling.records import RecordsAggregateResult, RecordsBucket
+from cognite.client.data_classes.data_modeling.records import RecordsAggregation
 from cognite.client.data_classes.datapoints import DatapointsArray, SyntheticDatapoints
 from cognite.client.data_classes.datapoints_subscriptions import SubscriptionDatapoints
 from cognite.client.data_classes.events import EventList
@@ -194,14 +196,17 @@ class TestCogniteResource:
                     # UnknownWorkflowTaskParameters: Requires task_type which is only available in the parent object's
                     # full response payload
                     UnknownWorkflowTaskParameters,
-                    # RecordsAggregateResult/RecordsBucket have non-standard constructors. The
+                    # RecordsAggregation/Bucket hold a `dict[str, aggregates.Result]` whose
+                    # values the fake generator synthesizes as the non-instantiable base, and the
+                    # Result subclasses have non-standard constructors. The
                     # nested-aggregate builders (Filters/NumberHistogram/TimeHistogram/UniqueValues)
                     # take an `Aggregate | dict` map the fake generator can't synthesize
                     # (abstract union), and TimeHistogram also has an interval guard; their
                     # load/dump round-trip is covered in test_records.py instead.
-                    *all_concrete_subclasses(RecordsAggregateResult),
-                    RecordsAggregateResult,
-                    RecordsBucket,
+                    *all_concrete_subclasses(Result),
+                    Result,
+                    RecordsAggregation,
+                    Bucket,
                     Filters,
                     NumberHistogram,
                     TimeHistogram,
@@ -237,9 +242,10 @@ class TestCogniteResource:
                     Agent,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
-                    *all_concrete_subclasses(RecordsAggregateResult),
-                    RecordsAggregateResult,
-                    RecordsBucket,
+                    *all_concrete_subclasses(Result),
+                    Result,
+                    RecordsAggregation,
+                    Bucket,
                     Filters,
                     NumberHistogram,
                     TimeHistogram,
@@ -348,9 +354,10 @@ class TestCogniteResource:
                     SubscriptionDatapoints,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
-                    *all_concrete_subclasses(RecordsAggregateResult),
-                    RecordsAggregateResult,
-                    RecordsBucket,
+                    *all_concrete_subclasses(Result),
+                    Result,
+                    RecordsAggregation,
+                    Bucket,
                     Filters,
                     NumberHistogram,
                     TimeHistogram,
@@ -392,9 +399,10 @@ class TestCogniteResource:
                     SubscriptionDatapoints,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
-                    *all_concrete_subclasses(RecordsAggregateResult),
-                    RecordsAggregateResult,
-                    RecordsBucket,
+                    *all_concrete_subclasses(Result),
+                    Result,
+                    RecordsAggregation,
+                    Bucket,
                     Filters,
                     NumberHistogram,
                     TimeHistogram,
@@ -449,9 +457,10 @@ class TestCogniteResource:
                     SubscriptionDatapoints,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
-                    *all_concrete_subclasses(RecordsAggregateResult),
-                    RecordsAggregateResult,
-                    RecordsBucket,
+                    *all_concrete_subclasses(Result),
+                    Result,
+                    RecordsAggregation,
+                    Bucket,
                     Filters,
                     NumberHistogram,
                     TimeHistogram,

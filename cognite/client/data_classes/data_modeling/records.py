@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, ClassVar, Literal
+from typing import Any, Literal
 
 from typing_extensions import Self
 
@@ -13,33 +13,12 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-from cognite.client.data_classes.data_modeling.aggregates import _dump_aggregate_value
+from cognite.client.data_classes.data_modeling import aggregates as aggs
 from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.data_classes.data_modeling.instances import TypeInformation
 from cognite.client.utils._identifier import IdentifierSequenceCore
 from cognite.client.utils._identifier import RecordId as RecordId  # explicit re-export
-from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
-
-
-def _dump_aggregate_results(
-    aggregates: dict[str, Any],
-    results: dict[str, RecordsAggregateResult],
-    camel_case: bool,
-) -> dict[str, Any]:
-    """Dump a map of aggregate results keyed by client-defined aggregate IDs.
-
-    The IDs are chosen by the caller and left untouched; only each result's own payload honors
-    ``camel_case``. Entries without a parsed result (e.g. non-dict values) are passed through.
-    """
-    return {
-        aggregate_id: (
-            results[aggregate_id].dump(camel_case=camel_case)
-            if aggregate_id in results
-            else _dump_aggregate_value(value)
-        )
-        for aggregate_id, value in aggregates.items()
-    }
 
 
 class RecordIdSequence(IdentifierSequenceCore[RecordId]):
@@ -133,189 +112,31 @@ class RecordWriteList(CogniteResourceList[RecordWrite]):
         return [v.as_id() for v in self]
 
 
-class RecordsAggregateResult(CogniteResource):
-    """Base class for typed Records aggregate results."""
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any]) -> RecordsAggregateResult:
-        # Dispatcher: each aggregate result carries exactly one top-level key that selects the
-        # concrete result type. Each subclass implements its own _load returning Self.
-        assert len(resource) == 1, f"expected exactly one aggregate result key, got {sorted(resource)}"
-        key = next(iter(resource))
-        if key in _METRIC_AGGREGATE_KEYS:
-            return RecordsMetricAggregateResult._load(resource)
-        if key == "fnValue":
-            return RecordsMovingFunctionAggregateResult._load(resource)
-        if (result_cls := _BUCKET_RESULT_BY_KEY.get(key)) is not None:
-            return result_cls._load(resource)
-        return RecordsUnknownAggregateResult._load(resource)
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        raise NotImplementedError
-
-
-class RecordsMetricAggregateResult(RecordsAggregateResult):
-    """Metric aggregate result such as ``avg``, ``count``, ``min``, ``max``, or ``sum``."""
-
-    def __init__(self, aggregate: str, value: Any) -> None:
-        self.aggregate = aggregate
-        self.value = value
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
-        key = next(iter(resource))
-        return cls(aggregate=key, value=resource[key])
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {self.aggregate: self.value}
-
-
-class RecordsMovingFunctionAggregateResult(RecordsAggregateResult):
-    def __init__(self, fn_value: float) -> None:
-        self.fn_value = fn_value
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(fn_value=resource["fnValue"])
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {"fnValue" if camel_case else "fn_value": self.fn_value}
-
-
-class RecordsUnknownAggregateResult(RecordsAggregateResult):
-    """Fallback for aggregate result shapes the SDK does not model yet.
-
-    Preserves the raw payload verbatim so nothing is lost, snake-casing the API keys on request.
-    """
-
-    def __init__(self, raw_result: dict[str, Any]) -> None:
-        self._raw_result = raw_result
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(resource)
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        if camel_case:
-            return dict(self._raw_result)
-        return convert_all_keys_to_snake_case(self._raw_result)
-
-
-class RecordsBucket(CogniteResource):
-    def __init__(
-        self,
-        count: int,
-        value: Any = None,
-        interval_start: float | str | None = None,
-        aggregates: dict[str, Any] | None = None,
-    ) -> None:
-        self.count = count
-        self.value = value
-        self.interval_start = interval_start
-        self.aggregates = aggregates or {}
-        self.results = {
-            aggregate_id: RecordsAggregateResult._load(result)
-            for aggregate_id, result in self.aggregates.items()
-            if isinstance(result, dict)
-        }
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(
-            count=resource["count"],
-            value=resource.get("value"),
-            interval_start=resource.get("intervalStart"),
-            aggregates=resource.get("aggregates"),
-        )
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output: dict[str, Any] = {"count": self.count}
-        if self.value is not None:
-            output["value"] = self.value
-        if self.interval_start is not None:
-            output["intervalStart" if camel_case else "interval_start"] = self.interval_start
-        if self.aggregates:
-            output["aggregates"] = _dump_aggregate_results(self.aggregates, self.results, camel_case)
-        return output
-
-
-class _RecordsBucketAggregateResult(RecordsAggregateResult):
-    _buckets_key: ClassVar[str]
-
-    def __init__(self, buckets: Sequence[RecordsBucket]) -> None:
-        self._buckets = list(buckets)
-
-    @property
-    def buckets(self) -> list[RecordsBucket]:
-        return list(self._buckets)
-
-    @classmethod
-    def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(buckets=[RecordsBucket._load(bucket) for bucket in resource.get(cls._buckets_key, [])])
-
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        key = self._buckets_key if camel_case else to_snake_case(self._buckets_key)
-        return {key: [bucket.dump(camel_case=camel_case) for bucket in self._buckets]}
-
-
-class RecordsUniqueValuesAggregateResult(_RecordsBucketAggregateResult):
-    _buckets_key = "uniqueValueBuckets"
-
-
-class RecordsNumberHistogramAggregateResult(_RecordsBucketAggregateResult):
-    _buckets_key = "numberHistogramBuckets"
-
-
-class RecordsTimeHistogramAggregateResult(_RecordsBucketAggregateResult):
-    _buckets_key = "timeHistogramBuckets"
-
-
-class RecordsFilterAggregateResult(_RecordsBucketAggregateResult):
-    _buckets_key = "filterBuckets"
-
-
-_METRIC_AGGREGATE_KEYS: frozenset[str] = frozenset({"avg", "count", "min", "max", "sum"})
-
-_BUCKET_RESULT_BY_KEY: dict[str, type[_RecordsBucketAggregateResult]] = {
-    result_cls._buckets_key: result_cls
-    for result_cls in (
-        RecordsUniqueValuesAggregateResult,
-        RecordsNumberHistogramAggregateResult,
-        RecordsTimeHistogramAggregateResult,
-        RecordsFilterAggregateResult,
-    )
-}
-
-
 class RecordsAggregation(CogniteResource):
     """Aggregate results returned from the Records aggregate endpoint.
 
     Args:
-        aggregates (dict[str, Any]): Aggregate results keyed by the client-defined aggregate IDs.
+        aggregates (dict[str, aggs.Result]): Aggregate results keyed by the client-defined
+            aggregate IDs.
         typing (TypeInformation | None): Optional property typing metadata.
     """
 
-    def __init__(self, aggregates: dict[str, Any], typing: TypeInformation | None = None) -> None:
+    def __init__(self, aggregates: dict[str, aggs.Result], typing: TypeInformation | None = None) -> None:
         self.aggregates = aggregates
-        self.results = {
-            aggregate_id: RecordsAggregateResult._load(result)
-            for aggregate_id, result in aggregates.items()
-            if isinstance(result, dict)
-        }
         self.typing = typing
 
-    def __getitem__(self, aggregate_id: str) -> RecordsAggregateResult:
-        return self.results[aggregate_id]
+    def __getitem__(self, aggregate_id: str) -> aggs.Result:
+        return self.aggregates[aggregate_id]
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
-            aggregates=resource["aggregates"],
+            aggregates=aggs._load_results(resource["aggregates"]),
             typing=TypeInformation._load(resource["typing"]) if "typing" in resource else None,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        output: dict[str, Any] = {"aggregates": _dump_aggregate_results(self.aggregates, self.results, camel_case)}
+        output: dict[str, Any] = {"aggregates": aggs._dump_results(self.aggregates, camel_case)}
         if self.typing is not None:
             output["typing"] = self.typing.dump(camel_case=camel_case)
         return output

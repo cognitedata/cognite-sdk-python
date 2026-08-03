@@ -11,12 +11,20 @@ from cognite.client.data_classes.data_modeling.aggregates import (
     Average,
     Count,
     Filters,
+    FiltersResult,
     Max,
+    MetricResult,
     MovingFunction,
+    MovingFunctionResult,
+    MovingFunctions,
     NumberHistogram,
+    NumberHistogramResult,
     Sum,
     TimeHistogram,
+    TimeHistogramResult,
     UniqueValues,
+    UniqueValuesResult,
+    UnknownResult,
 )
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, TypeInformation
@@ -26,15 +34,8 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordId,
     RecordList,
     RecordsAggregation,
-    RecordsFilterAggregateResult,
-    RecordsMetricAggregateResult,
-    RecordsMovingFunctionAggregateResult,
-    RecordsNumberHistogramAggregateResult,
     RecordSource,
     RecordSourceSelector,
-    RecordsTimeHistogramAggregateResult,
-    RecordsUniqueValuesAggregateResult,
-    RecordsUnknownAggregateResult,
     RecordTargetUnit,
     RecordTargetUnits,
     RecordWrite,
@@ -305,7 +306,7 @@ class TestRecordsAPIAggregate:
         )
 
         assert isinstance(out, RecordsAggregation)
-        assert out.aggregates == {"avg_temp": {"avg": 22.5}}
+        assert out.dump()["aggregates"] == {"avg_temp": {"avg": 22.5}}
         body = jsgz_load(httpx_mock.get_requests()[0].content)
         assert body == {
             "aggregates": {"avg_temp": {"avg": {"property": ["sp", "container-x", "temp"]}}},
@@ -360,7 +361,7 @@ class TestRecordsAPIAggregate:
                         "moving_count": MovingFunction(
                             buckets_path="_count",
                             window=3,
-                            function="MovingFunctions.unweightedAvg",
+                            function=MovingFunctions.UNWEIGHTED_AVG,
                         ),
                         "raw_total": {"count": {}},
                     },
@@ -462,32 +463,32 @@ class TestRecordsAPIAggregate:
         )
 
         avg_temp = loaded["avg_temp"]
-        assert isinstance(avg_temp, RecordsMetricAggregateResult)
+        assert isinstance(avg_temp, MetricResult)
         assert avg_temp.aggregate == "avg"
         assert avg_temp.value == 22.5
 
         by_region = loaded["by_region"]
-        assert isinstance(by_region, RecordsUniqueValuesAggregateResult)
+        assert isinstance(by_region, UniqueValuesResult)
         assert by_region.buckets[0].value == "north"
-        max_temp = by_region.buckets[0].results["max_temp"]
-        assert isinstance(max_temp, RecordsMetricAggregateResult)
+        max_temp = by_region.buckets[0].aggregates["max_temp"]
+        assert isinstance(max_temp, MetricResult)
         assert max_temp.value == 30.0
 
         by_number = loaded["by_number"]
-        assert isinstance(by_number, RecordsNumberHistogramAggregateResult)
+        assert isinstance(by_number, NumberHistogramResult)
         assert by_number.buckets[0].interval_start == 0.0
 
         by_time = loaded["by_time"]
-        assert isinstance(by_time, RecordsTimeHistogramAggregateResult)
-        moving = by_time.buckets[0].results["moving"]
-        assert isinstance(moving, RecordsMovingFunctionAggregateResult)
+        assert isinstance(by_time, TimeHistogramResult)
+        moving = by_time.buckets[0].aggregates["moving"]
+        assert isinstance(moving, MovingFunctionResult)
         assert moving.fn_value == 7.5
 
         by_filter = loaded["by_filter"]
-        assert isinstance(by_filter, RecordsFilterAggregateResult)
+        assert isinstance(by_filter, FiltersResult)
         assert by_filter.buckets[0].count == 4
 
-        assert isinstance(loaded["future"], RecordsUnknownAggregateResult)
+        assert isinstance(loaded["future"], UnknownResult)
         assert loaded["future"].dump() == {"futureAggregateResult": 1}
 
     def test_aggregate_results_dump_honors_camel_case(self) -> None:

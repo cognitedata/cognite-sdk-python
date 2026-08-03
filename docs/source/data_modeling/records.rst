@@ -16,5 +16,6 @@ Records data classes
     :members:
     :show-inheritance:
 
-The aggregate classes passed to ``records.aggregate`` are shared with the other data modeling
-aggregate endpoints and are documented in :doc:`aggregates`.
+The aggregate classes passed to ``records.aggregate``, and the result classes it returns inside
+``RecordsAggregation``, are shared with the other data modeling aggregate endpoints and are
+documented in :doc:`aggregates`.
