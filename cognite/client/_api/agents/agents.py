@@ -193,7 +193,7 @@ class AgentsAPI(APIClient):
                 ... )
                 >>> client.agents.upsert(agent)
 
-            Create an agent that delegates to another agent as a subagent:
+            Create an agent that delegates to a subagent:
 
                 >>> from cognite.client.data_classes.agents import (
                 ...     AgentUpsert,
