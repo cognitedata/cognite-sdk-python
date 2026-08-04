@@ -8,6 +8,7 @@ from cognite.client.data_classes.agents.agent_tools import (
     AgentTool,
     AgentToolUpsert,
     AskDocumentAgentTool,
+    Subagent,
     SummarizeDocumentAgentTool,
 )
 from cognite.client.data_classes.agents.agents import Agent, AgentList, AgentUpsert, AgentUpsertList
@@ -199,6 +200,26 @@ class TestAgent:
         # Test with empty list of tools
         agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent", tools=[])
         assert agent.tools == []
+
+    def test_subagents_handling(self) -> None:
+        # Test with no subagents
+        agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent")
+        assert agent.subagents is None
+
+        # Test with a list of subagents
+        subagents_list = [Subagent(agent_external_id="subagent_1"), Subagent(agent_external_id="subagent_2")]
+        agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent", subagents=subagents_list)
+        assert agent.subagents
+        assert len(agent.subagents) == 2
+        assert all(isinstance(subagent, Subagent) for subagent in agent.subagents)
+        assert agent.subagents[0].agent_external_id == "subagent_1"
+        assert agent.subagents[1].agent_external_id == "subagent_2"
+
+        # Test that dump() and as_write() preserve an empty list rather than dropping it (allows clearing subagents)
+        agent = DefaultResourceGenerator.agent(external_id="test_agent", name="Test Agent", subagents=[])
+        assert agent.subagents == []
+        assert agent.dump(camel_case=True)["subagents"] == []
+        assert agent.as_write().subagents == []
 
     def test_post_init_tools_validation(self) -> None:
         # Test with invalid tool type

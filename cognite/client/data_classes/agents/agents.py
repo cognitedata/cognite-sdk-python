@@ -102,7 +102,7 @@ class AgentUpsert(AgentCore):
         result = super().dump(camel_case=camel_case)
         if self.tools:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
-        if self.subagents:
+        if self.subagents is not None:
             result["subagents"] = [item.dump(camel_case=camel_case) for item in self.subagents]
         if self._unknown_properties:
             result.update(self._unknown_properties)
@@ -223,7 +223,7 @@ class Agent(AgentCore):
             runtime_version=self.runtime_version,
             labels=self.labels,
             tools=[tool.as_write() for tool in self.tools] if self.tools else None,
-            subagents=[subagent.as_write() for subagent in self.subagents] if self.subagents else None,
+            subagents=[subagent.as_write() for subagent in self.subagents] if self.subagents is not None else None,
         )
 
     @classmethod
