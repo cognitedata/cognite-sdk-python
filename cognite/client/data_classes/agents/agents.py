@@ -15,6 +15,8 @@ from cognite.client.data_classes.agents.agent_tools import (
     AgentToolList,
     AgentToolUpsert,
     AgentToolUpsertList,
+    Subagent,
+    SubagentList,
 )
 
 
@@ -55,6 +57,7 @@ class AgentUpsert(AgentCore):
         runtime_version (str | None): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Defaults to the latest version if not set. See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
         tools (AgentToolUpsertList | Sequence[AgentToolUpsert] | None): List of tools for the agent.
+        subagents (SubagentList | Sequence[Subagent] | None): List of agents to expose as subagents on this agent.
 
     """
 
@@ -70,6 +73,7 @@ class AgentUpsert(AgentCore):
         runtime_version: str | None = None,
         labels: list[str] | None = None,
         tools: AgentToolUpsertList | Sequence[AgentToolUpsert] | None = None,
+        subagents: SubagentList | Sequence[Subagent] | None = None,
     ) -> None:
         super().__init__(
             external_id=external_id,
@@ -85,6 +89,11 @@ class AgentUpsert(AgentCore):
             if isinstance(tools, AgentToolUpsertList)
             else (AgentToolUpsertList(tools) if tools is not None else None)
         )
+        self.subagents = (
+            subagents
+            if isinstance(subagents, SubagentList)
+            else (SubagentList(subagents) if subagents is not None else None)
+        )
         # This stores any unknown properties that are not part of the defined fields.
         # This is useful while the API is evolving and new fields are added.
         self._unknown_properties: dict[str, object] = {}
@@ -93,6 +102,8 @@ class AgentUpsert(AgentCore):
         result = super().dump(camel_case=camel_case)
         if self.tools:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
+        if self.subagents:
+            result["subagents"] = [item.dump(camel_case=camel_case) for item in self.subagents]
         if self._unknown_properties:
             result.update(self._unknown_properties)
         return result
@@ -108,6 +119,11 @@ class AgentUpsert(AgentCore):
             if isinstance(resource.get("tools"), list)
             else None
         )
+        subagents = (
+            [Subagent._load(item) for item in resource.get("subagents", [])]
+            if isinstance(resource.get("subagents"), list)
+            else None
+        )
         instances = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -117,6 +133,7 @@ class AgentUpsert(AgentCore):
             runtime_version=resource.get("runtimeVersion"),
             labels=resource.get("labels"),
             tools=tools,
+            subagents=subagents,
         )
         existing = set(instances.dump(camel_case=True).keys())
         instances._unknown_properties = {key: value for key, value in resource.items() if key not in existing}
@@ -139,6 +156,7 @@ class Agent(AgentCore):
         runtime_version (str | None): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Always present in API responses (server defaults to the latest version if not provided on upsert). See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
         tools (AgentToolList | Sequence[AgentTool] | None): List of tools for the agent.
+        subagents (SubagentList | Sequence[Subagent] | None): List of agents to expose as subagents on this agent.
         owner_id (str | None): The ID of the user who owns the agent. Always present in API responses.
     """
 
@@ -154,6 +172,7 @@ class Agent(AgentCore):
         runtime_version: str | None = None,
         labels: list[str] | None = None,
         tools: AgentToolList | Sequence[AgentTool] | None = None,
+        subagents: SubagentList | Sequence[Subagent] | None = None,
         owner_id: str | None = None,
     ) -> None:
         super().__init__(
@@ -167,6 +186,11 @@ class Agent(AgentCore):
         )
         self.tools = (
             tools if isinstance(tools, AgentToolList) else (AgentToolList(tools) if tools is not None else None)
+        )
+        self.subagents = (
+            subagents
+            if isinstance(subagents, SubagentList)
+            else (SubagentList(subagents) if subagents is not None else None)
         )
         self.created_time = created_time
         self.last_updated_time = last_updated_time
@@ -182,6 +206,8 @@ class Agent(AgentCore):
         result = super().dump(camel_case=camel_case)
         if self.tools is not None:
             result["tools"] = [item.dump(camel_case=camel_case) for item in self.tools]
+        if self.subagents is not None:
+            result["subagents"] = [item.dump(camel_case=camel_case) for item in self.subagents]
         if self._unknown_properties:
             result.update(self._unknown_properties)
         return result
@@ -197,11 +223,13 @@ class Agent(AgentCore):
             runtime_version=self.runtime_version,
             labels=self.labels,
             tools=[tool.as_write() for tool in self.tools] if self.tools else None,
+            subagents=[subagent.as_write() for subagent in self.subagents] if self.subagents else None,
         )
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Agent:
         tools_data = resource.get("tools")
+        subagents_data = resource.get("subagents")
         instance = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -211,6 +239,7 @@ class Agent(AgentCore):
             runtime_version=resource["runtimeVersion"],
             labels=resource.get("labels"),
             tools=[AgentTool._load(item) for item in tools_data] if tools_data else None,
+            subagents=[Subagent._load(item) for item in subagents_data] if subagents_data else None,
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             owner_id=resource["ownerId"],
