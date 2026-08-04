@@ -1,6 +1,6 @@
 """
 ===============================================================================
-36576fed4e841c3b3329e55e1ac6d15c
+8da9ee8d74b9a0e9179f7429c396086b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -227,6 +227,8 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...     external_id="operations_agent",
                 ...     name="Plant Operations Agent",
                 ...     instructions="Assist plant operators with day-to-day questions.",
+                ...     # Subagents require runtime version 1.3.0 or later:
+                ...     runtime_version="1.3.0",
                 ...     # Use the external ID of a newly created agent, or an existing agent's external ID directly:
                 ...     subagents=[Subagent(agent_external_id=created_data_explorer_agent.external_id)],
                 ... )

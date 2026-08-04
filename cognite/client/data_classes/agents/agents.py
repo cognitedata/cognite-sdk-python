@@ -57,7 +57,7 @@ class AgentUpsert(AgentCore):
         runtime_version (str | None): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Defaults to the latest version if not set. See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published.
         tools (AgentToolUpsertList | Sequence[AgentToolUpsert] | None): List of tools for the agent.
-        subagents (SubagentList | Sequence[Subagent] | None): List of agents to expose as subagents on this agent.
+        subagents (SubagentList | Sequence[Subagent] | None): List of agents to expose as subagents on this agent. Requires runtime_version "1.3.0" or later.
 
     """
 
@@ -156,7 +156,7 @@ class Agent(AgentCore):
         runtime_version (str | None): The runtime version of the agent. Defines the complete execution environment including system prompt, available tools, and core features. Always present in API responses (server defaults to the latest version if not provided on upsert). See https://docs.cognite.com/cdf/atlas_ai/references/atlas_ai_agent_runtime_versions for available versions.
         labels (list[str] | None): Labels for the agent. For example, ["published"] to mark an agent as published. Always present in API responses.
         tools (AgentToolList | Sequence[AgentTool] | None): List of tools for the agent.
-        subagents (SubagentList | Sequence[Subagent] | None): List of agents to expose as subagents on this agent.
+        subagents (SubagentList | Sequence[Subagent] | None): List of agents to expose as subagents on this agent. Requires runtime_version "1.3.0" or later.
         owner_id (str | None): The ID of the user who owns the agent. Always present in API responses.
     """
 

@@ -229,6 +229,8 @@ class AgentsAPI(APIClient):
                 ...     external_id="operations_agent",
                 ...     name="Plant Operations Agent",
                 ...     instructions="Assist plant operators with day-to-day questions.",
+                ...     # Subagents require runtime version 1.3.0 or later:
+                ...     runtime_version="1.3.0",
                 ...     # Use the external ID of a newly created agent, or an existing agent's external ID directly:
                 ...     subagents=[Subagent(agent_external_id=created_data_explorer_agent.external_id)],
                 ... )
