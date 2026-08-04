@@ -19,7 +19,6 @@ As of 2025-08-29, changes are grouped as follows
 ### Bug Fixes
 
 * Retrieving routine revision with zero valued input or empty time series external ID in the configuration ([#2470](https://github.com/cognitedata/cognite-sdk-python/issues/2470)) ([e6b3d91](https://github.com/cognitedata/cognite-sdk-python/commit/e6b3d910a74e0ed6b964a49b1d61fe1144c3af83))
-* Retrieving routine revision with zero valued input or empty timeseries external ID in the configuration ([#2470](https://github.com/cognitedata/cognite-sdk-python/issues/2470)) ([#2736](https://github.com/cognitedata/cognite-sdk-python/issues/2736)) ([1634437](https://github.com/cognitedata/cognite-sdk-python/commit/163443797d25f4417b22afe6e1034a4a89407afb))
 * **tests:** update stale integration test expectations ([#2738](https://github.com/cognitedata/cognite-sdk-python/issues/2738)) ([404c104](https://github.com/cognitedata/cognite-sdk-python/commit/404c1040b2f6d4c80811b47aed8f7e6c2fca5d98))
 
 ## [7.94.1](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.94.0...cognite-sdk-python-v7.94.1) (2026-07-14)
