@@ -119,11 +119,7 @@ class AgentUpsert(AgentCore):
             if isinstance(resource.get("tools"), list)
             else None
         )
-        subagents = (
-            [Subagent._load(item) for item in resource.get("subagents", [])]
-            if isinstance(resource.get("subagents"), list)
-            else None
-        )
+        subagents = SubagentList._load_if(resource.get("subagents"))
         instances = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -229,7 +225,6 @@ class Agent(AgentCore):
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Agent:
         tools_data = resource.get("tools")
-        subagents_data = resource.get("subagents")
         instance = cls(
             external_id=resource["externalId"],
             name=resource["name"],
@@ -239,7 +234,7 @@ class Agent(AgentCore):
             runtime_version=resource["runtimeVersion"],
             labels=resource.get("labels"),
             tools=[AgentTool._load(item) for item in tools_data] if tools_data else None,
-            subagents=[Subagent._load(item) for item in subagents_data] if subagents_data else None,
+            subagents=SubagentList._load_if(resource.get("subagents")),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
             owner_id=resource["ownerId"],

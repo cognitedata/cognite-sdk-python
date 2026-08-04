@@ -217,14 +217,14 @@ class AgentsAPI(APIClient):
                 ...         instance_spaces=InstanceSpaces(type="all"),
                 ...     ),
                 ... )
-                >>> data_explorer_agent = AgentUpsert(
+                >>> to_create = AgentUpsert(
                 ...     external_id="data_explorer_agent",
                 ...     name="Data Explorer Agent",
                 ...     instructions="Explore and answer questions about data in Cognite Data Fusion.",
                 ...     runtime_version="1.2.0",
                 ...     tools=[query_tool],
                 ... )
-                >>> created_data_explorer_agent = client.agents.upsert(data_explorer_agent)
+                >>> data_explorer_agent = client.agents.upsert(to_create)
                 >>> operations_agent = AgentUpsert(
                 ...     external_id="operations_agent",
                 ...     name="Plant Operations Agent",
@@ -232,7 +232,7 @@ class AgentsAPI(APIClient):
                 ...     # Subagents require runtime version 1.3.0 or later:
                 ...     runtime_version="1.3.0",
                 ...     # Use the external ID of a newly created agent, or an existing agent's external ID directly:
-                ...     subagents=[Subagent(agent_external_id=created_data_explorer_agent.external_id)],
+                ...     subagents=[Subagent(agent_external_id=data_explorer_agent.external_id)],
                 ... )
                 >>> client.agents.upsert(operations_agent)
 
