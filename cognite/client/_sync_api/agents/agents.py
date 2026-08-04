@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8da9ee8d74b9a0e9179f7429c396086b
+119486c1f410f879ea5c0dc103c53a37
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -226,7 +226,7 @@ class SyncAgentsAPI(SyncAPIClient):
                 >>> operations_agent = AgentUpsert(
                 ...     external_id="operations_agent",
                 ...     name="Plant Operations Agent",
-                ...     instructions="Assist plant operators with day-to-day questions.",
+                ...     instructions="Assist plant operators with day-to-day tasks.",
                 ...     # Subagents require runtime version 1.3.0 or later:
                 ...     runtime_version="1.3.0",
                 ...     # Use the external ID of a newly created agent, or an existing agent's external ID directly:
