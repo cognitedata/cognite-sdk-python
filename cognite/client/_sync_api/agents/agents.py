@@ -1,6 +1,6 @@
 """
 ===============================================================================
-119486c1f410f879ea5c0dc103c53a37
+f30e98e4f2db687cb999a361fa7db314
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -191,7 +191,7 @@ class SyncAgentsAPI(SyncAPIClient):
                 ... )
                 >>> client.agents.upsert(agent)
 
-            Create an agent that delegates to another agent as a subagent:
+            Create an agent that delegates to a subagent:
 
                 >>> from cognite.client.data_classes.agents import (
                 ...     AgentUpsert,
