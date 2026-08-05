@@ -23,11 +23,6 @@ As of 2025-08-29, changes are grouped as follows
 * **records:** accept unprefixed MovingFunctions values ([#2743](https://github.com/cognitedata/cognite-sdk-python/issues/2743)) ([58ed952](https://github.com/cognitedata/cognite-sdk-python/commit/58ed952be73af8620071ac5b053daf7580756c95))
 * **records:** aggregate endpoint ([#2705](https://github.com/cognitedata/cognite-sdk-python/issues/2705)) ([72af69b](https://github.com/cognitedata/cognite-sdk-python/commit/72af69b36bf30feafabea401cb9ade1ae3d7fdf8))
 
-
-### Bug Fixes
-
-* **tests:** update stale integration test expectations ([#2738](https://github.com/cognitedata/cognite-sdk-python/issues/2738)) ([9330beb](https://github.com/cognitedata/cognite-sdk-python/commit/9330bebdad8b3e2c1f98d2ee9492384c74c4ca64))
-
 ## [8.11.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.10.0...cognite-sdk-python-v8.11.0) (2026-07-31)
 
 
