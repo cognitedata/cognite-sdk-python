@@ -7,6 +7,7 @@ import pytest
 
 from cognite.client.data_classes import Group, GroupList
 from cognite.client.data_classes.capabilities import DataModelInstancesAcl
+from tests.utils import PANDAS_TS_UNIT
 
 
 @pytest.fixture
@@ -104,7 +105,14 @@ class TestGroupsList:
     @pytest.mark.parametrize(
         "convert_timestamps, expected",
         (
-            (True, dict(data=[None, "1970-01-02 10:17:36.789", None], dtype="datetime64[ms]", name="deleted_time")),
+            (
+                True,
+                dict(
+                    data=[None, "1970-01-02 10:17:36.789", None],
+                    dtype=f"datetime64[{PANDAS_TS_UNIT}]",
+                    name="deleted_time",
+                ),
+            ),
             (False, dict(data=[-1, 123456789, None], dtype="Int64", name="deleted_time")),
         ),
     )
