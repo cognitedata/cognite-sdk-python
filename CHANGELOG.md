@@ -13,6 +13,16 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.12.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.11.0...cognite-sdk-python-v8.12.0) (2026-08-05)
+
+
+### Features
+
+* **ACLs:** Add missing acl: slaAcl ([#2741](https://github.com/cognitedata/cognite-sdk-python/issues/2741)) ([3025817](https://github.com/cognitedata/cognite-sdk-python/commit/302581728940c28fc21be40f8180d41effd9d5b8))
+* **agents:** add subagents support to agents ([#2737](https://github.com/cognitedata/cognite-sdk-python/issues/2737)) ([0cb4a50](https://github.com/cognitedata/cognite-sdk-python/commit/0cb4a501c94925a7d5ad9f35668ed7afa502db7f))
+* **records:** accept unprefixed MovingFunctions values ([#2743](https://github.com/cognitedata/cognite-sdk-python/issues/2743)) ([58ed952](https://github.com/cognitedata/cognite-sdk-python/commit/58ed952be73af8620071ac5b053daf7580756c95))
+* **records:** aggregate endpoint ([#2705](https://github.com/cognitedata/cognite-sdk-python/issues/2705)) ([72af69b](https://github.com/cognitedata/cognite-sdk-python/commit/72af69b36bf30feafabea401cb9ade1ae3d7fdf8))
+
 ## [8.11.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.10.0...cognite-sdk-python-v8.11.0) (2026-07-31)
 
 
