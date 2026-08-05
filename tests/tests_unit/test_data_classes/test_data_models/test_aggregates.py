@@ -229,6 +229,15 @@ class TestMovingFunctionsEnum:
             "MovingFunctions.linearWeightedAvg",
         }
 
+    def test_unprefixed_suffix_also_resolves(self) -> None:
+        # _missing_ lets callers skip the "MovingFunctions." namespace prefix.
+        assert MovingFunctions("sum") is MovingFunctions.SUM
+        assert MovingFunctions("unweightedAvg") is MovingFunctions.UNWEIGHTED_AVG
+
+    def test_unprefixed_unknown_suffix_still_raises(self) -> None:
+        with pytest.raises(ValueError):
+            MovingFunctions("median")
+
 
 class TestCoexistenceWithTheAggregationsModule:
     """``data_classes.aggregations`` defines its own ``Average``, ``Count``, ``Min``, ``Max`` and

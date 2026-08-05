@@ -278,6 +278,9 @@ class MovingFunctions(str, Enum):
     ``MAX``, ``MIN`` and ``SUM`` take that statistic over the window. ``UNWEIGHTED_AVG`` averages the
     window; ``LINEAR_WEIGHTED_AVG`` averages it too, but weights the most recent buckets highest, so it
     follows a trend more closely at the cost of being noisier.
+
+    The wire values carry a ``MovingFunctions.`` prefix, but the unprefixed suffix (e.g. ``"sum"``) is
+    also accepted, so ``MovingFunctions("sum") is MovingFunctions.SUM``.
     """
 
     MAX = "MovingFunctions.max"
@@ -285,6 +288,14 @@ class MovingFunctions(str, Enum):
     SUM = "MovingFunctions.sum"
     UNWEIGHTED_AVG = "MovingFunctions.unweightedAvg"
     LINEAR_WEIGHTED_AVG = "MovingFunctions.linearWeightedAvg"
+
+    @classmethod
+    def _missing_(cls, value: object) -> MovingFunctions | None:
+        if isinstance(value, str) and not value.startswith(f"{cls.__name__}."):
+            for member in cls:
+                if member.value == f"{cls.__name__}.{value}":
+                    return member
+        return None
 
 
 class MovingFunction(Aggregate):
