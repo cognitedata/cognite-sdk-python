@@ -13,6 +13,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling import aggregates as aggs
 from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.data_classes.data_modeling.instances import TypeInformation
@@ -109,6 +110,36 @@ class RecordWriteList(CogniteResourceList[RecordWrite]):
 
     def as_ids(self) -> list[RecordId]:
         return [v.as_id() for v in self]
+
+
+class RecordsAggregation(CogniteResource):
+    """Aggregate results returned from the Records aggregate endpoint.
+
+    Args:
+        aggregates (dict[str, aggs.Result]): Aggregate results keyed by the client-defined
+            aggregate IDs.
+        typing (TypeInformation | None): Optional property typing metadata.
+    """
+
+    def __init__(self, aggregates: dict[str, aggs.Result], typing: TypeInformation | None = None) -> None:
+        self.aggregates = aggregates
+        self.typing = typing
+
+    def __getitem__(self, aggregate_id: str) -> aggs.Result:
+        return self.aggregates[aggregate_id]
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            aggregates=aggs._load_results(resource["aggregates"]),
+            typing=TypeInformation._load(resource["typing"]) if "typing" in resource else None,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"aggregates": aggs._dump_results(self.aggregates, camel_case)}
+        if self.typing is not None:
+            output["typing"] = self.typing.dump(camel_case=camel_case)
+        return output
 
 
 class Record(WriteableCogniteResource["RecordWrite"]):
@@ -389,10 +420,6 @@ class SyncRecordList(CogniteResourceList[SyncRecord]):
         self.cursor = cursor
         self.has_next = has_next
         self.typing = typing
-
-    @classmethod
-    def _load_response(cls, response: dict[str, Any]) -> Self:
-        return cls._load_raw_api_response([response])
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:
