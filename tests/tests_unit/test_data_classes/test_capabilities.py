@@ -152,6 +152,7 @@ def all_acls() -> Iterator[dict[str, Any]]:
         {"sessionsAcl": {"actions": ["LIST", "CREATE", "DELETE"], "scope": {"all": {}}}},
         {"simulatorsAcl": {"actions": ["READ", "WRITE", "DELETE", "RUN", "MANAGE"], "scope": {"all": {}}}},
         {"simulatorsAcl": {"actions": ["READ", "WRITE"], "scope": {"datasetScope": {"ids": ["123", "456"]}}}},
+        {"slaAcl": {"actions": ["READ"], "scope": {"all": {}}}},
         {"streamsAcl": {"actions": ["READ"], "scope": {"all": {}}}},
         {"streamsAcl": {"actions": ["CREATE", "DELETE"], "scope": {"all": {}}}},
         {"streamRecordsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},

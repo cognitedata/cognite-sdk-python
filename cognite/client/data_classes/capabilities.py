@@ -1534,6 +1534,19 @@ class SimulatorsAcl(Capability):
 
 
 @dataclass
+class SlaAcl(Capability):
+    _capability_name = "slaAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+    class Action(Capability.Action):  # type: ignore [misc]
+        Read = "READ"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
 class LegacyModelHostingAcl(LegacyCapability):
     _capability_name = "modelHostingAcl"
     actions: Sequence[Action]
