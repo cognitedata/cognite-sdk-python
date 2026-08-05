@@ -22,6 +22,7 @@ from cognite.client.data_classes.data_modeling.instances import (
     TypedNode,
     TypedNodeApply,
 )
+from tests.utils import PANDAS_TS_UNIT
 
 
 class PersonProperties:
@@ -305,8 +306,8 @@ class TestTypedNode:
                     "space": ["sp_my_fixed_space"],
                     "external_id": ["my_external_id"],
                     "version": [1],
-                    "last_updated_time": pd.array([pd.Timestamp(0, unit="ms")], dtype="datetime64[ms]"),
-                    "created_time": pd.array([pd.Timestamp(0, unit="ms")], dtype="datetime64[ms]"),
+                    "last_updated_time": pd.array([pd.Timestamp(0, unit="ms")], dtype=f"datetime64[{PANDAS_TS_UNIT}]"),
+                    "created_time": pd.array([pd.Timestamp(0, unit="ms")], dtype=f"datetime64[{PANDAS_TS_UNIT}]"),
                     "instance_type": ["node"],
                     "type": [{"space": "sp_model_space", "external_id": "person"}],
                     "name": ["John Doe"],
