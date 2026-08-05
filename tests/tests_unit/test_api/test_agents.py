@@ -13,6 +13,7 @@ from cognite.client.data_classes.agents.agent_tools import (
     InstanceSpaces,
     QueryKnowledgeGraphAgentToolConfiguration,
     QueryKnowledgeGraphAgentToolUpsert,
+    Subagent,
 )
 from tests.utils import get_url, jsgz_load
 
@@ -47,6 +48,7 @@ def agent_response_body() -> dict:
                         },
                     }
                 ],
+                "subagents": [{"agentExternalId": "sub_agent_1"}],
                 "createdTime": 1234567890,
                 "lastUpdatedTime": 1234567890,
                 "ownerId": "owner_1!",
@@ -166,6 +168,7 @@ class TestAgentsAPI:
                     ),
                 )
             ],
+            subagents=[Subagent(agent_external_id="sub_agent_1")],
         )
         created_agent = cognite_client.agents.upsert(agent_write)
         assert isinstance(created_agent, Agent)
