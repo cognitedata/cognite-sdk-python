@@ -21,6 +21,7 @@ from cognite.client.utils._auxiliary import (
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._pandas_helpers import to_pandas_timestamp
 from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -509,7 +510,7 @@ class RawRowsAPI(APIClient):
         )
         if last_updated_time_in_index:
             idx = pd.MultiIndex.from_tuples(
-                [(r.key, pd.Timestamp(r.last_updated_time, unit="ms")) for r in rows],
+                [(r.key, to_pandas_timestamp(r.last_updated_time)) for r in rows],
                 names=["key", "last_updated_time"],
             )
         else:
