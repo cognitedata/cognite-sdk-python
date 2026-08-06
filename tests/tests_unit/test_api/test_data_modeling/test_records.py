@@ -947,3 +947,12 @@ class TestRecordDTOs:
         assert record.status == "deleted"
         assert record.properties is None
         assert "properties" not in record.dump()
+
+
+class TestRecordsAPIAggregatesArgument:
+    @pytest.mark.parametrize("bad_aggregates", [Count(), [Count()], ("total", Count())])
+    def test_aggregate_rejects_non_mapping_aggregates(
+        self, cognite_client: CogniteClient, stream_id: str, bad_aggregates: object
+    ) -> None:
+        with pytest.raises(TypeError, match="'aggregates' must be a mapping"):
+            cognite_client.data_modeling.records.aggregate(bad_aggregates, stream_id=stream_id)  # type: ignore[arg-type]
