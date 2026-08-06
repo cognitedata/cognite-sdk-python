@@ -947,3 +947,24 @@ class TestRecordDTOs:
         assert record.status == "deleted"
         assert record.properties is None
         assert "properties" not in record.dump()
+
+
+class TestRecordsAPIDeleteIdentifiers:
+    """Records fetched from the API are a plausible thing to hand straight back to delete()."""
+
+    def test_delete_rejects_records(self, cognite_client: CogniteClient, stream_id: str) -> None:
+        record = Record(space="sp", external_id="rec-1", created_time=1, last_updated_time=2)
+        with pytest.raises(TypeError, match="as_id"):
+            cognite_client.data_modeling.records.delete([record], stream_id=stream_id)  # type: ignore[list-item]
+
+    def test_delete_rejects_record_list(self, cognite_client: CogniteClient, stream_id: str) -> None:
+        records = RecordList([Record(space="sp", external_id="rec-1", created_time=1, last_updated_time=2)])
+        with pytest.raises(TypeError, match="as_ids"):
+            cognite_client.data_modeling.records.delete(records, stream_id=stream_id)
+
+    @pytest.mark.parametrize("bad_items", ["rec-1", [{"space": "sp", "externalId": "rec-1"}]])
+    def test_delete_rejects_non_record_ids(
+        self, cognite_client: CogniteClient, stream_id: str, bad_items: object
+    ) -> None:
+        with pytest.raises(TypeError, match="'items' must be RecordId"):
+            cognite_client.data_modeling.records.delete(bad_items, stream_id=stream_id)  # type: ignore[arg-type]
