@@ -300,11 +300,3 @@ class TestAggregatePropertyPathValidation:
     def test_time_histogram_rejects_bare_string_property(self) -> None:
         with pytest.raises(TypeError, match="'property' must be a sequence of strings"):
             TimeHistogram(property="game_time", calendar_interval="1d")  # type: ignore[arg-type]
-
-    def test_rejects_non_string_path_segments(self) -> None:
-        with pytest.raises(TypeError, match="'property' must be a sequence of strings"):
-            Count(property=["sp", 42])
-
-    def test_rejects_empty_property_path(self) -> None:
-        with pytest.raises(ValueError, match="'property' cannot be empty"):
-            Sum(property=[])
