@@ -256,6 +256,10 @@ class TimeRange(CogniteResource):
         lte: int | str | None = None,
         lt: int | str | None = None,
     ) -> None:
+        if gte is not None and gt is not None:
+            raise ValueError("Provide at most one lower bound: 'gte' or 'gt', not both.")
+        if lte is not None and lt is not None:
+            raise ValueError("Provide at most one upper bound: 'lte' or 'lt', not both.")
         self.gte = gte
         self.gt = gt
         self.lte = lte

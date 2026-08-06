@@ -49,6 +49,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SelectSync,
 )
+from cognite.client.data_classes.data_modeling.records import TimeRange
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.datapoint_aggregates import (
     ALL_SORTED_DP_AGGS,
@@ -401,6 +402,10 @@ class FakeCogniteResourceGenerator:
             key = self._random_string(15)
             keyword_arguments["with_"] = {key: self.create_instance(NodeResultSetExpressionSync)}
             keyword_arguments["select"] = {key: self.create_instance(SelectSync)}
+        elif resource_cls is TimeRange:
+            # A TimeRange takes at most one lower ('gte' or 'gt') and one upper ('lte' or 'lt') bound
+            keyword_arguments.pop("gt", None)
+            keyword_arguments.pop("lt", None)
         elif resource_cls is Relationship and not skip_defaulted_args:
             # Relationship must set the source and target type consistently with the source and target
             keyword_arguments["source_type"] = type(keyword_arguments["source"]).__name__
