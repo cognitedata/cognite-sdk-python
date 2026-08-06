@@ -5,6 +5,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client._api_client import APIClient
+from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.data_modeling.aggregates import Aggregate, _dump_aggregate_value
 from cognite.client.data_classes.data_modeling.instances import InstanceSort
 from cognite.client.data_classes.data_modeling.records import (
@@ -29,6 +30,60 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
+_TIME_RANGE_HINT = "TimeRange(gte=...) takes the same bounds as the raw dict: 'gte', 'gt', 'lte' and 'lt'."
+_SORT_HINT = (
+    'Sort on a property path, e.g. InstanceSort(property=["lastUpdatedTime"], direction="descending") '
+    'or InstanceSort(property=["my_space", "my_container", "temperature"]).'
+)
+_SOURCES_HINT = (
+    "Select properties per container, e.g. RecordSourceSelector("
+    'source=RecordContainerId(space="my_space", external_id="my_container"), properties=["*"]).'
+)
+_TARGET_UNITS_HINT = (
+    'Convert everything with RecordTargetUnits(unit_system_name="SI"), or one property at a time with '
+    'RecordTargetUnit(property=["my_space", "my_container", "temperature"], unit=UnitReference("temperature:deg_f")).'
+)
+_FILTER_HINT = (
+    "Build filters with cognite.client.data_classes.filters, e.g. "
+    'filters.Equals(["my_space", "my_container", "temperature"], 22.5).'
+)
+
+
+def _dump_request_object(value: Any, expected: type[CogniteResource], argument: str, hint: str) -> dict[str, Any]:
+    """Dump one typed request object, accepting a dict as the already serialized wire form.
+
+    Without the type check, anything else (a bare string, a tuple, ...) fails downstream with an
+    ``AttributeError: ... has no attribute 'dump'`` that says nothing about which argument was wrong.
+    """
+    if isinstance(value, expected):
+        return value.dump()
+    if isinstance(value, dict):
+        return value
+    raise TypeError(f"{argument!r} must be {expected.__name__} or dict, not {type(value).__name__}. {hint}")
+
+
+def _dump_request_objects(
+    values: Any, expected: type[CogniteResource], argument: str, hint: str
+) -> list[dict[str, Any]]:
+    """Dump one typed request object, or a sequence of them."""
+    if isinstance(values, (expected, dict)):
+        values = [values]
+    elif isinstance(values, str) or not isinstance(values, Sequence):
+        raise TypeError(
+            f"{argument!r} must be {expected.__name__} or dict, or a sequence of them, "
+            f"not {type(values).__name__}. {hint}"
+        )
+    return [_dump_request_object(value, expected, argument, hint) for value in values]
+
+
+def _dump_filter(filter: Any) -> dict[str, Any] | None:
+    """Dump a filter expression; property paths are passed through as given, never camelCased."""
+    if filter is None or isinstance(filter, dict):
+        return filter
+    if isinstance(filter, Filter):
+        return filter.dump(camel_case_property=False)
+    raise TypeError(f"'filter' must be Filter or dict, not {type(filter).__name__}. {_FILTER_HINT}")
+
 
 class RecordsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
@@ -50,20 +105,28 @@ class RecordsAPI(APIClient):
         return interpolate_and_url_encode("/streams/{}/records", stream_id) + suffix
 
     @staticmethod
-    def _dump_target_units(target_units: RecordTargetUnits | Sequence[RecordTargetUnit]) -> dict[str, Any]:
+    def _dump_target_units(
+        target_units: RecordTargetUnits
+        | RecordTargetUnit
+        | Sequence[RecordTargetUnit | dict[str, Any]]
+        | dict[str, Any],
+    ) -> dict[str, Any]:
         if isinstance(target_units, RecordTargetUnits):
             if (target_units.properties is None) == (target_units.unit_system_name is None):
                 raise ValueError("Provide exactly one of 'properties' or 'unit_system_name'.")
             return target_units.dump()
-        return RecordTargetUnits(properties=list(target_units)).dump()
+        if isinstance(target_units, dict):
+            return target_units
+        properties = _dump_request_objects(target_units, RecordTargetUnit, "target_units", _TARGET_UNITS_HINT)
+        return {"properties": properties}
 
     async def _sync(
         self,
         stream_id: str,
         *,
-        filter: Filter | None = None,
-        sources: Sequence[RecordSourceSelector] | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sources: RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         limit: int = 10,
         include_typing: bool = False,
         initialize_cursor: str | None = None,
@@ -73,7 +136,7 @@ class RecordsAPI(APIClient):
         if initialize_cursor is not None:
             other_params["initializeCursor"] = initialize_cursor
         if sources is not None:
-            other_params["sources"] = [source.dump() for source in sources]
+            other_params["sources"] = _dump_request_objects(sources, RecordSourceSelector, "sources", _SOURCES_HINT)
         if target_units is not None:
             other_params["targetUnits"] = self._dump_target_units(target_units)
         if include_typing:
@@ -86,7 +149,7 @@ class RecordsAPI(APIClient):
             resource_path=self._records_url(stream_id),
             url_path=self._records_url(stream_id, "/sync"),
             limit=limit,
-            filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
+            filter=_dump_filter(filter),
             other_params=other_params,
             initial_cursor=cursor,
             settings_forcing_raw_response_loading=["records_sync_cursor"],
@@ -242,9 +305,9 @@ class RecordsAPI(APIClient):
         aggregates: Mapping[str, Aggregate | dict[str, Any]],
         *,
         stream_id: str,
-        last_updated_time: TimeRange | None = None,
+        last_updated_time: TimeRange | dict[str, Any] | None = None,
         filter: Filter | dict[str, Any] | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         include_typing: bool = False,
     ) -> RecordsAggregation:
         """`Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_.
@@ -253,10 +316,10 @@ class RecordsAPI(APIClient):
             aggregates (Mapping[str, Aggregate | dict[str, Any]]): Aggregate request tree keyed
                 by client-defined aggregate IDs.
             stream_id (str): External ID of the stream to aggregate from.
-            last_updated_time (TimeRange | None): Filter records by last-updated time.
+            last_updated_time (TimeRange | dict[str, Any] | None): Filter records by last-updated time.
                 **Required** for immutable streams (must include a lower bound).
             filter (Filter | dict[str, Any] | None): Filter expression.
-            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Unit conversion specification.
+            target_units (RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None): Unit conversion specification.
             include_typing (bool): Include property type metadata in the response.
 
         Returns:
@@ -363,9 +426,11 @@ class RecordsAPI(APIClient):
         self._warning.warn()
         body: dict[str, Any] = {"aggregates": _dump_aggregate_value(aggregates)}
         if last_updated_time is not None:
-            body["lastUpdatedTime"] = last_updated_time.dump()
+            body["lastUpdatedTime"] = _dump_request_object(
+                last_updated_time, TimeRange, "last_updated_time", _TIME_RANGE_HINT
+            )
         if filter is not None:
-            body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+            body["filter"] = _dump_filter(filter)
         if target_units is not None:
             body["targetUnits"] = self._dump_target_units(target_units)
         if include_typing:
@@ -382,10 +447,10 @@ class RecordsAPI(APIClient):
         self,
         stream_id: str,
         *,
-        last_updated_time: TimeRange | None = None,
-        filter: Filter | None = None,
-        sources: Sequence[RecordSourceSelector] | None = None,
-        sort: Sequence[InstanceSort] | InstanceSort | None = None,
+        last_updated_time: TimeRange | dict[str, Any] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sources: RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None = None,
+        sort: InstanceSort | Sequence[InstanceSort | dict[str, Any]] | dict[str, Any] | None = None,
         limit: int = 10,
         include_typing: bool = False,
     ) -> RecordList:
@@ -396,11 +461,11 @@ class RecordsAPI(APIClient):
 
         Args:
             stream_id (str): External ID of the stream to query.
-            last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
+            last_updated_time (TimeRange | dict[str, Any] | None): Filter by last-updated time. **Required for
                 immutable streams** (must include a lower bound).
-            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
-            sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
+            filter (Filter | dict[str, Any] | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None): Which container properties to return.
+            sort (InstanceSort | Sequence[InstanceSort | dict[str, Any]] | dict[str, Any] | None): Sort specification(s); up to 5.
             limit (int): Maximum number of records to return (1-1000).
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
@@ -424,12 +489,13 @@ class RecordsAPI(APIClient):
         self._warning.warn()
         other_params: dict[str, Any] = {}
         if last_updated_time is not None:
-            other_params["lastUpdatedTime"] = last_updated_time.dump()
+            other_params["lastUpdatedTime"] = _dump_request_object(
+                last_updated_time, TimeRange, "last_updated_time", _TIME_RANGE_HINT
+            )
         if sources is not None:
-            other_params["sources"] = [source.dump() for source in sources]
+            other_params["sources"] = _dump_request_objects(sources, RecordSourceSelector, "sources", _SOURCES_HINT)
         if sort is not None:
-            sort_list = [sort] if isinstance(sort, InstanceSort) else list(sort)
-            other_params["sort"] = [spec.dump() for spec in sort_list]
+            other_params["sort"] = _dump_request_objects(sort, InstanceSort, "sort", _SORT_HINT)
         if include_typing:
             other_params["includeTyping"] = True
 
@@ -440,7 +506,7 @@ class RecordsAPI(APIClient):
             resource_path=self._records_url(stream_id),
             url_path=self._records_url(stream_id, "/filter"),
             limit=limit,
-            filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
+            filter=_dump_filter(filter),
             other_params=other_params,
             settings_forcing_raw_response_loading=[f"{include_typing=}"] if include_typing else None,
         )
@@ -450,9 +516,9 @@ class RecordsAPI(APIClient):
         stream_id: str,
         *,
         initialize_cursor: str,
-        filter: Filter | None = None,
-        sources: Sequence[RecordSourceSelector] | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sources: RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         limit: int = 10,
         include_typing: bool = False,
     ) -> SyncRecordList:
@@ -466,9 +532,9 @@ class RecordsAPI(APIClient):
         Args:
             stream_id (str): External ID of the stream to sync.
             initialize_cursor (str): Where to start, as a relative duration like ``"7d-ago"``.
-            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
-            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
+            filter (Filter | dict[str, Any] | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None): Which container properties to return.
+            target_units (RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None): Properties to convert
                 to another unit.
             limit (int): Maximum number of records to return in this page (1-1000). Defaults to 10.
             include_typing (bool): If True, include property type information on the returned
@@ -508,9 +574,9 @@ class RecordsAPI(APIClient):
         stream_id: str,
         *,
         cursor: str,
-        filter: Filter | None = None,
-        sources: Sequence[RecordSourceSelector] | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sources: RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         limit: int = 10,
         include_typing: bool = False,
     ) -> SyncRecordList:
@@ -519,9 +585,9 @@ class RecordsAPI(APIClient):
         Args:
             stream_id (str): External ID of the stream to sync.
             cursor (str): Resume from a cursor returned by a previous sync call.
-            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
-            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
+            filter (Filter | dict[str, Any] | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None): Which container properties to return.
+            target_units (RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None): Properties to convert
                 to another unit.
             limit (int): Maximum number of records to return in this page (1-1000). Defaults to 10.
             include_typing (bool): If True, include property type information on the returned

@@ -947,3 +947,114 @@ class TestRecordDTOs:
         assert record.status == "deleted"
         assert record.properties is None
         assert "properties" not in record.dump()
+
+
+class TestRecordsAPIRequestArgumentValidation:
+    """Wrong-but-plausible argument types must fail client-side with an actionable error.
+
+    Typed request objects are dumped without a type check, so a raw dict or a bare string surfaces
+    as ``AttributeError: 'dict' object has no attribute 'dump'`` from deep inside the SDK.
+    """
+
+    def test_filter_accepts_dict_last_updated_time(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, mock_filter: None, stream_id: str
+    ) -> None:
+        cognite_client.data_modeling.records.filter(stream_id=stream_id, last_updated_time={"gte": "2d-ago"})
+        assert jsgz_load(httpx_mock.get_requests()[0].content)["lastUpdatedTime"] == {"gte": "2d-ago"}
+
+    @pytest.mark.parametrize("bad_time_range", ["2d-ago", 1_000_000, ("gte", 1)])
+    def test_filter_rejects_non_time_range(
+        self, cognite_client: CogniteClient, stream_id: str, bad_time_range: object
+    ) -> None:
+        with pytest.raises(TypeError, match="'last_updated_time' must be TimeRange or dict"):
+            cognite_client.data_modeling.records.filter(stream_id=stream_id, last_updated_time=bad_time_range)  # type: ignore[arg-type]
+
+    def test_aggregate_accepts_dict_last_updated_time(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, records_base_url: str, stream_id: str
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=re.compile(re.escape(records_base_url) + r"/aggregate$"),
+            json={"aggregates": {"total": {"count": 1}}},
+        )
+        cognite_client.data_modeling.records.aggregate(
+            stream_id=stream_id, aggregates={"total": Count()}, last_updated_time={"gte": 1_000_000}
+        )
+        assert jsgz_load(httpx_mock.get_requests()[0].content)["lastUpdatedTime"] == {"gte": 1_000_000}
+
+    def test_aggregate_rejects_non_time_range(self, cognite_client: CogniteClient, stream_id: str) -> None:
+        with pytest.raises(TypeError, match="'last_updated_time' must be TimeRange or dict"):
+            cognite_client.data_modeling.records.aggregate(
+                stream_id=stream_id,
+                aggregates={"total": Count()},
+                last_updated_time="2d-ago",  # type: ignore[arg-type]
+            )
+
+    @pytest.mark.parametrize("bad_sort", ["lastUpdatedTime", ["lastUpdatedTime"], (("lastUpdatedTime", "asc"),)])
+    def test_filter_rejects_string_sort(self, cognite_client: CogniteClient, stream_id: str, bad_sort: object) -> None:
+        with pytest.raises(TypeError, match="'sort' must be InstanceSort or dict"):
+            cognite_client.data_modeling.records.filter(stream_id=stream_id, sort=bad_sort)  # type: ignore[arg-type]
+
+    def test_filter_accepts_dict_sort(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, mock_filter: None, stream_id: str
+    ) -> None:
+        cognite_client.data_modeling.records.filter(
+            stream_id=stream_id, sort={"property": ["lastUpdatedTime"], "direction": "descending"}
+        )
+        assert jsgz_load(httpx_mock.get_requests()[0].content)["sort"] == [
+            {"property": ["lastUpdatedTime"], "direction": "descending"}
+        ]
+
+    def test_filter_accepts_single_source_and_dicts(
+        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, mock_filter: None, stream_id: str
+    ) -> None:
+        cognite_client.data_modeling.records.filter(
+            stream_id=stream_id,
+            sources=RecordSourceSelector(RecordContainerId(space="sp", external_id="container-x"), ["*"]),
+        )
+        assert jsgz_load(httpx_mock.get_requests()[0].content)["sources"] == [
+            {"source": {"type": "container", "space": "sp", "externalId": "container-x"}, "properties": ["*"]}
+        ]
+
+    @pytest.mark.parametrize("bad_sources", ["temp", ["temp"], [None]])
+    def test_filter_rejects_invalid_sources(
+        self, cognite_client: CogniteClient, stream_id: str, bad_sources: object
+    ) -> None:
+        with pytest.raises(TypeError, match="'sources' must be RecordSourceSelector or dict"):
+            cognite_client.data_modeling.records.filter(stream_id=stream_id, sources=bad_sources)  # type: ignore[arg-type]
+
+    def test_filter_rejects_non_filter(self, cognite_client: CogniteClient, stream_id: str) -> None:
+        with pytest.raises(TypeError, match="'filter' must be Filter or dict"):
+            cognite_client.data_modeling.records.filter(stream_id=stream_id, filter="temp > 20")  # type: ignore[arg-type]
+
+    def test_sync_accepts_single_target_unit(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            json={"items": [{**record_response, "status": "created"}], "nextCursor": "z", "hasNext": False},
+        )
+        cognite_client.data_modeling.records.sync(
+            stream_id=stream_id,
+            initialize_cursor="c",
+            target_units=RecordTargetUnit(["sp", "c", "temp"], UnitReference("temperature:deg_c")),
+            limit=1,
+        )
+        assert jsgz_load(httpx_mock.get_requests()[0].content)["targetUnits"] == {
+            "properties": [{"property": ["sp", "c", "temp"], "unit": {"externalId": "temperature:deg_c"}}]
+        }
+
+    def test_sync_rejects_invalid_target_units(self, cognite_client: CogniteClient, stream_id: str) -> None:
+        with pytest.raises(TypeError, match="'target_units' must be RecordTargetUnit or dict"):
+            cognite_client.data_modeling.records.sync(
+                stream_id=stream_id,
+                initialize_cursor="c",
+                target_units=["temperature:deg_c"],  # type: ignore[list-item]
+                limit=1,
+            )
