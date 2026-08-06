@@ -13,13 +13,15 @@ from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
 from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client._proto.data_point_list_response_pb2 import (
     TIMESERIES_TYPE_NUMERIC,
+    TIMESERIES_TYPE_STATE,
     TIMESERIES_TYPE_STRING,
+    TIMESERIES_TYPE_UNSPECIFIED,
     DataPointListItem,
-    TimeSeriesType,
 )
 from cognite.client._proto.data_points_pb2 import (
     AggregateDatapoint,
     NumericDatapoint,
+    StateDatapoint,
     StringDatapoint,
 )
 from cognite.client.data_classes.data_modeling import NodeId
@@ -30,6 +32,7 @@ from cognite.client.data_classes.datapoints import (
     MaxOrMinDatapoint,
     MinDatapoint,
     MinDatapointWithStatus,
+    StateAggregate,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -43,11 +46,13 @@ AggregateDatapoints = RepeatedCompositeFieldContainer[AggregateDatapoint]
 NumericDatapoints = RepeatedCompositeFieldContainer[NumericDatapoint]
 StringDatapoints = RepeatedCompositeFieldContainer[StringDatapoint]
 
-DatapointAny = AggregateDatapoint | NumericDatapoint | StringDatapoint
-DatapointsAny = AggregateDatapoints | NumericDatapoints | StringDatapoints
+StateDatapoints = RepeatedCompositeFieldContainer[StateDatapoint]
 
-DatapointRaw = NumericDatapoint | StringDatapoint
-DatapointsRaw = NumericDatapoints | StringDatapoints
+DatapointAny = AggregateDatapoint | NumericDatapoint | StringDatapoint | StateDatapoint
+DatapointsAny = AggregateDatapoints | NumericDatapoints | StringDatapoints | StateDatapoints
+
+DatapointRaw = NumericDatapoint | StringDatapoint | StateDatapoint
+DatapointsRaw = NumericDatapoints | StringDatapoints | StateDatapoints
 
 RawDatapointValue = float | str
 DatapointsId = int | DatapointsQuery | Sequence[int | DatapointsQuery]
@@ -57,7 +62,12 @@ DatapointsInstanceId = NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQu
 
 class DpsUnpackFns:
     ts: Callable[[DatapointAny], int] = op.attrgetter("timestamp")
-    raw_dp: Callable[[DatapointRaw], RawDatapointValue] = op.attrgetter("value")
+
+    @staticmethod
+    def raw_dp(dp: DatapointRaw) -> RawDatapointValue:
+        if isinstance(dp, StateDatapoint):
+            raise TypeError("raw_dp does not apply to state datapoints")
+        return dp.value
 
     @staticmethod
     def custom_from_aggregates(lst: list[str]) -> Callable[[AggregateDatapoint], tuple[float, ...]]:
@@ -73,9 +83,10 @@ class DpsUnpackFns:
 
     # When datapoints with bad status codes are not ignored, value may be missing:
     @staticmethod
-    def nullable_raw_dp(dp: DatapointRaw) -> float | str:
-        # We pretend like float is always returned to not break every dps annot. in the entire SDK..
-        return dp.value if not dp.nullValue else None  # type: ignore [return-value]
+    def nullable_raw_dp(dp: DatapointRaw) -> float | str | None:
+        if isinstance(dp, StateDatapoint):
+            raise TypeError("nullable_raw_dp does not apply to state datapoints")
+        return dp.value if not dp.nullValue else None
 
     # minDatapoint and maxDatapoint are also objects in the response. The proto lookups doesn't fail,
     # so we must be very careful to only attach status codes if requested.
@@ -124,7 +135,7 @@ class DpsUnpackFns:
         return np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=dtype, count=len(dps))
 
     @staticmethod
-    def extract_nullable_raw_dps(dps: DatapointsRaw) -> list[float | str]:  # actually list of [... | None]
+    def extract_nullable_raw_dps(dps: DatapointsRaw) -> list[float | str | None]:
         return list(map(DpsUnpackFns.nullable_raw_dp, dps))
 
     @staticmethod
@@ -132,12 +143,12 @@ class DpsUnpackFns:
         dps: DatapointsRaw, dtype: type[np.float64] | type[np.object_]
     ) -> tuple[npt.NDArray[Any], list[int]]:
         # This is a very hot loop, thus we make some ugly optimizations:
-        values = [None] * len(dps)
+        values: list[float | str | None] = [None] * len(dps)
         missing: list[int] = []
         add_missing = missing.append
         for i, dp in enumerate(map(DpsUnpackFns.nullable_raw_dp, dps)):
             # we use list because of its significantly lower overhead than numpy on single element access:
-            values[i] = dp  # type: ignore [call-overload]
+            values[i] = dp
             if dp is None:
                 add_missing(i)
         arr = np.array(values, dtype=dtype)
@@ -158,6 +169,34 @@ class DpsUnpackFns:
     @staticmethod
     def extract_status_symbol_numpy(dps: DatapointsRaw) -> npt.NDArray[np.object_]:
         return np.fromiter(map(DpsUnpackFns.status_symbol, dps), dtype=np.object_, count=len(dps))
+
+    @staticmethod
+    def nullable_state_numeric(dp: StateDatapoint) -> int | None:
+        return dp.numericValue if dp.HasField("numericValue") else None
+
+    @staticmethod
+    def nullable_state_string(dp: StateDatapoint) -> str | None:
+        return dp.stringValue if dp.HasField("stringValue") else None
+
+    @staticmethod
+    def extract_state_numeric(dps: StateDatapoints) -> list[int | None]:
+        return list(map(DpsUnpackFns.nullable_state_numeric, dps))
+
+    @staticmethod
+    def extract_state_string(dps: StateDatapoints) -> list[str | None]:
+        return list(map(DpsUnpackFns.nullable_state_string, dps))
+
+    @staticmethod
+    def extract_state_numeric_numpy(dps: StateDatapoints) -> npt.NDArray[np.object_]:
+        return np.fromiter(map(DpsUnpackFns.nullable_state_numeric, dps), dtype=np.object_, count=len(dps))
+
+    @staticmethod
+    def extract_state_string_numpy(dps: StateDatapoints) -> npt.NDArray[np.object_]:
+        return np.fromiter(map(DpsUnpackFns.nullable_state_string, dps), dtype=np.object_, count=len(dps))
+
+    @staticmethod
+    def extract_state_aggregates_rows(dps: AggregateDatapoints) -> list[list[StateAggregate]]:
+        return [[StateAggregate.from_proto(sa) for sa in dp.stateAggregates] for dp in dps]
 
     @staticmethod
     def extract_aggregates(
@@ -226,23 +265,38 @@ def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
     return cast(DatapointsAny, [])
 
 
-def proto_type_to_str(ts_type: TimeSeriesType) -> Literal["numeric", "string"]:
-    if ts_type == TIMESERIES_TYPE_NUMERIC:  # 1
+def infer_time_series_type_from_list_item(
+    res: DataPointListItem,
+) -> Literal["numeric", "string", "state", "unknown"]:
+    t = res.type
+    if t == TIMESERIES_TYPE_UNSPECIFIED:
+        # Older API responses do not set the new `type` field; fall back to which datapoint
+        # variant was returned in the `datapointType` oneof.
+        match res.WhichOneof("datapointType"):
+            case "stateDatapoints":
+                return "state"
+            case "stringDatapoints":
+                return "string"
+            case "numericDatapoints" | "aggregateDatapoints":
+                return "numeric"
+            case _:
+                return "unknown"
+    if t == TIMESERIES_TYPE_NUMERIC:
         return "numeric"
-    elif ts_type == TIMESERIES_TYPE_STRING:  # 2
+    if t == TIMESERIES_TYPE_STRING:
         return "string"
-    elif ts_type >= 3:
-        from cognite.client._version import __version__
+    if t == TIMESERIES_TYPE_STATE:
+        return "state"
+    from cognite.client._version import __version__
 
-        warnings.warn(
-            f"Unknown time series type ({ts_type}) received from the API. "
-            "Please upgrade to a newer version of the Cognite SDK to handle this type "
-            f"(current version={__version__!r}).",
-            UserWarning,
-            stacklevel=3,
-        )
-    # We also return 'unknown' for TIMESERIES_TYPE_UNSPECIFIED (0):
-    return "unknown"  # type: ignore [return-value]
+    warnings.warn(
+        f"Unknown time series type ({t}) received from the API. "
+        "Please upgrade to a newer version of the Cognite SDK to handle this type "
+        f"(current version={__version__!r}).",
+        UserWarning,
+        stacklevel=3,
+    )
+    return "unknown"
 
 
 def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | NodeId | None]:
@@ -256,7 +310,7 @@ def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool
         "external_id": res.externalId,
         "is_string": res.isString,
         "is_step": res.isStep,
-        "type": proto_type_to_str(res.type),
+        "type": infer_time_series_type_from_list_item(res),
         "unit": res.unit,
         "unit_external_id": res.unitExternalId,
         "instance_id": instance_id,

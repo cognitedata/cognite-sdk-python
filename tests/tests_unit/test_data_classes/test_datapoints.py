@@ -6,10 +6,10 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from cognite.client.data_classes import Datapoint, DatapointsArray
+from cognite.client.data_classes import Datapoint, Datapoints, DatapointsArray
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
-from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
+from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList, StateAggregate
 
 
 class TestDatapoint:
@@ -115,3 +115,58 @@ class TestToPandas:
         )
         exp_df.columns = pd.Index([123, "foo", NodeId(space="s", external_id="x")], name="identifier")
         pd.testing.assert_frame_equal(df, exp_df)
+
+
+class TestStateAggregate:
+    def test_load_dump_round_trip(self) -> None:
+        raw = {
+            "numericValue": 7,
+            "stringValue": "on",
+            "stateCount": 2,
+            "stateTransitions": 1,
+            "stateDuration": 3600,
+        }
+        sa = StateAggregate._load(raw)
+        assert sa.numeric_value == 7
+        assert sa.string_value == "on"
+        assert sa.state_count == 2
+        assert sa.state_transitions == 1
+        assert sa.state_duration == 3600
+        assert StateAggregate._load(sa.dump(camel_case=False)) == sa
+
+
+@pytest.mark.dsl
+class TestDatapointsStateSeries:
+    def test_dump_load_state_raw(self) -> None:
+        # State series with sparse columns must round-trip via Datapoints.dump/_load.
+        dps = Datapoints(
+            id=1,
+            timestamp=[1, 2],
+            is_string=False,
+            is_step=False,
+            type="state",
+            numeric_value=[1, None],
+            string_value=[None, "b"],
+        )
+        loaded = Datapoints._load(dps.dump())
+        assert loaded.type == "state"
+        assert loaded.numeric_value is not None
+        assert loaded.string_value is not None
+        assert list(loaded.numeric_value) == [1, None]
+        assert list(loaded.string_value) == [None, "b"]
+
+    def test_datapoints_array_state_dump(self) -> None:
+        import numpy as np
+
+        dps = DatapointsArray(
+            id=9,
+            timestamp=np.array([1000, 2000], dtype="datetime64[ms]"),
+            is_string=False,
+            is_step=False,
+            type="state",
+            numeric_value=np.array([3, 4], dtype=np.int64),
+            string_value=None,
+        )
+        dumped = dps.dump()
+        assert dumped["type"] == "state"
+        assert len(dumped["datapoints"]) == 2
