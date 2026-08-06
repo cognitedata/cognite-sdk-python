@@ -947,3 +947,15 @@ class TestRecordDTOs:
         assert record.status == "deleted"
         assert record.properties is None
         assert "properties" not in record.dump()
+
+
+class TestTimeRangeBounds:
+    @pytest.mark.parametrize(
+        "kwargs", [{"gte": 1, "gt": 2}, {"lte": 1, "lt": 2}, {"gte": 1, "gt": 2, "lt": 3, "lte": 4}]
+    )
+    def test_time_range_rejects_two_bounds_on_the_same_side(self, kwargs: dict) -> None:
+        with pytest.raises(ValueError, match=r"lower|upper"):
+            TimeRange(**kwargs)
+
+    def test_time_range_allows_one_bound_on_each_side(self) -> None:
+        assert TimeRange(gt=1, lte=2).dump() == {"gt": 1, "lte": 2}
