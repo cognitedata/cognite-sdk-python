@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 from cognite.client._api_client import APIClient
+from cognite.client.data_classes.data_modeling.aggregates import Aggregate, _dump_aggregate_value
 from cognite.client.data_classes.data_modeling.instances import InstanceSort
 from cognite.client.data_classes.data_modeling.records import (
     Record,
     RecordId,
     RecordIdSequence,
     RecordList,
+    RecordsAggregation,
     RecordSourceSelector,
     RecordTargetUnit,
     RecordTargetUnits,
@@ -234,6 +236,147 @@ class RecordsAPI(APIClient):
             resource_path=self._records_url(stream_id, "/upsert"),
             no_response=True,
         )
+
+    async def aggregate(
+        self,
+        aggregates: Mapping[str, Aggregate | dict[str, Any]],
+        *,
+        stream_id: str,
+        last_updated_time: TimeRange | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        include_typing: bool = False,
+    ) -> RecordsAggregation:
+        """`Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_.
+
+        Args:
+            aggregates (Mapping[str, Aggregate | dict[str, Any]]): Aggregate request tree keyed
+                by client-defined aggregate IDs.
+            stream_id (str): External ID of the stream to aggregate from.
+            last_updated_time (TimeRange | None): Filter records by last-updated time.
+                **Required** for immutable streams (must include a lower bound).
+            filter (Filter | dict[str, Any] | None): Filter expression.
+            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Unit conversion specification.
+            include_typing (bool): Include property type metadata in the response.
+
+        Returns:
+            RecordsAggregation: Aggregate results keyed by the requested aggregate IDs.
+
+        Examples:
+
+            The examples below aggregate over a stream of padel game statistics records; each
+            example builds on the previous one.
+
+            The property paths used below:
+
+                >>> game_time = ["paddle", "game_statistics", "game_time"]
+                >>> player_name = ["paddle", "game_statistics", "player_name"]
+                >>> points_scored = ["paddle", "game_statistics", "points_scored"]
+
+
+            Find the average points scored across all games, using a typed helper:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling.aggregates import Average
+                >>> client = CogniteClient()
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={"avg_points_scored": Average(points_scored)},
+                ... )
+
+
+            Count the total number of games, and how many of them have a recorded score, only
+            considering games updated after a given time:
+
+                >>> from cognite.client.data_classes.data_modeling.aggregates import Count
+                >>> from cognite.client.data_classes.data_modeling.records import TimeRange
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={
+                ...         "total_games": Count(),
+                ...         "games_with_score": Count(points_scored),
+                ...     },
+                ...     last_updated_time=TimeRange(gt=1759276800000),
+                ... )
+
+
+            Group games by day, then by player, and for each player-day compute their total,
+            highest, and average points scored, alongside the single highest score across all
+            games:
+
+                >>> from cognite.client.data_classes.data_modeling.aggregates import (
+                ...     Average,
+                ...     Max,
+                ...     Sum,
+                ...     TimeHistogram,
+                ...     UniqueValues,
+                ... )
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={
+                ...         "my_groups_by_1d_range": TimeHistogram(
+                ...             property=game_time,
+                ...             calendar_interval="1d",
+                ...             aggregates={
+                ...                 "my_groups_by_player_name": UniqueValues(
+                ...                     property=player_name,
+                ...                     aggregates={
+                ...                         "my_player_daily_scores_sum": Sum(points_scored),
+                ...                         "my_player_daily_scores_maximum": Max(points_scored),
+                ...                     },
+                ...                 ),
+                ...                 "my_daily_scores_average": Average(points_scored),
+                ...             },
+                ...         ),
+                ...         "my_scores_maximum_across_all_games": Max(points_scored),
+                ...     },
+                ... )
+
+
+            Bucket games by day and smooth the daily count with a 7-day moving average, using the
+            ``MovingFunctions`` enum so the pipeline function name cannot be mistyped:
+
+                >>> from cognite.client.data_classes.data_modeling.aggregates import (
+                ...     Count,
+                ...     MovingFunction,
+                ...     MovingFunctions,
+                ...     TimeHistogram,
+                ... )
+                >>> res = client.data_modeling.records.aggregate(
+                ...     stream_id="my-stream",
+                ...     aggregates={
+                ...         "games_per_day": TimeHistogram(
+                ...             property=game_time,
+                ...             calendar_interval="1d",
+                ...             aggregates={
+                ...                 "games": Count(),
+                ...                 "games_7d_avg": MovingFunction(
+                ...                     buckets_path="games",
+                ...                     window=7,
+                ...                     function=MovingFunctions.UNWEIGHTED_AVG,
+                ...                 ),
+                ...             },
+                ...         ),
+                ...     },
+                ... )
+        """
+        self._warning.warn()
+        body: dict[str, Any] = {"aggregates": _dump_aggregate_value(aggregates)}
+        if last_updated_time is not None:
+            body["lastUpdatedTime"] = last_updated_time.dump()
+        if filter is not None:
+            body["filter"] = filter.dump() if isinstance(filter, Filter) else filter
+        if target_units is not None:
+            body["targetUnits"] = self._dump_target_units(target_units)
+        if include_typing:
+            body["includeTyping"] = True
+
+        res = await self._post(
+            url_path=self._records_url(stream_id, "/aggregate"),
+            json=body,
+            semaphore=self._get_semaphore("read"),
+        )
+        return RecordsAggregation._load(res.json())
 
     async def filter(
         self,

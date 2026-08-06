@@ -157,6 +157,28 @@ class InstanceSpaces(WriteableCogniteResource):
 
 
 @dataclass
+class Subagent(WriteableCogniteResource):
+    """A reference to another agent exposed as a subagent on a supervisor agent.
+
+    Args:
+        agent_external_id (str): External ID of the agent to use as a subagent.
+    """
+
+    agent_external_id: str
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Subagent:
+        return cls(agent_external_id=resource["agentExternalId"])
+
+    def as_write(self) -> Subagent:
+        return self
+
+
+class SubagentList(CogniteResourceList[Subagent]):
+    _RESOURCE = Subagent
+
+
+@dataclass
 class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     """Configuration for knowledge graph query agent tools.
 
