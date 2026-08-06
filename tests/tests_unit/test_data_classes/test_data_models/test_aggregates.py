@@ -279,3 +279,32 @@ class TestCoexistenceWithTheAggregationsModule:
         assert not issubclass(aggregations.Aggregation, Aggregate)
         assert type(aggregations.Aggregation.load({"avg": {"property": "height"}})) is aggregations.Average
         assert type(Aggregate.load({"avg": {"property": ["sp", "c", "temp"]}})) is Average
+
+
+class TestAggregatePropertyPathValidation:
+    """A property path is a sequence of segments; a bare string is a sequence of characters.
+
+    ``Count(property="temperature_c")`` is accepted and sent as one segment per character, which the
+    API rejects with ``Property has incorrect number='13' of segments. Expected 1 or 3``.
+    """
+
+    @pytest.mark.parametrize("aggregate_cls", [Average, Count, Min, Max, Sum, UniqueValues])
+    def test_metric_aggregates_reject_bare_string_property(self, aggregate_cls: type) -> None:
+        with pytest.raises(TypeError, match="'property' must be a sequence of strings"):
+            aggregate_cls(property="temperature_c")
+
+    def test_number_histogram_rejects_bare_string_property(self) -> None:
+        with pytest.raises(TypeError, match="'property' must be a sequence of strings"):
+            NumberHistogram(property="temperature_c", interval=1.0)  # type: ignore[arg-type]
+
+    def test_time_histogram_rejects_bare_string_property(self) -> None:
+        with pytest.raises(TypeError, match="'property' must be a sequence of strings"):
+            TimeHistogram(property="game_time", calendar_interval="1d")  # type: ignore[arg-type]
+
+    def test_rejects_non_string_path_segments(self) -> None:
+        with pytest.raises(TypeError, match="'property' must be a sequence of strings"):
+            Count(property=["sp", 42])
+
+    def test_rejects_empty_property_path(self) -> None:
+        with pytest.raises(ValueError, match="'property' cannot be empty"):
+            Sum(property=[])
