@@ -29,6 +29,20 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
 
+# The filter endpoint answers with a single page and returns no cursor, so nothing can page past it:
+_FILTER_MAX_LIMIT = 1000
+
+
+def _validate_filter_limit(limit: Any) -> None:
+    hint = (
+        "The filter endpoint returns a single page and does not paginate; to read more records, narrow "
+        "'last_updated_time' and repeat, or follow the change feed with sync()."
+    )
+    if isinstance(limit, bool) or not isinstance(limit, int):
+        raise TypeError(f"'limit' must be an int between 1 and {_FILTER_MAX_LIMIT}, not {type(limit).__name__}. {hint}")
+    if not 1 <= limit <= _FILTER_MAX_LIMIT:
+        raise ValueError(f"'limit' must be between 1 and {_FILTER_MAX_LIMIT}, got {limit}. {hint}")
+
 
 class RecordsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
@@ -401,7 +415,8 @@ class RecordsAPI(APIClient):
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
-            limit (int): Maximum number of records to return (1-1000).
+            limit (int): Maximum number of records to return (1-1000). This endpoint returns a single
+                page and does not paginate, so a larger limit is an error rather than a silent cap.
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
 
@@ -422,6 +437,7 @@ class RecordsAPI(APIClient):
                 ... )
         """
         self._warning.warn()
+        _validate_filter_limit(limit)
         other_params: dict[str, Any] = {}
         if last_updated_time is not None:
             other_params["lastUpdatedTime"] = last_updated_time.dump()
@@ -470,7 +486,8 @@ class RecordsAPI(APIClient):
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
                 to another unit.
-            limit (int): Maximum number of records to return in this page (1-1000). Defaults to 10.
+            limit (int): Maximum number of records to return (1-1000 per request; a larger limit is
+                served by following the cursor). Defaults to 10.
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
 
@@ -523,7 +540,8 @@ class RecordsAPI(APIClient):
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
                 to another unit.
-            limit (int): Maximum number of records to return in this page (1-1000). Defaults to 10.
+            limit (int): Maximum number of records to return (1-1000 per request; a larger limit is
+                served by following the cursor). Defaults to 10.
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
 
