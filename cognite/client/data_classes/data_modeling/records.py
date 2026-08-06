@@ -20,12 +20,26 @@ from cognite.client.data_classes.data_modeling.instances import TypeInformation
 from cognite.client.utils._identifier import IdentifierSequenceCore
 from cognite.client.utils._identifier import RecordId as RecordId  # explicit re-export
 
+_RECORD_ID_HINT = (
+    "Records are identified by RecordId(space=..., external_id=...); call record.as_id() or "
+    "record_list.as_ids() to convert records you have already fetched."
+)
+
 
 class RecordIdSequence(IdentifierSequenceCore[RecordId]):
     @classmethod
     def load(cls, items: RecordId | Sequence[RecordId]) -> RecordIdSequence:
         if isinstance(items, RecordId):
             return cls([items], is_singleton=True)
+        if isinstance(items, str) or not isinstance(items, Sequence):
+            raise TypeError(
+                f"'items' must be RecordId or a sequence of RecordId, not {type(items).__name__}. {_RECORD_ID_HINT}"
+            )
+        if invalid := [item for item in items if not isinstance(item, RecordId)]:
+            raise TypeError(
+                f"'items' must be RecordId or a sequence of RecordId, but got an entry of type "
+                f"{type(invalid[0]).__name__}. {_RECORD_ID_HINT}"
+            )
         return cls(list(items), is_singleton=False)
 
 
