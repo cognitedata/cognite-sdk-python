@@ -279,3 +279,29 @@ class TestCoexistenceWithTheAggregationsModule:
         assert not issubclass(aggregations.Aggregation, Aggregate)
         assert type(aggregations.Aggregation.load({"avg": {"property": "height"}})) is aggregations.Average
         assert type(Aggregate.load({"avg": {"property": ["sp", "c", "temp"]}})) is Average
+
+
+class TestAggregateContainerValidation:
+    """`aggregates` is a mapping of client-defined ID to aggregate, and `filters` a list.
+
+    Passing an aggregate (or a list of them) instead builds a request the API cannot make sense of,
+    with no hint that the shape was the problem.
+    """
+
+    @pytest.mark.parametrize("bad_aggregates", [Count(), [Count()], {"nested": "count"}])
+    def test_nested_aggregates_must_be_a_mapping_of_aggregates(self, bad_aggregates: object) -> None:
+        with pytest.raises(TypeError, match="'aggregates'"):
+            UniqueValues(["sp", "c", "player"], aggregates=bad_aggregates)  # type: ignore[arg-type]
+
+    def test_nested_aggregates_validated_for_all_bucket_aggregates(self) -> None:
+        for build in (
+            lambda aggs: NumberHistogram(["sp", "c", "score"], interval=1.0, aggregates=aggs),
+            lambda aggs: TimeHistogram(["sp", "c", "t"], calendar_interval="1d", aggregates=aggs),
+            lambda aggs: Filters(filters=[filters.MatchAll()], aggregates=aggs),
+        ):
+            with pytest.raises(TypeError, match="'aggregates'"):
+                build([Count()])
+
+    def test_filters_aggregate_rejects_a_single_filter(self) -> None:
+        with pytest.raises(TypeError, match="'filters' must be a sequence"):
+            Filters(filters=filters.MatchAll())  # type: ignore[arg-type]
