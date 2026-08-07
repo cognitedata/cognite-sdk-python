@@ -17,13 +17,13 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordTargetUnit,
     RecordTargetUnits,
     RecordWrite,
-    SyncRecord,
     SyncRecordList,
     TimeRange,
 )
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._url import interpolate_and_url_encode
+from cognite.client.utils._validation import verify_limit
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -69,28 +69,32 @@ class RecordsAPI(APIClient):
         initialize_cursor: str | None = None,
         cursor: str | None = None,
     ) -> SyncRecordList:
-        other_params: dict[str, Any] = {}
+        # Sync returns exactly one page of the change feed: 'limit' is the page size and
+        # 'hasNext' tells the caller whether to ask for more. We must not use the generic
+        # paging helpers here - they stop on an exhausted cursor, but the sync endpoint always
+        # returns a 'nextCursor' (that is what makes the feed resumable), so a page that does
+        # not fill 'limit' would make them request forever.
+        verify_limit(limit)
+        body: dict[str, Any] = {"limit": limit}
         if initialize_cursor is not None:
-            other_params["initializeCursor"] = initialize_cursor
+            body["initializeCursor"] = initialize_cursor
+        if cursor is not None:
+            body["cursor"] = cursor
+        if filter is not None:
+            body["filter"] = filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter
         if sources is not None:
-            other_params["sources"] = [source.dump() for source in sources]
+            body["sources"] = [source.dump() for source in sources]
         if target_units is not None:
-            other_params["targetUnits"] = self._dump_target_units(target_units)
+            body["targetUnits"] = self._dump_target_units(target_units)
         if include_typing:
-            other_params["includeTyping"] = True
+            body["includeTyping"] = True
 
-        return await self._list(
-            list_cls=SyncRecordList,
-            resource_cls=SyncRecord,
-            method="POST",
-            resource_path=self._records_url(stream_id),
+        res = await self._post(
             url_path=self._records_url(stream_id, "/sync"),
-            limit=limit,
-            filter=filter.dump(camel_case_property=False) if isinstance(filter, Filter) else filter,
-            other_params=other_params,
-            initial_cursor=cursor,
-            settings_forcing_raw_response_loading=["records_sync_cursor"],
+            json=body,
+            semaphore=self._get_semaphore("read"),
         )
+        return SyncRecordList._load_raw_api_response([res.json()])._maybe_set_client_ref(self._cognite_client)
 
     async def delete(
         self,
