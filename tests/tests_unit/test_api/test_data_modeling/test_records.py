@@ -793,6 +793,128 @@ class TestRecordsAPISync:
         body = jsgz_load(httpx_mock.get_requests()[0].content)
         assert body["targetUnits"] == {"unitSystemName": "Imperial"}
 
+    @pytest.mark.parametrize("has_next", [False, True])
+    def test_sync_partial_page_returns_after_one_request(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+        has_next: bool,
+    ) -> None:
+        # The sync endpoint always returns a 'nextCursor' - that is what makes the feed
+        # resumable - so a page holding fewer records than 'limit' must not make the SDK
+        # keep requesting. Only one response is registered, so any extra request fails.
+        items = [{**record_response, "externalId": "rec-1", "status": "created"}]
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": items, "nextCursor": "abc", "hasNext": has_next},
+        )
+        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago", limit=10)
+        assert len(page) == 1
+        assert page.cursor == "abc"
+        assert page.has_next is has_next
+        assert len(httpx_mock.get_requests()) == 1
+
+    def test_sync_empty_page_returns_after_one_request(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        stream_id: str,
+    ) -> None:
+        # A drained change feed returns no items, but still a cursor to resume from later.
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [], "nextCursor": "abc", "hasNext": False},
+        )
+        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago", limit=10)
+        assert len(page) == 0
+        assert page.cursor == "abc"
+        assert page.has_next is False
+        assert len(httpx_mock.get_requests()) == 1
+
+    def test_sync_resume_partial_page_returns_after_one_request(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        items = [{**record_response, "externalId": "rec-1", "status": "updated"}]
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": items, "nextCursor": "p2", "hasNext": False},
+        )
+        page = cognite_client.data_modeling.records.sync_resume(stream_id=stream_id, cursor="p1", limit=10)
+        assert len(page) == 1
+        assert page.cursor == "p2"
+        assert len(httpx_mock.get_requests()) == 1
+
+    def test_sync_resume_does_not_send_initialize_cursor(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        stream_id: str,
+    ) -> None:
+        # 'cursor' and 'initializeCursor' are mutually exclusive; resuming must send only 'cursor'.
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [], "nextCursor": "p2", "hasNext": False},
+        )
+        cognite_client.data_modeling.records.sync_resume(stream_id=stream_id, cursor="p1", limit=7)
+        assert jsgz_load(httpx_mock.get_requests()[0].content) == {"cursor": "p1", "limit": 7}
+
+    def test_sync_body_shape_with_filter_and_sources(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        stream_id: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [], "nextCursor": "z", "hasNext": False},
+        )
+        cognite_client.data_modeling.records.sync(
+            stream_id=stream_id,
+            initialize_cursor="2m-ago",
+            filter=filters.Equals(property=["sp", "container-x", "temp"], value=22.5),
+            sources=[
+                RecordSourceSelector(source=RecordContainerId(space="sp", external_id="container-x"), properties=["*"])
+            ],
+            limit=5,
+        )
+        assert jsgz_load(httpx_mock.get_requests()[0].content) == {
+            "initializeCursor": "2m-ago",
+            "limit": 5,
+            "filter": {"equals": {"property": ["sp", "container-x", "temp"], "value": 22.5}},
+            "sources": [
+                {"source": {"space": "sp", "externalId": "container-x", "type": "container"}, "properties": ["*"]}
+            ],
+        }
+
+    def test_sync_rejects_non_positive_limit(
+        self,
+        cognite_client: CogniteClient,
+        stream_id: str,
+    ) -> None:
+        with pytest.raises(ValueError, match="limit must be strictly positive"):
+            cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="c", limit=0)
+
 
 class TestRecordDTOs:
     def test_record_write_as_id(self, write_item: RecordWrite) -> None:
