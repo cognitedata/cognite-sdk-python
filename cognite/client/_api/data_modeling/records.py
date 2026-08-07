@@ -74,6 +74,8 @@ class RecordsAPI(APIClient):
         # paging helpers here - they stop on an exhausted cursor, but the sync endpoint always
         # returns a 'nextCursor' (that is what makes the feed resumable), so a page that does
         # not fill 'limit' would make them request forever.
+        if initialize_cursor is not None and cursor is not None:
+            raise ValueError("Pass either 'initialize_cursor' or 'cursor', not both.")
         verify_limit(limit)
         body: dict[str, Any] = {"limit": limit}
         if initialize_cursor is not None:

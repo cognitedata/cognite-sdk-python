@@ -24,16 +24,11 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordWrite,
     TimeRange,
 )
-from cognite.client.data_classes.data_modeling.streams import (
-    Stream,
-    StreamTemplate,
-    StreamTemplateWriteSettings,
-    StreamWrite,
-)
+from cognite.client.data_classes.data_modeling.streams import Stream
 
-# Streams cannot be hard deleted and their external IDs can never be reused, so the fixtures
-# below reuse one stream and one container for every run instead of creating them per test.
-STREAM_EXTERNAL_ID = "python_sdk_integration_test_records_stream"
+# Streams cannot be hard deleted and their external IDs can never be reused, so these tests reuse
+# a stream that already exists in the project, plus one container, for every run.
+STREAM_EXTERNAL_ID = "sdk_test_mutable_stream"
 CONTAINER_EXTERNAL_ID = "PythonSdkIntegrationTestRecords"
 
 
@@ -57,15 +52,20 @@ def record_container(cognite_client: CogniteClient, integration_test_space: Spac
 
 @pytest.fixture(scope="session")
 def mutable_stream(cognite_client: CogniteClient) -> Stream:
-    existing = cognite_client.data_modeling.streams.retrieve(STREAM_EXTERNAL_ID)
-    if existing is not None:
-        return existing
-    return cognite_client.data_modeling.streams.create(
-        StreamWrite(
-            external_id=STREAM_EXTERNAL_ID,
-            settings=StreamTemplateWriteSettings(template=StreamTemplate(name="BasicLiveData")),
-        )
-    )
+    """Reuse the shared mutable test stream that already exists in the project.
+
+    These tests never create a stream: a project may only hold a few active streams, and a stream
+    can neither be deleted nor have its external ID reused - so creating one per suite would
+    permanently burn a quota slot and eventually make every run fail on the quota. Fall back to
+    any other mutable stream in case the shared one is ever replaced.
+    """
+    stream = cognite_client.data_modeling.streams.retrieve(STREAM_EXTERNAL_ID)
+    if stream is not None:
+        return stream
+    for stream in sorted(cognite_client.data_modeling.streams.list(), key=lambda s: s.external_id):
+        if stream.type == "Mutable":
+            return stream
+    pytest.skip(f"No mutable stream in the project (looked for {STREAM_EXTERNAL_ID!r}) to ingest records into.")
 
 
 @pytest.fixture(scope="session")
@@ -152,6 +152,7 @@ class TestRecordsIntegration:
         self,
         cognite_client: CogniteClient,
         mutable_stream: Stream,
+        container_ref: RecordContainerId,
         sources: list[RecordSourceSelector],
         ingested_records: list[RecordWrite],
     ) -> None:
@@ -161,13 +162,15 @@ class TestRecordsIntegration:
         paging until the cursor runs out never terminates. Before this was fixed, asking for more
         records than the feed can deliver made the SDK request in a loop until the test timed out.
         """
+        tag = ingested_records[0].sources[0].properties["name"]
         page = cognite_client.data_modeling.records.sync(
             stream_id=mutable_stream.external_id,
             initialize_cursor="1m-ago",
             sources=sources,
+            filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag),
             limit=1000,
         )
-        assert len(page) < 1000
+        assert len(page) == len(ingested_records)
         assert page.cursor is not None
         assert page.has_next is False
 
