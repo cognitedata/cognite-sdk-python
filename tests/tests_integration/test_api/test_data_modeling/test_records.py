@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections.abc import Iterator
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -30,6 +31,15 @@ from cognite.client.data_classes.data_modeling.streams import Stream
 # a stream that already exists in the project, plus one container, for every run.
 STREAM_EXTERNAL_ID = "sdk_test_mutable_stream"
 CONTAINER_EXTERNAL_ID = "PythonSdkIntegrationTestRecords"
+
+
+def an_hour_ago() -> str:
+    """A lower bound for 'lastUpdatedTime'.
+
+    TimeRange forwards its bounds to the API untouched, and the API only accepts ISO-8601 there -
+    not the "1h-ago" shorthand that the rest of the SDK understands.
+    """
+    return (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 @pytest.fixture(scope="session")
@@ -120,7 +130,7 @@ class TestRecordsIntegration:
         tag = ingested_records[0].sources[0].properties["name"]
         result = cognite_client.data_modeling.records.filter(
             stream_id=mutable_stream.external_id,
-            last_updated_time=TimeRange(gt="1h-ago"),
+            last_updated_time=TimeRange(gt=an_hour_ago()),
             sources=sources,
             filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag),
             limit=10,
@@ -140,7 +150,7 @@ class TestRecordsIntegration:
         result = cognite_client.data_modeling.records.aggregate(
             {"total": Count(), "avg_value": Average(value)},
             stream_id=mutable_stream.external_id,
-            last_updated_time=TimeRange(gt="1h-ago"),
+            last_updated_time=TimeRange(gt=an_hour_ago()),
             filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag),
         )
         total, avg_value = result["total"], result["avg_value"]
@@ -237,7 +247,7 @@ class TestRecordsIntegration:
 
         result = cognite_client.data_modeling.records.filter(
             stream_id=mutable_stream.external_id,
-            last_updated_time=TimeRange(gt="1h-ago"),
+            last_updated_time=TimeRange(gt=an_hour_ago()),
             sources=sources,
             filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "value"], value=99.0),
             limit=10,
