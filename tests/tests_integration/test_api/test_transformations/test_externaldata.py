@@ -24,7 +24,7 @@ REQUIRED_ENV_VARS = (
     "ONELAKE_WORKSPACE_ID",
     "ONELAKE_CONTAINER_ID",
 )
-missing_env_vars = [var for var in REQUIRED_ENV_VARS if not os.environ.get(var)]
+missing_env_vars = [var for var in REQUIRED_ENV_VARS if not os.getenv(var)]
 
 pytestmark = pytest.mark.skipif(
     bool(missing_env_vars), reason=f"Fabric OneLake credentials not available, missing: {missing_env_vars}"

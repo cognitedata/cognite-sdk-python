@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -21,17 +21,6 @@ if TYPE_CHECKING:
 
 
 class TransformationExternalDataSourcesAPI(APIClient):
-    """Manage the external data sources available to transformations.
-
-    An external data source stores the credentials and the location needed to reach an external storage
-    system, and is referenced from transformation SQL by its external ID. Microsoft Fabric OneLake is
-    currently the only supported system, read through ``ext_onelake()``.
-
-    Note:
-        This API is in public beta. The contract may change before general availability. Using it requires
-        the Fabric connector to be enabled for the project.
-    """
-
     _RESOURCE_PATH = "/transformations/externaldata"
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
@@ -72,7 +61,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
             yield item
 
     async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> ExternalDataSourceList:
-        """List external data sources.
+        """`List external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/listExternalDataSources>`_.
 
         Args:
             limit (int | None): Maximum number of data sources to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -108,15 +97,21 @@ class TransformationExternalDataSourcesAPI(APIClient):
         )
 
     @overload
-    async def upsert(self, data_source: ExternalDataSourceWrite) -> ExternalDataSource: ...
+    async def upsert(
+        self, data_source: ExternalDataSourceWrite, upsert_mode: Literal["replace"] = "replace"
+    ) -> ExternalDataSource: ...
 
     @overload
-    async def upsert(self, data_source: Sequence[ExternalDataSourceWrite]) -> ExternalDataSourceList: ...
+    async def upsert(
+        self, data_source: Sequence[ExternalDataSourceWrite], upsert_mode: Literal["replace"] = "replace"
+    ) -> ExternalDataSourceList: ...
 
     async def upsert(
-        self, data_source: ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]
+        self,
+        data_source: ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite],
+        upsert_mode: Literal["replace"] = "replace",
     ) -> ExternalDataSource | ExternalDataSourceList:
-        """Create or replace external data sources, matched on external ID.
+        """`Upsert external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/upsertExternalDataSources>`_.
 
         Each item replaces the stored data source in full, so every request must contain complete settings
         including the client secret. Reading a data source never returns the client secret, so re-registering
@@ -124,6 +119,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
 
         Args:
             data_source (ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]): The data source(s) to create or replace.
+            upsert_mode (Literal['replace']): How existing data sources are updated. Currently only "replace" is supported, which fully replaces the existing data source. Defaults to "replace".
 
         Returns:
             ExternalDataSource | ExternalDataSourceList: The created or replaced data source(s).
@@ -169,12 +165,12 @@ class TransformationExternalDataSourcesAPI(APIClient):
         )
 
     async def delete(self, external_id: str | SequenceNotStr[str]) -> None:
-        """Delete external data sources by external ID.
+        """`Delete external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/deleteExternalDataSources>`_.
 
         Transformations that still reference a deleted data source fail when they next run.
 
         Args:
-            external_id (str | SequenceNotStr[str]): External ID or list of external IDs of the data source(s) to delete.
+            external_id (str | SequenceNotStr[str]): External ID or list of external IDs of the data source(s) to delete. Unknown external IDs are not silently ignored; the endpoint does not support an ignore-unknown-ids option.
 
         Examples:
 
@@ -194,7 +190,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
         )
 
     async def verify_usability(self, external_id: str) -> ExternalDataSourceUsability:
-        """Check whether an external data source can be used by a transformation.
+        """`Verify external data source usability <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/verifyExternalDataSourceUsability>`_.
 
         Args:
             external_id (str): External ID of the data source to check.
