@@ -412,7 +412,7 @@ class LatestDatapointQuery:
         id (InitVar[int | None]): The internal ID of the time series to query.
         external_id (InitVar[str | None]): The external ID of the time series to query.
         instance_id (InitVar[NodeId | None]): The instance ID of the time series to query.
-        before (None | int | str | datetime.datetime): Get latest datapoint before this time. None means 'now'.
+        before (int | str | datetime.datetime | None): Get latest datapoint before this time. None means 'now'.
         target_unit (str | None): The unit_external_id of the data points returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
         target_unit_system (str | None): The unit system of the data points returned. Cannot be used with target_unit.
         include_status (bool | None): Also return the status code, an integer, for each datapoint in the response.
@@ -423,7 +423,7 @@ class LatestDatapointQuery:
     id: InitVar[int | None] = None
     external_id: InitVar[str | None] = None
     instance_id: InitVar[NodeId | None] = None
-    before: None | int | str | datetime.datetime = None
+    before: int | str | datetime.datetime | None = None
     target_unit: str | None = None
     target_unit_system: str | None = None
     include_status: bool | None = None

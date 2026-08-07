@@ -580,5 +580,4 @@ __all__ = [
     "WorkflowVersionList",
     "WorkflowVersionUpsert",
     "WorkflowVersionUpsertList",
-    "WorkflowVersionUpsertList",
 ]

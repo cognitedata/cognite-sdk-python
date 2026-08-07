@@ -293,7 +293,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         self,
         view: ViewIdentifier,
         default: MutableMapping[PropertyIdentifier, PropertyValue] | None | _T | None = None,
-    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | None | _T:
+    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | _T | None:
         view_id = ViewId.load(view)
         return self.data.get(view_id, default)
 
@@ -1736,7 +1736,7 @@ class TypedNodeApply(NodeApply, TypedInstance):
         space: str,
         external_id: str,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         super().__init__(
             space=space,
