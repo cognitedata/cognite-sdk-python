@@ -488,11 +488,17 @@ class TimeSeriesWriteList(CogniteResourceList[TimeSeriesWrite], ExternalIDTransf
     _RESOURCE = TimeSeriesWrite
 
 
+TimeSeriesWrite._LIST_CLASS = TimeSeriesWriteList
+
+
 class TimeSeriesList(WriteableCogniteResourceList[TimeSeriesWrite, TimeSeries], IdTransformerMixin):
     _RESOURCE = TimeSeries
 
     def as_write(self) -> TimeSeriesWriteList:
         return TimeSeriesWriteList([ts.as_write() for ts in self.data])
+
+
+TimeSeries._LIST_CLASS = TimeSeriesList
 
 
 class TimeSeriesProperty(EnumProperty):

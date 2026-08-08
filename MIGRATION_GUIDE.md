@@ -21,6 +21,7 @@ Changes are grouped as follows:
 - The SDK now ships with a new mock for the async client, namely `AsyncCogniteClientMock`. Both it and the previous `CogniteClientMock` are greatly improved and provide better type safety, checking of call signatures and spec_set=True is now enforced for all APIs (even the mocked client itself), through the use of `create_autospec` and bottom-up construction of nested APIs.
 - With the move to an async client, concurrency now works in Pyodide e.g. Jupyter-Lite in the browser. This also means that user interfaces like Streamlit won't freeze while resources from CDF are being fetched!
 - Good to know: File upload speeds are now significantly faster on Windows after `requests` are gone!
+- Classes from the SDK now has a new public load method that short-circuits on "optional" input, e.g. `NodeId.load_if(data.get("instance_id")) -> NodeId | None`.
 
 ### Removed
 - The generic `aggregate` method on classic CDF APIs has been removed (Assets, Events, Sequences and Time Series). Use one of the more specific `aggregate_count`, `aggregate_unique_values`, `aggregate_cardinality_values`, `aggregate_cardinality_properties`, or `aggregate_unique_properties` instead.
@@ -55,6 +56,7 @@ Changes are grouped as follows:
 ### Changed
 - Attributes on all "read" data classes now have the correct type (typically no longer `Optional[...]`), meaning type inference will be correct. If you try to instantiate these classes directly (*you shouldn't* - use the write versions instead!), you will see that all required parameters in the API response will also be required on the object. **What is a read class?** Any data class returned by the SDK from a call to the API to fetch a resource of some kind.
 - All (HTTP) responses from the SDK (returned by e.g. `client.post` or `client.get`) are now of type `CogniteHTTPResponse` (from `cognite.client.response`) instead of the specific type from the underlying http library to support future http-client changes.
+- All timestamp/datetime columns (from dataframes produced by a `to_pandas` call) now use a precision that depends on your installed pandas version: nanoseconds on pandas v2 (matching the old, familiar default), and milliseconds on pandas v3 (matching the API), rather than the arbitrary precision (sec/ms/µs/ns) pandas v3 would otherwise infer from the input.
 - Parameter `partitions` has been removed from all `__call__` methods except for the Raw Rows API (which has special handling for it). It was previosuly being ignored with the added side effect of ignoring `chunk_size` stemming from a very early API design oversight.
 - The method `retrieve` on the Workflow Versions API no longer accepts `workflow_external_id` and `version` as separate arguments. Pass a single or a sequence of `WorkflowVersionId` (tuples also accepted).
 - When loading a `ViewProperty` or `ViewPropertyApply`, the resource dictionary must contain the `"connectionType"` key or an error is raised.

@@ -134,6 +134,9 @@ class UnitList(CogniteResourceList[Unit], ExternalIDTransformerMixin):
     _RESOURCE = Unit
 
 
+Unit._LIST_CLASS = UnitList
+
+
 class UnitSystem(CogniteResource):
     """
     This class represents a Unit System in CDF.
@@ -163,3 +166,6 @@ class UnitSystemList(CogniteResourceList[UnitSystem], NameTransformerMixin):
     """List of Unit Systems"""
 
     _RESOURCE = UnitSystem
+
+
+UnitSystem._LIST_CLASS = UnitSystemList

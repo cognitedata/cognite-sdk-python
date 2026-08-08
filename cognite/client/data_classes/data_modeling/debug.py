@@ -545,6 +545,9 @@ class DebugNoticeList(CogniteResourceList[DebugNotice]):
         raise NotImplementedError
 
 
+DebugNotice._LIST_CLASS = DebugNoticeList
+
+
 @cache
 def _create_debug_notice_subclass_map() -> dict[tuple[str, str], type[DebugNotice]]:
     from cognite.client import AsyncCogniteClient, CogniteClient

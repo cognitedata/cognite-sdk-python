@@ -366,6 +366,9 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
         return output
 
 
+ProjectCapability._LIST_CLASS = ProjectCapabilityList
+
+
 @dataclass(frozen=True)
 class AllScope(Capability.Scope):
     _scope_name = "all"
