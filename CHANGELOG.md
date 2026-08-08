@@ -13,6 +13,14 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.13.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.12.0...cognite-sdk-python-v8.13.0) (2026-08-08)
+
+
+### Features
+
+* **functions:** add py314 to RunTime ([#2735](https://github.com/cognitedata/cognite-sdk-python/issues/2735)) ([cf66c51](https://github.com/cognitedata/cognite-sdk-python/commit/cf66c51a8b73c243a7d1a8f742fb137463386f67))
+* **streams:** rename StreamTemplateWriteSettings to StreamWriteSettings ([#2753](https://github.com/cognitedata/cognite-sdk-python/issues/2753)) ([801ee75](https://github.com/cognitedata/cognite-sdk-python/commit/801ee75c61c49024f79701ea10dacf46706b03fc))
+
 ## [8.12.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.11.0...cognite-sdk-python-v8.12.0) (2026-08-05)
 
 
