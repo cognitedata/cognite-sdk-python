@@ -4057,4 +4057,4 @@ yaml = ["PyYAML"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">= 3.10, <4"
-content-hash = "e0eff58be3bc8976b26f0aef49f8f8415c8d489dffca3d214c020613c7c4fcd6"
+content-hash = "71c5ce4b5350b955cf7d038daee45dc54f8ae7efdddaa70f864cf01d04608fba"
