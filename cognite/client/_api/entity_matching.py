@@ -152,12 +152,12 @@ class EntityMatchingAPI(APIClient):
         return EntityMatchingModelList._load(models).set_client_ref(self._cognite_client)
 
     async def list_jobs(self) -> ContextualizationJobList:
-        # TODO: Not in service contract
         """List jobs, typically model fit and predict runs.
 
         Returns:
             ContextualizationJobList: List of jobs.
         """
+        # TODO: Not in service contract
         return ContextualizationJobList._load(
             unpack_items(await self._get(self._RESOURCE_PATH + "/jobs", semaphore=self._get_semaphore("read")))
         ).set_client_ref(self._cognite_client)
@@ -197,8 +197,6 @@ class EntityMatchingAPI(APIClient):
         description: str | None = None,
         external_id: str | None = None,
     ) -> EntityMatchingModel:
-        # TODO: Not in service contract
-
         """Fit entity matching model.
 
         Note:
@@ -235,6 +233,7 @@ class EntityMatchingAPI(APIClient):
             ...     description="AssetMatchingJob1",
             ... )
         """
+        # TODO: Not in service contract
 
         if match_fields:
             match_fields_processed = [
