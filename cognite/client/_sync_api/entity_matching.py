@@ -1,6 +1,6 @@
 """
 ===============================================================================
-804bc9b708b2641457184ca681292d1a
+8174b55b0e48c0722b747822847dc655
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,13 +8,14 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Literal
+from typing import Literal, TypeVar
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.contextualization import (
+    ContextualizationJob,
     ContextualizationJobList,
     EntityMatchingModel,
     EntityMatchingModelList,
@@ -23,6 +24,8 @@ from cognite.client.data_classes.contextualization import (
 )
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
+
+T_ContextualizationJob = TypeVar("T_ContextualizationJob", bound=ContextualizationJob)
 
 
 class SyncEntityMatchingAPI(SyncAPIClient):

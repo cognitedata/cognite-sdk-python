@@ -198,7 +198,6 @@ class EntityMatchingAPI(APIClient):
         external_id: str | None = None,
     ) -> EntityMatchingModel:
         # TODO: Not in service contract
-
         """Fit entity matching model.
 
         Note:
