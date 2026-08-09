@@ -1,6 +1,6 @@
 """
 ===============================================================================
-dfae0e191c572120b16241f21bc24a54
+0393af121436eccd196921625498ee8b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -148,7 +148,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
 
         Examples:
 
-            Retrieve the first 100 ids of annotated resources mathing the 'file' resource type:
+            Retrieve the first 100 ids of annotated resources matching the 'file' resource type:
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import AnnotationReverseLookupFilter

@@ -623,7 +623,7 @@ class CognitePrimitiveUpdate(Generic[T_CogniteUpdate]):
         self._update_object = update_object
         self._name = name
 
-    def _set(self, value: None | str | int | bool | dict | list) -> T_CogniteUpdate:
+    def _set(self, value: str | int | bool | dict | list | None) -> T_CogniteUpdate:
         if value is None:
             self._update_object._set_null(self._name)
         else:
@@ -838,7 +838,7 @@ class HasExternalAndInternalId(Protocol):
     def id(self) -> int: ...
 
 
-class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
+class ExternalIDTransformerMixin(Iterable[HasExternalId], ABC):
     def as_external_ids(self) -> list[str]:
         """
         Returns the external ids of all resources.
@@ -857,7 +857,7 @@ class ExternalIDTransformerMixin(Sequence[HasExternalId], ABC):
         return external_ids
 
 
-class NameTransformerMixin(Sequence[HasName], ABC):
+class NameTransformerMixin(Iterable[HasName], ABC):
     def as_names(self) -> list[str]:
         """
         Returns the names of all resources.
@@ -876,7 +876,7 @@ class NameTransformerMixin(Sequence[HasName], ABC):
         return names
 
 
-class InternalIdTransformerMixin(Sequence[HasInternalId], ABC):
+class InternalIdTransformerMixin(Iterable[HasInternalId], ABC):
     def as_ids(self) -> list[int]:
         """
         Returns the ids of all resources.

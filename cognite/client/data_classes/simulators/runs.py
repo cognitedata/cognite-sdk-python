@@ -270,7 +270,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
         return run_sync(self.get_logs_async())
 
     async def get_data_async(self) -> SimulationRunDataItem | None:
-        """`Retrieve data associated with this simulation run. <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/simulation_data_by_run_id_simulators_runs_data_list_post>`_
+        """`Retrieve data associated with this simulation run. <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_data>`_
 
         Returns:
             SimulationRunDataItem | None: Data for the simulation run.

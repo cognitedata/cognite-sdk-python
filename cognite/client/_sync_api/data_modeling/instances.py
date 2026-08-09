@@ -1,20 +1,21 @@
 """
 ===============================================================================
-c0af4f83cd8ffa0aaed6fa641bde9a98
+c0fa2584c449180c323f8b8b94af8789
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable, Iterator, Sequence
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.data_modeling.instances import Source
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.data_classes import filters
 from cognite.client.data_classes.aggregations import (
     AggregatedNumberedValue,
     Histogram,
@@ -41,15 +42,22 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Node,
     TargetUnit,
 )
-from cognite.client.data_classes.data_modeling.query import Query, QueryResult, QuerySync
+from cognite.client.data_classes.data_modeling.query import Query, QueryResult, QuerySync, SourceSelector
 from cognite.client.data_classes.data_modeling.sync import SubscriptionContext, SyncSessionWithCache
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.data_modeling.views import View
+from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
 from cognite.client.data_classes.data_modeling.debug import DebugParameters
+
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
+    {filters.Nested, filters.HasData, filters.MatchAll, filters.Overlaps, filters.InstanceReferences}
+)
+logger = logging.getLogger(__name__)
+Source: TypeAlias = SourceSelector | View | ViewId | tuple[str, str] | tuple[str, str, str]
 
 
 class SyncInstancesAPI(SyncAPIClient):
@@ -482,7 +490,7 @@ class SyncInstancesAPI(SyncAPIClient):
         involved_containers: InvolvedContainers | None = None,
     ) -> InstanceInspectResults:
         """
-        `Reverse lookup for instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/instanceInspect>`_.
+        `Reverse lookup for instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/instanceInspect>`_.
 
         This method will return the involved views and containers for the given nodes and edges.
 
@@ -526,7 +534,7 @@ class SyncInstancesAPI(SyncAPIClient):
     def subscribe(
         self,
         query: QuerySync,
-        callback: Callable[[QueryResult], None | Awaitable[None]],
+        callback: Callable[[QueryResult], Awaitable[None] | None],
         poll_delay_seconds: float = 30,
         throttle_seconds: float = 1,
     ) -> SubscriptionContext:
@@ -542,7 +550,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
         Args:
             query (QuerySync): The query to subscribe to.
-            callback (Callable[[QueryResult], None | Awaitable[None]]): The callback function to call when the result set changes. Can be a regular or async function.
+            callback (Callable[[QueryResult], Awaitable[None] | None]): The callback function to call when the result set changes. Can be a regular or async function.
             poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
             throttle_seconds (float): The time to wait between polls despite data being present.
 
@@ -811,7 +819,7 @@ class SyncInstancesAPI(SyncAPIClient):
         operator: Literal["AND", "OR"] = "AND",
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
         """
-        `Search instances <https://developer.cognite.com/api/v1/#tag/Instances/operation/searchInstances>`_.
+        `Search instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/searchInstances>`_.
 
         Args:
             view (ViewId): View to search in.
@@ -937,7 +945,7 @@ class SyncInstancesAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList:
         """
-        `Aggregate data across nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_.
+        `Aggregate data across nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/aggregateInstances>`_.
 
         Args:
             view (ViewId): View to aggregate over.
@@ -1026,7 +1034,7 @@ class SyncInstancesAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
         """
-        `Produces histograms for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/aggregateInstances>`_.
+        `Produces histograms for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/aggregateInstances>`_.
 
         Args:
             view (ViewId): View to to aggregate over.
@@ -1071,7 +1079,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
     def query(self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
         """
-        `Advanced query interface for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/queryContent>`_.
+        `Advanced query interface for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/queryContent>`_.
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
         recursive edge traversal, chaining of result sets, and granular property selection.
@@ -1166,7 +1174,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
     def sync(self, query: QuerySync, include_typing: bool = False, debug: DebugParameters | None = None) -> QueryResult:
         """
-        `Subscription to changes for nodes/edges <https://developer.cognite.com/api/v1/#tag/Instances/operation/syncContent>`_.
+        `Subscription to changes for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/syncContent>`_.
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
@@ -1276,7 +1284,7 @@ class SyncInstancesAPI(SyncAPIClient):
         backup_every: timedelta | None = timedelta(minutes=15),
         backup_on_exit: bool = False,
     ) -> SyncSessionWithCache:
-        r"""
+        """
         Create a managed sync session with persistent backup to a CDF file.
 
         Returns a :class:`SyncSessionWithCache` that you use as an async context manager. On entry

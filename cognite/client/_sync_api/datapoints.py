@@ -1,6 +1,6 @@
 """
 ===============================================================================
-7a135c3c2b851240417e3902f71b5222
+30f1b7fcc4ce65c780d6361683bbe0d1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -9,10 +9,13 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 from zoneinfo import ZoneInfo
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._api.datapoint_tasks import (
+    BaseDpsFetchSubtask,
+)
 from cognite.client._constants import DEFAULT_DATAPOINTS_CHUNK_SIZE
 from cognite.client._sync_api.synthetic_time_series import SyncSyntheticDatapointsAPI
 from cognite.client._sync_api_client import SyncAPIClient
@@ -26,13 +29,16 @@ from cognite.client.data_classes import (
     LatestDatapointList,
     LatestDatapointQuery,
 )
-from cognite.client.data_classes.data_modeling.ids import NodeId
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import Aggregate
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import pandas as pd
+
+PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
+_T = TypeVar("_T")
 
 
 class SyncDatapointsAPI(SyncAPIClient):
@@ -171,12 +177,12 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     )
         """  # noqa: DOC404
         yield from SyncIterator(
-            self.__async_client.time_series.data(
+            self.__async_client.time_series.data(  # type: ignore [call-overload]
                 queries=queries,
                 chunk_size_datapoints=chunk_size_datapoints,
                 chunk_size_time_series=chunk_size_time_series,
                 return_arrays=return_arrays,
-            )  # type: ignore [call-overload]
+            )
         )
 
     @overload
@@ -303,8 +309,8 @@ class SyncDatapointsAPI(SyncAPIClient):
     def retrieve(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery],
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery],
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None,
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -324,8 +330,8 @@ class SyncDatapointsAPI(SyncAPIClient):
     def retrieve(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery],
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery],
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -345,8 +351,8 @@ class SyncDatapointsAPI(SyncAPIClient):
     def retrieve(
         self,
         *,
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery],
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery],
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -366,9 +372,9 @@ class SyncDatapointsAPI(SyncAPIClient):
     def retrieve(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery],
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery],
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery],
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None,
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -387,9 +393,9 @@ class SyncDatapointsAPI(SyncAPIClient):
     def retrieve(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] = None,
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None = None,
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None = None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None = None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -429,9 +435,9 @@ class SyncDatapointsAPI(SyncAPIClient):
         `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes/>`_
 
         Args:
-            id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
+            id (int | DatapointsQuery | Sequence[int | DatapointsQuery] | None): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -452,16 +458,16 @@ class SyncDatapointsAPI(SyncAPIClient):
         Examples:
 
             You can specify the identifiers of the datapoints you wish to retrieve in a number of ways. In this example
-            we are using the time-ago format, ``"2w-ago"`` to get raw data for the time series with id=42 from 2 weeks ago up until now.
+            we are using the time-ago format, ``"2w-ago"`` to get raw data for a time series from 2 weeks ago up until now.
             You can also use the time-ahead format, like ``"3d-ahead"``, to specify a relative time in the future.
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> dps = client.time_series.data.retrieve(id=42, start="2w-ago")
-                >>> # You can also use instance_id:
-                >>> from cognite.client.data_classes.data_modeling import NodeId
-                >>> dps = client.time_series.data.retrieve(instance_id=NodeId("ts-space", "foo"))
+                >>> dps = client.time_series.data.retrieve(
+                ...     instance_id=NodeId("ts-space", "foo"), start="2w-ago"
+                ... )
 
             Although raw datapoints are returned by default, you can also get aggregated values, such as `max` or `average`. You may also fetch more than one time series simultaneously. Here we are
             getting daily averages and maximum values for all of 2018, for two different time series, where we're specifying `start` and `end` as integers
@@ -757,9 +763,9 @@ class SyncDatapointsAPI(SyncAPIClient):
     def retrieve_arrays(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] = None,
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None = None,
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None = None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None = None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -784,9 +790,9 @@ class SyncDatapointsAPI(SyncAPIClient):
         `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes/>`_
 
         Args:
-            id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
+            id (int | DatapointsQuery | Sequence[int | DatapointsQuery] | None): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -814,14 +820,15 @@ class SyncDatapointsAPI(SyncAPIClient):
 
         Examples:
 
-            Get weekly ``min`` and ``max`` aggregates for a time series with id=42 since the year 2000, then compute the range of values:
+            Get weekly ``min`` and ``max`` aggregates for a time series using instance_id, then compute the range of values:
 
                 >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> dps = client.time_series.data.retrieve_arrays(
-                ...     id=42,
+                ...     instance_id=NodeId("my-space", "my-ts-xid"),
                 ...     start=datetime(2020, 1, 1, tzinfo=timezone.utc),
                 ...     aggregates=["min", "max"],
                 ...     granularity="7d",
@@ -855,7 +862,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> series = pd.Series(dps.value, index=dps.timestamp)
         """
         return run_sync(
-            self.__async_client.time_series.data.retrieve_arrays(
+            self.__async_client.time_series.data.retrieve_arrays(  # type: ignore [misc, call-overload]
                 id=id,
                 external_id=external_id,
                 instance_id=instance_id,
@@ -872,15 +879,15 @@ class SyncDatapointsAPI(SyncAPIClient):
                 include_status=include_status,
                 ignore_bad_datapoints=ignore_bad_datapoints,
                 treat_uncertain_as_bad=treat_uncertain_as_bad,
-            )  # type: ignore [misc, call-overload]
+            )
         )
 
     def retrieve_dataframe(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] = None,
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None = None,
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None = None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None = None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -909,9 +916,9 @@ class SyncDatapointsAPI(SyncAPIClient):
             For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
 
         Args:
-            id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, DatapointsQuery or (mixed) sequence of these. See examples.
-            external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, DatapointsQuery or (mixed) sequence of these. See examples.
-            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id, DatapointsQuery or (mixed) sequence of these. See examples.
+            id (int | DatapointsQuery | Sequence[int | DatapointsQuery] | None): Id, DatapointsQuery or (mixed) sequence of these. See examples.
+            external_id (str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None): External id, DatapointsQuery or (mixed) sequence of these. See examples.
+            instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id, DatapointsQuery or (mixed) sequence of these. See examples.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -946,14 +953,15 @@ class SyncDatapointsAPI(SyncAPIClient):
 
         Examples:
 
-            Get a pandas dataframe using a single time series external ID, with data from the last two weeks,
+            Get a pandas dataframe using a single time series instance ID, with data from the last two weeks,
             but with no more than 100 datapoints:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     external_id="foo", start="2w-ago", end="now", limit=100
+                ...     instance_id=NodeId("my-space", "my-ts-xid"), start="2w-ago", end="now", limit=100
                 ... )
 
             Get the pandas dataframe with a uniform index (fixed spacing between points) of 1 day, for two time series with
@@ -984,11 +992,11 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     include_aggregate_name=False,
                 ... )
 
-            You may also use ``pandas.Timestamp`` to define start and end. Here we fetch using instance_id:
+            You may also use ``pandas.Timestamp`` to define start and end:
 
                 >>> import pandas as pd
                 >>> df = client.time_series.data.retrieve_dataframe(
-                ...     instance_id=NodeId("my-space", "my-ts-xid"),
+                ...     external_id="foo",
                 ...     start=pd.Timestamp("2023-01-01"),
                 ...     end=pd.Timestamp("2023-02-01"),
                 ... )
@@ -1023,7 +1031,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         self,
         id: int | LatestDatapointQuery,
         *,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1037,7 +1045,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         self,
         id: Sequence[int | LatestDatapointQuery],
         *,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1051,7 +1059,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         self,
         *,
         id: int | LatestDatapointQuery,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1065,7 +1073,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         self,
         *,
         id: Sequence[int | LatestDatapointQuery],
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1079,7 +1087,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         self,
         *,
         external_id: str | LatestDatapointQuery,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1093,7 +1101,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         self,
         *,
         external_id: SequenceNotStr[str | LatestDatapointQuery],
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1107,7 +1115,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         self,
         *,
         instance_id: NodeId | LatestDatapointQuery,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1122,7 +1130,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         *,
         instance_id: Sequence[NodeId | LatestDatapointQuery],
         external_id: None = None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1138,7 +1146,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None,
         external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None,
         instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1153,7 +1161,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         *,
         id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None,
         external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1168,7 +1176,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         *,
         id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None,
         instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1183,7 +1191,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         *,
         external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None,
         instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1197,7 +1205,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None = None,
         external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None = None,
         instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None = None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1215,7 +1223,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             id (int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None): Id or list of ids.
             external_id (str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None): External id or list of external ids.
             instance_id (NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None): Instance id or list of instance ids.
-            before (None | int | str | datetime.datetime): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
+            before (int | str | datetime.datetime | None): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
             target_unit (str | None): The unit_external_id of the datapoint returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoint returned. Cannot be used with target_unit.
             include_status (bool): Also return the status code, an integer, for each datapoint in the response.
@@ -1231,18 +1239,18 @@ class SyncDatapointsAPI(SyncAPIClient):
             Getting the latest datapoint in a time series:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.time_series.data.retrieve_latest(id=1)
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
                 >>> if res:  # Check if datapoint exists
                 ...     print(res.timestamp, res.value)
 
-            You can also use external_id or instance_id; single identifier or list of identifiers:
+            You can also use id or external_id; single identifier or list of identifiers:
 
-                >>> from cognite.client.data_classes.data_modeling import NodeId
-                >>> res = client.time_series.data.retrieve_latest(
-                ...     external_id=["foo", "bar"], instance_id=NodeId("my-space", "my-ts-xid")
-                ... )
+                >>> res = client.time_series.data.retrieve_latest(id=1, external_id=["foo", "bar"])
 
             You can also get the latest datapoint before a specific time:
 
@@ -1356,6 +1364,7 @@ class SyncDatapointsAPI(SyncAPIClient):
 
                 >>> from cognite.client import CogniteClient
                 >>> from cognite.client.data_classes import StatusCode
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> from datetime import datetime, timezone
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
@@ -1365,20 +1374,19 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     (datetime(2018, 1, 3, tzinfo=timezone.utc), 3000, StatusCode.Uncertain),
                 ...     (datetime(2018, 1, 4, tzinfo=timezone.utc), None, StatusCode.Bad),
                 ... ]
-                >>> client.time_series.data.insert(datapoints, id=1)
+                >>> client.time_series.data.insert(
+                ...     datapoints, instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
 
             The timestamp can be given by datetime as above, or in milliseconds since epoch. Status codes can also be
             passed as normal integers; this is necessary if a subcategory or modifier flag is needed, e.g. 3145728: 'GoodClamped':
 
-                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> datapoints = [
                 ...     (150000000000, 1000),
                 ...     (160000000000, 2000, 3145728),
                 ...     (170000000000, 2000, 2147483648),  # Same as StatusCode.Bad
                 ... ]
-                >>> client.time_series.data.insert(
-                ...     datapoints, instance_id=NodeId("my-space", "my-ts-xid")
-                ... )
+                >>> client.time_series.data.insert(datapoints, id=1)
 
             Or they can be a list of dictionaries:
 
@@ -1540,9 +1548,12 @@ class SyncDatapointsAPI(SyncAPIClient):
             Deleting the last week of data from a time series:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> client.time_series.data.delete_range(start="1w-ago", end="now", id=1)
+                >>> client.time_series.data.delete_range(
+                ...     start="1w-ago", end="now", instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
 
             Deleting the data from now until 2 days in the future from a time series containing e.g. forecasted data:
 

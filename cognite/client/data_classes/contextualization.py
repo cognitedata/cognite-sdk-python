@@ -1231,7 +1231,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
     ) -> Annotation | AnnotationList:
         """
         Saves all predictions made by the feature extractors in CDF using the Annotations API.
-        See https://docs.cognite.com/api/v1/#operation/annotationsSuggest
+        See https://docs.cognite.com/20230101/annotations/suggest-annotations
 
         Args:
             creating_user (str): A username, or email, or name.
@@ -1322,7 +1322,7 @@ class EntityMatchingPredictionResult(ContextualizationJob):
 
 class ResourceReference(CogniteResource):
     def __init__(
-        self, id: int | None = None, external_id: str | None = None, cognite_client: None | AsyncCogniteClient = None
+        self, id: int | None = None, external_id: str | None = None, cognite_client: AsyncCogniteClient | None = None
     ) -> None:
         self.id = id
         self.external_id = external_id

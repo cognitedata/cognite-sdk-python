@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
-import random
 from collections.abc import (
     AsyncIterable,
     AsyncIterator,
@@ -28,6 +27,7 @@ from cognite.client.exceptions import (
     CogniteRequestError,
 )
 from cognite.client.response import CogniteHTTPResponse
+from cognite.client.utils._retry import Backoff
 
 logger = logging.getLogger(__name__)
 
@@ -132,24 +132,18 @@ class RetryTracker:
         self.status = self.read = self.connect = 0
         self.last_failed_reason = ""
         self.total_time_in_backoff = 0.0
+        self._backoff = Backoff(
+            multiplier=config.backoff_factor,
+            max_wait=float(config.max_backoff_seconds),
+            min_wait=0.1,
+        )
 
     @property
     def total(self) -> int:
         return self.status + self.read + self.connect
 
-    def get_backoff_time(self) -> float:
-        """
-        Computes the randomized delay (backoff time) before the next retry attempt.
-
-        This method implements the **Exponential Backoff with Full Jitter** strategy,
-        with one addition, a small "initial floor" to avoid immediate retries.
-        """
-        base = self.config.backoff_factor * 2**self.total
-        cap = min(base, self.config.max_backoff_seconds)
-        return random.uniform(0.1, cap)
-
     async def back_off(self) -> None:
-        backoff_time = self.get_backoff_time()
+        backoff_time = next(self._backoff)
         self.total_time_in_backoff += backoff_time
         # We put logging here, since this is always called before retrying
         logger.debug(

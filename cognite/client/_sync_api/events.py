@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8b6c6ae83aaf32dec50a4e3acf4ff5cb
+ec9cf1d4c5cc823ad1e9a5a0d287a540
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -121,7 +121,7 @@ class SyncEventsAPI(SyncAPIClient):
             type (str | None): Type of the event, e.g 'failure'.
             subtype (str | None): Subtype of the event, e.g 'electrical'.
             metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
-            asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
+            asset_ids (Sequence[int] | None): Asset IDs of related equipment that this event relates to.
             asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this event relates to.
             asset_subtree_ids (int | Sequence[int] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include events that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
@@ -655,7 +655,7 @@ class SyncEventsAPI(SyncAPIClient):
             type (str | None): Type of the event, e.g 'failure'.
             subtype (str | None): Subtype of the event, e.g 'electrical'.
             metadata (dict[str, str] | None): Customizable extra data about the event. String key -> String value.
-            asset_ids (Sequence[int] | None): Asset IDs of related equipments that this event relates to.
+            asset_ids (Sequence[int] | None): Asset IDs of related equipment that this event relates to.
             asset_external_ids (SequenceNotStr[str] | None): Asset External IDs of related equipment that this event relates to.
             asset_subtree_ids (int | Sequence[int] | None): Only include events that have a related asset in a subtree rooted at any of these assetIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.
             asset_subtree_external_ids (str | SequenceNotStr[str] | None): Only include events that have a related asset in a subtree rooted at any of these assetExternalIds. If the total size of the given subtrees exceeds 100,000 assets, an error will be returned.

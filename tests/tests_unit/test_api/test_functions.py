@@ -368,7 +368,7 @@ def mock_functions_limit_response(
         "cpuCores": {"min": 0.1, "max": 0.6, "default": 0.25},
         "memoryGb": {"min": 0.1, "max": 2.5, "default": 1.0},
         "responseSizeMb": 1,
-        "runtimes": ["py310", "py311", "py312", "py313"],
+        "runtimes": ["py310", "py311", "py312", "py313", "py314"],
     }
     url = get_url(async_client.functions, "/functions/limits")
     httpx_mock.add_response(method="GET", url=url, status_code=200, json=response_body)
@@ -728,6 +728,13 @@ class TestRequirementsParser:
     def test_validate_requirements(self) -> None:
         parsed = _validate_and_parse_requirements(["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"])
         assert parsed == ["asyncio==3.4.3", "numpy==1.23.0", "pandas==1.4.3"]
+
+    def test_validate_requirements_browser_skips_validation_and_warns(self) -> None:
+        invalid_reqs = ["num py==1.23.0"]
+        with patch("cognite.client._api.functions._RUNNING_IN_PYODIDE", True):
+            with pytest.warns(UserWarning, match="browser environment"):
+                parsed = _validate_and_parse_requirements(invalid_reqs)
+        assert parsed == invalid_reqs
 
     def test_validate_requirements_error(self) -> None:
         reqs = [["asyncio=3.4.3"], ["num py==1.23.0"], ["pandas==1.4.3 python_version=='3.8'"]]

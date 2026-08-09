@@ -17,7 +17,7 @@ from typing import (
 
 from typing_extensions import assert_never
 
-from cognite.client._constants import _RUNNING_IN_BROWSER
+from cognite.client._constants import _RUNNING_IN_PYODIDE
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import no_op
 
@@ -221,6 +221,49 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         )
 
 
+class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
+    """
+    Global concurrency settings for the Records API. Named "global" to distinguish from
+    future per-endpoint rate limits that may be added later.
+
+    Args:
+        concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
+        read (int): Maximum concurrent read requests (list/filter, sync).
+        write (int): Maximum concurrent write requests (ingest, upsert, delete).
+    """
+
+    def __init__(
+        self,
+        concurrency_settings: ConcurrencySettings,
+        read: int,
+        write: int,
+    ) -> None:
+        super().__init__(concurrency_settings, "records", read=read, write=write, delete=0)
+
+    def _semaphore_factory(
+        self, operation: Literal["read", "write", "delete"], project: str
+    ) -> asyncio.BoundedSemaphore:
+        key = (operation, project, asyncio.get_running_loop())
+        if key in self._semaphore_cache:
+            return self._semaphore_cache[key]
+
+        from cognite.client import global_config
+
+        global_config.concurrency_settings._freeze()
+        match operation:
+            case "read":
+                sem = asyncio.BoundedSemaphore(self._read)
+            case "write" | "delete":
+                sem = asyncio.BoundedSemaphore(self._write)
+            case _:
+                assert_never(operation)
+        self._semaphore_cache[key] = sem
+        return sem
+
+    def __repr__(self) -> str:
+        return f"Concurrency[records](read={self._read}, write={self._write})"
+
+
 class FileConcurrencyConfig(ConcurrencyConfig):
     """
     Concurrency settings for the Files API.
@@ -257,7 +300,7 @@ class FileConcurrencyConfig(ConcurrencyConfig):
         self._download = download
         self._open_files = open_files
         # open_files key is only the event loop — project is intentionally excluded. It is a bit unfortunate
-        # that we cant remove the loop from the key as well, but semaphores are bound to the loop they are
+        # that we can't remove the loop from the key as well, but semaphores are bound to the loop they are
         # first used on, one of the httpx.Clients would break if we did that. We intentionally use a limit << OS fd limit.
         self._open_files_cache: dict[asyncio.AbstractEventLoop, asyncio.BoundedSemaphore] = {}
 
@@ -383,6 +426,7 @@ class ConcurrencySettings:
             write_schema=1,
         )
         self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
+        self._records = RecordsGlobalConcurrencyConfig(self, read=1, write=2)
 
     @functools.cached_property
     def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
@@ -428,6 +472,10 @@ class ConcurrencySettings:
     def files(self) -> FileConcurrencyConfig:
         return self._files
 
+    @property
+    def records(self) -> RecordsGlobalConcurrencyConfig:
+        return self._records
+
     def __repr__(self) -> str:
         frozen_str = " (frozen)" if self.__frozen else ""
         return (
@@ -437,6 +485,7 @@ class ConcurrencySettings:
             f"  datapoints={self._datapoints},\n"
             f"  data_modeling={self._data_modeling},\n"
             f"  files={self._files},\n"
+            f"  records={self._records},\n"
             f"){frozen_str}"
         )
 
@@ -707,7 +756,7 @@ def _get_event_loop_executor() -> EventLoopThreadExecutor:
     with _EXECUTOR_INIT_LOCK:
         if _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON is None:
             ex_cls = EventLoopThreadExecutor
-            if _RUNNING_IN_BROWSER:
+            if _RUNNING_IN_PYODIDE:
                 ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
             _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
             _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON.start()

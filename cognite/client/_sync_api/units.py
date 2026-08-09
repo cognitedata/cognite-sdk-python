@@ -1,6 +1,6 @@
 """
 ===============================================================================
-7f8fbb89585e5600a0adc8cbcdab740b
+edd37c879cf7b3408301e592b71aa5e0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -28,7 +28,7 @@ class SyncUnitAPI(SyncAPIClient):
         self.systems = SyncUnitSystemAPI(async_client)
 
     @overload
-    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit: ...
+    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> Unit | None: ...
 
     @overload
     def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList: ...
@@ -48,14 +48,14 @@ class SyncUnitAPI(SyncAPIClient):
 
         Examples:
 
-            Retrive unit 'temperature:deg_c':
+            Retrieve unit 'temperature:deg_c':
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.units.retrieve("temperature:deg_c")
 
-            Retrive units 'temperature:deg_c' and 'pressure:bar':
+            Retrieve units 'temperature:deg_c' and 'pressure:bar':
 
                 >>> res = client.units.retrieve(["temperature:deg_c", "pressure:bar"])
         """

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-f5edbbb225707bdc150a94fc1aa31095
+b4226098878998d79b4905d1a2dfe8f3
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -100,6 +100,33 @@ class SyncWorkflowTriggerAPI(SyncAPIClient):
                 ...             ),
                 ...             batch_size=500,
                 ...             batch_timeout=300,
+                ...         ),
+                ...         workflow_external_id="my_workflow",
+                ...         workflow_version="1",
+                ...     )
+                ... )
+
+            Create or update a record stream trigger for a workflow:
+
+                >>> from cognite.client.data_classes.workflows import (
+                ...     WorkflowRecordStreamTriggerRule,
+                ...     WorkflowRecordStreamSourceSelector,
+                ... )
+                >>> from cognite.client.data_classes.data_modeling.records import RecordContainerId
+                >>> client.workflows.triggers.upsert(
+                ...     WorkflowTriggerUpsert(
+                ...         external_id="my_trigger",
+                ...         trigger_rule=WorkflowRecordStreamTriggerRule(
+                ...             stream_external_id="my-stream",
+                ...             batch_size=100,
+                ...             batch_timeout=60,
+                ...             initialize_cursor="6h-ago",
+                ...             sources=[
+                ...                 WorkflowRecordStreamSourceSelector(
+                ...                     source=RecordContainerId("my-space", "my-container"),
+                ...                     properties=["name", "status"],
+                ...                 )
+                ...             ],
                 ...         ),
                 ...         workflow_external_id="my_workflow",
                 ...         workflow_version="1",

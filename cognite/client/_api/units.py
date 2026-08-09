@@ -43,7 +43,7 @@ class UnitAPI(APIClient):
         self.systems = UnitSystemAPI(config, api_version, cognite_client)
 
     @overload
-    async def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> None | Unit: ...
+    async def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> Unit | None: ...
 
     @overload
     async def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UnitList: ...
@@ -62,14 +62,14 @@ class UnitAPI(APIClient):
 
         Examples:
 
-            Retrive unit 'temperature:deg_c':
+            Retrieve unit 'temperature:deg_c':
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.units.retrieve("temperature:deg_c")
 
-            Retrive units 'temperature:deg_c' and 'pressure:bar':
+            Retrieve units 'temperature:deg_c' and 'pressure:bar':
 
                 >>> res = client.units.retrieve(["temperature:deg_c", "pressure:bar"])
 

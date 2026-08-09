@@ -21,7 +21,7 @@ class SourcesAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
-            api_maturity="alpha", sdk_maturity="alpha", feature_name="Hosted Extractors"
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Hosted Extractors"
         )
         self._CREATE_LIMIT = 10
         self._LIST_LIMIT = 100
@@ -57,19 +57,18 @@ class SourcesAPI(APIClient):
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
-            headers={"cdf-version": "beta"},
         ):
             yield item
 
     @overload
-    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source: ...
+    async def retrieve(self, external_ids: str, ignore_unknown_ids: bool = False) -> Source | None: ...
 
     @overload
     async def retrieve(self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> SourceList: ...
 
     async def retrieve(
         self, external_ids: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
-    ) -> Source | SourceList:
+    ) -> Source | SourceList | None:
         """`Retrieve one or more sources <https://api-docs.cognite.com/20230101/tag/Sources/operation/retrieve_sources>`_.
 
         Args:
@@ -77,7 +76,7 @@ class SourcesAPI(APIClient):
             ignore_unknown_ids (bool): Ignore external IDs that are not found rather than throw an exception.
 
         Returns:
-            Source | SourceList: Requested sources
+            Source | SourceList | None: Requested sources
 
         Examples:
 
@@ -99,7 +98,6 @@ class SourcesAPI(APIClient):
             resource_cls=Source,  # type: ignore[type-abstract]
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             ignore_unknown_ids=ignore_unknown_ids,
-            headers={"cdf-version": "beta"},
         )
 
     async def delete(
@@ -130,7 +128,6 @@ class SourcesAPI(APIClient):
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_ids),
             wrap_ids=True,
-            headers={"cdf-version": "beta"},
             extra_body_fields=extra_body_fields or None,
         )
 
@@ -168,7 +165,6 @@ class SourcesAPI(APIClient):
             resource_cls=Source,  # type: ignore[type-abstract]
             items=items,  # type: ignore[arg-type]
             input_resource_cls=SourceWrite,
-            headers={"cdf-version": "beta"},
         )
 
     @overload
@@ -219,7 +215,6 @@ class SourcesAPI(APIClient):
             resource_cls=Source,  # type: ignore[type-abstract]
             update_cls=SourceUpdate,
             mode=mode,
-            headers={"cdf-version": "beta"},
         )
 
     @classmethod
@@ -272,5 +267,4 @@ class SourcesAPI(APIClient):
             resource_cls=Source,  # type: ignore[type-abstract]
             method="GET",
             limit=limit,
-            headers={"cdf-version": "beta"},
         )

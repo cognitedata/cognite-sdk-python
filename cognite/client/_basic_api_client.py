@@ -121,7 +121,10 @@ class FailedRequestHandler:
                 await self._raise_no_project_access_error(cognite_client, cluster, project)
             case 409, list(), None:
                 self._raise_api_error(CogniteDuplicatedError, cluster, project)
-            case 400 | 422, None, list():
+            case 400 | 404 | 422, None, list():
+                self._raise_api_error(CogniteNotFoundError, cluster, project)
+            case 404, None, None:
+                self.missing = []  # Some recent APIs return 404 without a missing list when a resource is not found
                 self._raise_api_error(CogniteNotFoundError, cluster, project)
             case _:
                 self._raise_api_error(CogniteAPIError, cluster, project)
@@ -218,6 +221,11 @@ class BasicAsyncAPIClient:
 
     def _select_async_http_client(self, is_retryable: bool) -> AsyncHTTPClientWithRetry:
         return self._http_client_with_retry if is_retryable else self._http_client
+
+    def _alpha_version_header(self) -> dict[str, str]:
+        subversion = self._config.api_subversion
+        version = subversion if "alpha" in subversion else subversion + "-alpha"
+        return {"cdf-version": version}
 
     @property
     def _base_url_with_base_path(self) -> str:

@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9e343dcd2734f2822251a2f28026bdbe
+8d6a3ae185ff0d8cb67ac9ad4dc776fa
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -162,14 +162,14 @@ class SyncUsersAPI(SyncAPIClient):
         )
 
     @overload
-    def retrieve(self, username: str, ignore_unknown_ids: bool = False) -> User: ...
+    def retrieve(self, username: str, ignore_unknown_ids: bool = False) -> User | None: ...
 
     @overload
     def retrieve(self, username: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UserList: ...
 
-    def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> User | UserList:
+    def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> User | UserList | None:
         """
-        `Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_.
+        `Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retrieve_users>`_.
 
         Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames
 
@@ -178,7 +178,7 @@ class SyncUsersAPI(SyncAPIClient):
             ignore_unknown_ids (bool): Ignore usernames that are not found
 
         Returns:
-            User | UserList: The retrieved user(s).
+            User | UserList | None: The retrieved user(s).
 
         Examples:
 

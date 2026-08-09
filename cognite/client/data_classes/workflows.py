@@ -20,6 +20,8 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.data_modeling.query import Query, ResultSetExpression, Select
+from cognite.client.data_classes.data_modeling.records import RecordContainerId
+from cognite.client.data_classes.filters import Filter
 from cognite.client.data_classes.simulators.runs import (
     SimulationInputOverride,
 )
@@ -1556,6 +1558,88 @@ class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
             "batch_size": self.batch_size,
             "batch_timeout": self.batch_timeout,
         }
+        if camel_case:
+            return convert_all_keys_to_camel_case(item)
+        return item
+
+
+class WorkflowRecordStreamSourceSelector(CogniteResource):
+    """Selects which container properties to include in a record stream trigger's workflow input.
+
+    Args:
+        source (RecordContainerId): The container to select properties from.
+        properties (list[str]): Property identifiers to return; use ``["*"]`` to return all.
+    """
+
+    def __init__(self, source: RecordContainerId, properties: list[str]) -> None:
+        self.source = source
+        self.properties = properties
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> WorkflowRecordStreamSourceSelector:
+        return cls(source=RecordContainerId.load(resource["source"]), properties=resource["properties"])
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"source": self.source.dump(camel_case=camel_case), "properties": self.properties}
+
+
+class WorkflowRecordStreamTriggerRule(WorkflowTriggerRule):
+    """
+    This class represents a record stream trigger rule.
+
+    Args:
+        stream_external_id (str): The external ID of the stream to subscribe to for record changes.
+        batch_size (int): The maximum number of records to pass to a workflow execution.
+        batch_timeout (int): The maximum time in seconds to wait for the batch to be filled.
+        filter (Filter | None): Optional filter to limit which records trigger the workflow.
+        sources (list[WorkflowRecordStreamSourceSelector] | None): Optional containers and properties to include in
+            the workflow input.
+        initialize_cursor (str | None): Where record stream syncing starts when no cursor exists yet,
+            as a relative duration like ``"6h-ago"``. If omitted, syncing starts from the current time (``"0d-ago"``).
+    """
+
+    _trigger_type = "recordStream"
+
+    def __init__(
+        self,
+        stream_external_id: str,
+        batch_size: int,
+        batch_timeout: int,
+        filter: Filter | None = None,
+        sources: list[WorkflowRecordStreamSourceSelector] | None = None,
+        initialize_cursor: str | None = None,
+    ) -> None:
+        self.stream_external_id = stream_external_id
+        self.batch_size = batch_size
+        self.batch_timeout = batch_timeout
+        self.filter = filter
+        self.sources = sources
+        self.initialize_cursor = initialize_cursor
+
+    @classmethod
+    def _load_trigger(cls, data: dict[str, Any]) -> WorkflowRecordStreamTriggerRule:
+        return cls(
+            stream_external_id=data["streamExternalId"],
+            batch_size=data["batchSize"],
+            batch_timeout=data["batchTimeout"],
+            filter=Filter._load_if(data.get("filter")),
+            sources=[WorkflowRecordStreamSourceSelector._load(source) for source in (data.get("sources") or [])],
+            initialize_cursor=data.get("initializeCursor"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        item: dict[str, Any] = {
+            "trigger_type": self.trigger_type,
+            "stream_external_id": self.stream_external_id,
+            "batch_size": self.batch_size,
+            "batch_timeout": self.batch_timeout,
+        }
+        if self.filter is not None:
+            item["filter"] = self.filter.dump()
+        if self.sources:
+            item["sources"] = [source.dump(camel_case=camel_case) for source in self.sources]
+        if self.initialize_cursor is not None:
+            item["initialize_cursor"] = self.initialize_cursor
         if camel_case:
             return convert_all_keys_to_camel_case(item)
         return item

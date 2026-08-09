@@ -3,22 +3,35 @@ import json
 import re
 from collections import defaultdict
 from doctest import DocTestParser, Example
+from functools import cached_property
 
-from cognite.client import ClientConfig, CogniteClient
-from cognite.client._api_client import APIClient
+from cognite.client import ClientConfig
+from cognite.client._basic_api_client import BasicAsyncAPIClient
+from cognite.client._cognite_client import AsyncCogniteClient
 from cognite.client.credentials import Token
+
+_SKIP_DESCRIPTOR_TYPES = (property, cached_property, staticmethod, classmethod)
 
 
 def collect_apis(obj, done):
     if done.get(obj.__class__):
         return []
     done[obj.__class__] = True
-    apis = inspect.getmembers(obj, lambda m: isinstance(m, APIClient) and not done.get(m.__class__))
+    apis = [(n, v) for n, v in vars(obj).items() if isinstance(v, BasicAsyncAPIClient) and not done.get(v.__class__)]
     sub = [(n + "." + sn, sa) for n, c in apis for sn, sa in collect_apis(c, done)]
     return apis + sub
 
 
-client = CogniteClient(ClientConfig(project="_", client_name="_", cluster="_", credentials=Token("_")))
+def iter_methods(api):
+    """Iterate bound methods without triggering class-level properties."""
+    for name in dir(api):
+        val = inspect.getattr_static(api, name)
+        if isinstance(val, _SKIP_DESCRIPTOR_TYPES) or not callable(val):
+            continue
+        yield name, getattr(api, name)
+
+
+client = AsyncCogniteClient(ClientConfig(project="_", client_name="_", cluster="_", credentials=Token("_")))
 parser = DocTestParser()
 
 apis = collect_apis(client, {})
@@ -35,7 +48,7 @@ duplicate_operations = {
 }
 
 for api_name, api in apis:
-    for fun_name, fun in inspect.getmembers(api, predicate=inspect.ismethod):
+    for fun_name, fun in iter_methods(api):
         docstring = fun.__doc__ or ""
         match_link_openapi = re.match(r"`.* <.*?/operation/(.*)>`_", docstring.strip().split("\n")[0])
         if api_name[0] != "_" and fun_name[0] != "_" and match_link_openapi:

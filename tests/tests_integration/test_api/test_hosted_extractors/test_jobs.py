@@ -16,7 +16,6 @@ from cognite.client.data_classes.hosted_extractors import (
     JobWrite,
     Source,
 )
-from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
 
@@ -62,10 +61,8 @@ class TestJobs:
 
             cognite_client.hosted_extractors.jobs.delete(created.external_id)
 
-            with pytest.raises(CogniteAPIError):
-                cognite_client.hosted_extractors.jobs.retrieve(created.external_id)
-
-            cognite_client.hosted_extractors.jobs.retrieve(created.external_id, ignore_unknown_ids=True)
+            assert cognite_client.hosted_extractors.jobs.retrieve(created.external_id) is None
+            assert cognite_client.hosted_extractors.jobs.retrieve(created.external_id, ignore_unknown_ids=True) is None
 
         finally:
             if created:

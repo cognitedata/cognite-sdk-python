@@ -11,8 +11,8 @@ from cognite.client.data_classes.data_modeling.streams import (
     Stream,
     StreamList,
     StreamTemplate,
-    StreamTemplateWriteSettings,
     StreamWrite,
+    StreamWriteSettings,
 )
 from tests.utils import jsgz_load
 
@@ -96,7 +96,7 @@ class TestStreamsAPI:
         )
         w = StreamWrite(
             "st1",
-            StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream")),
+            StreamWriteSettings(StreamTemplate("ImmutableTestStream")),
         )
         out = cognite_client.data_modeling.streams.create(w)
         requests = httpx_mock.get_requests()
@@ -117,7 +117,7 @@ class TestStreamsAPI:
         url_pattern = re.compile(re.escape(streams_base_url) + r"$")
         httpx_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("a", 1)]})
         httpx_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("b", 2)]})
-        tpl = StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream"))
+        tpl = StreamWriteSettings(StreamTemplate("ImmutableTestStream"))
         a = StreamWrite("a", tpl)
         b = StreamWrite("b", tpl)
         out = cognite_client.data_modeling.streams.create([a, b])

@@ -4,6 +4,7 @@ import inspect
 import re
 import shlex
 import subprocess
+import tempfile
 from collections.abc import Iterator
 from functools import cache
 from pathlib import Path
@@ -86,6 +87,11 @@ def get_module_level_imports(tree: ast.Module):
     return "\n".join(ast.unparse(node) for node in import_nodes)
 
 
+def get_module_level_constants(tree: ast.Module) -> str:
+    constant_nodes = [node for node in tree.body if isinstance(node, (ast.Assign, ast.AnnAssign))]
+    return "\n".join(ast.unparse(node) for node in constant_nodes)
+
+
 def get_module_level_type_checking_imports(tree: ast.Module) -> str:
     imports: list[str] = []
     for node in tree.body:
@@ -115,13 +121,9 @@ def get_all_imports(tree: ast.Module, source_code: str, source_path: Path) -> tu
     parent_source = get_source_code(parent / "__init__.py") if parent_api_in_init else ""
 
     for maybe in MAYBE_IMPORTS:
-        # Typically there are type aliases defined in the async API module that we need to import:
-        if maybe in source_code:
-            to_import = maybe.split(": ")[0]
-            import_path = path_as_importable(source_path).replace(".__init__", "")
-            extras.append(f"from {import_path} import {to_import}")
-        # For a lot of 'nested' APIs, these are in parent / init:
-        elif maybe in parent_source:
+        # If the alias is defined in this file, it will be included via module_constants — no import needed.
+        # For nested APIs, the alias lives in the parent init and must be imported explicitly:
+        if maybe in parent_source and maybe not in source_code:
             to_import = maybe.split(": ")[0]
             extras.append(f"from {path_as_importable(parent)} import {to_import}")
 
@@ -177,12 +179,16 @@ def inverse_foolish_cls_name_rewrite(class_name: str) -> str:
     return class_name.replace("3D", "ThreeD")  # Needed when searching
 
 
+def _has_no_return(node: ast.AsyncFunctionDef | ast.FunctionDef) -> bool:
+    return node.returns is not None and ast.unparse(node.returns) == "NoReturn"
+
+
 def method_should_be_converted(node: ast.AST) -> bool:
     match node:
         case ast.AsyncFunctionDef(name=n) if not n.startswith("_") or n in ASYNC_METHODS_TO_KEEP:
-            return True
+            return not _has_no_return(node)
         case ast.FunctionDef(name=n) if n in SYNC_METHODS_TO_KEEP:
-            return True
+            return not _has_no_return(node)
         case _:
             return False
 
@@ -233,6 +239,25 @@ def run_ruff(file_paths: list[Path], verbose: bool = False) -> None:
     if verbose:
         print("Now running command\n", shlex.join(command))
     subprocess.run(command, check=False, capture_output=True)
+
+    for fp in file_paths:
+        if fp.name == "__init__.py":
+            fix_unused_imports_in_init_file(fp)
+
+
+def fix_unused_imports_in_init_file(init_file: Path) -> None:
+    """Ruff won't auto-remove unused imports in __init__.py (treats them as potential
+    re-exports, and even --unsafe-fixes doesn't override this). Trick it by temporarily
+    renaming the file 🧠"""
+    # delete=False so we can close the handle before ruff opens it (just Windows things....):
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", encoding="utf-8", delete=False) as tmp:
+        tmp.write(init_file.read_text(encoding="utf-8"))
+        tmp_path = tmp.name
+    try:
+        run_ruff_direct(Path(tmp_path))
+        init_file.write_text(Path(tmp_path).read_text(encoding="utf-8"), encoding="utf-8")
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
 
 
 def run_ruff_direct(file_path: Path) -> None:

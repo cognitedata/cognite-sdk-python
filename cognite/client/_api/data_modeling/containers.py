@@ -10,6 +10,7 @@ from cognite.client.data_classes.data_modeling.containers import (
     Container,
     ContainerApply,
     ContainerList,
+    ContainerUsedFor,
     _ContainerFilter,
 )
 from cognite.client.data_classes.data_modeling.ids import (
@@ -48,6 +49,7 @@ class ContainersAPI(APIClient):
         chunk_size: None = None,
         space: str | None = None,
         include_global: bool = False,
+        used_for: ContainerUsedFor | Sequence[ContainerUsedFor] | None = None,
         limit: int | None = None,
     ) -> AsyncIterator[Container]: ...
 
@@ -57,6 +59,7 @@ class ContainersAPI(APIClient):
         chunk_size: int,
         space: str | None = None,
         include_global: bool = False,
+        used_for: ContainerUsedFor | Sequence[ContainerUsedFor] | None = None,
         limit: int | None = None,
     ) -> AsyncIterator[ContainerList]: ...
 
@@ -65,6 +68,7 @@ class ContainersAPI(APIClient):
         chunk_size: int | None = None,
         space: str | None = None,
         include_global: bool = False,
+        used_for: ContainerUsedFor | Sequence[ContainerUsedFor] | None = None,
         limit: int | None = None,
     ) -> AsyncIterator[Container] | AsyncIterator[ContainerList]:
         """Iterate over containers
@@ -75,12 +79,13 @@ class ContainersAPI(APIClient):
             chunk_size (int | None): Number of containers to return in each chunk. Defaults to yielding one container a time.
             space (str | None): The space to query.
             include_global (bool): Whether the global containers should be returned.
+            used_for (ContainerUsedFor | Sequence[ContainerUsedFor] | None): Only include containers marked for these purposes. If omitted, containers of every kind (nodes, edges, and records) are returned.
             limit (int | None): Maximum number of containers to return. Defaults to returning all items.
 
         Yields:
             Container | ContainerList: yields Container one by one if chunk_size is not specified, else ContainerList objects.
         """  # noqa: DOC404
-        flt = _ContainerFilter(space, include_global)
+        flt = _ContainerFilter(space, include_global, used_for)
         async for item in self._list_generator(
             list_cls=ContainerList,
             resource_cls=Container,
@@ -226,6 +231,7 @@ class ContainersAPI(APIClient):
         space: str | None = None,
         limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         include_global: bool = False,
+        used_for: ContainerUsedFor | Sequence[ContainerUsedFor] | None = None,
     ) -> ContainerList:
         """`List containers <https://api-docs.cognite.com/20230101/tag/Containers/operation/listContainers>`_.
 
@@ -233,6 +239,7 @@ class ContainersAPI(APIClient):
             space (str | None): The space to query
             limit (int | None): Maximum number of containers to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
             include_global (bool): Whether the global containers should be returned.
+            used_for (ContainerUsedFor | Sequence[ContainerUsedFor] | None): Only include containers marked for these purposes. If omitted, containers of every kind (nodes, edges, and records) are returned.
 
         Returns:
             ContainerList: List of requested containers
@@ -246,6 +253,16 @@ class ContainersAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> container_list = client.data_modeling.containers.list(limit=5)
 
+            Filter containers by `used_for`. Note that "all" refers to containers that stores *both*
+            nodes and edges:
+
+                >>> # High-volume data containers (records)
+                >>> record_containers = client.data_modeling.containers.list(used_for="record")
+                >>> # Containers that store ONLY nodes or ONLY edges (excludes "all"):
+                >>> containers = client.data_modeling.containers.list(used_for=["node", "edge"])
+                >>> # All containers that can store nodes:
+                >>> containers = client.data_modeling.containers.list(used_for=["node", "all"])
+
             Iterate over containers, one-by-one:
 
                 >>> for container in client.data_modeling.containers():
@@ -256,7 +273,7 @@ class ContainersAPI(APIClient):
                 >>> for container_list in client.data_modeling.containers(chunk_size=10):
                 ...     container_list  # do something with the containers
         """
-        flt = _ContainerFilter(space, include_global)
+        flt = _ContainerFilter(space, include_global, used_for)
         return await self._list(
             list_cls=ContainerList,
             resource_cls=Container,
@@ -398,7 +415,7 @@ class ContainersAPI(APIClient):
                 ...     "prop21": ContainerPropertyApply(Json(is_list=True)),
                 ...     "prop22": ContainerPropertyApply(SequenceReference),
                 ...     "prop23": ContainerPropertyApply(SequenceReference(is_list=True)),
-                ...     # Note: It is adviced to represent files and time series directly as nodes
+                ...     # Note: It is advised to represent files and time series directly as nodes
                 ...     #       instead of referencing existing:
                 ...     "prop24": ContainerPropertyApply(FileReference),
                 ...     "prop25": ContainerPropertyApply(FileReference(is_list=True)),

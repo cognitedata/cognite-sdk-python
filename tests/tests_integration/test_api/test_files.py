@@ -174,10 +174,11 @@ class TestFilesAPI:
             f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
             f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")
             await_file_upload(cognite_client, [f1.id, f2.id])
-            download_links = cognite_client.files.retrieve_download_urls(id=f1.id, external_id=f2.external_id)
+            f2_xid = get_or_raise(f2.external_id)
+            download_links = cognite_client.files.retrieve_download_urls(id=f1.id, external_id=f2_xid)
             assert len(download_links.values()) == 2
             assert download_links[f1.id].startswith("http")
-            assert download_links[get_or_raise(f2.external_id)].startswith("http")
+            assert download_links[f2_xid].startswith("http")
         finally:
             cognite_client.files.delete(id=[f1.id, f2.id], ignore_unknown_ids=True)
 
@@ -186,12 +187,13 @@ class TestFilesAPI:
             f1 = cognite_client.files.upload_bytes(b"f1", external_id=random_string(10), name="bla")
             f2 = cognite_client.files.upload_bytes(b"f2", external_id=random_string(10), name="bla")
             await_file_upload(cognite_client, [f1.id, f2.id])
+            f2_xid = get_or_raise(f2.external_id)
             download_links = cognite_client.files.retrieve_download_urls(
-                id=f1.id, external_id=f2.external_id, extended_expiration=True
+                id=f1.id, external_id=f2_xid, extended_expiration=True
             )
             assert len(download_links.values()) == 2
             assert download_links[f1.id].startswith("http")
-            assert download_links[get_or_raise(f2.external_id)].startswith("http")
+            assert download_links[f2_xid].startswith("http")
         finally:
             cognite_client.files.delete(id=[f1.id, f2.id], ignore_unknown_ids=True)
 

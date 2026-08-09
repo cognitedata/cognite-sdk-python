@@ -49,6 +49,7 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SelectSync,
 )
+from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.datapoint_aggregates import (
     ALL_SORTED_DP_AGGS,
     INT_AGGREGATES,
@@ -477,6 +478,11 @@ class FakeCogniteResourceGenerator:
         elif issubclass(resource_cls, ListablePropertyType):
             if not keyword_arguments.get("is_list"):
                 keyword_arguments.pop("max_list_size", None)
+        elif resource_cls is View:
+            # A View with used_for "record" can only be converted via
+            # as_record_view_apply(), not as_write()/as_apply() (reserved for regular views):
+            used_for = self._random.choice(["node", "edge", "all"])
+            keyword_arguments["used_for"] = used_for
         elif resource_cls is SimulatorRoutineStepArguments:
             keyword_arguments = {"data": {"reference_id": self._random_string(50), "arg2": self._random_string(50)}}
         elif resource_cls is SimulationRunWrite:
@@ -505,10 +511,11 @@ class FakeCogniteResourceGenerator:
 
         container_type = get_origin(type_)
         is_container = container_type is not None
-        if not is_container or container_type is np.ndarray:  # looks weird, but 3.8 and 3.12 type compat. issue
-            # Handle numpy types
-            from numpy.typing import NDArray
+        # Handle numpy types. NDArray's origin is np.ndarray on older numpy, but numpy>=2.3 defines
+        # NDArray as a PEP 695 type alias, whose origin is the NDArray alias itself.
+        from numpy.typing import NDArray
 
+        if not is_container or container_type is np.ndarray or container_type is NDArray:
             if type_ == NDArray[np.float64]:
                 return np.array([self._random.random() for _ in range(3)], dtype=np.float64)
             elif type_ == NDArray[np.uint32]:

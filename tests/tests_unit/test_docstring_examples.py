@@ -34,10 +34,17 @@ from cognite.client._api.data_modeling import (
     data_models,
     graphql,
     instances,
+    records,
     spaces,
     statistics,
     streams,
     views,
+)
+from cognite.client._api.data_modeling import (
+    files as dm_files,
+)
+from cognite.client._api.data_modeling import (
+    time_series as dm_time_series,
 )
 from cognite.client._api.hosted_extractors import destinations, jobs, mappings, sources
 from cognite.client._api.postgres_gateway import tables as postgres_gateway_tables
@@ -46,8 +53,11 @@ from cognite.client.testing import AsyncCogniteClientMock, CogniteClientMock
 
 # this fixes the issue with 'got MagicMock but expected Nothing in docstrings'
 doctest.OutputChecker.__check_output = doctest.OutputChecker.check_output  # type: ignore[attr-defined]
-doctest.OutputChecker.check_output = lambda self, want, got, optionflags: not want or self.__check_output(  # type: ignore[attr-defined, method-assign]
-    want, got, optionflags
+doctest.OutputChecker.check_output = lambda self, want, got, optionflags: (  # type: ignore[method-assign]
+    not want
+    or self.__check_output(  # type: ignore[attr-defined]
+        want, got, optionflags
+    )
 )
 
 
@@ -127,9 +137,12 @@ class TestDocstringExamples:
         run_docstring_tests(instances)
         run_docstring_tests(data_models)
         run_docstring_tests(spaces)
+        run_docstring_tests(dm_files)
         run_docstring_tests(graphql)
         run_docstring_tests(statistics)
         run_docstring_tests(streams)
+        run_docstring_tests(records)
+        run_docstring_tests(dm_time_series)
 
     def test_datapoint_subscriptions(self) -> None:
         run_docstring_tests(datapoints_subscriptions)

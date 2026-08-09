@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+import base64
 import json
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, ClassVar, Literal
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_camel_case
+
+_ALLOWED_IMAGE_MEDIA_TYPES = frozenset({"image/png", "image/jpeg", "image/webp"})
+_MEDIA_TYPE_BY_SUFFIX = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
 
 
 @dataclass
@@ -34,6 +40,26 @@ class MessageContent(CogniteResource, ABC):
         """Create a concrete content instance from raw data."""
         ...
 
+    @classmethod
+    def _load_content_value(
+        cls, data: dict[str, Any] | list[dict[str, Any]] | None
+    ) -> MessageContent | list[MessageContent] | None:
+        """Load a single content object or a list of content parts."""
+        if data is None:
+            return None
+        if isinstance(data, list):
+            return [cls._load(item) for item in data]
+        return cls._load(data)
+
+    @staticmethod
+    def _dump_content_value(
+        content: MessageContent | list[MessageContent], camel_case: bool = True
+    ) -> dict[str, Any] | list[dict[str, Any]]:
+        """Dump a single content object or a list of content parts."""
+        if isinstance(content, list):
+            return [item.dump(camel_case=camel_case) for item in content]
+        return content.dump(camel_case=camel_case)
+
 
 @dataclass
 class TextContent(MessageContent):
@@ -49,6 +75,63 @@ class TextContent(MessageContent):
     @classmethod
     def _load_content(cls, data: dict[str, Any]) -> TextContent:
         return cls(text=data["text"])
+
+
+@dataclass
+class ImageContent(MessageContent):
+    """Image content for messages.
+
+    Args:
+        data (str): Base64-encoded image data.
+        media_type (str): The MIME type of the image. Must be ``image/png``, ``image/jpeg``, or ``image/webp``.
+    """
+
+    _type: ClassVar[str] = "image"
+    data: str = ""
+    media_type: str = ""
+
+    @classmethod
+    def _load_content(cls, data: dict[str, Any]) -> ImageContent:
+        return cls(data=data["data"], media_type=data["mediaType"])
+
+    @classmethod
+    def from_bytes(cls, data: bytes, media_type: str) -> ImageContent:
+        """Create image content from raw image bytes.
+
+        Args:
+            data (bytes): Raw image bytes.
+            media_type (str): The MIME type of the image. Must be ``image/png``, ``image/jpeg``, or ``image/webp``.
+
+        Returns:
+            ImageContent: The image content ready to send to an agent.
+        """
+        if media_type not in _ALLOWED_IMAGE_MEDIA_TYPES:
+            raise ValueError(
+                f"Unsupported media type {media_type!r}. "
+                f"Allowed values: {', '.join(sorted(_ALLOWED_IMAGE_MEDIA_TYPES))}."
+            )
+        encoded = base64.b64encode(data).decode()
+        return cls(data=encoded, media_type=media_type)
+
+    @classmethod
+    def from_file(cls, path: str | Path, media_type: str | None = None) -> ImageContent:
+        """Create image content from an image file on disk.
+
+        Args:
+            path (str | Path): Path to the image file.
+            media_type (str | None): The MIME type of the image. If not provided, it is inferred from the file suffix.
+
+        Returns:
+            ImageContent: The image content ready to send to an agent.
+        """
+        file_path = Path(path)
+        resolved_media_type = media_type or _MEDIA_TYPE_BY_SUFFIX.get(file_path.suffix.lower())
+        if resolved_media_type is None:
+            raise ValueError(
+                f"Could not infer media type from file suffix {file_path.suffix!r}. "
+                f"Provide media_type explicitly or use one of: {', '.join(sorted(_MEDIA_TYPE_BY_SUFFIX))}."
+            )
+        return cls.from_bytes(file_path.read_bytes(), resolved_media_type)
 
 
 @dataclass
@@ -326,29 +409,45 @@ class Message(CogniteResource):
     """A message to send to an agent.
 
     Args:
-        content (str | MessageContent): The message content. If a string is provided, it will be converted to TextContent.
+        content (str | MessageContent | Sequence[MessageContent | str]): The message content. If a string is
+            provided, it will be converted to TextContent. Use a sequence of content parts to send multimodal
+            messages with images. Strings in a sequence are also converted to TextContent.
         role (Literal['user']): The role of the message sender. Defaults to "user".
     """
 
-    content: MessageContent
+    content: MessageContent | list[MessageContent]
     role: Literal["user"] = "user"
 
-    def __init__(self, content: str | MessageContent, role: Literal["user"] = "user") -> None:
+    def __init__(
+        self, content: str | MessageContent | Sequence[MessageContent | str], role: Literal["user"] = "user"
+    ) -> None:
         if isinstance(content, str):
             self.content = TextContent(text=content)
-        else:
+        elif isinstance(content, MessageContent):
             self.content = content
+        else:
+            parts: list[MessageContent] = []
+            for item in content:
+                if isinstance(item, str):
+                    parts.append(TextContent(text=item))
+                elif isinstance(item, MessageContent):
+                    parts.append(item)
+                else:
+                    raise TypeError(f"Expected str or MessageContent, got {type(item).__name__}")
+            self.content = parts
         self.role = role
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            "content": self.content.dump(camel_case=camel_case),
+            "content": MessageContent._dump_content_value(self.content, camel_case=camel_case),
             "role": self.role,
         }
 
     @classmethod
     def _load(cls, data: dict[str, Any]) -> Message:
-        content = MessageContent._load(data["content"])
+        content = MessageContent._load_content_value(data["content"])
+        if content is None:
+            raise ValueError("Message content is required.")
         return cls(content=content, role=data["role"])
 
 
@@ -465,24 +564,131 @@ class AgentDataItem(CogniteResource):
 
 
 @dataclass
+class ToolCallDetail(CogniteResource):
+    """Details of a tool call made during agent reasoning.
+
+    Args:
+        id (str): The id of the tool call.
+        name (str): The name of the tool that was called.
+        tool_type (str): The type of the tool that was called.
+        input (dict[str, Any]): The parameters that were passed to the tool.
+        result (dict[str, Any]): The results that were returned by the tool.
+    """
+
+    id: str
+    name: str
+    tool_type: str
+    input: dict[str, Any] = field(default_factory=dict)
+    result: dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> ToolCallDetail:
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            tool_type=data["toolType"],
+            input=data.get("input", {}),
+            result=data.get("result", {}),
+        )
+
+
+@dataclass
+class ReasoningDataItem(CogniteResource, ABC):
+    """Base class for reasoning data item types."""
+
+    _type: ClassVar[str]
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case=camel_case)
+        output["type"] = self._type
+        return output
+
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> ReasoningDataItem:
+        item_type = data["type"]
+        klass = _REASONING_DATA_CLS_BY_TYPE.get(item_type, UnknownReasoningDataItem)
+        return klass._load_item(data)
+
+    @classmethod
+    @abstractmethod
+    def _load_item(cls, data: dict[str, Any]) -> ReasoningDataItem: ...
+
+
+@dataclass
+class ToolCallReasoningDataItem(ReasoningDataItem):
+    """Reasoning data item for a tool call.
+
+    Args:
+        tool_call (ToolCallDetail | None): Details of the tool call.
+    """
+
+    _type: ClassVar[str] = "toolCall"
+    tool_call: ToolCallDetail | None = None
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        key = "toolCall" if camel_case else "tool_call"
+        result: dict[str, Any] = {"type": self._type}
+        if self.tool_call is not None:
+            result[key] = self.tool_call.dump(camel_case=camel_case)
+        return result
+
+    @classmethod
+    def _load_item(cls, data: dict[str, Any]) -> ToolCallReasoningDataItem:
+        return cls(tool_call=ToolCallDetail._load_if(data.get("toolCall")))
+
+
+@dataclass
+class UnknownReasoningDataItem(ReasoningDataItem):
+    """Unknown reasoning data item type for forward compatibility.
+
+    Args:
+        type (str): The item type.
+        data (dict[str, Any]): The raw item data.
+    """
+
+    type: str
+    data: dict[str, Any] = field(default_factory=dict)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        result = self.data.copy()
+        result["type"] = self.type
+        return result
+
+    @classmethod
+    def _load_item(cls, data: dict[str, Any]) -> UnknownReasoningDataItem:
+        raw = data.copy()
+        item_type = raw.pop("type")
+        return cls(type=item_type, data=raw)
+
+
+_REASONING_DATA_CLS_BY_TYPE: dict[str, type[ReasoningDataItem]] = {
+    ToolCallReasoningDataItem._type: ToolCallReasoningDataItem,
+}
+
+
+@dataclass
 class AgentReasoningItem(CogniteResource):
     """Reasoning item in agent response.
 
     Args:
         content (list[MessageContent]): The reasoning content.
+        data (list[ReasoningDataItem] | None): The data of the reasoning.
     """
 
     content: list[MessageContent]
+    data: list[ReasoningDataItem] | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
-            "content": [item.dump(camel_case=camel_case) for item in self.content],
-        }
+        result: dict[str, Any] = {"content": [item.dump(camel_case=camel_case) for item in self.content]}
+        if self.data is not None:
+            result["data"] = [item.dump(camel_case=camel_case) for item in self.data]
+        return result
 
     @classmethod
     def _load(cls, data: dict[str, Any]) -> AgentReasoningItem:
         content = [MessageContent._load(item) for item in data.get("content", [])]
-        return cls(content=content)
+        data_items = [ReasoningDataItem._load(item) for item in data.get("data", [])] or None
+        return cls(content=content, data=data_items)
 
 
 @dataclass
@@ -490,14 +696,14 @@ class AgentMessage(CogniteResource):
     """A message from an agent.
 
     Args:
-        content (MessageContent | None): The message content.
+        content (MessageContent | list[MessageContent] | None): The message content.
         data (list[AgentDataItem] | None): Data items in the response.
         reasoning (list[AgentReasoningItem] | None): Reasoning items in the response.
         actions (list[ActionCall] | None): Action calls requested by the agent.
         role (Literal['agent']): The role of the message sender.
     """
 
-    content: MessageContent | None = None
+    content: MessageContent | list[MessageContent] | None = None
     data: list[AgentDataItem] | None = None
     reasoning: list[AgentReasoningItem] | None = None
     actions: list[ActionCall] | None = None
@@ -506,7 +712,7 @@ class AgentMessage(CogniteResource):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = {"role": self.role}
         if self.content is not None:
-            result["content"] = self.content.dump(camel_case=camel_case)
+            result["content"] = MessageContent._dump_content_value(self.content, camel_case=camel_case)
         if self.data is not None:
             result["data"] = [item.dump(camel_case=camel_case) for item in self.data]
         if self.reasoning is not None:
@@ -521,7 +727,7 @@ class AgentMessage(CogniteResource):
         reasoning_items = [AgentReasoningItem._load(item) for item in data.get("reasoning", [])]
         action_calls = [ActionCall._load(item) for item in data.get("actions", [])]
         return cls(
-            content=MessageContent._load_if(data.get("content")),
+            content=MessageContent._load_content_value(data.get("content")),
             data=data_items or None,
             reasoning=reasoning_items or None,
             actions=action_calls or None,
@@ -571,10 +777,17 @@ class AgentChatResponse(CogniteResource):
     @property
     def text(self) -> str | None:
         """Get the text content from the first message with text content."""
-        if self.messages:
-            for message in self.messages:
-                if message.content and isinstance(message.content, TextContent):
-                    return message.content.text
+        if not self.messages:
+            return None
+        for message in self.messages:
+            if message.content is None:
+                continue
+            if isinstance(message.content, list):
+                for part in message.content:
+                    if isinstance(part, TextContent):
+                        return part.text
+            elif isinstance(message.content, TextContent):
+                return message.content.text
         return None
 
     @property

@@ -48,11 +48,11 @@ def no_op(x: T) -> T:
     return x
 
 
-def is_finite(limit: Any) -> TypeGuard[int]:
+def is_non_negative_int(limit: Any) -> TypeGuard[int]:
     return isinstance(limit, int) and limit >= 0
 
 
-def is_positive(limit: Any) -> TypeGuard[int]:
+def is_positive_int(limit: Any) -> TypeGuard[int]:
     return isinstance(limit, int) and limit > 0
 
 

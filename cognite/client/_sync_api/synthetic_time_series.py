@@ -1,6 +1,6 @@
 """
 ===============================================================================
-ea1d043bdb3a6528c72c4c5769df9fe7
+19b8124aa1ef168dfe5b84e25ba82a41
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -76,7 +76,7 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
         `Calculate the result of a function on time series <https://api-docs.cognite.com/20230101/tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_.
 
         Info:
-            You can read the guide to synthetic time series in our `documentation <https://docs.cognite.com/dev/concepts/resource_types/synthetic_timeseries>`_.
+            You can read the guide to synthetic time series in our `documentation <https://docs.cognite.com/api-reference/concepts/20230101/synthetic-time-series>`_.
 
         Args:
             expressions (str | sympy.Basic | Sequence[str] | Sequence[sympy.Basic]): Functions to be calculated. Supports both strings and sympy expressions. Strings can have either the API `ts{}` syntax, or contain variable names to be replaced using the `variables` parameter.

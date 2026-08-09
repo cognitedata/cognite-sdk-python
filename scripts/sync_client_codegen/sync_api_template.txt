@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     import pandas as pd
     {type_checking_imports}
 
+{module_constants}
 
 class Sync{class_name}(SyncAPIClient):
     """Auto-generated, do not modify manually."""

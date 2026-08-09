@@ -220,18 +220,25 @@ class SimulatorModelRevisionsAPI(APIClient):
             yield item
 
     @overload
-    async def create(self, items: SimulatorModelRevisionWrite) -> SimulatorModelRevision: ...
+    async def create(
+        self, items: SimulatorModelRevisionWrite, delete_oldest: bool = False
+    ) -> SimulatorModelRevision: ...
 
     @overload
-    async def create(self, items: Sequence[SimulatorModelRevisionWrite]) -> SimulatorModelRevisionList: ...
+    async def create(
+        self, items: Sequence[SimulatorModelRevisionWrite], delete_oldest: bool = False
+    ) -> SimulatorModelRevisionList: ...
 
     async def create(
-        self, items: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]
+        self,
+        items: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite],
+        delete_oldest: bool = False,
     ) -> SimulatorModelRevision | SimulatorModelRevisionList:
         """`Create simulator model revisions <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
 
         Args:
             items (SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]): The model revision(s) to create.
+            delete_oldest (bool): When true, deletes the oldest revisions for the model, keeping only the newest revisions up to the per model limit.
 
         Returns:
             SimulatorModelRevision | SimulatorModelRevisionList: Created simulator model revision(s)
@@ -268,6 +275,9 @@ class SimulatorModelRevisionsAPI(APIClient):
                 ...     ),
                 ... ]
                 >>> res = client.simulators.models.revisions.create(revisions)
+
+            Create a new simulator model revision, deleting the oldest revision if the per-model limit is reached:
+                >>> res = client.simulators.models.revisions.create(revisions, delete_oldest=True)
         """
         assert_type(items, "simulator_model_revision", [SimulatorModelRevisionWrite, Sequence])
 
@@ -276,10 +286,11 @@ class SimulatorModelRevisionsAPI(APIClient):
             resource_cls=SimulatorModelRevision,
             items=items,
             input_resource_cls=SimulatorModelRevisionWrite,
+            extra_body_fields={"deleteOldest": delete_oldest},
         )
 
     async def retrieve_data(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
-        """`Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/get_simulator_model_revision_data_by_id>`_
+        """`Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/retrieve_simulator_model_revision_data>`_
 
         Retrieves a list of simulator model revisions data that match the given criteria.
 

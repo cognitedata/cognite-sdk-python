@@ -1,6 +1,6 @@
 """
 ===============================================================================
-465575f7283dac5a1831298bc22b3bda
+26c89a64a49ece12d8f69199724157f0
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -17,6 +17,7 @@ from cognite.client.data_classes.data_modeling.containers import (
     Container,
     ContainerApply,
     ContainerList,
+    ContainerUsedFor,
 )
 from cognite.client.data_classes.data_modeling.ids import (
     ConstraintIdentifier,
@@ -38,12 +39,22 @@ class SyncContainersAPI(SyncAPIClient):
 
     @overload
     def __call__(
-        self, chunk_size: None = None, space: str | None = None, include_global: bool = False, limit: int | None = None
+        self,
+        chunk_size: None = None,
+        space: str | None = None,
+        include_global: bool = False,
+        used_for: ContainerUsedFor | Sequence[ContainerUsedFor] | None = None,
+        limit: int | None = None,
     ) -> Iterator[Container]: ...
 
     @overload
     def __call__(
-        self, chunk_size: int, space: str | None = None, include_global: bool = False, limit: int | None = None
+        self,
+        chunk_size: int,
+        space: str | None = None,
+        include_global: bool = False,
+        used_for: ContainerUsedFor | Sequence[ContainerUsedFor] | None = None,
+        limit: int | None = None,
     ) -> Iterator[ContainerList]: ...
 
     def __call__(
@@ -51,6 +62,7 @@ class SyncContainersAPI(SyncAPIClient):
         chunk_size: int | None = None,
         space: str | None = None,
         include_global: bool = False,
+        used_for: ContainerUsedFor | Sequence[ContainerUsedFor] | None = None,
         limit: int | None = None,
     ) -> Iterator[Container] | Iterator[ContainerList]:
         """
@@ -62,6 +74,7 @@ class SyncContainersAPI(SyncAPIClient):
             chunk_size (int | None): Number of containers to return in each chunk. Defaults to yielding one container a time.
             space (str | None): The space to query.
             include_global (bool): Whether the global containers should be returned.
+            used_for (ContainerUsedFor | Sequence[ContainerUsedFor] | None): Only include containers marked for these purposes. If omitted, containers of every kind (nodes, edges, and records) are returned.
             limit (int | None): Maximum number of containers to return. Defaults to returning all items.
 
         Yields:
@@ -69,7 +82,7 @@ class SyncContainersAPI(SyncAPIClient):
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_modeling.containers(
-                chunk_size=chunk_size, space=space, include_global=include_global, limit=limit
+                chunk_size=chunk_size, space=space, include_global=include_global, used_for=used_for, limit=limit
             )
         )  # type: ignore [misc]
 
@@ -171,6 +184,7 @@ class SyncContainersAPI(SyncAPIClient):
         space: str | None = None,
         limit: int | None = DATA_MODELING_DEFAULT_LIMIT_READ,
         include_global: bool = False,
+        used_for: ContainerUsedFor | Sequence[ContainerUsedFor] | None = None,
     ) -> ContainerList:
         """
         `List containers <https://api-docs.cognite.com/20230101/tag/Containers/operation/listContainers>`_.
@@ -179,6 +193,7 @@ class SyncContainersAPI(SyncAPIClient):
             space (str | None): The space to query
             limit (int | None): Maximum number of containers to return. Defaults to 10. Set to -1, float("inf") or None to return all items.
             include_global (bool): Whether the global containers should be returned.
+            used_for (ContainerUsedFor | Sequence[ContainerUsedFor] | None): Only include containers marked for these purposes. If omitted, containers of every kind (nodes, edges, and records) are returned.
 
         Returns:
             ContainerList: List of requested containers
@@ -192,6 +207,16 @@ class SyncContainersAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> container_list = client.data_modeling.containers.list(limit=5)
 
+            Filter containers by `used_for`. Note that "all" refers to containers that stores *both*
+            nodes and edges:
+
+                >>> # High-volume data containers (records)
+                >>> record_containers = client.data_modeling.containers.list(used_for="record")
+                >>> # Containers that store ONLY nodes or ONLY edges (excludes "all"):
+                >>> containers = client.data_modeling.containers.list(used_for=["node", "edge"])
+                >>> # All containers that can store nodes:
+                >>> containers = client.data_modeling.containers.list(used_for=["node", "all"])
+
             Iterate over containers, one-by-one:
 
                 >>> for container in client.data_modeling.containers():
@@ -203,7 +228,9 @@ class SyncContainersAPI(SyncAPIClient):
                 ...     container_list  # do something with the containers
         """
         return run_sync(
-            self.__async_client.data_modeling.containers.list(space=space, limit=limit, include_global=include_global)
+            self.__async_client.data_modeling.containers.list(
+                space=space, limit=limit, include_global=include_global, used_for=used_for
+            )
         )
 
     @overload
@@ -339,7 +366,7 @@ class SyncContainersAPI(SyncAPIClient):
                 ...     "prop21": ContainerPropertyApply(Json(is_list=True)),
                 ...     "prop22": ContainerPropertyApply(SequenceReference),
                 ...     "prop23": ContainerPropertyApply(SequenceReference(is_list=True)),
-                ...     # Note: It is adviced to represent files and time series directly as nodes
+                ...     # Note: It is advised to represent files and time series directly as nodes
                 ...     #       instead of referencing existing:
                 ...     "prop24": ContainerPropertyApply(FileReference),
                 ...     "prop25": ContainerPropertyApply(FileReference(is_list=True)),

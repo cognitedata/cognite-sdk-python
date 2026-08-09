@@ -269,7 +269,7 @@ class _DpsColumnInfo:
             case _, "symbol":
                 return np.array(self.data, dtype=np.object_)
             case _:
-                # IsString is required in the response, so if we reach here, most likely a user has instatiated
+                # IsString is required in the response, so if we reach here, most likely a user has instantiated
                 # the datapoints object themselves:
                 raise ValueError(
                     f"Invalid combination of is_string={self.is_string} and status_info={self.status_info}"

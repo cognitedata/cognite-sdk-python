@@ -183,13 +183,15 @@ class UsersAPI(APIClient):
         )
 
     @overload
-    async def retrieve(self, username: str, ignore_unknown_ids: bool = False) -> User: ...
+    async def retrieve(self, username: str, ignore_unknown_ids: bool = False) -> User | None: ...
 
     @overload
     async def retrieve(self, username: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> UserList: ...
 
-    async def retrieve(self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> User | UserList:
-        """`Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retreive_users>`_.
+    async def retrieve(
+        self, username: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> User | UserList | None:
+        """`Retrieve a list of users by their usernames <https://api-docs.cognite.com/20230101-beta/tag/Postgres-Gateway-Users/operation/retrieve_users>`_.
 
         Retrieve a list of postgres users by their usernames, optionally ignoring unknown usernames
 
@@ -198,7 +200,7 @@ class UsersAPI(APIClient):
             ignore_unknown_ids (bool): Ignore usernames that are not found
 
         Returns:
-            User | UserList: The retrieved user(s).
+            User | UserList | None: The retrieved user(s).
 
         Examples:
 

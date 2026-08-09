@@ -293,7 +293,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
         self,
         view: ViewIdentifier,
         default: MutableMapping[PropertyIdentifier, PropertyValue] | None | _T | None = None,
-    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | None | _T:
+    ) -> MutableMapping[PropertyIdentifier, PropertyValue] | _T | None:
         view_id = ViewId.load(view)
         return self.data.get(view_id, default)
 
@@ -368,6 +368,18 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         if len(self.properties) > 1:
             err_msg += f" Hint: You may use `instance.properties[view_id][{attr!r}]`"
         raise RuntimeError(err_msg) from None
+
+    def drop_source(self, source: ViewId) -> None:
+        """Remove a source with its corresponding properties from the instance and attempts to reset the
+        instance to be a 'singular-source instance' if possible. This restores the ability to use quick
+        property access, e.g. `instance["some_prop"]` and makes to_pandas() remove the view ID prefix
+        from column names.
+        """
+        self.properties.data.pop(source, None)
+        try:
+            (self.__prop_lookup,) = self.properties.values()
+        except ValueError:
+            self.__prop_lookup = None  # type: ignore [assignment]
 
     @property
     def properties(self) -> Properties:
@@ -1724,7 +1736,7 @@ class TypedNodeApply(NodeApply, TypedInstance):
         space: str,
         external_id: str,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         super().__init__(
             space=space,
