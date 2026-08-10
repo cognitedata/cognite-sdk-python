@@ -1044,3 +1044,15 @@ class TestRecordDTOs:
         assert record.status == "deleted"
         assert record.properties is None
         assert "properties" not in record.dump()
+
+    def test_sync_record_list_public_load(self) -> None:
+        items = [
+            {"space": "sp", "externalId": f"rec-{i}", "createdTime": 1, "lastUpdatedTime": 2, "status": "created"}
+            for i in range(2)
+        ]
+        page = SyncRecordList.load(items)
+        assert isinstance(page, SyncRecordList)
+        assert [record.external_id for record in page] == ["rec-0", "rec-1"]
+        assert page.cursor is None
+        assert page.has_next is False
+        assert page.typing is None
