@@ -881,8 +881,8 @@ class DatapointsAPI(APIClient):
     async def retrieve(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery],
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery],
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None,
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -902,8 +902,8 @@ class DatapointsAPI(APIClient):
     async def retrieve(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery],
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery],
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -923,8 +923,8 @@ class DatapointsAPI(APIClient):
     async def retrieve(
         self,
         *,
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery],
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery],
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -944,9 +944,9 @@ class DatapointsAPI(APIClient):
     async def retrieve(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery],
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery],
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery],
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None,
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -965,9 +965,9 @@ class DatapointsAPI(APIClient):
     async def retrieve(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] = None,
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None = None,
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None = None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None = None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -1006,9 +1006,9 @@ class DatapointsAPI(APIClient):
         `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes/>`_
 
         Args:
-            id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
+            id (int | DatapointsQuery | Sequence[int | DatapointsQuery] | None): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -1340,9 +1340,9 @@ class DatapointsAPI(APIClient):
     async def retrieve_arrays(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] = None,
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None = None,
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None = None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None = None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -1366,9 +1366,9 @@ class DatapointsAPI(APIClient):
         `status codes. <https://docs.cognite.com/dev/concepts/reference/status_codes/>`_
 
         Args:
-            id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, dict (with id) or (mixed) sequence of these. See examples below.
-            external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, dict (with external id) or (mixed) sequence of these. See examples below.
-            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id or sequence of instance ids.
+            id (int | DatapointsQuery | Sequence[int | DatapointsQuery] | None): Id, dict (with id) or (mixed) sequence of these. See examples below.
+            external_id (str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None): External id, dict (with external id) or (mixed) sequence of these. See examples below.
+            instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -1470,9 +1470,9 @@ class DatapointsAPI(APIClient):
     async def retrieve_dataframe(
         self,
         *,
-        id: None | int | DatapointsQuery | Sequence[int | DatapointsQuery] = None,
-        external_id: None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] = None,
-        instance_id: None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] = None,
+        id: int | DatapointsQuery | Sequence[int | DatapointsQuery] | None = None,
+        external_id: str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None = None,
+        instance_id: NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None = None,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
         aggregates: Aggregate | str | list[Aggregate | str] | None = None,
@@ -1500,9 +1500,9 @@ class DatapointsAPI(APIClient):
             For many more usage examples, check out the :py:meth:`~DatapointsAPI.retrieve` method which accepts exactly the same arguments.
 
         Args:
-            id (None | int | DatapointsQuery | Sequence[int | DatapointsQuery]): Id, DatapointsQuery or (mixed) sequence of these. See examples.
-            external_id (None | str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]): External id, DatapointsQuery or (mixed) sequence of these. See examples.
-            instance_id (None | NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]): Instance id, DatapointsQuery or (mixed) sequence of these. See examples.
+            id (int | DatapointsQuery | Sequence[int | DatapointsQuery] | None): Id, DatapointsQuery or (mixed) sequence of these. See examples.
+            external_id (str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery] | None): External id, DatapointsQuery or (mixed) sequence of these. See examples.
+            instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id, DatapointsQuery or (mixed) sequence of these. See examples.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
             aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
@@ -1644,7 +1644,7 @@ class DatapointsAPI(APIClient):
         self,
         id: int | LatestDatapointQuery,
         *,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1658,7 +1658,7 @@ class DatapointsAPI(APIClient):
         self,
         id: Sequence[int | LatestDatapointQuery],
         *,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1672,7 +1672,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         id: int | LatestDatapointQuery,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1686,7 +1686,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         id: Sequence[int | LatestDatapointQuery],
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1700,7 +1700,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         external_id: str | LatestDatapointQuery,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1714,7 +1714,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         external_id: SequenceNotStr[str | LatestDatapointQuery],
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1728,7 +1728,7 @@ class DatapointsAPI(APIClient):
         self,
         *,
         instance_id: NodeId | LatestDatapointQuery,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1743,7 +1743,7 @@ class DatapointsAPI(APIClient):
         *,
         instance_id: Sequence[NodeId | LatestDatapointQuery],
         external_id: None = None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1759,7 +1759,7 @@ class DatapointsAPI(APIClient):
         id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None,
         external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None,
         instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1774,7 +1774,7 @@ class DatapointsAPI(APIClient):
         *,
         id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None,
         external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1789,7 +1789,7 @@ class DatapointsAPI(APIClient):
         *,
         id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None,
         instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1804,7 +1804,7 @@ class DatapointsAPI(APIClient):
         *,
         external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None,
         instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1818,7 +1818,7 @@ class DatapointsAPI(APIClient):
         id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None = None,
         external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None = None,
         instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None = None,
-        before: None | int | str | datetime.datetime = None,
+        before: int | str | datetime.datetime | None = None,
         target_unit: str | None = None,
         target_unit_system: str | None = None,
         include_status: bool = False,
@@ -1835,7 +1835,7 @@ class DatapointsAPI(APIClient):
             id (int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None): Id or list of ids.
             external_id (str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None): External id or list of external ids.
             instance_id (NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None): Instance id or list of instance ids.
-            before (None | int | str | datetime.datetime): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
+            before (int | str | datetime.datetime | None): Get latest datapoint before this time. Not used when passing 'LatestDatapointQuery'.
             target_unit (str | None): The unit_external_id of the datapoint returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
             target_unit_system (str | None): The unit system of the datapoint returned. Cannot be used with target_unit.
             include_status (bool): Also return the status code, an integer, for each datapoint in the response.
@@ -2486,12 +2486,12 @@ class DatapointsPoster:
 class RetrieveLatestDpsFetcher:
     def __init__(
         self,
-        id: None | int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery],
-        external_id: None | str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery],
-        instance_id: None | NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery],
-        before: None | int | str | datetime.datetime,
-        target_unit: None | str,
-        target_unit_system: None | str,
+        id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None,
+        external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None,
+        instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None,
+        before: int | str | datetime.datetime | None,
+        target_unit: str | None,
+        target_unit_system: str | None,
         include_status: bool,
         ignore_bad_datapoints: bool,
         treat_uncertain_as_bad: bool,
@@ -2505,9 +2505,9 @@ class RetrieveLatestDpsFetcher:
         self.default_ignore_bad_datapoints = ignore_bad_datapoints
         self.default_treat_uncertain_as_bad = treat_uncertain_as_bad
 
-        self.settings_before: dict[tuple[str, int], None | int | str | datetime.datetime] = {}
-        self.settings_target_unit: dict[tuple[str, int], None | str] = {}
-        self.settings_target_unit_system: dict[tuple[str, int], None | str] = {}
+        self.settings_before: dict[tuple[str, int], int | str | datetime.datetime | None] = {}
+        self.settings_target_unit: dict[tuple[str, int], str | None] = {}
+        self.settings_target_unit_system: dict[tuple[str, int], str | None] = {}
         self.settings_include_status: dict[tuple[str, int], bool | None] = {}
         self.settings_ignore_bad_datapoints: dict[tuple[str, int], bool | None] = {}
         self.settings_treat_uncertain_as_bad: dict[tuple[str, int], bool | None] = {}
@@ -2516,9 +2516,9 @@ class RetrieveLatestDpsFetcher:
         self.dps_client = dps_client
         self.semaphore = self.dps_client._get_semaphore("read")
 
-        parsed_ids = cast(None | int | Sequence[int], self._parse_user_input(id, "id"))
-        parsed_xids = cast(None | str | SequenceNotStr[str], self._parse_user_input(external_id, "external_id"))
-        parsed_inst_ids = cast(None | NodeId | Sequence[NodeId], self._parse_user_input(instance_id, "instance_id"))
+        parsed_ids = cast(int | Sequence[int] | None, self._parse_user_input(id, "id"))
+        parsed_xids = cast(str | SequenceNotStr[str] | None, self._parse_user_input(external_id, "external_id"))
+        parsed_inst_ids = cast(NodeId | Sequence[NodeId] | None, self._parse_user_input(instance_id, "instance_id"))
         self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids, parsed_inst_ids).is_singleton()
         self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids, parsed_inst_ids)
 
@@ -2571,9 +2571,9 @@ class RetrieveLatestDpsFetcher:
 
     def _prepare_requests(
         self,
-        parsed_ids: None | int | Sequence[int],
-        parsed_xids: None | str | SequenceNotStr[str],
-        parsed_inst_ids: None | NodeId | Sequence[NodeId],
+        parsed_ids: int | Sequence[int] | None,
+        parsed_xids: str | SequenceNotStr[str] | None,
+        parsed_inst_ids: NodeId | Sequence[NodeId] | None,
     ) -> list[dict]:
         all_ids, all_xids, all_inst_ids = [], [], []
         if parsed_ids is not None:
