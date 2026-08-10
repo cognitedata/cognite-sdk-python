@@ -1322,7 +1322,7 @@ class EntityMatchingPredictionResult(ContextualizationJob):
 
 class ResourceReference(CogniteResource):
     def __init__(
-        self, id: int | None = None, external_id: str | None = None, cognite_client: None | AsyncCogniteClient = None
+        self, id: int | None = None, external_id: str | None = None, cognite_client: AsyncCogniteClient | None = None
     ) -> None:
         self.id = id
         self.external_id = external_id
