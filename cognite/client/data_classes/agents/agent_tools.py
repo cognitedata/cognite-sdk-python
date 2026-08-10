@@ -178,6 +178,9 @@ class SubagentList(CogniteResourceList[Subagent]):
     _RESOURCE = Subagent
 
 
+Subagent._LIST_CLASS = SubagentList
+
+
 @dataclass
 class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     """Configuration for knowledge graph query agent tools.
