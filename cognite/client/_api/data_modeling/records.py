@@ -69,11 +69,8 @@ class RecordsAPI(APIClient):
         initialize_cursor: str | None = None,
         cursor: str | None = None,
     ) -> SyncRecordList:
-        # Sync returns exactly one page of the change feed: 'limit' is the page size and
-        # 'hasNext' tells the caller whether to ask for more. We must not use the generic
-        # paging helpers here - they stop on an exhausted cursor, but the sync endpoint always
-        # returns a 'nextCursor' (that is what makes the feed resumable), so a page that does
-        # not fill 'limit' would make them request forever.
+        # One page per call: the endpoint always returns a nextCursor, so the generic
+        # paging helpers would never terminate.
         if initialize_cursor is not None and cursor is not None:
             raise ValueError("Pass either 'initialize_cursor' or 'cursor', not both.")
         verify_limit(limit)
