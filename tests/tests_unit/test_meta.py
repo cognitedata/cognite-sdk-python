@@ -17,7 +17,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
 from cognite.client.data_classes.principals import PrincipalList
 from cognite.client.utils._url import NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN
-from tests.utils import all_concrete_subclasses, all_subclasses
+from tests.utils import all_concrete_subclasses, all_subclasses, dict_without
 
 
 def test_assert_no_root_init_file() -> None:
@@ -122,6 +122,18 @@ def test_POST_endpoint_idempotency_vs_retries(api: str, apis_matching_non_idempo
             "You'll need to either remove it from the whitelist or from "
             "NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN."
         )
+
+
+def test_dict_without() -> None:
+    # Was previously a doctest on dict_without itself, but pytest's built-in --doctest-modules
+    # collection of it was a source of rare, very confusing CI flakes. Moved here as a plain test.
+    a = {"foo": "bar", "bar": "baz", "zip": "zap"}
+    b = dict_without(a, {"foo", "bar"})
+    assert b == {"zip": "zap"}
+
+    b["foo"] = "not bar"
+    # Should be unaffected: dict_without returns a copy
+    assert a == {"foo": "bar", "bar": "baz", "zip": "zap"}
 
 
 def test_constants_are_importable() -> None:
