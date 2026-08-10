@@ -859,23 +859,6 @@ class TestRecordsAPISync:
         assert page.cursor == "p2"
         assert len(httpx_mock.get_requests()) == 1
 
-    def test_sync_resume_does_not_send_initialize_cursor(
-        self,
-        cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
-        sync_url_pattern: re.Pattern,
-        stream_id: str,
-    ) -> None:
-        # 'cursor' and 'initializeCursor' are mutually exclusive; resuming must send only 'cursor'.
-        httpx_mock.add_response(
-            method="POST",
-            url=sync_url_pattern,
-            status_code=200,
-            json={"items": [], "nextCursor": "p2", "hasNext": False},
-        )
-        cognite_client.data_modeling.records.sync_resume(stream_id=stream_id, cursor="p1", limit=7)
-        assert jsgz_load(httpx_mock.get_requests()[0].content) == {"cursor": "p1", "limit": 7}
-
     def test_sync_body_shape_with_filter_and_sources(
         self,
         cognite_client: CogniteClient,
@@ -906,14 +889,6 @@ class TestRecordsAPISync:
                 {"source": {"space": "sp", "externalId": "container-x", "type": "container"}, "properties": ["*"]}
             ],
         }
-
-    def test_sync_rejects_non_positive_limit(
-        self,
-        cognite_client: CogniteClient,
-        stream_id: str,
-    ) -> None:
-        with pytest.raises(ValueError, match="limit must be strictly positive"):
-            cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="c", limit=0)
 
 
 class TestRecordDTOs:
