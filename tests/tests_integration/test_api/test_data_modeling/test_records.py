@@ -25,7 +25,12 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordWrite,
     TimeRange,
 )
-from cognite.client.data_classes.data_modeling.streams import Stream
+from cognite.client.data_classes.data_modeling.streams import (
+    Stream,
+    StreamTemplate,
+    StreamTemplateWriteSettings,
+    StreamWrite,
+)
 
 # Streams cannot be hard deleted and their external IDs can never be reused, so these tests reuse
 # a stream that already exists in the project, plus one container, for every run.
@@ -62,15 +67,15 @@ def record_container(cognite_client: CogniteClient, integration_test_space: Spac
 
 @pytest.fixture(scope="session")
 def mutable_stream(cognite_client: CogniteClient) -> Stream:
-    """Reuse the shared mutable test stream that already exists in the project.
-    """
     stream = cognite_client.data_modeling.streams.retrieve(STREAM_EXTERNAL_ID)
     if stream is not None:
         return stream
-    for stream in sorted(cognite_client.data_modeling.streams.list(), key=lambda s: s.external_id):
-        if stream.type == "Mutable":
-            return stream
-    pytest.skip(f"No mutable stream in the project (looked for {STREAM_EXTERNAL_ID!r}) to ingest records into.")
+    return cognite_client.data_modeling.streams.create(
+        StreamWrite(
+            external_id=STREAM_EXTERNAL_ID,
+            settings=StreamTemplateWriteSettings(template=StreamTemplate(name="BasicLiveData")),
+        )
+    )
 
 
 @pytest.fixture(scope="session")
@@ -160,8 +165,7 @@ class TestRecordsIntegration:
         sources: list[RecordSourceSelector],
         ingested_records: list[RecordWrite],
     ) -> None:
-        """Regression test: sync must return one page, even when it holds fewer than 'limit' records.
-        """
+        """Regression test: sync must return one page, even when it holds fewer than 'limit' records."""
         tag = ingested_records[0].sources[0].properties["name"]
         page = cognite_client.data_modeling.records.sync(
             stream_id=mutable_stream.external_id,
