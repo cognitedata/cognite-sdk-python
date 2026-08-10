@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import re
 
 import pytest
@@ -858,6 +859,84 @@ class TestRecordsAPISync:
         assert len(page) == 1
         assert page.cursor == "p2"
         assert len(httpx_mock.get_requests()) == 1
+
+    @pytest.mark.parametrize("limit", [None, -1, math.inf])
+    def test_sync_unlimited_drains_the_feed(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+        limit: int | None,
+    ) -> None:
+        # An unlimited limit keeps requesting pages (of the API max) until hasNext is False,
+        # and returns everything as one list holding the final cursor.
+        pages = [
+            {
+                "items": [{**record_response, "externalId": "rec-1", "status": "created"}],
+                "nextCursor": "c1",
+                "hasNext": True,
+            },
+            {
+                "items": [{**record_response, "externalId": "rec-2", "status": "updated"}],
+                "nextCursor": "c2",
+                "hasNext": True,
+            },
+            {"items": [], "nextCursor": "c3", "hasNext": False},
+        ]
+        for page in pages:
+            httpx_mock.add_response(method="POST", url=sync_url_pattern, status_code=200, json=page)
+        result = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago", limit=limit)
+        assert [record.external_id for record in result] == ["rec-1", "rec-2"]
+        assert result.cursor == "c3"
+        assert result.has_next is False
+        bodies = [jsgz_load(request.content) for request in httpx_mock.get_requests()]
+        assert bodies == [
+            {"initializeCursor": "7d-ago", "limit": 1000},
+            {"cursor": "c1", "limit": 1000},
+            {"cursor": "c2", "limit": 1000},
+        ]
+
+    def test_sync_resume_unlimited_drains_the_feed(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        pages = [
+            {
+                "items": [{**record_response, "externalId": "rec-1", "status": "created"}],
+                "nextCursor": "c1",
+                "hasNext": True,
+            },
+            {
+                "items": [{**record_response, "externalId": "rec-2", "status": "deleted"}],
+                "nextCursor": "c2",
+                "hasNext": False,
+            },
+        ]
+        for page in pages:
+            httpx_mock.add_response(method="POST", url=sync_url_pattern, status_code=200, json=page)
+        result = cognite_client.data_modeling.records.sync_resume(stream_id=stream_id, cursor="p0", limit=None)
+        assert [record.external_id for record in result] == ["rec-1", "rec-2"]
+        assert result.cursor == "c2"
+        assert result.has_next is False
+        bodies = [jsgz_load(request.content) for request in httpx_mock.get_requests()]
+        assert bodies == [{"cursor": "p0", "limit": 1000}, {"cursor": "c1", "limit": 1000}]
+
+    @pytest.mark.parametrize("limit", [0, -2, 1001])
+    def test_sync_rejects_out_of_range_limit(
+        self,
+        cognite_client: CogniteClient,
+        stream_id: str,
+        limit: int,
+    ) -> None:
+        # A finite limit is the page size of a single request, which the API caps at 1000.
+        with pytest.raises(ValueError, match="between 1 and 1000"):
+            cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="c", limit=limit)
 
     def test_sync_body_shape_with_filter_and_sources(
         self,

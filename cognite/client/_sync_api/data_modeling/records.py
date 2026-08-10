@@ -1,6 +1,6 @@
 """
 ===============================================================================
-0b09e1ee66fffe5d5888d258843302e0
+5b6d4cdb1252bbea4a51fd4405818363
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -361,7 +361,7 @@ class SyncRecordsAPI(SyncAPIClient):
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,
         target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
-        limit: int = 10,
+        limit: int | None = 10,
         include_typing: bool = False,
     ) -> SyncRecordList:
         """
@@ -372,6 +372,12 @@ class SyncRecordsAPI(SyncAPIClient):
         :attr:`SyncRecordList.cursor` and pass it to :meth:`sync_resume` on the next call to continue;
         :attr:`SyncRecordList.has_next` indicates whether more changes are immediately available.
 
+        Warning:
+            An unlimited sync (``limit=None``) accumulates every record in memory and only returns
+            once the feed is caught up, which can be a lot of data on a busy stream. For large or
+            interruptible backfills, prefer a finite page size and persist the cursor after
+            processing each page.
+
         Args:
             stream_id (str): External ID of the stream to sync.
             initialize_cursor (str): Where to start, as a relative duration like ``"7d-ago"``.
@@ -379,12 +385,15 @@ class SyncRecordsAPI(SyncAPIClient):
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
                 to another unit.
-            limit (int): Maximum number of records to return in this page (1-1000). Defaults to 10.
+            limit (int | None): Page size, between 1 and 1000. Defaults to 10. Pass ``None``, ``-1``
+                or ``math.inf`` to instead keep fetching pages until the feed is exhausted
+                (``has_next`` is False) and return everything as a single list.
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
 
         Returns:
-            SyncRecordList: One page of change records, with ``cursor`` and ``has_next`` set.
+            SyncRecordList: One page of change records (or the entire remaining feed when ``limit``
+                is unlimited), with ``cursor`` and ``has_next`` set.
 
         Examples:
 
@@ -399,6 +408,15 @@ class SyncRecordsAPI(SyncAPIClient):
                 ...     pass  # process record; record.status is created/updated/deleted
                 >>> next_page = client.data_modeling.records.sync_resume(
                 ...     stream_id="my-stream", cursor=page.cursor
+                ... )
+
+            Fetch everything from the last 7 days in one call, then only new changes later:
+
+                >>> everything = client.data_modeling.records.sync(
+                ...     stream_id="my-stream", initialize_cursor="7d-ago", limit=None
+                ... )
+                >>> news = client.data_modeling.records.sync_resume(
+                ...     stream_id="my-stream", cursor=everything.cursor, limit=None
                 ... )
         """
         return run_sync(
@@ -421,11 +439,17 @@ class SyncRecordsAPI(SyncAPIClient):
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,
         target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
-        limit: int = 10,
+        limit: int | None = 10,
         include_typing: bool = False,
     ) -> SyncRecordList:
         """
         Resume syncing records from a stream using a cursor from :meth:`sync` or :meth:`sync_resume`.
+
+        Warning:
+            An unlimited sync (``limit=None``) accumulates every record in memory and only returns
+            once the feed is caught up, which can be a lot of data on a busy stream. For large or
+            interruptible backfills, prefer a finite page size and persist the cursor after
+            processing each page.
 
         Args:
             stream_id (str): External ID of the stream to sync.
@@ -434,12 +458,15 @@ class SyncRecordsAPI(SyncAPIClient):
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
                 to another unit.
-            limit (int): Maximum number of records to return in this page (1-1000). Defaults to 10.
+            limit (int | None): Page size, between 1 and 1000. Defaults to 10. Pass ``None``, ``-1``
+                or ``math.inf`` to instead keep fetching pages until the feed is exhausted
+                (``has_next`` is False) and return everything as a single list.
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
 
         Returns:
-            SyncRecordList: One page of change records, with ``cursor`` and ``has_next`` set.
+            SyncRecordList: One page of change records (or the entire remaining feed when ``limit``
+                is unlimited), with ``cursor`` and ``has_next`` set.
         """
         return run_sync(
             self.__async_client.data_modeling.records.sync_resume(
