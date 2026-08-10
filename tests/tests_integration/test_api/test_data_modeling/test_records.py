@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -31,6 +31,7 @@ from cognite.client.data_classes.data_modeling.streams import (
     StreamTemplateWriteSettings,
     StreamWrite,
 )
+from cognite.client.utils._retry import Backoff
 
 # Deleted streams are soft deleted, and their external IDs stay reserved for a couple of weeks
 # before they can be reused. Combined with the low quota on active streams per project, these
@@ -46,6 +47,18 @@ def an_hour_ago() -> str:
     not the "1h-ago" shorthand that the rest of the SDK understands.
     """
     return (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def assert_eventually(assertion: Callable[[], None], retries: int = 5) -> None:
+    """Retry an assertion about eventually-consistent backend state instead of a fixed sleep."""
+    wait = Backoff(max_wait=4, min_wait=0.25)
+    for _ in range(retries):
+        try:
+            assertion()
+            return
+        except AssertionError:
+            time.sleep(next(wait))
+    assertion()
 
 
 @pytest.fixture(scope="session")
@@ -110,8 +123,18 @@ def ingested_records(
         for i in range(3)
     ]
     cognite_client.data_modeling.records.ingest(records, stream_id=mutable_stream.external_id)
+
+    def all_records_are_queryable() -> None:
+        result = cognite_client.data_modeling.records.filter(
+            stream_id=mutable_stream.external_id,
+            last_updated_time=TimeRange(gt=an_hour_ago()),
+            filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag),
+            limit=len(records) + 1,
+        )
+        assert len(result) == len(records)
+
     # Records are not queryable the instant ingest returns.
-    time.sleep(2)
+    assert_eventually(all_records_are_queryable)
     yield records
     cognite_client.data_modeling.records.delete(
         [record.as_id() for record in records], stream_id=mutable_stream.external_id
@@ -238,16 +261,18 @@ class TestRecordsIntegration:
             ),
             stream_id=mutable_stream.external_id,
         )
-        time.sleep(2)
 
-        result = cognite_client.data_modeling.records.filter(
-            stream_id=mutable_stream.external_id,
-            last_updated_time=TimeRange(gt=an_hour_ago()),
-            sources=sources,
-            filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "value"], value=99.0),
-            limit=10,
-        )
-        assert [record.external_id for record in result] == [target.external_id]
+        def replacement_is_queryable() -> None:
+            result = cognite_client.data_modeling.records.filter(
+                stream_id=mutable_stream.external_id,
+                last_updated_time=TimeRange(gt=an_hour_ago()),
+                sources=sources,
+                filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "value"], value=99.0),
+                limit=10,
+            )
+            assert [record.external_id for record in result] == [target.external_id]
+
+        assert_eventually(replacement_is_queryable)
 
 
 class TestStreamsIntegration:
