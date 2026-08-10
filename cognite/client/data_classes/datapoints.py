@@ -37,6 +37,8 @@ from cognite.client.utils._pandas_helpers import (
     convert_dps_to_dataframe,
     convert_tz_for_pandas,
     notebook_display_with_fallback,
+    timestamp_dtype_unit,
+    to_pandas_timestamp,
 )
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -541,7 +543,7 @@ class Datapoint(CogniteResource):
 
         timestamp = dumped.pop("timestamp")
         tz = convert_tz_for_pandas(self.timezone)
-        return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms", tz=tz)])
+        return pd.DataFrame(dumped, index=[to_pandas_timestamp(timestamp, tz=tz)])
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -1334,8 +1336,10 @@ class SyntheticDatapoints(CogniteResource):
         """
         pd = local_import("pandas")
 
+        # Note: Unlike `create_timestamp_index`, we deliberately keep the index UTC-aware even when no
+        # timezone is given (this is existing/documented behavior for synthetic datapoints):
         tz = convert_tz_for_pandas(self.timezone)
-        index = pd.to_datetime(self.timestamp, unit="ms", utc=True)
+        index = pd.to_datetime(self.timestamp, unit="ms", utc=True).as_unit(timestamp_dtype_unit())
         if tz is not None:
             index = index.tz_convert(tz)
 
@@ -1386,6 +1390,9 @@ class SyntheticDatapointsList(CogniteResourceList[SyntheticDatapoints]):
 
     def dump(self, camel_case: bool = True) -> NoReturn:
         raise NotImplementedError
+
+
+SyntheticDatapoints._LIST_CLASS = SyntheticDatapointsList
 
 
 class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
@@ -1468,6 +1475,9 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
         return [dps.dump(camel_case, convert_timestamps) for dps in self]
 
 
+DatapointsArray._LIST_CLASS = DatapointsArrayList
+
+
 class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
     _RESOURCE = Datapoints
 
@@ -1538,6 +1548,9 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
             include_status=include_status,
             include_unit=include_unit,
         )
+
+
+Datapoints._LIST_CLASS = DatapointsList
 
 
 class LatestDatapoint(CogniteResource):
@@ -1814,3 +1827,6 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
                 df = df.drop(columns=["status_code", "status_symbol"])
 
         return df
+
+
+LatestDatapoint._LIST_CLASS = LatestDatapointList

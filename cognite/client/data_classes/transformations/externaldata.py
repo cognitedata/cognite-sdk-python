@@ -382,6 +382,9 @@ class ExternalDataSourceWriteList(CogniteResourceList[ExternalDataSourceWrite], 
     _RESOURCE = ExternalDataSourceWrite
 
 
+ExternalDataSourceWrite._LIST_CLASS = ExternalDataSourceWriteList
+
+
 class ExternalDataSourceList(
     WriteableCogniteResourceList[ExternalDataSourceWrite, ExternalDataSource], ExternalIDTransformerMixin
 ):
@@ -391,6 +394,9 @@ class ExternalDataSourceList(
 
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write")
+
+
+ExternalDataSource._LIST_CLASS = ExternalDataSourceList
 
 
 class ExternalDataSourceUsability(CogniteResource):

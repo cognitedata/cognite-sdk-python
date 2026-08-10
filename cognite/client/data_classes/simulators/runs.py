@@ -527,8 +527,14 @@ class SimulationRunDataList(CogniteResourceList[SimulationRunDataItem], IdTransf
         return pd.concat([item.to_pandas() for item in self.data], ignore_index=True)
 
 
+SimulationRunDataItem._LIST_CLASS = SimulationRunDataList
+
+
 class SimulationRunWriteList(CogniteResourceList[SimulationRunWrite], ExternalIDTransformerMixin):
     _RESOURCE = SimulationRunWrite
+
+
+SimulationRunWrite._LIST_CLASS = SimulationRunWriteList
 
 
 class SimulationRunList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
@@ -536,3 +542,6 @@ class SimulationRunList(WriteableCogniteResourceList[SimulationRunWrite, Simulat
 
     def as_write(self) -> SimulationRunWriteList:
         return SimulationRunWriteList([a.as_write() for a in self.data])
+
+
+SimulationRun._LIST_CLASS = SimulationRunList

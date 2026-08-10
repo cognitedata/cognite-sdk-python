@@ -414,11 +414,17 @@ class JobWriteList(CogniteResourceList[JobWrite], ExternalIDTransformerMixin):
     _RESOURCE = JobWrite
 
 
+JobWrite._LIST_CLASS = JobWriteList
+
+
 class JobList(WriteableCogniteResourceList[JobWrite, Job], ExternalIDTransformerMixin):
     _RESOURCE = Job
 
     def as_write(self) -> JobWriteList:
         return JobWriteList([job.as_write() for job in self.data])
+
+
+Job._LIST_CLASS = JobList
 
 
 class JobUpdate(CogniteUpdate):
@@ -578,8 +584,14 @@ class JobLogsList(CogniteResourceList[JobLogs]):
     _RESOURCE = JobLogs
 
 
+JobLogs._LIST_CLASS = JobLogsList
+
+
 class JobMetricsList(CogniteResourceList[JobMetrics]):
     _RESOURCE = JobMetrics
+
+
+JobMetrics._LIST_CLASS = JobMetricsList
 
 
 _JOBFORMAT_CLASS_BY_TYPE: dict[str, type[JobFormat]] = {

@@ -192,23 +192,6 @@ class Group(GroupCore):
             members=resource.get("members"),
         )
 
-    def to_pandas(
-        self,
-        expand_metadata: bool = False,
-        metadata_prefix: str = "metadata.",
-        ignore: list[str] | None = None,
-        camel_case: bool = False,
-        convert_timestamps: bool = True,
-    ) -> pd.DataFrame:
-        df = super().to_pandas(expand_metadata, metadata_prefix, ignore, camel_case, convert_timestamps)
-
-        # The API uses -1 to represent "no deleted time". It looks weird if deleted = False,
-        # but deleted_time = 1969-12-31 23:59:59.999:
-        key = "deletedTime" if camel_case else "deleted_time"
-        if self.deleted_time == -1 and convert_timestamps and key in df.index:
-            df.at[key, "value"] = local_import("pandas").NaT
-        return df
-
 
 class GroupWrite(GroupCore):
     """Groups are used to give principals the capabilities to access CDF resources. One principal
@@ -260,6 +243,9 @@ class GroupWriteList(CogniteResourceList[GroupWrite], NameTransformerMixin):
         return cls([cls._RESOURCE._load(res, allow_unknown) for res in resource_list])
 
 
+GroupWrite._LIST_CLASS = GroupWriteList
+
+
 class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformerMixin, InternalIdTransformerMixin):
     _RESOURCE = Group
 
@@ -291,6 +277,9 @@ class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformer
             pd = local_import("pandas")
             df.loc[df[key] == pd.Timestamp(-1, unit="ms"), key] = pd.NaT
         return df
+
+
+Group._LIST_CLASS = GroupList
 
 
 class SecurityCategoryCore(WriteableCogniteResource["SecurityCategoryWrite"], ABC):
@@ -351,6 +340,9 @@ class SecurityCategoryWriteList(CogniteResourceList[SecurityCategoryWrite], Name
     _RESOURCE = SecurityCategoryWrite
 
 
+SecurityCategoryWrite._LIST_CLASS = SecurityCategoryWriteList
+
+
 class SecurityCategoryList(
     WriteableCogniteResourceList[SecurityCategoryWrite, SecurityCategory],
     InternalIdTransformerMixin,
@@ -361,6 +353,9 @@ class SecurityCategoryList(
     def as_write(self) -> SecurityCategoryWriteList:
         """Returns a write version of this security category list."""
         return SecurityCategoryWriteList([s.as_write() for s in self])
+
+
+SecurityCategory._LIST_CLASS = SecurityCategoryList
 
 
 class ProjectSpec(CogniteResource):
@@ -523,6 +518,9 @@ class SessionList(CogniteResourceList[Session], IdTransformerMixin):
     _RESOURCE = Session
 
 
+Session._LIST_CLASS = SessionList
+
+
 class RevokedSession(CogniteResource):
     """A session that has been revoked.
 
@@ -569,6 +567,9 @@ class RevokedSession(CogniteResource):
 
 class RevokedSessionList(CogniteResourceList[RevokedSession], IdTransformerMixin):
     _RESOURCE = RevokedSession
+
+
+RevokedSession._LIST_CLASS = RevokedSessionList
 
 
 class ClientCredentials(CogniteResource):

@@ -10,6 +10,7 @@ from cognite.client.data_classes import Datapoint, DatapointsArray
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
+from tests.utils import PANDAS_TS_UNIT
 
 
 class TestDatapoint:
@@ -109,9 +110,10 @@ class TestToPandas:
             ]
         ).to_pandas()
 
+        exp_ts = 1234 * 1_000_000 if PANDAS_TS_UNIT == "ns" else 1234
         exp_df = pd.DataFrame(
             {1: 2.0, 2: 4.0, 3: 6.0},
-            index=np.array([1234 * 1_000_000], dtype="datetime64[ns]"),
+            index=np.array([exp_ts], dtype=f"datetime64[{PANDAS_TS_UNIT}]"),
         )
         exp_df.columns = pd.Index([123, "foo", NodeId(space="s", external_id="x")], name="identifier")
         pd.testing.assert_frame_equal(df, exp_df)

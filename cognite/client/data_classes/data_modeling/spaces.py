@@ -120,6 +120,9 @@ class SpaceApplyList(CogniteResourceList[SpaceApply]):
         return [item.space for item in self]
 
 
+SpaceApply._LIST_CLASS = SpaceApplyList
+
+
 class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
     _RESOURCE = Space
 
@@ -166,3 +169,6 @@ class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
 
     def as_write(self) -> SpaceApplyList:
         return self.as_apply()
+
+
+Space._LIST_CLASS = SpaceList

@@ -152,6 +152,9 @@ class TransformationScheduleWriteList(CogniteResourceList[TransformationSchedule
     _RESOURCE = TransformationScheduleWrite
 
 
+TransformationScheduleWrite._LIST_CLASS = TransformationScheduleWriteList
+
+
 class TransformationScheduleList(
     WriteableCogniteResourceList[TransformationScheduleWrite, TransformationSchedule], IdTransformerMixin
 ):
@@ -159,3 +162,6 @@ class TransformationScheduleList(
 
     def as_write(self) -> TransformationScheduleWriteList:
         return TransformationScheduleWriteList([x.as_write() for x in self.data])
+
+
+TransformationSchedule._LIST_CLASS = TransformationScheduleList

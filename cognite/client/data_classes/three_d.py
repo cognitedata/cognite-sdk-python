@@ -228,6 +228,9 @@ class ThreeDModelWriteList(CogniteResourceList[ThreeDModelWrite], NameTransforme
     _RESOURCE = ThreeDModelWrite
 
 
+ThreeDModelWrite._LIST_CLASS = ThreeDModelWriteList
+
+
 class ThreeDModelList(
     WriteableCogniteResourceList[ThreeDModelWrite, ThreeDModel], NameTransformerMixin, InternalIdTransformerMixin
 ):
@@ -236,6 +239,9 @@ class ThreeDModelList(
     def as_write(self) -> ThreeDModelWriteList:
         """Returns this ThreedModelList in a write version."""
         return ThreeDModelWriteList([item.as_write() for item in self.data])
+
+
+ThreeDModel._LIST_CLASS = ThreeDModelList
 
 
 class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite"], ABC):
@@ -488,6 +494,9 @@ class ThreeDModelRevisionWriteList(CogniteResourceList[ThreeDModelRevisionWrite]
     _RESOURCE = ThreeDModelRevisionWrite
 
 
+ThreeDModelRevisionWrite._LIST_CLASS = ThreeDModelRevisionWriteList
+
+
 class ThreeDModelRevisionList(
     WriteableCogniteResourceList[ThreeDModelRevisionWrite, ThreeDModelRevision], InternalIdTransformerMixin
 ):
@@ -496,6 +505,9 @@ class ThreeDModelRevisionList(
     def as_write(self) -> ThreeDModelRevisionWriteList:
         """Returns this ThreedModelRevisionList in a write version."""
         return ThreeDModelRevisionWriteList([item.as_write() for item in self.data])
+
+
+ThreeDModelRevision._LIST_CLASS = ThreeDModelRevisionList
 
 
 class ThreeDNode(CogniteResource):
@@ -554,6 +566,9 @@ class ThreeDNode(CogniteResource):
 
 class ThreeDNodeList(CogniteResourceList[ThreeDNode], InternalIdTransformerMixin):
     _RESOURCE = ThreeDNode
+
+
+ThreeDNode._LIST_CLASS = ThreeDNodeList
 
 
 class ThreeDAssetMappingCore(WriteableCogniteResource["ThreeDAssetMappingWrite"], ABC):
@@ -643,9 +658,15 @@ class ThreeDAssetMappingWriteList(CogniteResourceList[ThreeDAssetMappingWrite]):
     _RESOURCE = ThreeDAssetMappingWrite
 
 
+ThreeDAssetMappingWrite._LIST_CLASS = ThreeDAssetMappingWriteList
+
+
 class ThreeDAssetMappingList(WriteableCogniteResourceList[ThreeDAssetMappingWrite, ThreeDAssetMapping]):
     _RESOURCE = ThreeDAssetMapping
 
     def as_write(self) -> ThreeDAssetMappingWriteList:
         """Returns this ThreedAssetMappingList in a write version."""
         return ThreeDAssetMappingWriteList([item.as_write() for item in self.data])
+
+
+ThreeDAssetMapping._LIST_CLASS = ThreeDAssetMappingList

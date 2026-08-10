@@ -248,6 +248,9 @@ class AgentUpsertList(CogniteResourceList[AgentUpsert], ExternalIDTransformerMix
     _RESOURCE = AgentUpsert
 
 
+AgentUpsert._LIST_CLASS = AgentUpsertList
+
+
 class AgentList(
     WriteableCogniteResourceList[AgentUpsert, Agent],
     ExternalIDTransformerMixin,
@@ -257,3 +260,6 @@ class AgentList(
     def as_write(self) -> AgentUpsertList:
         """Returns this AgentList as writeableinstance"""
         return AgentUpsertList([item.as_write() for item in self.data])
+
+
+Agent._LIST_CLASS = AgentList

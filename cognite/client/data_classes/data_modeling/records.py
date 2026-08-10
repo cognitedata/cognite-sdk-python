@@ -112,6 +112,9 @@ class RecordWriteList(CogniteResourceList[RecordWrite]):
         return [v.as_id() for v in self]
 
 
+RecordWrite._LIST_CLASS = RecordWriteList
+
+
 class RecordsAggregation(CogniteResource):
     """Aggregate results returned from the Records aggregate endpoint.
 
@@ -233,6 +236,9 @@ class RecordList(WriteableCogniteResourceList[RecordWrite, Record]):
         typing = next((TypeInformation._load(resp["typing"]) for resp in responses if "typing" in resp), None)
         resources = [cls._RESOURCE._load(item) for response in responses for item in response.get("items", [])]
         return cls(resources, typing)
+
+
+Record._LIST_CLASS = RecordList
 
 
 class TimeRange(CogniteResource):
@@ -433,3 +439,6 @@ class SyncRecordList(CogniteResourceList[SyncRecord]):
             has_next=last_response["hasNext"],
             typing=typing,
         )
+
+
+SyncRecord._LIST_CLASS = SyncRecordList
