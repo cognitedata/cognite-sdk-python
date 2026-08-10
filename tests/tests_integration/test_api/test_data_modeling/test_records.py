@@ -63,11 +63,6 @@ def record_container(cognite_client: CogniteClient, integration_test_space: Spac
 @pytest.fixture(scope="session")
 def mutable_stream(cognite_client: CogniteClient) -> Stream:
     """Reuse the shared mutable test stream that already exists in the project.
-
-    These tests never create a stream: a project may only hold a few active streams, and a stream
-    can neither be deleted nor have its external ID reused - so creating one per suite would
-    permanently burn a quota slot and eventually make every run fail on the quota. Fall back to
-    any other mutable stream in case the shared one is ever replaced.
     """
     stream = cognite_client.data_modeling.streams.retrieve(STREAM_EXTERNAL_ID)
     if stream is not None:
@@ -94,7 +89,6 @@ def ingested_records(
     mutable_stream: Stream,
     container_ref: RecordContainerId,
 ) -> Iterator[list[RecordWrite]]:
-    """Ingest a small, uniquely tagged batch and clean it up afterwards."""
     tag = uuid.uuid4().hex
     records = [
         RecordWrite(
@@ -167,10 +161,6 @@ class TestRecordsIntegration:
         ingested_records: list[RecordWrite],
     ) -> None:
         """Regression test: sync must return one page, even when it holds fewer than 'limit' records.
-
-        The endpoint always returns a 'nextCursor' - that is what makes the feed resumable - so
-        paging until the cursor runs out never terminates. Before this was fixed, asking for more
-        records than the feed can deliver made the SDK request in a loop until the test timed out.
         """
         tag = ingested_records[0].sources[0].properties["name"]
         page = cognite_client.data_modeling.records.sync(

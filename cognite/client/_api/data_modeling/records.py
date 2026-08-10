@@ -96,7 +96,7 @@ class RecordsAPI(APIClient):
             json=body,
             semaphore=self._get_semaphore("read"),
         )
-        return SyncRecordList._load_raw_api_response([res.json()])._maybe_set_client_ref(self._cognite_client)
+        return SyncRecordList._load_raw_api_response([res.json()])
 
     async def delete(
         self,
