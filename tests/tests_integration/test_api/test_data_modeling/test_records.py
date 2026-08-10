@@ -28,8 +28,8 @@ from cognite.client.data_classes.data_modeling.records import (
 from cognite.client.data_classes.data_modeling.streams import (
     Stream,
     StreamTemplate,
-    StreamTemplateWriteSettings,
     StreamWrite,
+    StreamWriteSettings,
 )
 from cognite.client.utils._retry import Backoff
 
@@ -87,7 +87,7 @@ def mutable_stream(cognite_client: CogniteClient) -> Stream:
     return cognite_client.data_modeling.streams.create(
         StreamWrite(
             external_id=STREAM_EXTERNAL_ID,
-            settings=StreamTemplateWriteSettings(template=StreamTemplate(name="BasicLiveData")),
+            settings=StreamWriteSettings(template=StreamTemplate(name="BasicLiveData")),
         )
     )
 
