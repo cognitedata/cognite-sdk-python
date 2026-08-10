@@ -32,8 +32,9 @@ from cognite.client.data_classes.data_modeling.streams import (
     StreamWrite,
 )
 
-# Streams cannot be hard deleted and their external IDs can never be reused, so these tests reuse
-# a stream that already exists in the project, plus one container, for every run.
+# Deleted streams are soft deleted, and their external IDs stay reserved for a couple of weeks
+# before they can be reused. Combined with the low quota on active streams per project, these
+# tests use one fixed stream (created only if missing) rather than one per run.
 STREAM_EXTERNAL_ID = "sdk_test_mutable_stream"
 CONTAINER_EXTERNAL_ID = "PythonSdkIntegrationTestRecords"
 
