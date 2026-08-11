@@ -1,20 +1,21 @@
 """
 ===============================================================================
-e588d70452083ea18d701f837f1be049
+c0fa2584c449180c323f8b8b94af8789
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Awaitable, Callable, Iterator, Sequence
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.data_modeling.instances import Source
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.data_classes import filters
 from cognite.client.data_classes.aggregations import (
     AggregatedNumberedValue,
     Histogram,
@@ -41,15 +42,22 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Node,
     TargetUnit,
 )
-from cognite.client.data_classes.data_modeling.query import Query, QueryResult, QuerySync
+from cognite.client.data_classes.data_modeling.query import Query, QueryResult, QuerySync, SourceSelector
 from cognite.client.data_classes.data_modeling.sync import SubscriptionContext, SyncSessionWithCache
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.data_modeling.views import View
+from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
 from cognite.client.data_classes.data_modeling.debug import DebugParameters
+
+_FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
+    {filters.Nested, filters.HasData, filters.MatchAll, filters.Overlaps, filters.InstanceReferences}
+)
+logger = logging.getLogger(__name__)
+Source: TypeAlias = SourceSelector | View | ViewId | tuple[str, str] | tuple[str, str, str]
 
 
 class SyncInstancesAPI(SyncAPIClient):
@@ -526,7 +534,7 @@ class SyncInstancesAPI(SyncAPIClient):
     def subscribe(
         self,
         query: QuerySync,
-        callback: Callable[[QueryResult], None | Awaitable[None]],
+        callback: Callable[[QueryResult], Awaitable[None] | None],
         poll_delay_seconds: float = 30,
         throttle_seconds: float = 1,
     ) -> SubscriptionContext:
@@ -542,7 +550,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
         Args:
             query (QuerySync): The query to subscribe to.
-            callback (Callable[[QueryResult], None | Awaitable[None]]): The callback function to call when the result set changes. Can be a regular or async function.
+            callback (Callable[[QueryResult], Awaitable[None] | None]): The callback function to call when the result set changes. Can be a regular or async function.
             poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
             throttle_seconds (float): The time to wait between polls despite data being present.
 
@@ -1276,7 +1284,7 @@ class SyncInstancesAPI(SyncAPIClient):
         backup_every: timedelta | None = timedelta(minutes=15),
         backup_on_exit: bool = False,
     ) -> SyncSessionWithCache:
-        r"""
+        """
         Create a managed sync session with persistent backup to a CDF file.
 
         Returns a :class:`SyncSessionWithCache` that you use as an async context manager. On entry

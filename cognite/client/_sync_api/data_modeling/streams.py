@@ -1,6 +1,6 @@
 """
 ===============================================================================
-3bfd805fbceb341bb437635ac632d5ad
+fc33127df959c71d171f89bcec5aa291
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -50,14 +50,14 @@ class SyncStreamsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.data_modeling.streams import (
                 ...     StreamWrite,
                 ...     StreamTemplate,
-                ...     StreamTemplateWriteSettings,
+                ...     StreamWriteSettings,
                 ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.streams.create(
                 ...     StreamWrite(
                 ...         external_id="my-stream",
-                ...         settings=StreamTemplateWriteSettings(
+                ...         settings=StreamWriteSettings(
                 ...             template=StreamTemplate(name="ImmutableTestStream"),
                 ...         ),
                 ...     )
