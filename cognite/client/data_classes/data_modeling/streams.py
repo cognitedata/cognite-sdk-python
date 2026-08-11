@@ -142,7 +142,7 @@ class Stream(WriteableCogniteResource["StreamWrite"]):
     def as_write(self) -> StreamWrite:
         return StreamWrite(
             external_id=self.external_id,
-            settings=StreamTemplateWriteSettings(template=StreamTemplate(name=self.created_from_template)),
+            settings=StreamWriteSettings(template=StreamTemplate(name=self.created_from_template)),
         )
 
 
@@ -165,7 +165,7 @@ class StreamTemplate(CogniteResource):
         return cls(name=resource["name"])
 
 
-class StreamTemplateWriteSettings(CogniteResource):
+class StreamWriteSettings(CogniteResource):
     """Write-side settings that specify which template to create the stream from.
 
     Args:
@@ -190,13 +190,13 @@ class StreamWrite(WriteableCogniteResource["StreamWrite"]):
 
     Args:
         external_id (str): External ID of the stream, must be unique within the project.
-        settings (StreamTemplateWriteSettings): Settings specifying which template to create the stream from.
+        settings (StreamWriteSettings): Settings specifying which template to create the stream from.
     """
 
     def __init__(
         self,
         external_id: str,
-        settings: StreamTemplateWriteSettings,
+        settings: StreamWriteSettings,
     ) -> None:
         self.external_id = external_id
         self.settings = settings
@@ -205,7 +205,7 @@ class StreamWrite(WriteableCogniteResource["StreamWrite"]):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
-            settings=StreamTemplateWriteSettings._load(resource["settings"]),
+            settings=StreamWriteSettings._load(resource["settings"]),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

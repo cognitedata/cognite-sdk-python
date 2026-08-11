@@ -42,26 +42,26 @@ class Cognite360ImageApply(_Cognite360ImageProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image.
-        translation_x (float | None | Omitted): The displacement of the object along the X-axis in the 3D coordinate system
-        translation_y (float | None | Omitted): The displacement of the object along the Y-axis in the 3D coordinate system
-        translation_z (float | None | Omitted): The displacement of the object along the Z-axis in the 3D coordinate system
-        euler_rotation_x (float | None | Omitted): The rotation of the object around the X-axis in radians
-        euler_rotation_y (float | None | Omitted): The rotation of the object around the Y-axis in radians
-        euler_rotation_z (float | None | Omitted): The rotation of the object around the Z-axis in radians
-        scale_x (float | None | Omitted): The scaling factor applied to the object along the X-axis
-        scale_y (float | None | Omitted): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None | Omitted): The scaling factor applied to the object along the Z-axis
-        front (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the front projection of the cube map
-        back (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the back projection of the cube map
-        left (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the left projection of the cube map
-        right (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the right projection of the cube map
-        top (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the top projection of the cube map
-        bottom (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the bottom projection of the cube map
-        collection_360 (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to Cognite360ImageCollection
-        station_360 (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to Cognite3DGroup instance that groups different Cognite360Image instances to the same station
-        taken_at (datetime | None | Omitted): The timestamp when the 6 photos were taken
+        translation_x (float | Omitted | None): The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y (float | Omitted | None): The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z (float | Omitted | None): The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x (float | Omitted | None): The rotation of the object around the X-axis in radians
+        euler_rotation_y (float | Omitted | None): The rotation of the object around the Y-axis in radians
+        euler_rotation_z (float | Omitted | None): The rotation of the object around the Z-axis in radians
+        scale_x (float | Omitted | None): The scaling factor applied to the object along the X-axis
+        scale_y (float | Omitted | None): The scaling factor applied to the object along the Y-axis
+        scale_z (float | Omitted | None): The scaling factor applied to the object along the Z-axis
+        front (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the front projection of the cube map
+        back (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the back projection of the cube map
+        left (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the left projection of the cube map
+        right (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the right projection of the cube map
+        top (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the top projection of the cube map
+        bottom (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the bottom projection of the cube map
+        collection_360 (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to Cognite360ImageCollection
+        station_360 (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to Cognite3DGroup instance that groups different Cognite360Image instances to the same station
+        taken_at (datetime | Omitted | None): The timestamp when the 6 photos were taken
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -69,26 +69,26 @@ class Cognite360ImageApply(_Cognite360ImageProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        translation_x: float | None | Omitted = OMITTED,
-        translation_y: float | None | Omitted = OMITTED,
-        translation_z: float | None | Omitted = OMITTED,
-        euler_rotation_x: float | None | Omitted = OMITTED,
-        euler_rotation_y: float | None | Omitted = OMITTED,
-        euler_rotation_z: float | None | Omitted = OMITTED,
-        scale_x: float | None | Omitted = OMITTED,
-        scale_y: float | None | Omitted = OMITTED,
-        scale_z: float | None | Omitted = OMITTED,
-        front: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        back: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        left: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        right: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        top: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        bottom: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        collection_360: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        station_360: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        taken_at: datetime | None | Omitted = OMITTED,
+        translation_x: float | Omitted | None = OMITTED,
+        translation_y: float | Omitted | None = OMITTED,
+        translation_z: float | Omitted | None = OMITTED,
+        euler_rotation_x: float | Omitted | None = OMITTED,
+        euler_rotation_y: float | Omitted | None = OMITTED,
+        euler_rotation_z: float | Omitted | None = OMITTED,
+        scale_x: float | Omitted | None = OMITTED,
+        scale_y: float | Omitted | None = OMITTED,
+        scale_z: float | Omitted | None = OMITTED,
+        front: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        back: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        left: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        right: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        top: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        bottom: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        collection_360: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        station_360: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        taken_at: datetime | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.translation_x = translation_x
@@ -239,16 +239,16 @@ class Cognite360ImageCollectionApply(_Cognite360ImageCollectionProperties, Typed
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image collection.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None | Omitted): The status field.
-        published (bool | None | Omitted): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): The revision type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): The model 3d field.
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | Omitted | None): The status field.
+        published (bool | Omitted | None): The published field.
+        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | Omitted | None): The revision type field.
+        model_3d (DirectRelationReference | tuple[str, str] | Omitted | None): The model 3d field.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -256,16 +256,16 @@ class Cognite360ImageCollectionApply(_Cognite360ImageCollectionProperties, Typed
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None | Omitted = OMITTED,
-        published: bool | None | Omitted = OMITTED,
-        revision_type: Literal["CAD", "Image360", "PointCloud"] | None | Omitted = OMITTED,
-        model_3d: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | Omitted | None = OMITTED,
+        published: bool | Omitted | None = OMITTED,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | Omitted | None = OMITTED,
+        model_3d: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -367,14 +367,14 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image model.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | tuple[str, str] | None | Omitted): Thumbnail of the 3D model
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | Omitted | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | tuple[str, str] | Omitted | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -382,14 +382,14 @@ class Cognite360ImageModelApply(_Cognite360ImageModelProperties, TypedNodeApply)
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None | Omitted = OMITTED,
-        thumbnail: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | Omitted | None = OMITTED,
+        thumbnail: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -481,13 +481,13 @@ class Cognite360ImageStationApply(_Cognite360ImageStationProperties, TypedNodeAp
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 360 image station.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        group_type (Literal['Station360'] | None | Omitted): Type of group
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        group_type (Literal['Station360'] | Omitted | None): Type of group
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -495,13 +495,13 @@ class Cognite360ImageStationApply(_Cognite360ImageStationProperties, TypedNodeAp
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        group_type: Literal["Station360"] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        group_type: Literal["Station360"] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -588,14 +588,14 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D model.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | tuple[str, str] | None | Omitted): Thumbnail of the 3D model
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | Omitted | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | tuple[str, str] | Omitted | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -603,14 +603,14 @@ class Cognite3DModelApply(_Cognite3DModelProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None | Omitted = OMITTED,
-        thumbnail: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | Omitted | None = OMITTED,
+        thumbnail: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -707,18 +707,18 @@ class Cognite3DObjectApply(_Cognite3DObjectProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D object.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        x_min (float | None | Omitted): Lowest X value in bounding box
-        x_max (float | None | Omitted): Highest X value in bounding box
-        y_min (float | None | Omitted): Lowest Y value in bounding box
-        y_max (float | None | Omitted): Highest Y value in bounding box
-        z_min (float | None | Omitted): Lowest Z value in bounding box
-        z_max (float | None | Omitted): Highest Z value in bounding box
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        x_min (float | Omitted | None): Lowest X value in bounding box
+        x_max (float | Omitted | None): Highest X value in bounding box
+        y_min (float | Omitted | None): Lowest Y value in bounding box
+        y_max (float | Omitted | None): Highest Y value in bounding box
+        z_min (float | Omitted | None): Lowest Z value in bounding box
+        z_max (float | Omitted | None): Highest Z value in bounding box
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -726,18 +726,18 @@ class Cognite3DObjectApply(_Cognite3DObjectProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        x_min: float | None | Omitted = OMITTED,
-        x_max: float | None | Omitted = OMITTED,
-        y_min: float | None | Omitted = OMITTED,
-        y_max: float | None | Omitted = OMITTED,
-        z_min: float | None | Omitted = OMITTED,
-        z_max: float | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        x_min: float | Omitted | None = OMITTED,
+        x_max: float | Omitted | None = OMITTED,
+        y_min: float | Omitted | None = OMITTED,
+        y_max: float | Omitted | None = OMITTED,
+        z_min: float | Omitted | None = OMITTED,
+        z_max: float | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -850,12 +850,12 @@ class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D revision.
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None | Omitted): The status field.
-        published (bool | None | Omitted): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): The revision type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): The model 3d field.
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | Omitted | None): The status field.
+        published (bool | Omitted | None): The published field.
+        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | Omitted | None): The revision type field.
+        model_3d (DirectRelationReference | tuple[str, str] | Omitted | None): The model 3d field.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -863,12 +863,12 @@ class Cognite3DRevisionApply(_Cognite3DRevisionProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None | Omitted = OMITTED,
-        published: bool | None | Omitted = OMITTED,
-        revision_type: Literal["CAD", "Image360", "PointCloud"] | None | Omitted = OMITTED,
-        model_3d: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | Omitted | None = OMITTED,
+        published: bool | Omitted | None = OMITTED,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | Omitted | None = OMITTED,
+        model_3d: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.status = status
@@ -958,17 +958,17 @@ class Cognite3DTransformationNodeApply(_Cognite3DTransformationProperties, Typed
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite 3D transformation node.
-        translation_x (float | None | Omitted): The displacement of the object along the X-axis in the 3D coordinate system
-        translation_y (float | None | Omitted): The displacement of the object along the Y-axis in the 3D coordinate system
-        translation_z (float | None | Omitted): The displacement of the object along the Z-axis in the 3D coordinate system
-        euler_rotation_x (float | None | Omitted): The rotation of the object around the X-axis in radians
-        euler_rotation_y (float | None | Omitted): The rotation of the object around the Y-axis in radians
-        euler_rotation_z (float | None | Omitted): The rotation of the object around the Z-axis in radians
-        scale_x (float | None | Omitted): The scaling factor applied to the object along the X-axis
-        scale_y (float | None | Omitted): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None | Omitted): The scaling factor applied to the object along the Z-axis
+        translation_x (float | Omitted | None): The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y (float | Omitted | None): The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z (float | Omitted | None): The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x (float | Omitted | None): The rotation of the object around the X-axis in radians
+        euler_rotation_y (float | Omitted | None): The rotation of the object around the Y-axis in radians
+        euler_rotation_z (float | Omitted | None): The rotation of the object around the Z-axis in radians
+        scale_x (float | Omitted | None): The scaling factor applied to the object along the X-axis
+        scale_y (float | Omitted | None): The scaling factor applied to the object along the Y-axis
+        scale_z (float | Omitted | None): The scaling factor applied to the object along the Z-axis
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -976,17 +976,17 @@ class Cognite3DTransformationNodeApply(_Cognite3DTransformationProperties, Typed
         space: str,
         external_id: str,
         *,
-        translation_x: float | None | Omitted = OMITTED,
-        translation_y: float | None | Omitted = OMITTED,
-        translation_z: float | None | Omitted = OMITTED,
-        euler_rotation_x: float | None | Omitted = OMITTED,
-        euler_rotation_y: float | None | Omitted = OMITTED,
-        euler_rotation_z: float | None | Omitted = OMITTED,
-        scale_x: float | None | Omitted = OMITTED,
-        scale_y: float | None | Omitted = OMITTED,
-        scale_z: float | None | Omitted = OMITTED,
+        translation_x: float | Omitted | None = OMITTED,
+        translation_y: float | Omitted | None = OMITTED,
+        translation_z: float | Omitted | None = OMITTED,
+        euler_rotation_x: float | Omitted | None = OMITTED,
+        euler_rotation_y: float | Omitted | None = OMITTED,
+        euler_rotation_z: float | Omitted | None = OMITTED,
+        scale_x: float | Omitted | None = OMITTED,
+        scale_y: float | Omitted | None = OMITTED,
+        scale_z: float | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.translation_x = translation_x
@@ -1103,26 +1103,26 @@ class CogniteActivityApply(_CogniteActivityProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite activity.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        start_time (datetime | None | Omitted): The actual start time of an activity (or similar that extends this)
-        end_time (datetime | None | Omitted): The actual end time of an activity (or similar that extends this)
-        scheduled_start_time (datetime | None | Omitted): The planned start time of an activity (or similar that extends this)
-        scheduled_end_time (datetime | None | Omitted): The planned end time of an activity (or similar that extends this)
-        assets (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of assets the activity is related to.
-        equipment (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of equipment the activity is related to.
-        time_series (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of time series the activity is related to.
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        start_time (datetime | Omitted | None): The actual start time of an activity (or similar that extends this)
+        end_time (datetime | Omitted | None): The actual end time of an activity (or similar that extends this)
+        scheduled_start_time (datetime | Omitted | None): The planned start time of an activity (or similar that extends this)
+        scheduled_end_time (datetime | Omitted | None): The planned end time of an activity (or similar that extends this)
+        assets (list[DirectRelationReference | tuple[str, str]] | Omitted | None): A list of assets the activity is related to.
+        equipment (list[DirectRelationReference | tuple[str, str]] | Omitted | None): A list of equipment the activity is related to.
+        time_series (list[DirectRelationReference | tuple[str, str]] | Omitted | None): A list of time series the activity is related to.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1130,26 +1130,26 @@ class CogniteActivityApply(_CogniteActivityProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
-        start_time: datetime | None | Omitted = OMITTED,
-        end_time: datetime | None | Omitted = OMITTED,
-        scheduled_start_time: datetime | None | Omitted = OMITTED,
-        scheduled_end_time: datetime | None | Omitted = OMITTED,
-        assets: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
-        equipment: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
-        time_series: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
+        start_time: datetime | Omitted | None = OMITTED,
+        end_time: datetime | Omitted | None = OMITTED,
+        scheduled_start_time: datetime | Omitted | None = OMITTED,
+        scheduled_end_time: datetime | Omitted | None = OMITTED,
+        assets: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
+        equipment: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
+        time_series: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -1309,23 +1309,23 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset.
-        object_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to an Object3D instance representing the 3D resource
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        parent (DirectRelationReference | tuple[str, str] | None | Omitted): The parent of the asset.
-        asset_class (DirectRelationReference | tuple[str, str] | None | Omitted): Specifies the class of the asset. It's a direct relation to CogniteAssetClass.
-        asset_type (DirectRelationReference | tuple[str, str] | None | Omitted): Specifies the type of the asset. It's a direct relation to CogniteAssetType.
+        object_3d (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to an Object3D instance representing the 3D resource
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        parent (DirectRelationReference | tuple[str, str] | Omitted | None): The parent of the asset.
+        asset_class (DirectRelationReference | tuple[str, str] | Omitted | None): Specifies the class of the asset. It's a direct relation to CogniteAssetClass.
+        asset_type (DirectRelationReference | tuple[str, str] | Omitted | None): Specifies the type of the asset. It's a direct relation to CogniteAssetType.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1333,23 +1333,23 @@ class CogniteAssetApply(_CogniteAssetProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        object_3d: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
-        parent: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        asset_class: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        asset_type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        object_3d: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
+        parent: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        asset_class: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        asset_type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.object_3d = DirectRelationReference.load(object_3d) if object_3d else object_3d
@@ -1495,14 +1495,14 @@ class CogniteAssetClassApply(_CogniteAssetClassProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset clas.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        code (str | None | Omitted): A unique identifier for the class of asset.
-        standard (str | None | Omitted): A text string to specify which standard the class is from.
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        code (str | Omitted | None): A unique identifier for the class of asset.
+        standard (str | Omitted | None): A text string to specify which standard the class is from.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1510,14 +1510,14 @@ class CogniteAssetClassApply(_CogniteAssetClassProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        code: str | None | Omitted = OMITTED,
-        standard: str | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        code: str | Omitted | None = OMITTED,
+        standard: str | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -1609,15 +1609,15 @@ class CogniteAssetTypeApply(_CogniteAssetTypeProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite asset type.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        code (str | None | Omitted): A unique identifier for the type of asset.
-        standard (str | None | Omitted): A text string to specify which standard the type is from.
-        asset_class (DirectRelationReference | tuple[str, str] | None | Omitted): Specifies the class the type belongs to. It's a direct relation to CogniteAssetClass.
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        code (str | Omitted | None): A unique identifier for the type of asset.
+        standard (str | Omitted | None): A text string to specify which standard the type is from.
+        asset_class (DirectRelationReference | tuple[str, str] | Omitted | None): Specifies the class the type belongs to. It's a direct relation to CogniteAssetClass.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1625,15 +1625,15 @@ class CogniteAssetTypeApply(_CogniteAssetTypeProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        code: str | None | Omitted = OMITTED,
-        standard: str | None | Omitted = OMITTED,
-        asset_class: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        code: str | Omitted | None = OMITTED,
+        standard: str | Omitted | None = OMITTED,
+        asset_class: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -1730,14 +1730,14 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad model.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | tuple[str, str] | None | Omitted): Thumbnail of the 3D model
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | Omitted | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | tuple[str, str] | Omitted | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1745,14 +1745,14 @@ class CogniteCADModelApply(_CogniteCADModelProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None | Omitted = OMITTED,
-        thumbnail: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | Omitted | None = OMITTED,
+        thumbnail: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -1848,18 +1848,18 @@ class CogniteCADNodeApply(_CogniteCADNodeProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad node.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        object_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to object3D grouping for this node
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to Cognite3DModel
-        cad_node_reference (str | None | Omitted): Reference to a node within a CAD model from the 3D API
-        revisions (list[DirectRelationReference | tuple[str, str]] | None | Omitted): List of direct relations to instances of Cognite3DRevision which this CogniteCADNode exists in.
-        tree_indexes (list[int] | None | Omitted): List of tree indexes in the same order as revisions. Used by Reveal and similar applications to map from CogniteCADNode to tree index
-        sub_tree_sizes (list[int] | None | Omitted): List of subtree sizes in the same order as revisions. Used by Reveal and similar applications to know how many nodes exists below this node in the hierarchy
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        object_3d (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to object3D grouping for this node
+        model_3d (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to Cognite3DModel
+        cad_node_reference (str | Omitted | None): Reference to a node within a CAD model from the 3D API
+        revisions (list[DirectRelationReference | tuple[str, str]] | Omitted | None): List of direct relations to instances of Cognite3DRevision which this CogniteCADNode exists in.
+        tree_indexes (list[int] | Omitted | None): List of tree indexes in the same order as revisions. Used by Reveal and similar applications to map from CogniteCADNode to tree index
+        sub_tree_sizes (list[int] | Omitted | None): List of subtree sizes in the same order as revisions. Used by Reveal and similar applications to know how many nodes exists below this node in the hierarchy
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -1867,18 +1867,18 @@ class CogniteCADNodeApply(_CogniteCADNodeProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        object_3d: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        model_3d: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        cad_node_reference: str | None | Omitted = OMITTED,
-        revisions: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
-        tree_indexes: list[int] | None | Omitted = OMITTED,
-        sub_tree_sizes: list[int] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        object_3d: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        model_3d: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        cad_node_reference: str | Omitted | None = OMITTED,
+        revisions: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
+        tree_indexes: list[int] | Omitted | None = OMITTED,
+        sub_tree_sizes: list[int] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -1990,13 +1990,13 @@ class CogniteCADRevisionApply(_CogniteCADRevisionProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cad revision.
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None | Omitted): The status field.
-        published (bool | None | Omitted): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): The revision type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): .
-        revision_id (int | None | Omitted): The 3D API revision identifier for this CAD model
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | Omitted | None): The status field.
+        published (bool | Omitted | None): The published field.
+        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | Omitted | None): The revision type field.
+        model_3d (DirectRelationReference | tuple[str, str] | Omitted | None): .
+        revision_id (int | Omitted | None): The 3D API revision identifier for this CAD model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2004,13 +2004,13 @@ class CogniteCADRevisionApply(_CogniteCADRevisionProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None | Omitted = OMITTED,
-        published: bool | None | Omitted = OMITTED,
-        revision_type: Literal["CAD", "Image360", "PointCloud"] | None | Omitted = OMITTED,
-        model_3d: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        revision_id: int | None | Omitted = OMITTED,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | Omitted | None = OMITTED,
+        published: bool | Omitted | None = OMITTED,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | Omitted | None = OMITTED,
+        model_3d: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        revision_id: int | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.status = status
@@ -2093,14 +2093,14 @@ class CogniteCubeMapApply(_CogniteCubeMapProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite cube map.
-        front (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the front projection of the cube map
-        back (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the back projection of the cube map
-        left (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the left projection of the cube map
-        right (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the right projection of the cube map
-        top (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the top projection of the cube map
-        bottom (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a file holding the bottom projection of the cube map
+        front (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the front projection of the cube map
+        back (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the back projection of the cube map
+        left (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the left projection of the cube map
+        right (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the right projection of the cube map
+        top (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the top projection of the cube map
+        bottom (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a file holding the bottom projection of the cube map
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2108,14 +2108,14 @@ class CogniteCubeMapApply(_CogniteCubeMapProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        front: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        back: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        left: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        right: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        top: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        bottom: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        front: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        back: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        left: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        right: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        top: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        bottom: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.front = DirectRelationReference.load(front) if front else front
@@ -2205,12 +2205,12 @@ class CogniteDescribableNodeApply(_CogniteDescribableProperties, TypedNodeApply)
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite describable node.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2218,12 +2218,12 @@ class CogniteDescribableNodeApply(_CogniteDescribableProperties, TypedNodeApply)
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -2312,24 +2312,24 @@ class CogniteEquipmentApply(_CogniteEquipmentProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        asset (DirectRelationReference | tuple[str, str] | None | Omitted): The asset the equipment is related to.
-        serial_number (str | None | Omitted): The serial number of the equipment.
-        manufacturer (str | None | Omitted): The manufacturer of the equipment.
-        equipment_type (DirectRelationReference | tuple[str, str] | None | Omitted): Specifies the type of the equipment. It's a direct relation to CogniteEquipmentType.
-        files (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of files the equipment relates to.
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        asset (DirectRelationReference | tuple[str, str] | Omitted | None): The asset the equipment is related to.
+        serial_number (str | Omitted | None): The serial number of the equipment.
+        manufacturer (str | Omitted | None): The manufacturer of the equipment.
+        equipment_type (DirectRelationReference | tuple[str, str] | Omitted | None): Specifies the type of the equipment. It's a direct relation to CogniteEquipmentType.
+        files (list[DirectRelationReference | tuple[str, str]] | Omitted | None): A list of files the equipment relates to.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2337,24 +2337,24 @@ class CogniteEquipmentApply(_CogniteEquipmentProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
-        asset: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        serial_number: str | None | Omitted = OMITTED,
-        manufacturer: str | None | Omitted = OMITTED,
-        equipment_type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        files: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
+        asset: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        serial_number: str | Omitted | None = OMITTED,
+        manufacturer: str | Omitted | None = OMITTED,
+        equipment_type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        files: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -2497,16 +2497,16 @@ class CogniteEquipmentTypeApply(_CogniteEquipmentTypeProperties, TypedNodeApply)
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite equipment type.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        code (str | None | Omitted): A unique identifier for the type of equipment.
-        equipment_class (str | None | Omitted): Represents the class of equipment.
-        standard (str | None | Omitted): An identifier for the standard this equipment type is sourced from, for example, ISO14224.
-        standard_reference (str | None | Omitted): A reference to the source of the equipment standard.
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        code (str | Omitted | None): A unique identifier for the type of equipment.
+        equipment_class (str | Omitted | None): Represents the class of equipment.
+        standard (str | Omitted | None): An identifier for the standard this equipment type is sourced from, for example, ISO14224.
+        standard_reference (str | Omitted | None): A reference to the source of the equipment standard.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2514,16 +2514,16 @@ class CogniteEquipmentTypeApply(_CogniteEquipmentTypeProperties, TypedNodeApply)
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        code: str | None | Omitted = OMITTED,
-        equipment_class: str | None | Omitted = OMITTED,
-        standard: str | None | Omitted = OMITTED,
-        standard_reference: str | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        code: str | Omitted | None = OMITTED,
+        equipment_class: str | Omitted | None = OMITTED,
+        standard: str | Omitted | None = OMITTED,
+        standard_reference: str | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -2631,23 +2631,23 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        assets (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of assets this file is related to.
-        mime_type (str | None | Omitted): The MIME type of the file.
-        directory (str | None | Omitted): Contains the path elements from the source (if the source system has a file system hierarchy or similar.)
-        category (DirectRelationReference | tuple[str, str] | None | Omitted): Specifies the detected category the file belongs to. It's a direct relation to an instance of CogniteFileCategory.
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        assets (list[DirectRelationReference | tuple[str, str]] | Omitted | None): A list of assets this file is related to.
+        mime_type (str | Omitted | None): The MIME type of the file.
+        directory (str | Omitted | None): Contains the path elements from the source (if the source system has a file system hierarchy or similar.)
+        category (DirectRelationReference | tuple[str, str] | Omitted | None): Specifies the detected category the file belongs to. It's a direct relation to an instance of CogniteFileCategory.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2655,23 +2655,23 @@ class CogniteFileApply(_CogniteFileProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
-        assets: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
-        mime_type: str | None | Omitted = OMITTED,
-        directory: str | None | Omitted = OMITTED,
-        category: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
+        assets: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
+        mime_type: str | Omitted | None = OMITTED,
+        directory: str | Omitted | None = OMITTED,
+        category: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -2818,14 +2818,14 @@ class CogniteFileCategoryApply(_CogniteFileCategoryProperties, TypedNodeApply):
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite file category.
         code (str): An identifier for the category, for example, 'AA' for Accounting (from Norsok.)
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        standard (str | None | Omitted): The name of the standard the category originates from, for example, 'Norsok'.
-        standard_reference (str | None | Omitted): A reference to the source of the category standard.
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        standard (str | Omitted | None): The name of the standard the category originates from, for example, 'Norsok'.
+        standard_reference (str | Omitted | None): A reference to the source of the category standard.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2834,14 +2834,14 @@ class CogniteFileCategoryApply(_CogniteFileCategoryProperties, TypedNodeApply):
         external_id: str,
         *,
         code: str,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        standard: str | None | Omitted = OMITTED,
-        standard_reference: str | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        standard: str | Omitted | None = OMITTED,
+        standard_reference: str | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.code = code
@@ -2938,14 +2938,14 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud model.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        model_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): CAD, PointCloud or Image360
-        thumbnail (DirectRelationReference | tuple[str, str] | None | Omitted): Thumbnail of the 3D model
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        model_type (Literal['CAD', 'Image360', 'PointCloud'] | Omitted | None): CAD, PointCloud or Image360
+        thumbnail (DirectRelationReference | tuple[str, str] | Omitted | None): Thumbnail of the 3D model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -2953,14 +2953,14 @@ class CognitePointCloudModelApply(_CognitePointCloudModelProperties, TypedNodeAp
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        model_type: Literal["CAD", "Image360", "PointCloud"] | None | Omitted = OMITTED,
-        thumbnail: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        model_type: Literal["CAD", "Image360", "PointCloud"] | Omitted | None = OMITTED,
+        thumbnail: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -3054,13 +3054,13 @@ class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, Typed
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud revision.
-        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | None | Omitted): The status field.
-        published (bool | None | Omitted): The published field.
-        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | None | Omitted): The revision type field.
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): .
-        revision_id (int | None | Omitted): The 3D API revision identifier for this PointCloud model
+        status (Literal['Done', 'Failed', 'Processing', 'Queued'] | Omitted | None): The status field.
+        published (bool | Omitted | None): The published field.
+        revision_type (Literal['CAD', 'Image360', 'PointCloud'] | Omitted | None): The revision type field.
+        model_3d (DirectRelationReference | tuple[str, str] | Omitted | None): .
+        revision_id (int | Omitted | None): The 3D API revision identifier for this PointCloud model
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3068,13 +3068,13 @@ class CognitePointCloudRevisionApply(_CognitePointCloudRevisionProperties, Typed
         space: str,
         external_id: str,
         *,
-        status: Literal["Done", "Failed", "Processing", "Queued"] | None | Omitted = OMITTED,
-        published: bool | None | Omitted = OMITTED,
-        revision_type: Literal["CAD", "Image360", "PointCloud"] | None | Omitted = OMITTED,
-        model_3d: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        revision_id: int | None | Omitted = OMITTED,
+        status: Literal["Done", "Failed", "Processing", "Queued"] | Omitted | None = OMITTED,
+        published: bool | Omitted | None = OMITTED,
+        revision_type: Literal["CAD", "Image360", "PointCloud"] | Omitted | None = OMITTED,
+        model_3d: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        revision_id: int | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.status = status
@@ -3165,19 +3165,19 @@ class CognitePointCloudVolumeApply(_CognitePointCloudVolumeProperties, TypedNode
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite point cloud volume.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        object_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to object3D grouping for this node
-        model_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to Cognite3DModel instance
-        volume_references (list[str] | None | Omitted): Unique volume metric hashes used to access the 3D specialized data storage
-        revisions (list[DirectRelationReference | tuple[str, str]] | None | Omitted): List of direct relations to revision information
-        volume_type (Literal['Box', 'Cylinder'] | None | Omitted): Type of volume (Cylinder or Box)
-        volume (list[float] | None | Omitted): Relevant coordinates for the volume type, 9 floats in total, that defines the volume
-        format_version (str | None | Omitted): Specifies the version the 'volume' field is following. Volume definition is today 9 floats (property volume)
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        object_3d (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to object3D grouping for this node
+        model_3d (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to Cognite3DModel instance
+        volume_references (list[str] | Omitted | None): Unique volume metric hashes used to access the 3D specialized data storage
+        revisions (list[DirectRelationReference | tuple[str, str]] | Omitted | None): List of direct relations to revision information
+        volume_type (Literal['Box', 'Cylinder'] | Omitted | None): Type of volume (Cylinder or Box)
+        volume (list[float] | Omitted | None): Relevant coordinates for the volume type, 9 floats in total, that defines the volume
+        format_version (str | Omitted | None): Specifies the version the 'volume' field is following. Volume definition is today 9 floats (property volume)
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3185,19 +3185,19 @@ class CognitePointCloudVolumeApply(_CognitePointCloudVolumeProperties, TypedNode
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        object_3d: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        model_3d: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        volume_references: list[str] | None | Omitted = OMITTED,
-        revisions: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
-        volume_type: Literal["Box", "Cylinder"] | None | Omitted = OMITTED,
-        volume: list[float] | None | Omitted = OMITTED,
-        format_version: str | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        object_3d: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        model_3d: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        volume_references: list[str] | Omitted | None = OMITTED,
+        revisions: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
+        volume_type: Literal["Box", "Cylinder"] | Omitted | None = OMITTED,
+        volume: list[float] | Omitted | None = OMITTED,
+        format_version: str | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -3317,12 +3317,12 @@ class CogniteSchedulableApply(_CogniteSchedulableProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite schedulable.
-        start_time (datetime | None | Omitted): The actual start time of an activity (or similar that extends this)
-        end_time (datetime | None | Omitted): The actual end time of an activity (or similar that extends this)
-        scheduled_start_time (datetime | None | Omitted): The planned start time of an activity (or similar that extends this)
-        scheduled_end_time (datetime | None | Omitted): The planned end time of an activity (or similar that extends this)
+        start_time (datetime | Omitted | None): The actual start time of an activity (or similar that extends this)
+        end_time (datetime | Omitted | None): The actual end time of an activity (or similar that extends this)
+        scheduled_start_time (datetime | Omitted | None): The planned start time of an activity (or similar that extends this)
+        scheduled_end_time (datetime | Omitted | None): The planned end time of an activity (or similar that extends this)
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3330,12 +3330,12 @@ class CogniteSchedulableApply(_CogniteSchedulableProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        start_time: datetime | None | Omitted = OMITTED,
-        end_time: datetime | None | Omitted = OMITTED,
-        scheduled_start_time: datetime | None | Omitted = OMITTED,
-        scheduled_end_time: datetime | None | Omitted = OMITTED,
+        start_time: datetime | Omitted | None = OMITTED,
+        end_time: datetime | Omitted | None = OMITTED,
+        scheduled_start_time: datetime | Omitted | None = OMITTED,
+        scheduled_end_time: datetime | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.start_time = start_time
@@ -3417,14 +3417,14 @@ class CogniteSourceSystemApply(_CogniteSourceSystemProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite source system.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_system_version (str | None | Omitted): Version identifier for the source system
-        manufacturer (str | None | Omitted): Manufacturer of the source system
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_system_version (str | Omitted | None): Version identifier for the source system
+        manufacturer (str | Omitted | None): Manufacturer of the source system
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3432,14 +3432,14 @@ class CogniteSourceSystemApply(_CogniteSourceSystemProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        source_system_version: str | None | Omitted = OMITTED,
-        manufacturer: str | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_system_version: str | Omitted | None = OMITTED,
+        manufacturer: str | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -3534,15 +3534,15 @@ class CogniteSourceableNodeApply(_CogniteSourceableProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite sourceable node.
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3550,15 +3550,15 @@ class CogniteSourceableNodeApply(_CogniteSourceableProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.source_id = source_id
@@ -3663,23 +3663,23 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
         external_id (str): The external id of the Cognite time series.
         is_step (bool): Specifies whether the time series is a step time series or not.
         time_series_type (Literal['numeric', 'string']): Specifies the data type of the data points.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_unit (str | None | Omitted): The unit specified in the source system.
-        unit (DirectRelationReference | tuple[str, str] | None | Omitted): The unit of the time series.
-        assets (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of assets the time series is related to.
-        equipment (list[DirectRelationReference | tuple[str, str]] | None | Omitted): A list of equipment the time series is related to.
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_unit (str | Omitted | None): The unit specified in the source system.
+        unit (DirectRelationReference | tuple[str, str] | Omitted | None): The unit of the time series.
+        assets (list[DirectRelationReference | tuple[str, str]] | Omitted | None): A list of assets the time series is related to.
+        equipment (list[DirectRelationReference | tuple[str, str]] | Omitted | None): A list of equipment the time series is related to.
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3689,23 +3689,23 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
         *,
         is_step: bool,
         time_series_type: Literal["numeric", "string"],
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
-        source_unit: str | None | Omitted = OMITTED,
-        unit: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        assets: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
-        equipment: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
+        source_unit: str | Omitted | None = OMITTED,
+        unit: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        assets: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
+        equipment: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.is_step = is_step
@@ -3852,16 +3852,16 @@ class CogniteUnitApply(_CogniteUnitProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite unit.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        symbol (str | None | Omitted): The symbol for the unit of measurement
-        quantity (str | None | Omitted): Specifies the physical quantity the unit measures
-        source (str | None | Omitted): Source of the unit definition
-        source_reference (str | None | Omitted): Reference to the source of the unit definition
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        symbol (str | Omitted | None): The symbol for the unit of measurement
+        quantity (str | Omitted | None): Specifies the physical quantity the unit measures
+        source (str | Omitted | None): Source of the unit definition
+        source_reference (str | Omitted | None): Reference to the source of the unit definition
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3869,16 +3869,16 @@ class CogniteUnitApply(_CogniteUnitProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        symbol: str | None | Omitted = OMITTED,
-        quantity: str | None | Omitted = OMITTED,
-        source: str | None | Omitted = OMITTED,
-        source_reference: str | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        symbol: str | Omitted | None = OMITTED,
+        quantity: str | Omitted | None = OMITTED,
+        source: str | Omitted | None = OMITTED,
+        source_reference: str | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -3980,9 +3980,9 @@ class CogniteVisualizableApply(_CogniteVisualizableProperties, TypedNodeApply):
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite visualizable.
-        object_3d (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to an Object3D instance representing the 3D resource
+        object_3d (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to an Object3D instance representing the 3D resource
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -3990,9 +3990,9 @@ class CogniteVisualizableApply(_CogniteVisualizableProperties, TypedNodeApply):
         space: str,
         external_id: str,
         *,
-        object_3d: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        object_3d: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.object_3d = DirectRelationReference.load(object_3d) if object_3d else object_3d
@@ -4066,21 +4066,21 @@ class Cognite360ImageAnnotationApply(_Cognite360ImageAnnotationProperties, Typed
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        confidence (float | None | Omitted): The confidence that the annotation is a good match
-        status (Literal['Approved', 'Rejected', 'Suggested'] | None | Omitted): The status of the annotation
-        polygon (list[float] | None | Omitted): List of floats representing the polygon. Format depends on formatVersion
-        format_version (str | None | Omitted): Specifies the storage representation for the polygon
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        confidence (float | Omitted | None): The confidence that the annotation is a good match
+        status (Literal['Approved', 'Rejected', 'Suggested'] | Omitted | None): The status of the annotation
+        polygon (list[float] | Omitted | None): List of floats representing the polygon. Format depends on formatVersion
+        format_version (str | Omitted | None): Specifies the storage representation for the polygon
         existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
@@ -4092,21 +4092,21 @@ class Cognite360ImageAnnotationApply(_Cognite360ImageAnnotationProperties, Typed
         start_node: DirectRelationReference | tuple[str, str],
         end_node: DirectRelationReference | tuple[str, str],
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
-        confidence: float | None | Omitted = OMITTED,
-        status: Literal["Approved", "Rejected", "Suggested"] | None | Omitted = OMITTED,
-        polygon: list[float] | None | Omitted = OMITTED,
-        format_version: str | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
+        confidence: float | Omitted | None = OMITTED,
+        status: Literal["Approved", "Rejected", "Suggested"] | Omitted | None = OMITTED,
+        polygon: list[float] | Omitted | None = OMITTED,
+        format_version: str | Omitted | None = OMITTED,
         existing_version: int | None = None,
     ) -> None:
         TypedEdgeApply.__init__(self, space, external_id, type, start_node, end_node, existing_version)
@@ -4245,15 +4245,15 @@ class Cognite3DTransformationEdgeApply(_Cognite3DTransformationProperties, Typed
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        translation_x (float | None | Omitted): The displacement of the object along the X-axis in the 3D coordinate system
-        translation_y (float | None | Omitted): The displacement of the object along the Y-axis in the 3D coordinate system
-        translation_z (float | None | Omitted): The displacement of the object along the Z-axis in the 3D coordinate system
-        euler_rotation_x (float | None | Omitted): The rotation of the object around the X-axis in radians
-        euler_rotation_y (float | None | Omitted): The rotation of the object around the Y-axis in radians
-        euler_rotation_z (float | None | Omitted): The rotation of the object around the Z-axis in radians
-        scale_x (float | None | Omitted): The scaling factor applied to the object along the X-axis
-        scale_y (float | None | Omitted): The scaling factor applied to the object along the Y-axis
-        scale_z (float | None | Omitted): The scaling factor applied to the object along the Z-axis
+        translation_x (float | Omitted | None): The displacement of the object along the X-axis in the 3D coordinate system
+        translation_y (float | Omitted | None): The displacement of the object along the Y-axis in the 3D coordinate system
+        translation_z (float | Omitted | None): The displacement of the object along the Z-axis in the 3D coordinate system
+        euler_rotation_x (float | Omitted | None): The rotation of the object around the X-axis in radians
+        euler_rotation_y (float | Omitted | None): The rotation of the object around the Y-axis in radians
+        euler_rotation_z (float | Omitted | None): The rotation of the object around the Z-axis in radians
+        scale_x (float | Omitted | None): The scaling factor applied to the object along the X-axis
+        scale_y (float | Omitted | None): The scaling factor applied to the object along the Y-axis
+        scale_z (float | Omitted | None): The scaling factor applied to the object along the Z-axis
         existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
@@ -4265,15 +4265,15 @@ class Cognite3DTransformationEdgeApply(_Cognite3DTransformationProperties, Typed
         start_node: DirectRelationReference | tuple[str, str],
         end_node: DirectRelationReference | tuple[str, str],
         *,
-        translation_x: float | None | Omitted = OMITTED,
-        translation_y: float | None | Omitted = OMITTED,
-        translation_z: float | None | Omitted = OMITTED,
-        euler_rotation_x: float | None | Omitted = OMITTED,
-        euler_rotation_y: float | None | Omitted = OMITTED,
-        euler_rotation_z: float | None | Omitted = OMITTED,
-        scale_x: float | None | Omitted = OMITTED,
-        scale_y: float | None | Omitted = OMITTED,
-        scale_z: float | None | Omitted = OMITTED,
+        translation_x: float | Omitted | None = OMITTED,
+        translation_y: float | Omitted | None = OMITTED,
+        translation_z: float | Omitted | None = OMITTED,
+        euler_rotation_x: float | Omitted | None = OMITTED,
+        euler_rotation_y: float | Omitted | None = OMITTED,
+        euler_rotation_z: float | Omitted | None = OMITTED,
+        scale_x: float | Omitted | None = OMITTED,
+        scale_y: float | Omitted | None = OMITTED,
+        scale_z: float | Omitted | None = OMITTED,
         existing_version: int | None = None,
     ) -> None:
         TypedEdgeApply.__init__(self, space, external_id, type, start_node, end_node, existing_version)
@@ -4397,19 +4397,19 @@ class CogniteAnnotationApply(_CogniteAnnotationProperties, TypedEdgeApply):
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        confidence (float | None | Omitted): The confidence that the annotation is a good match
-        status (Literal['Approved', 'Rejected', 'Suggested'] | None | Omitted): The status of the annotation
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        confidence (float | Omitted | None): The confidence that the annotation is a good match
+        status (Literal['Approved', 'Rejected', 'Suggested'] | Omitted | None): The status of the annotation
         existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
@@ -4421,19 +4421,19 @@ class CogniteAnnotationApply(_CogniteAnnotationProperties, TypedEdgeApply):
         start_node: DirectRelationReference | tuple[str, str],
         end_node: DirectRelationReference | tuple[str, str],
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
-        confidence: float | None | Omitted = OMITTED,
-        status: Literal["Approved", "Rejected", "Suggested"] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
+        confidence: float | Omitted | None = OMITTED,
+        status: Literal["Approved", "Rejected", "Suggested"] | Omitted | None = OMITTED,
         existing_version: int | None = None,
     ) -> None:
         TypedEdgeApply.__init__(self, space, external_id, type, start_node, end_node, existing_version)
@@ -4564,10 +4564,10 @@ class CogniteDescribableEdgeApply(_CogniteDescribableProperties, TypedEdgeApply)
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
         existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
@@ -4579,10 +4579,10 @@ class CogniteDescribableEdgeApply(_CogniteDescribableProperties, TypedEdgeApply)
         start_node: DirectRelationReference | tuple[str, str],
         end_node: DirectRelationReference | tuple[str, str],
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
         existing_version: int | None = None,
     ) -> None:
         TypedEdgeApply.__init__(self, space, external_id, type, start_node, end_node, existing_version)
@@ -4693,31 +4693,31 @@ class CogniteDiagramAnnotationApply(_CogniteDiagramAnnotationProperties, TypedEd
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        confidence (float | None | Omitted): The confidence that the annotation is a good match
-        status (Literal['Approved', 'Rejected', 'Suggested'] | None | Omitted): The status of the annotation
-        start_node_page_number (int | None | Omitted): The number of the page on which this annotation is located in `startNode` File. The first page has number 1
-        end_node_page_number (int | None | Omitted): The number of the page on which this annotation is located in the endNode File if an endNode is present. The first page has number 1
-        start_node_x_min (float | None | Omitted): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than startNodeXMax
-        start_node_x_max (float | None | Omitted): Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than startNodeXMin
-        start_node_y_min (float | None | Omitted): Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than startNodeYMax
-        start_node_y_max (float | None | Omitted): Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than startNodeYMin
-        start_node_text (str | None | Omitted): The text extracted from within the bounding box on the startNode
-        end_node_x_min (float | None | Omitted): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than endNodeXMax. Only applicable if an endNode is defined
-        end_node_x_max (float | None | Omitted): Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than endNodeXMin. Only applicable if an endNode is defined
-        end_node_y_min (float | None | Omitted): Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than endNodeYMax. Only applicable if an endNode is defined
-        end_node_y_max (float | None | Omitted): Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than endNodeYMin. Only applicable if an endNode is defined
-        end_node_text (str | None | Omitted): The text extracted from within the bounding box on the endNode. Only applicable if an endNode is defined
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        confidence (float | Omitted | None): The confidence that the annotation is a good match
+        status (Literal['Approved', 'Rejected', 'Suggested'] | Omitted | None): The status of the annotation
+        start_node_page_number (int | Omitted | None): The number of the page on which this annotation is located in `startNode` File. The first page has number 1
+        end_node_page_number (int | Omitted | None): The number of the page on which this annotation is located in the endNode File if an endNode is present. The first page has number 1
+        start_node_x_min (float | Omitted | None): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than startNodeXMax
+        start_node_x_max (float | Omitted | None): Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than startNodeXMin
+        start_node_y_min (float | Omitted | None): Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than startNodeYMax
+        start_node_y_max (float | Omitted | None): Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than startNodeYMin
+        start_node_text (str | Omitted | None): The text extracted from within the bounding box on the startNode
+        end_node_x_min (float | Omitted | None): Value between [0,1]. Minimum abscissa of the bounding box (left edge). Must be strictly less than endNodeXMax. Only applicable if an endNode is defined
+        end_node_x_max (float | Omitted | None): Value between [0,1]. Maximum abscissa of the bounding box (right edge). Must be strictly more than endNodeXMin. Only applicable if an endNode is defined
+        end_node_y_min (float | Omitted | None): Value between [0,1]. Minimum ordinate of the bounding box (bottom edge). Must be strictly less than endNodeYMax. Only applicable if an endNode is defined
+        end_node_y_max (float | Omitted | None): Value between [0,1]. Maximum ordinate of the bounding box (top edge). Must be strictly more than endNodeYMin. Only applicable if an endNode is defined
+        end_node_text (str | Omitted | None): The text extracted from within the bounding box on the endNode. Only applicable if an endNode is defined
         existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
@@ -4729,31 +4729,31 @@ class CogniteDiagramAnnotationApply(_CogniteDiagramAnnotationProperties, TypedEd
         start_node: DirectRelationReference | tuple[str, str],
         end_node: DirectRelationReference | tuple[str, str],
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
-        confidence: float | None | Omitted = OMITTED,
-        status: Literal["Approved", "Rejected", "Suggested"] | None | Omitted = OMITTED,
-        start_node_page_number: int | None | Omitted = OMITTED,
-        end_node_page_number: int | None | Omitted = OMITTED,
-        start_node_x_min: float | None | Omitted = OMITTED,
-        start_node_x_max: float | None | Omitted = OMITTED,
-        start_node_y_min: float | None | Omitted = OMITTED,
-        start_node_y_max: float | None | Omitted = OMITTED,
-        start_node_text: str | None | Omitted = OMITTED,
-        end_node_x_min: float | None | Omitted = OMITTED,
-        end_node_x_max: float | None | Omitted = OMITTED,
-        end_node_y_min: float | None | Omitted = OMITTED,
-        end_node_y_max: float | None | Omitted = OMITTED,
-        end_node_text: str | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
+        confidence: float | Omitted | None = OMITTED,
+        status: Literal["Approved", "Rejected", "Suggested"] | Omitted | None = OMITTED,
+        start_node_page_number: int | Omitted | None = OMITTED,
+        end_node_page_number: int | Omitted | None = OMITTED,
+        start_node_x_min: float | Omitted | None = OMITTED,
+        start_node_x_max: float | Omitted | None = OMITTED,
+        start_node_y_min: float | Omitted | None = OMITTED,
+        start_node_y_max: float | Omitted | None = OMITTED,
+        start_node_text: str | Omitted | None = OMITTED,
+        end_node_x_min: float | Omitted | None = OMITTED,
+        end_node_x_max: float | Omitted | None = OMITTED,
+        end_node_y_min: float | Omitted | None = OMITTED,
+        end_node_y_max: float | Omitted | None = OMITTED,
+        end_node_text: str | Omitted | None = OMITTED,
         existing_version: int | None = None,
     ) -> None:
         TypedEdgeApply.__init__(self, space, external_id, type, start_node, end_node, existing_version)
@@ -4942,13 +4942,13 @@ class CogniteSourceableEdgeApply(_CogniteSourceableProperties, TypedEdgeApply):
         type (DirectRelationReference | tuple[str, str]): The type of edge.
         start_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
         end_node (DirectRelationReference | tuple[str, str]): Reference to the direct relation. The reference consists of a space and an external-id.
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
         existing_version (int | None): Fail the ingestion request if the edge's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the edge (for the specified container or edge). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
     """
 
@@ -4960,13 +4960,13 @@ class CogniteSourceableEdgeApply(_CogniteSourceableProperties, TypedEdgeApply):
         start_node: DirectRelationReference | tuple[str, str],
         end_node: DirectRelationReference | tuple[str, str],
         *,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
         existing_version: int | None = None,
     ) -> None:
         TypedEdgeApply.__init__(self, space, external_id, type, start_node, end_node, existing_version)

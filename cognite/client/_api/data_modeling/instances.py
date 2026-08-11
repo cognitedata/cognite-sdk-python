@@ -290,7 +290,7 @@ class InstancesAPI(APIClient):
             case _:
                 raise ValueError(f"Invalid instance type: {instance_type}")
 
-        headers: None | dict[str, str] = None
+        headers: dict[str, str] | None = None
         settings_forcing_raw_response_loading = []
         if include_typing:
             settings_forcing_raw_response_loading.append(f"{include_typing=}")
@@ -835,7 +835,7 @@ class InstancesAPI(APIClient):
     async def subscribe(
         self,
         query: QuerySync,
-        callback: Callable[[QueryResult], None | Awaitable[None]],
+        callback: Callable[[QueryResult], Awaitable[None] | None],
         poll_delay_seconds: float = 30,
         throttle_seconds: float = 1,
     ) -> SubscriptionContext:
@@ -850,7 +850,7 @@ class InstancesAPI(APIClient):
 
         Args:
             query (QuerySync): The query to subscribe to.
-            callback (Callable[[QueryResult], None | Awaitable[None]]): The callback function to call when the result set changes. Can be a regular or async function.
+            callback (Callable[[QueryResult], Awaitable[None] | None]): The callback function to call when the result set changes. Can be a regular or async function.
             poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
             throttle_seconds (float): The time to wait between polls despite data being present.
 
@@ -1758,7 +1758,7 @@ class InstancesAPI(APIClient):
         include_typing: bool,
         debug: DebugParameters | None,
     ) -> QueryResult:
-        headers: None | dict[str, str] = None
+        headers: dict[str, str] | None = None
         body = query.dump(camel_case=True)
         if include_typing:
             body["includeTyping"] = include_typing
@@ -2078,7 +2078,7 @@ class InstancesAPI(APIClient):
         else:
             raise ValueError(f"Invalid instance type: {instance_type}")
 
-        headers: None | dict[str, str] = None
+        headers: dict[str, str] | None = None
         settings_forcing_raw_response_loading = []
         if include_typing:
             settings_forcing_raw_response_loading.append(f"{include_typing=}")
