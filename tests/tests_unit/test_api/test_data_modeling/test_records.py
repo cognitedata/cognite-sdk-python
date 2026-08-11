@@ -959,3 +959,8 @@ class TestRecordPropertyPathValidation:
     def test_record_source_selector_rejects_bare_string_properties(self) -> None:
         with pytest.raises(TypeError, match="'properties' must be a sequence of strings"):
             RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), "temp")  # type: ignore[arg-type]
+
+    def test_record_source_selector_rejects_no_properties(self) -> None:
+        # The API requires minItems: 1 for properties.
+        with pytest.raises(ValueError, match="'properties' must not be empty"):
+            RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), [])
