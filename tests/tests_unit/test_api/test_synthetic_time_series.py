@@ -120,6 +120,10 @@ class TestSyntheticQuery:
             "ts{externalId:'x',targetUnitSystem:'Imperial'}",
             "a",
         ) == build_fn(symbols("a"), {"a": "x"}, target_unit_system="Imperial")
+        with pytest.raises(
+            ValueError, match=r"'a-b' is not a valid variable name. Variable names must be valid Python identifiers."
+        ):
+            build_fn("a-b-1", {"a-b": "x"})
 
     @pytest.mark.dsl
     def test_expression_builder__overlapping(self, async_client: AsyncCogniteClient) -> None:
