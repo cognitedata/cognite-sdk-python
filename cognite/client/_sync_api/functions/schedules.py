@@ -1,6 +1,6 @@
 """
 ===============================================================================
-6235647338dc58a934eb35e2aac6f9e5
+8130bd1d831ffed369da5d87e177f8bc
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -98,7 +98,7 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
 
     def retrieve(
         self, id: int | Sequence[int], ignore_unknown_ids: bool = False
-    ) -> FunctionSchedule | None | FunctionSchedulesList:
+    ) -> FunctionSchedule | FunctionSchedulesList | None:
         """
         `Retrieve a single function schedule by id <https://api-docs.cognite.com/20230101/tag/Function-schedules/operation/byIdsFunctionSchedules>`_.
 
@@ -107,7 +107,7 @@ class SyncFunctionSchedulesAPI(SyncAPIClient):
             ignore_unknown_ids (bool): Ignore IDs that are not found rather than throw an exception.
 
         Returns:
-            FunctionSchedule | None | FunctionSchedulesList: Requested function schedule or None if not found.
+            FunctionSchedule | FunctionSchedulesList | None: Requested function schedule or None if not found.
 
         Examples:
 
