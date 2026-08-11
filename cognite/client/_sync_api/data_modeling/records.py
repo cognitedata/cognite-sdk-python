@@ -1,6 +1,6 @@
 """
 ===============================================================================
-828de11d0b1ec3a690c7bce50cfeebb6
+21f3b5a6fad87079d33ceeaebbeb8592
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -30,6 +30,12 @@ from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
+
+_TIME_RANGE_HINT = "TimeRange(gte=...) takes the same bounds as the raw dict: 'gte', 'gt', 'lte' and 'lt'."
+_SORT_HINT = 'Sort on a property path, e.g. InstanceSort(property=["lastUpdatedTime"], direction="descending") or InstanceSort(property=["my_space", "my_container", "temperature"]).'
+_SOURCES_HINT = 'Select properties per container, e.g. RecordSourceSelector(source=RecordContainerId(space="my_space", external_id="my_container"), properties=["*"]).'
+_TARGET_UNITS_HINT = 'Convert everything with RecordTargetUnits(unit_system_name="SI"), or one property at a time with RecordTargetUnit(property=["my_space", "my_container", "temperature"], unit=UnitReference("temperature:deg_f")).'
+_FILTER_HINT = 'Build filters with cognite.client.data_classes.filters, e.g. filters.Equals(["my_space", "my_container", "temperature"], 22.5).'
 
 
 class SyncRecordsAPI(SyncAPIClient):
@@ -167,9 +173,9 @@ class SyncRecordsAPI(SyncAPIClient):
         aggregates: Mapping[str, Aggregate | dict[str, Any]],
         *,
         stream_id: str,
-        last_updated_time: TimeRange | None = None,
+        last_updated_time: TimeRange | dict[str, Any] | None = None,
         filter: Filter | dict[str, Any] | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         include_typing: bool = False,
     ) -> RecordsAggregation:
         """
@@ -179,10 +185,10 @@ class SyncRecordsAPI(SyncAPIClient):
             aggregates (Mapping[str, Aggregate | dict[str, Any]]): Aggregate request tree keyed
                 by client-defined aggregate IDs.
             stream_id (str): External ID of the stream to aggregate from.
-            last_updated_time (TimeRange | None): Filter records by last-updated time.
+            last_updated_time (TimeRange | dict[str, Any] | None): Filter records by last-updated time.
                 **Required** for immutable streams (must include a lower bound).
             filter (Filter | dict[str, Any] | None): Filter expression.
-            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Unit conversion specification.
+            target_units (RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None): Unit conversion specification.
             include_typing (bool): Include property type metadata in the response.
 
         Returns:
@@ -301,10 +307,10 @@ class SyncRecordsAPI(SyncAPIClient):
         self,
         stream_id: str,
         *,
-        last_updated_time: TimeRange | None = None,
-        filter: Filter | None = None,
-        sources: Sequence[RecordSourceSelector] | None = None,
-        sort: Sequence[InstanceSort] | InstanceSort | None = None,
+        last_updated_time: TimeRange | dict[str, Any] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sources: RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None = None,
+        sort: InstanceSort | Sequence[InstanceSort | dict[str, Any]] | dict[str, Any] | None = None,
         limit: int = 10,
         include_typing: bool = False,
     ) -> RecordList:
@@ -316,11 +322,11 @@ class SyncRecordsAPI(SyncAPIClient):
 
         Args:
             stream_id (str): External ID of the stream to query.
-            last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
+            last_updated_time (TimeRange | dict[str, Any] | None): Filter by last-updated time. **Required for
                 immutable streams** (must include a lower bound).
-            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
-            sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
+            filter (Filter | dict[str, Any] | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None): Which container properties to return.
+            sort (InstanceSort | Sequence[InstanceSort | dict[str, Any]] | dict[str, Any] | None): Sort specification(s); up to 5.
             limit (int): Maximum number of records to return (1-1000).
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
@@ -358,9 +364,9 @@ class SyncRecordsAPI(SyncAPIClient):
         stream_id: str,
         *,
         initialize_cursor: str,
-        filter: Filter | None = None,
-        sources: Sequence[RecordSourceSelector] | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sources: RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         limit: int = 10,
         include_typing: bool = False,
     ) -> SyncRecordList:
@@ -375,9 +381,9 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             stream_id (str): External ID of the stream to sync.
             initialize_cursor (str): Where to start, as a relative duration like ``"7d-ago"``.
-            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
-            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
+            filter (Filter | dict[str, Any] | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None): Which container properties to return.
+            target_units (RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None): Properties to convert
                 to another unit.
             limit (int): Maximum number of records to return in this page (1-1000). Defaults to 10.
             include_typing (bool): If True, include property type information on the returned
@@ -418,9 +424,9 @@ class SyncRecordsAPI(SyncAPIClient):
         stream_id: str,
         *,
         cursor: str,
-        filter: Filter | None = None,
-        sources: Sequence[RecordSourceSelector] | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sources: RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         limit: int = 10,
         include_typing: bool = False,
     ) -> SyncRecordList:
@@ -430,9 +436,9 @@ class SyncRecordsAPI(SyncAPIClient):
         Args:
             stream_id (str): External ID of the stream to sync.
             cursor (str): Resume from a cursor returned by a previous sync call.
-            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
-            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
+            filter (Filter | dict[str, Any] | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None): Which container properties to return.
+            target_units (RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None): Properties to convert
                 to another unit.
             limit (int): Maximum number of records to return in this page (1-1000). Defaults to 10.
             include_typing (bool): If True, include property type information on the returned
