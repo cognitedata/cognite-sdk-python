@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
+from cognite.client._api.transformations.externaldata import TransformationExternalDataSourcesAPI
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
 from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
@@ -36,6 +37,7 @@ class TransformationsAPI(APIClient):
         self.schedules = TransformationSchedulesAPI(config, api_version, cognite_client)
         self.schema = TransformationSchemaAPI(config, api_version, cognite_client)
         self.notifications = TransformationNotificationsAPI(config, api_version, cognite_client)
+        self.external_data_sources = TransformationExternalDataSourcesAPI(config, api_version, cognite_client)
 
     @overload
     def __call__(

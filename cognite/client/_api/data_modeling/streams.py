@@ -52,14 +52,14 @@ class StreamsAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling.streams import (
                 ...     StreamWrite,
                 ...     StreamTemplate,
-                ...     StreamTemplateWriteSettings,
+                ...     StreamWriteSettings,
                 ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.streams.create(
                 ...     StreamWrite(
                 ...         external_id="my-stream",
-                ...         settings=StreamTemplateWriteSettings(
+                ...         settings=StreamWriteSettings(
                 ...             template=StreamTemplate(name="ImmutableTestStream"),
                 ...         ),
                 ...     )

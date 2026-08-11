@@ -53,8 +53,11 @@ from cognite.client.testing import AsyncCogniteClientMock, CogniteClientMock
 
 # this fixes the issue with 'got MagicMock but expected Nothing in docstrings'
 doctest.OutputChecker.__check_output = doctest.OutputChecker.check_output  # type: ignore[attr-defined]
-doctest.OutputChecker.check_output = lambda self, want, got, optionflags: not want or self.__check_output(  # type: ignore[attr-defined, method-assign]
-    want, got, optionflags
+doctest.OutputChecker.check_output = lambda self, want, got, optionflags: (  # type: ignore[method-assign]
+    not want
+    or self.__check_output(  # type: ignore[attr-defined]
+        want, got, optionflags
+    )
 )
 
 
@@ -86,6 +89,7 @@ def test_credential_providers(mock_confidential_client: MagicMock, mock_public_c
 @patch("cognite.client.AsyncCogniteClient", AsyncCogniteClientMock)
 @patch("os.environ", defaultdict(lambda: "value"))
 class TestDocstringExamples:
+    # TODO: add all of Transformations (incl. transformations.external_data_sources) to this suite.
     def test_time_series(self) -> None:
         run_docstring_tests(time_series)
 
