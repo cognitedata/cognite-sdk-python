@@ -57,6 +57,11 @@ Transformation External Data Sources
 
    AsyncCogniteClient.transformations.external_data_sources
 
+.. toctree::
+   :maxdepth: 2
+
+   transformations_external_data_sources
+
 Data classes
 ------------
 .. automodule:: cognite.client.data_classes.transformations
