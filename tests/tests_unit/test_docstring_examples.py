@@ -89,6 +89,7 @@ def test_credential_providers(mock_confidential_client: MagicMock, mock_public_c
 @patch("cognite.client.AsyncCogniteClient", AsyncCogniteClientMock)
 @patch("os.environ", defaultdict(lambda: "value"))
 class TestDocstringExamples:
+    # TODO: add all of Transformations (incl. transformations.external_data_sources) to this suite.
     def test_time_series(self) -> None:
         run_docstring_tests(time_series)
 
