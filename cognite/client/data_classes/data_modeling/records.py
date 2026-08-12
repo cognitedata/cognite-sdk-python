@@ -13,27 +13,14 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
+from cognite.client.data_classes.data_modeling import aggregates as aggs
+from cognite.client.data_classes.data_modeling._validation import validate_property_path
 from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
 from cognite.client.data_classes.data_modeling.ids import ContainerId
 from cognite.client.data_classes.data_modeling.instances import TypeInformation
-from cognite.client.utils._identifier import IdentifierSequenceCore, RecordId
-
-__all__ = [
-    "Record",
-    "RecordContainerId",
-    "RecordId",
-    "RecordIdSequence",
-    "RecordList",
-    "RecordSource",
-    "RecordSourceSelector",
-    "RecordTargetUnit",
-    "RecordTargetUnits",
-    "RecordWrite",
-    "RecordWriteList",
-    "SyncRecord",
-    "SyncRecordList",
-    "TimeRange",
-]
+from cognite.client.utils._identifier import IdentifierSequenceCore
+from cognite.client.utils._identifier import RecordId as RecordId  # explicit re-export
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class RecordIdSequence(IdentifierSequenceCore[RecordId]):
@@ -125,6 +112,36 @@ class RecordWriteList(CogniteResourceList[RecordWrite]):
 
     def as_ids(self) -> list[RecordId]:
         return [v.as_id() for v in self]
+
+
+class RecordsAggregation(CogniteResource):
+    """Aggregate results returned from the Records aggregate endpoint.
+
+    Args:
+        aggregates (dict[str, aggs.Result]): Aggregate results keyed by the client-defined
+            aggregate IDs.
+        typing (TypeInformation | None): Optional property typing metadata.
+    """
+
+    def __init__(self, aggregates: dict[str, aggs.Result], typing: TypeInformation | None = None) -> None:
+        self.aggregates = aggregates
+        self.typing = typing
+
+    def __getitem__(self, aggregate_id: str) -> aggs.Result:
+        return self.aggregates[aggregate_id]
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            aggregates=aggs._load_results(resource["aggregates"]),
+            typing=TypeInformation._load(resource["typing"]) if "typing" in resource else None,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"aggregates": aggs._dump_results(self.aggregates, camel_case)}
+        if self.typing is not None:
+            output["typing"] = self.typing.dump(camel_case=camel_case)
+        return output
 
 
 class Record(WriteableCogniteResource["RecordWrite"]):
@@ -263,12 +280,16 @@ class RecordSourceSelector(CogniteResource):
 
     Args:
         source (RecordContainerId): The container to select properties from.
-        properties (list[str]): Property identifiers to return; use ``["*"]`` to return all.
+        properties (SequenceNotStr[str]): Property identifiers to return; use ``["*"]`` to return all.
     """
 
-    def __init__(self, source: RecordContainerId, properties: list[str]) -> None:
+    def __init__(self, source: RecordContainerId, properties: SequenceNotStr[str]) -> None:
         self.source = source
-        self.properties = properties
+        self.properties = validate_property_path(
+            properties,
+            "properties",
+            'Properties are the container property identifiers to return, e.g. ["temperature"], or ["*"] for all.',
+        )
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -282,13 +303,13 @@ class RecordTargetUnit(CogniteResource):
     """A target unit conversion for one Records container property.
 
     Args:
-        property (list[str]): Fully qualified container property path:
+        property (SequenceNotStr[str]): Fully qualified container property path:
             ``[space, container_external_id, property_id]``.
         unit (UnitReference | UnitSystemReference): Target unit or target unit system.
     """
 
-    def __init__(self, property: list[str], unit: UnitReference | UnitSystemReference) -> None:
-        self.property = property
+    def __init__(self, property: SequenceNotStr[str], unit: UnitReference | UnitSystemReference) -> None:
+        self.property = validate_property_path(property)
         self.unit = unit
 
     @classmethod
@@ -405,10 +426,6 @@ class SyncRecordList(CogniteResourceList[SyncRecord]):
         self.cursor = cursor
         self.has_next = has_next
         self.typing = typing
-
-    @classmethod
-    def _load_response(cls, response: dict[str, Any]) -> Self:
-        return cls._load_raw_api_response([response])
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:

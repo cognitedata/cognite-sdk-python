@@ -116,6 +116,7 @@ Contents
    data_modeling/statistics
    data_modeling/streams
    data_modeling/records
+   data_modeling/aggregates
    data_modeling/graphql
    data_modeling/core_data_model
 

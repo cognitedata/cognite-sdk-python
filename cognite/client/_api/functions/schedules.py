@@ -100,7 +100,7 @@ class FunctionSchedulesAPI(APIClient):
 
     async def retrieve(
         self, id: int | Sequence[int], ignore_unknown_ids: bool = False
-    ) -> FunctionSchedule | None | FunctionSchedulesList:
+    ) -> FunctionSchedule | FunctionSchedulesList | None:
         """`Retrieve a single function schedule by id <https://api-docs.cognite.com/20230101/tag/Function-schedules/operation/byIdsFunctionSchedules>`_.
 
         Args:
@@ -108,7 +108,7 @@ class FunctionSchedulesAPI(APIClient):
             ignore_unknown_ids (bool): Ignore IDs that are not found rather than throw an exception.
 
         Returns:
-            FunctionSchedule | None | FunctionSchedulesList: Requested function schedule or None if not found.
+            FunctionSchedule | FunctionSchedulesList | None: Requested function schedule or None if not found.
 
         Examples:
 

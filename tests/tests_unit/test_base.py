@@ -37,6 +37,15 @@ from cognite.client.data_classes.data_modeling import (
     EdgeListWithCursor,
     NodeListWithCursor,
 )
+from cognite.client.data_classes.data_modeling.aggregates import (
+    Bucket,
+    Filters,
+    NumberHistogram,
+    Result,
+    TimeHistogram,
+    UniqueValues,
+)
+from cognite.client.data_classes.data_modeling.records import RecordsAggregation
 from cognite.client.data_classes.datapoints import DatapointsArray, SyntheticDatapoints
 from cognite.client.data_classes.datapoints_subscriptions import SubscriptionDatapoints
 from cognite.client.data_classes.events import EventList
@@ -46,6 +55,7 @@ from cognite.client.data_classes.hosted_extractors import Destination, Destinati
 from cognite.client.data_classes.postgres_gateway import TableList, User, UserCreated, UserCreatedList, UserList
 from cognite.client.data_classes.sequences import SequenceUpdate
 from cognite.client.data_classes.time_series import TimeSeries, TimeSeriesList
+from cognite.client.data_classes.transformations.externaldata import ExternalDataSource, ExternalDataSourceList
 from cognite.client.data_classes.workflows import UnknownWorkflowTaskParameters, WorkflowTaskOutput
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
@@ -187,6 +197,21 @@ class TestCogniteResource:
                     # UnknownWorkflowTaskParameters: Requires task_type which is only available in the parent object's
                     # full response payload
                     UnknownWorkflowTaskParameters,
+                    # RecordsAggregation/Bucket hold a `dict[str, aggregates.Result]` whose
+                    # values the fake generator synthesizes as the non-instantiable base, and the
+                    # Result subclasses have non-standard constructors. The
+                    # nested-aggregate builders (Filters/NumberHistogram/TimeHistogram/UniqueValues)
+                    # take an `Aggregate | dict` map the fake generator can't synthesize
+                    # (abstract union), and TimeHistogram also has an interval guard; their
+                    # load/dump round-trip is covered in test_records.py instead.
+                    *all_concrete_subclasses(Result),
+                    Result,
+                    RecordsAggregation,
+                    Bucket,
+                    Filters,
+                    NumberHistogram,
+                    TimeHistogram,
+                    UniqueValues,
                 },
             )
         ],
@@ -218,6 +243,14 @@ class TestCogniteResource:
                     Agent,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
+                    *all_concrete_subclasses(Result),
+                    Result,
+                    RecordsAggregation,
+                    Bucket,
+                    Filters,
+                    NumberHistogram,
+                    TimeHistogram,
+                    UniqueValues,
                 },
             )
         ],
@@ -241,7 +274,8 @@ class TestCogniteResource:
             # Hosted extractors does not support the as_write method
             for cls in all_concrete_subclasses(WriteableCogniteResource)
             # Hosted extractors does not support the as_write method
-            if cls not in {Destination, User, UserCreated} and not issubclass(cls, Source)
+            # External data sources cannot be converted to write, as the API never returns the client secret
+            if cls not in {Destination, User, UserCreated} and not issubclass(cls, Source | ExternalDataSource)
         ],
     )
     def test_writable_as_write(
@@ -282,6 +316,7 @@ class TestCogniteResource:
                 UserList,
                 UserCreatedList,
                 TableList,
+                ExternalDataSourceList,
             }
         ],
     )
@@ -322,6 +357,14 @@ class TestCogniteResource:
                     SubscriptionDatapoints,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
+                    *all_concrete_subclasses(Result),
+                    Result,
+                    RecordsAggregation,
+                    Bucket,
+                    Filters,
+                    NumberHistogram,
+                    TimeHistogram,
+                    UniqueValues,
                 },
             )
         ],
@@ -359,6 +402,14 @@ class TestCogniteResource:
                     SubscriptionDatapoints,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
+                    *all_concrete_subclasses(Result),
+                    Result,
+                    RecordsAggregation,
+                    Bucket,
+                    Filters,
+                    NumberHistogram,
+                    TimeHistogram,
+                    UniqueValues,
                 },
             )
         ],
@@ -409,6 +460,14 @@ class TestCogniteResource:
                     SubscriptionDatapoints,
                     *all_concrete_subclasses(WorkflowTaskOutput),
                     UnknownWorkflowTaskParameters,
+                    *all_concrete_subclasses(Result),
+                    Result,
+                    RecordsAggregation,
+                    Bucket,
+                    Filters,
+                    NumberHistogram,
+                    TimeHistogram,
+                    UniqueValues,
                 },
             )
         ],

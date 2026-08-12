@@ -234,7 +234,9 @@ def async_workflow_version(
     yield from _new_async_workflow_version(cognite_client, new_workflow, a_function)
 
 
-def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersionList]:
+def _new_workflow_version_list(
+    cognite_client: CogniteClient, new_workflow: Workflow, a_function: Function
+) -> Iterator[WorkflowVersionList]:
     version_1 = WorkflowVersionUpsert(
         workflow_external_id=new_workflow.external_id,
         version="1",
@@ -262,7 +264,7 @@ def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Work
                             WorkflowTask(
                                 external_id="s1-task1",
                                 parameters=FunctionTaskParameters(
-                                    external_id="non-existing-function",
+                                    external_id=get_or_raise(a_function.external_id),
                                     data={"a": 3, "b": 4},
                                     is_async_complete=True,
                                 ),
@@ -299,15 +301,17 @@ def _new_workflow_version_list(cognite_client: CogniteClient, new_workflow: Work
 
 
 @pytest.fixture(scope="session")
-def workflow_version_list(cognite_client: CogniteClient, new_workflow: Workflow) -> Iterator[WorkflowVersionList]:
-    yield from _new_workflow_version_list(cognite_client, new_workflow)
+def workflow_version_list(
+    cognite_client: CogniteClient, new_workflow: Workflow, a_function: Function
+) -> Iterator[WorkflowVersionList]:
+    yield from _new_workflow_version_list(cognite_client, new_workflow, a_function)
 
 
 @pytest.fixture
 def workflow_version_list_test_scoped(
-    cognite_client: CogniteClient, new_workflow_test_scoped: Workflow
+    cognite_client: CogniteClient, new_workflow_test_scoped: Workflow, a_function: Function
 ) -> Iterator[WorkflowVersionList]:
-    yield from _new_workflow_version_list(cognite_client, new_workflow_test_scoped)
+    yield from _new_workflow_version_list(cognite_client, new_workflow_test_scoped, a_function)
 
 
 def _new_workflow_execution_list(
@@ -656,9 +660,10 @@ class TestWorkflowExecutions:
         listed = cognite_client.workflows.executions.list(
             workflow_version_ids=workflow_execution_list[0].as_workflow_id()
         )
-        # Compare by ID: cancel() can return before fields like end_time are
-        # finalized server-side, so full-object equality is flaky.
-        assert {e.id for e in listed} == {e.id for e in workflow_execution_list}
+        # Subset (not equality) check by ID: other tests in this class create additional
+        # executions against the same shared, session-scoped workflow version, and
+        # cancel() can return before fields like end_time are finalized server-side.
+        assert {e.id for e in workflow_execution_list} <= {e.id for e in listed}
 
     def test_list_workflow_executions_by_status(
         self,
@@ -837,8 +842,8 @@ class TestWorkflowTriggers:
         assert permanent_data_modeling_trigger.external_id in external_ids
 
     @pytest.mark.skipif(
-        datetime.date.today() < datetime.date(2026, 8, 1),
-        reason="Skip until 2026-08-01",
+        datetime.date.today() < datetime.date(2026, 8, 17),
+        reason="Skip until 2026-08-17",
     )
     def test_trigger_run_history(
         self,
