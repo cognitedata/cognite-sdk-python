@@ -1170,3 +1170,20 @@ class TestRecordDTOs:
         assert page.cursor is None
         assert page.has_next is False
         assert page.typing is None
+
+
+class TestRecordPropertyPathValidation:
+    """The records DTOs take property paths too, with the same bare-string hazard."""
+
+    def test_record_target_unit_rejects_bare_string_property(self) -> None:
+        with pytest.raises(TypeError, match="'property' must be a sequence of strings"):
+            RecordTargetUnit("sp.c.temp", UnitReference("temperature:deg_c"))  # type: ignore[arg-type]
+
+    def test_record_source_selector_rejects_bare_string_properties(self) -> None:
+        with pytest.raises(TypeError, match="'properties' must be a sequence of strings"):
+            RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), "temp")  # type: ignore[arg-type]
+
+    def test_record_source_selector_rejects_no_properties(self) -> None:
+        # The API requires minItems: 1 for properties.
+        with pytest.raises(ValueError, match="'properties' must not be empty"):
+            RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), [])
