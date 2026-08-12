@@ -29,6 +29,7 @@ SYNC_CLIENT_PATH = Path("cognite/client/_sync_cognite_client.py")
 SYNC_METHODS_TO_KEEP = {
     "compare_capabilities",
     "__call__",
+    "sync",  # async generator with overloads, so its overload stubs are plain 'def' (see above)
 }
 ASYNC_METHODS_TO_KEEP = {
     "_unsafely_wipe_and_regenerate_dml",

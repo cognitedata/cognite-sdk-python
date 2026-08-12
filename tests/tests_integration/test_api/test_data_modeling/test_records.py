@@ -189,20 +189,21 @@ class TestRecordsIntegration:
         sources: list[RecordSourceSelector],
         ingested_records: list[RecordWrite],
     ) -> None:
-        """Regression test: sync must return one page, even when it holds fewer than 'limit' records."""
+        """Regression test: sync must yield a chunk, even when it holds fewer than 'chunk_size' records."""
         tag = ingested_records[0].sources[0].properties["name"]
-        page = cognite_client.data_modeling.records.sync(
-            stream_id=mutable_stream.external_id,
-            initialize_cursor="1m-ago",
-            sources=sources,
-            filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag),
-            limit=1000,
+        page = next(
+            cognite_client.data_modeling.records.sync(
+                stream_id=mutable_stream.external_id,
+                initialize_cursor="1m-ago",
+                sources=sources,
+                filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag),
+            )
         )
         assert len(page) == len(ingested_records)
         assert page.cursor is not None
         assert page.has_next is False
 
-    def test_sync_resume_drains_the_feed(
+    def test_sync_iterates_until_feed_exhausted(
         self,
         cognite_client: CogniteClient,
         mutable_stream: Stream,
@@ -210,37 +211,28 @@ class TestRecordsIntegration:
         sources: list[RecordSourceSelector],
         ingested_records: list[RecordWrite],
     ) -> None:
-        """Walk the change feed one small page at a time until it is empty.
+        """Walk the change feed one small chunk at a time until it is empty.
 
-        This is the cursor-based pipeline pattern: read a page, process it, and only persist the
-        cursor once processing succeeded. The final page is always partial, so this loop is what
-        the runaway-paging bug used to hang on.
+        Each yielded chunk carries the cursor to persist once processing succeeded. The final
+        chunk is always partial.
         """
         tag = ingested_records[0].sources[0].properties["name"]
         tagged = filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag)
-        page = cognite_client.data_modeling.records.sync(
+        seen: list[str] = []
+        pages = 0
+        for page in cognite_client.data_modeling.records.sync(
             stream_id=mutable_stream.external_id,
             initialize_cursor="1m-ago",
             sources=sources,
             filter=tagged,
-            limit=2,
-        )
-        seen = [record.external_id for record in page]
-        pages = 1
-        while page.has_next:
+            chunk_size=2,
+        ):
             assert page.cursor is not None
-            page = cognite_client.data_modeling.records.sync_resume(
-                stream_id=mutable_stream.external_id,
-                cursor=page.cursor,
-                sources=sources,
-                filter=tagged,
-                limit=2,
-            )
             seen.extend(record.external_id for record in page)
             pages += 1
-            assert pages < 20, "sync_resume did not drain the feed"
+            assert pages < 20, "sync did not exhausted the feed"
 
-        assert pages > 1, "expected the 3 ingested records to span more than one page of size 2"
+        assert pages > 1, "expected the 3 ingested records to span more than one chunk of size 2"
         assert set(seen) == {record.external_id for record in ingested_records}
 
     def test_upsert_replaces_record(

@@ -400,7 +400,7 @@ class SyncRecordList(CogniteResourceList[SyncRecord]):
 
     Args:
         resources (Sequence[SyncRecord]): The records in this page.
-        cursor (str | None): Cursor to pass as ``cursor`` to the next ``sync_resume`` call to resume
+        cursor (str | None): Cursor to pass as ``cursor`` to a later ``sync`` call to resume
             from this position.
         has_next (bool): Whether more changes are available beyond this page.
         typing (TypeInformation | None): Property type information, present when the request was
