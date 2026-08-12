@@ -72,7 +72,7 @@ Extraction pipeline configs
    AsyncCogniteClient.extraction_pipelines.config
 
 Extraction pipelines data classes
---------------------------------
+---------------------------------
 .. automodule:: cognite.client.data_classes.extractionpipelines
     :members:
     :show-inheritance:
