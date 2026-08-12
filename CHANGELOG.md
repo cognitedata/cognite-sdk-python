@@ -13,6 +13,27 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.13.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.12.0...cognite-sdk-python-v8.13.0) (2026-08-12)
+
+
+### Features
+
+* **credentials:** let users choose the account for interactive login (DM-3512) ([#2730](https://github.com/cognitedata/cognite-sdk-python/issues/2730)) ([bef4f27](https://github.com/cognitedata/cognite-sdk-python/commit/bef4f27a836b2e93410fd2411e59043ee28a5cc0))
+* **functions:** add py314 to RunTime ([#2735](https://github.com/cognitedata/cognite-sdk-python/issues/2735)) ([cf66c51](https://github.com/cognitedata/cognite-sdk-python/commit/cf66c51a8b73c243a7d1a8f742fb137463386f67))
+* **streams:** rename StreamTemplateWriteSettings to StreamWriteSettings ([#2753](https://github.com/cognitedata/cognite-sdk-python/issues/2753)) ([801ee75](https://github.com/cognitedata/cognite-sdk-python/commit/801ee75c61c49024f79701ea10dacf46706b03fc))
+* **transformations:** add external data sources client API ([#2732](https://github.com/cognitedata/cognite-sdk-python/issues/2732)) ([60b6c36](https://github.com/cognitedata/cognite-sdk-python/commit/60b6c36e42c60020198f298ad784580e00c0bdc2))
+
+
+### Bug Fixes
+
+* **records:** validate property paths instead of splitting bare strings ([#2747](https://github.com/cognitedata/cognite-sdk-python/issues/2747)) ([b90a384](https://github.com/cognitedata/cognite-sdk-python/commit/b90a3847d0ee49e5eaa37b8ae980cf1b6fe4d0eb))
+
+
+### Documentation
+
+* add all __call__ methods ([#2633](https://github.com/cognitedata/cognite-sdk-python/issues/2633)) ([b99af78](https://github.com/cognitedata/cognite-sdk-python/commit/b99af789b78fdfd905977db0ba2b7b5db20f1692))
+* **transformations:** add external data sources guide ([#2734](https://github.com/cognitedata/cognite-sdk-python/issues/2734)) ([629c506](https://github.com/cognitedata/cognite-sdk-python/commit/629c50699aa42ea60978d92dbd748f5419ec1387))
+
 ## [8.12.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.11.0...cognite-sdk-python-v8.12.0) (2026-08-05)
 
 
