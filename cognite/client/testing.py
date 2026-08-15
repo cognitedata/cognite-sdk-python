@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock, create_autospec, patch
 
-from cognite.client import AsyncCogniteClient, CogniteClient
+from cognite.client import AsyncCogniteClient, ClientConfig, CogniteClient
 from cognite.client._api.agents import AgentsAPI
 from cognite.client._api.ai import AIAPI
 from cognite.client._api.ai.tools import AIToolsAPI
@@ -184,6 +184,7 @@ from cognite.client._sync_api.workflows.executions import SyncWorkflowExecutionA
 from cognite.client._sync_api.workflows.tasks import SyncWorkflowTaskAPI
 from cognite.client._sync_api.workflows.triggers import SyncWorkflowTriggerAPI
 from cognite.client._sync_api.workflows.versions import SyncWorkflowVersionAPI
+from cognite.client.credentials import Token
 
 
 def flip_spec_set_on(*mocked_apis: MagicMock) -> None:
@@ -210,6 +211,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=AsyncCogniteClient, *args, **kwargs)
+        self.config = create_autospec(ClientConfig("mock", "mock", Token("mock"), base_url="mock"), spec_set=True)
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.
@@ -420,6 +422,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=CogniteClient, *args, **kwargs)
+        self.config = create_autospec(ClientConfig("mock", "mock", Token("mock"), base_url="mock"), spec_set=True)
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.

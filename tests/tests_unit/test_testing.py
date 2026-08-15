@@ -93,3 +93,11 @@ def test_cognite_client_accepts_arguments_during_and_after_mock() -> None:
     with monkeypatch_cognite_client():
         CogniteClient(ClientConfig(client_name="bla", project="bla", cluster="x", credentials=Token("bla")))
     CogniteClient(ClientConfig(client_name="bla", project="bla", cluster="x", credentials=Token("bla")))
+
+
+def test_client_config_is_available_on_cognite_client_mock() -> None:
+    for client_cls in [CogniteClientMock, AsyncCogniteClientMock]:
+        client = client_cls()
+        assert isinstance(client.config.client_name, str)
+        with pytest.raises(AttributeError):
+            client.config.does_not_exist
