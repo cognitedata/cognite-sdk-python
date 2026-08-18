@@ -889,6 +889,10 @@ class TestPandasIntegration:
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
 
+    def test_latest_datapoint_list_empty(self) -> None:
+        latest_list = LatestDatapointList([])
+        assert latest_list.to_pandas().empty
+
     @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_id_and_xid(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         import pandas as pd
