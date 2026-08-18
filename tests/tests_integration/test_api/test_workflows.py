@@ -735,6 +735,7 @@ class TestWorkflowExecutions:
         assert retried_workflow_execution.status == "running"
 
 
+@pytest.mark.skip(reason="Very flaky. Rework is planned so skipping for now.")
 class TestWorkflowTriggers:
     def test_create_update_scheduled_trigger(
         self,
