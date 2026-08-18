@@ -791,6 +791,10 @@ class TestCogniteResourceList:
         resource_list += MyResourceList([MyResource(id=5, external_id="5")])
         assert resource_list.get(id=5) == MyResource(id=5, external_id="5")
 
+        # `+=` delegates to extend(), so it enforces the same duplicate-id check.
+        with pytest.raises(ValueError, match="introduce duplicates"):
+            resource_list += MyResourceList([MyResource(id=5, external_id="5")])
+
         # __setitem__ replaces an item.
         resource_list[0] = MyResource(id=6, external_id="6")
         assert resource_list.get(id=4) is None

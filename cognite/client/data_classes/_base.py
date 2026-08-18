@@ -303,17 +303,20 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         self._clear_identifier_lookups()
         return item
 
-    def __setitem__(self, i: Any, item: Any) -> None:
-        super().__setitem__(i, item)
+    def __setitem__(self, i: SupportsIndex | slice, item: T_CogniteResource | Iterable[T_CogniteResource]) -> None:
+        super().__setitem__(i, item)  # type: ignore[index, assignment]
         self._clear_identifier_lookups()
 
-    def __delitem__(self, i: Any) -> None:
+    def __delitem__(self, i: SupportsIndex | slice) -> None:
         super().__delitem__(i)
         self._clear_identifier_lookups()
 
-    def __iadd__(self: T_CogniteResourceList, other: Iterable[Any]) -> T_CogniteResourceList:
-        super().__iadd__(other)
-        self._clear_identifier_lookups()
+    def __iadd__(  # type: ignore[misc]
+        self: T_CogniteResourceList, other: Iterable[T_CogniteResource]
+    ) -> T_CogniteResourceList:
+        # Delegate to extend() so `+=` gets the same duplicate-id check (and
+        # cache maintenance) as extend(), rather than bypassing it via UserList.
+        self.extend(other)
         return self
 
     def __imul__(self: T_CogniteResourceList, n: int) -> T_CogniteResourceList:
