@@ -84,7 +84,8 @@ jobs:
           COGNITE_BASE_URL: ${{ vars.CDF_BASE_URL_CI }}
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
         # Testpaths are defined in the pytest.ini file:
-        run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+        # --reruns-delay gives the shared CDF test project's per-minute rate limits time to clear before a retry.
+        run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --reruns-delay 20 --maxfail 20
 
       - uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
         # Report code coverage from windows runner; xdist + ubuntu gives incorrect results
