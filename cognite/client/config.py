@@ -3,6 +3,7 @@ from __future__ import annotations
 import getpass
 import pprint
 import re
+import ssl
 import warnings
 from typing import Any, ClassVar, NoReturn, overload
 
@@ -30,6 +31,9 @@ class GlobalConfig:
         max_connection_pool_size (int): The maximum number of connections which will be kept in the SDKs connection pool.
             Defaults to 20.
         disable_ssl (bool): Whether or not to disable SSL. Defaults to False
+        ssl_context (ssl.SSLContext | None): Custom SSL context for certificate verification. Overrides the
+            default certifi bundle. Ignored when ``disable_ssl`` is True. Must be set before the first API
+            request. Defaults to None. See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#ssl-certificate-configuration
         proxy (str | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. ``http://localhost:8030``.
             For proxy authentication, embed credentials in the URL: ``http://user:pass@localhost:8030``.
             Defaults to None (no proxy).
@@ -70,6 +74,7 @@ class GlobalConfig:
         self.max_retry_backoff: int = 60
         self.max_connection_pool_size: int = 20
         self.disable_ssl: bool = False
+        self.ssl_context: ssl.SSLContext | None = None
         self.proxy: str | None = None
         self._max_workers: int = 5
         self._concurrency_settings: ConcurrencySettings = ConcurrencySettings()
@@ -91,6 +96,9 @@ class GlobalConfig:
 
             case "file_download_chunk_size" | "file_upload_chunk_size" if val is not None and not is_positive_int(val):
                 raise ValueError(f"{name} must be a positive integer or None, got {val!r}")
+
+            case "ssl_context" if val is not None and not isinstance(val, ssl.SSLContext):
+                raise TypeError(f"ssl_context must be an ssl.SSLContext or None, got {type(val)!r}")
 
         super().__setattr__(name, val)
 
@@ -155,6 +163,10 @@ class GlobalConfig:
             raise ValueError(
                 "Cannot apply 'concurrency_settings' via apply_settings. Modify the individual attributes on "
                 "'global_config.concurrency_settings' instead."
+            )
+        if "ssl_context" in loaded:
+            raise ValueError(
+                "Cannot apply 'ssl_context' via apply_settings. Set 'global_config.ssl_context' directly instead."
             )
         if "default_client_config" in loaded:
             if not isinstance(loaded["default_client_config"], ClientConfig):
