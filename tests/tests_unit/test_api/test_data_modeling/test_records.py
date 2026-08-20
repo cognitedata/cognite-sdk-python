@@ -681,16 +681,16 @@ class TestRecordsAPISync:
             status_code=200,
             json={"items": items, "nextCursor": "abc", "hasNext": False},
         )
-        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago")
+        page = next(cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago"))
         assert isinstance(page, SyncRecordList)
         assert page.cursor == "abc"
         assert page.has_next is False
         assert page[0].status == "created"
         request = httpx_mock.get_requests()[0]
         assert request.url.path.endswith(f"/streams/{stream_id}/records/sync")
-        assert jsgz_load(request.content) == {"initializeCursor": "7d-ago", "limit": 10}
+        assert jsgz_load(request.content) == {"initializeCursor": "7d-ago", "limit": 1000}
 
-    def test_sync_resume_sends_cursor(
+    def test_sync_with_cursor_sends_cursor(
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
@@ -721,10 +721,12 @@ class TestRecordsAPISync:
                 "hasNext": False,
             },
         )
-        first = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="2d-ago", limit=1)
+        first = next(
+            cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="2d-ago", chunk_size=1)
+        )
         assert first.has_next is True
         assert first.cursor is not None
-        second = cognite_client.data_modeling.records.sync_resume(stream_id=stream_id, cursor=first.cursor, limit=1)
+        second = next(cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor=first.cursor, chunk_size=1))
         assert second.cursor == "p3"
         body2 = jsgz_load(httpx_mock.get_requests()[1].content)
         assert body2 == {"cursor": "p2", "limit": 1}
@@ -743,7 +745,7 @@ class TestRecordsAPISync:
             status_code=200,
             json={"items": [item], "nextCursor": "z", "hasNext": False},
         )
-        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="c", limit=1)
+        page = next(cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="c", chunk_size=1))
         assert page[0].status == "deleted"
         assert page[0].properties is None
 
@@ -763,8 +765,10 @@ class TestRecordsAPISync:
             status_code=200,
             json={"items": [item], "nextCursor": "z", "hasNext": False, "typing": typing},
         )
-        page = cognite_client.data_modeling.records.sync(
-            stream_id=stream_id, initialize_cursor="c", include_typing=True, limit=1
+        page = next(
+            cognite_client.data_modeling.records.sync(
+                stream_id=stream_id, initialize_cursor="c", include_typing=True, chunk_size=1
+            )
         )
         assert jsgz_load(httpx_mock.get_requests()[0].content)["includeTyping"] is True
         assert isinstance(page.typing, TypeInformation)
@@ -784,14 +788,219 @@ class TestRecordsAPISync:
             status_code=200,
             json={"items": [item], "nextCursor": "z", "hasNext": False},
         )
-        cognite_client.data_modeling.records.sync(
-            stream_id=stream_id,
-            initialize_cursor="c",
-            target_units=RecordTargetUnits(unit_system_name="Imperial"),
-            limit=1,
+        next(
+            cognite_client.data_modeling.records.sync(
+                stream_id=stream_id,
+                initialize_cursor="c",
+                target_units=RecordTargetUnits(unit_system_name="Imperial"),
+                chunk_size=1,
+            )
         )
         body = jsgz_load(httpx_mock.get_requests()[0].content)
         assert body["targetUnits"] == {"unitSystemName": "Imperial"}
+
+    @pytest.mark.parametrize("has_next", [False, True])
+    def test_sync_partial_chunk_yields_after_one_request(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+        has_next: bool,
+    ) -> None:
+        # The sync endpoint always returns a 'nextCursor' - that is what makes the feed
+        # resumable - so a chunk holding fewer records than 'chunk_size' must not make the
+        # SDK keep requesting. Only one response is registered, so any extra request fails.
+        items = [{**record_response, "externalId": "rec-1", "status": "created"}]
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": items, "nextCursor": "abc", "hasNext": has_next},
+        )
+        page = next(
+            cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago", chunk_size=10)
+        )
+        assert len(page) == 1
+        assert page.cursor == "abc"
+        assert page.has_next is has_next
+        assert len(httpx_mock.get_requests()) == 1
+
+    def test_sync_empty_chunk_yields_after_one_request(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        stream_id: str,
+    ) -> None:
+        # A drained change feed returns no items, but still a cursor to resume from later.
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [], "nextCursor": "abc", "hasNext": False},
+        )
+        page = next(
+            cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago", chunk_size=10)
+        )
+        assert len(page) == 0
+        assert page.cursor == "abc"
+        assert page.has_next is False
+        assert len(httpx_mock.get_requests()) == 1
+
+    def test_sync_with_cursor_partial_chunk_yields_after_one_request(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        items = [{**record_response, "externalId": "rec-1", "status": "updated"}]
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": items, "nextCursor": "p2", "hasNext": False},
+        )
+        page = next(cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="p1", chunk_size=10))
+        assert len(page) == 1
+        assert page.cursor == "p2"
+        assert len(httpx_mock.get_requests()) == 1
+
+    def test_sync_iterates_all_chunks(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        # Iteration keeps requesting chunks until hasNext is False, rotating the cursor
+        # ('initializeCursor' only on the first request) and yielding one list per request.
+        pages = [
+            {
+                "items": [{**record_response, "externalId": "rec-1", "status": "created"}],
+                "nextCursor": "c1",
+                "hasNext": True,
+            },
+            {
+                "items": [{**record_response, "externalId": "rec-2", "status": "updated"}],
+                "nextCursor": "c2",
+                "hasNext": True,
+            },
+            {"items": [], "nextCursor": "c3", "hasNext": False},
+        ]
+        for page in pages:
+            httpx_mock.add_response(method="POST", url=sync_url_pattern, status_code=200, json=page)
+        chunks = list(
+            cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago", chunk_size=2)
+        )
+        assert [[record.external_id for record in chunk] for chunk in chunks] == [["rec-1"], ["rec-2"], []]
+        assert [chunk.cursor for chunk in chunks] == ["c1", "c2", "c3"]
+        assert [chunk.has_next for chunk in chunks] == [True, True, False]
+        bodies = [jsgz_load(request.content) for request in httpx_mock.get_requests()]
+        assert bodies == [
+            {"initializeCursor": "7d-ago", "limit": 2},
+            {"cursor": "c1", "limit": 2},
+            {"cursor": "c2", "limit": 2},
+        ]
+
+    def test_sync_with_cursor_iterates_all_chunks(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        pages = [
+            {
+                "items": [{**record_response, "externalId": "rec-1", "status": "created"}],
+                "nextCursor": "c1",
+                "hasNext": True,
+            },
+            {
+                "items": [{**record_response, "externalId": "rec-2", "status": "deleted"}],
+                "nextCursor": "c2",
+                "hasNext": False,
+            },
+        ]
+        for page in pages:
+            httpx_mock.add_response(method="POST", url=sync_url_pattern, status_code=200, json=page)
+        chunks = list(cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="p0"))
+        assert [record.external_id for chunk in chunks for record in chunk] == ["rec-1", "rec-2"]
+        assert chunks[-1].cursor == "c2"
+        assert chunks[-1].has_next is False
+        bodies = [jsgz_load(request.content) for request in httpx_mock.get_requests()]
+        assert bodies == [{"cursor": "p0", "limit": 1000}, {"cursor": "c1", "limit": 1000}]
+
+    @pytest.mark.parametrize("chunk_size", [0, -2, 1001])
+    def test_sync_rejects_out_of_range_chunk_size(
+        self,
+        cognite_client: CogniteClient,
+        stream_id: str,
+        chunk_size: int,
+    ) -> None:
+        # 'chunk_size' is the page size of a single request, which the API caps at 1000.
+        # Validation is lazy (the method is a generator), so the raise happens on next().
+        with pytest.raises(ValueError, match="between 1 and 1000"):
+            next(
+                cognite_client.data_modeling.records.sync(
+                    stream_id=stream_id, initialize_cursor="c", chunk_size=chunk_size
+                )
+            )
+
+    def test_sync_requires_exactly_one_cursor(
+        self,
+        cognite_client: CogniteClient,
+        stream_id: str,
+    ) -> None:
+        # The overloads enforce this statically; the runtime check covers untyped callers.
+        with pytest.raises(ValueError, match="exactly one of 'initialize_cursor' or 'cursor'"):
+            next(
+                cognite_client.data_modeling.records.sync(  # type: ignore[call-overload]
+                    stream_id=stream_id, initialize_cursor="7d-ago", cursor="abc"
+                )
+            )
+        with pytest.raises(ValueError, match="exactly one of 'initialize_cursor' or 'cursor'"):
+            next(cognite_client.data_modeling.records.sync(stream_id=stream_id))  # type: ignore[call-overload]
+
+    def test_sync_body_shape_with_filter_and_sources(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        stream_id: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [], "nextCursor": "z", "hasNext": False},
+        )
+        next(
+            cognite_client.data_modeling.records.sync(
+                stream_id=stream_id,
+                initialize_cursor="2m-ago",
+                filter=filters.Equals(property=["sp", "container-x", "temp"], value=22.5),
+                sources=[
+                    RecordSourceSelector(
+                        source=RecordContainerId(space="sp", external_id="container-x"), properties=["*"]
+                    )
+                ],
+                chunk_size=5,
+            )
+        )
+        assert jsgz_load(httpx_mock.get_requests()[0].content) == {
+            "initializeCursor": "2m-ago",
+            "limit": 5,
+            "filter": {"equals": {"property": ["sp", "container-x", "temp"], "value": 22.5}},
+            "sources": [
+                {"source": {"space": "sp", "externalId": "container-x", "type": "container"}, "properties": ["*"]}
+            ],
+        }
 
 
 class TestRecordDTOs:
@@ -907,11 +1116,12 @@ class TestRecordDTOs:
     ) -> None:
         expected_err = "Provide exactly one of 'properties' or 'unit_system_name'."
         with pytest.raises(ValueError, match=expected_err):
-            cognite_client.data_modeling.records.sync(
-                stream_id=stream_id,
-                initialize_cursor="c",
-                target_units=RecordTargetUnits(),
-                limit=1,
+            next(
+                cognite_client.data_modeling.records.sync(
+                    stream_id=stream_id,
+                    initialize_cursor="c",
+                    target_units=RecordTargetUnits(),
+                )
             )
 
     def test_record_target_units_rejects_multiple_request_modes(
@@ -919,11 +1129,12 @@ class TestRecordDTOs:
     ) -> None:
         expected_err = "Provide exactly one of 'properties' or 'unit_system_name'."
         with pytest.raises(ValueError, match=expected_err):
-            cognite_client.data_modeling.records.sync(
-                stream_id=stream_id,
-                initialize_cursor="c",
-                target_units=RecordTargetUnits(properties=[], unit_system_name="Imperial"),
-                limit=1,
+            next(
+                cognite_client.data_modeling.records.sync(
+                    stream_id=stream_id,
+                    initialize_cursor="c",
+                    target_units=RecordTargetUnits(properties=[], unit_system_name="Imperial"),
+                )
             )
 
     def test_sync_record_load_dump_round_trip(self) -> None:
@@ -947,6 +1158,18 @@ class TestRecordDTOs:
         assert record.status == "deleted"
         assert record.properties is None
         assert "properties" not in record.dump()
+
+    def test_sync_record_list_public_load(self) -> None:
+        items = [
+            {"space": "sp", "externalId": f"rec-{i}", "createdTime": 1, "lastUpdatedTime": 2, "status": "created"}
+            for i in range(2)
+        ]
+        page = SyncRecordList.load(items)
+        assert isinstance(page, SyncRecordList)
+        assert [record.external_id for record in page] == ["rec-0", "rec-1"]
+        assert page.cursor is None
+        assert page.has_next is False
+        assert page.typing is None
 
 
 class TestRecordsAPIFilterLimit:
