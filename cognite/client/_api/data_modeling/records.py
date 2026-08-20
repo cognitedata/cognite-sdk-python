@@ -41,7 +41,7 @@ def _validate_filter_limit(limit: Any) -> None:
     if isinstance(limit, bool) or not isinstance(limit, int):
         raise TypeError(f"'limit' must be an int between 1 and {_FILTER_MAX_LIMIT}, not {type(limit).__name__}. {hint}")
     if not 1 <= limit <= _FILTER_MAX_LIMIT:
-        raise ValueError(f"'limit' must be between 1 and {_FILTER_MAX_LIMIT}, got {limit}. {hint}")
+        raise ValueError(f"'limit' must be between 1 and {_FILTER_MAX_LIMIT} (inclusive), got {limit}. {hint}")
 
 
 class RecordsAPI(APIClient):
