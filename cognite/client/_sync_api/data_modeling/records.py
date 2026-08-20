@@ -1,6 +1,6 @@
 """
 ===============================================================================
-1ae61c3ae5750099928ff1a393f453e9
+93bf57af12acd0fa115d85207d21a500
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -401,6 +401,12 @@ class SyncRecordsAPI(SyncAPIClient):
         carries the ``cursor`` to persist for resuming later; this is also why records are always
         yielded in chunks rather than one by one.
 
+        Warning:
+            Every chunk is fetched with a separate API request - there is no smart fetching
+            behind the scenes - so a small ``chunk_size`` multiplies the number of requests
+            and comes at a hefty performance penalty. Keep the default of 1000 (the API
+            maximum) unless your per-chunk processing genuinely needs smaller checkpoints.
+
         Args:
             stream_id (str): External ID of the stream to sync.
             initialize_cursor (str | None): Where to start, as a relative duration like ``"7d-ago"``.
@@ -437,15 +443,16 @@ class SyncRecordsAPI(SyncAPIClient):
                 >>> for chunk in client.data_modeling.records.sync(
                 ...     stream_id="my-stream", cursor="previously-stored-cursor"
                 ... ):
-                ...     pass  # process chunk, then persist chunk.cursor
+                ...     pass
 
-            Fetch a single chunk with manual control, e.g. to poll at your own cadence:
+            Fetch chunks with manual control, e.g. to poll at your own cadence. Store the
+            iterator in a variable to keep pulling chunks from where you left off:
 
-                >>> chunk = next(
-                ...     client.data_modeling.records.sync(
-                ...         stream_id="my-stream", cursor="previously-stored-cursor"
-                ...     )
+                >>> feed = client.data_modeling.records.sync(
+                ...     stream_id="my-stream", cursor="previously-stored-cursor"
                 ... )
+                >>> first_chunk = next(feed)
+                >>> second_chunk = next(feed)
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.data_modeling.records.sync(  # type: ignore [call-overload, misc]

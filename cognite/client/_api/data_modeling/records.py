@@ -30,10 +30,9 @@ if TYPE_CHECKING:
 
 
 class RecordsAPI(APIClient):
-    _SYNC_LIMIT = 1000  # Maximum page size of the sync endpoint
-
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self._SYNC_LIMIT = 1000  # Maximum page size of the sync endpoint
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Records"
         )
@@ -458,6 +457,12 @@ class RecordsAPI(APIClient):
         carries the ``cursor`` to persist for resuming later; this is also why records are always
         yielded in chunks rather than one by one.
 
+        Warning:
+            Every chunk is fetched with a separate API request - there is no smart fetching
+            behind the scenes - so a small ``chunk_size`` multiplies the number of requests
+            and comes at a hefty performance penalty. Keep the default of 1000 (the API
+            maximum) unless your per-chunk processing genuinely needs smaller checkpoints.
+
         Args:
             stream_id (str): External ID of the stream to sync.
             initialize_cursor (str | None): Where to start, as a relative duration like ``"7d-ago"``.
@@ -496,13 +501,14 @@ class RecordsAPI(APIClient):
                 ... ):
                 ...     pass
 
-            Fetch a single chunk with manual control, e.g. to poll at your own cadence:
+            Fetch chunks with manual control, e.g. to poll at your own cadence. Store the
+            iterator in a variable to keep pulling chunks from where you left off:
 
-                >>> chunk = next(
-                ...     client.data_modeling.records.sync(
-                ...         stream_id="my-stream", cursor="previously-stored-cursor"
-                ...     )
+                >>> feed = client.data_modeling.records.sync(
+                ...     stream_id="my-stream", cursor="previously-stored-cursor"
                 ... )
+                >>> first_chunk = next(feed)
+                >>> second_chunk = next(feed)
         """
         self._warning.warn()
         if (initialize_cursor is None) == (cursor is None):
