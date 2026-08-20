@@ -1,6 +1,6 @@
 """
 ===============================================================================
-93bf57af12acd0fa115d85207d21a500
+854033356b2e6580a038464a0c174587
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -402,10 +402,9 @@ class SyncRecordsAPI(SyncAPIClient):
         yielded in chunks rather than one by one.
 
         Warning:
-            Every chunk is fetched with a separate API request - there is no smart fetching
-            behind the scenes - so a small ``chunk_size`` multiplies the number of requests
-            and comes at a hefty performance penalty. Keep the default of 1000 (the API
-            maximum) unless your per-chunk processing genuinely needs smaller checkpoints.
+            Every chunk is fetched with a separate API request, so a small ``chunk_size`` increases
+            the number of requests (i.e. comes at a high performance penalty). Keep the default of
+            1000 (the API maximum) unless your per-chunk processing genuinely needs smaller batches.
 
         Args:
             stream_id (str): External ID of the stream to sync.
