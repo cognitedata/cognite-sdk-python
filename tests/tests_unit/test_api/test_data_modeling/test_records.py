@@ -960,6 +960,7 @@ class TestRecordsAPIFilterLimit:
         with pytest.raises((TypeError, ValueError), match="'limit'"):
             cognite_client.data_modeling.records.filter(stream_id=stream_id, limit=limit)  # type: ignore[arg-type]
 
+
 class TestRecordPropertyPathValidation:
     """The records DTOs take property paths too, with the same bare-string hazard."""
 
