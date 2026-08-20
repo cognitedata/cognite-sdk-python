@@ -33,13 +33,13 @@ if TYPE_CHECKING:
 _FILTER_MAX_LIMIT = 1000
 
 
-def _validate_filter_limit(limit: Any) -> None:
+def _validate_filter_limit(limit: int) -> None:
     hint = (
         "The filter endpoint returns a single page and does not paginate; to read more records, narrow "
         "'last_updated_time' and repeat, or follow the change feed with sync()."
     )
-    if isinstance(limit, bool) or not isinstance(limit, int):
-        raise TypeError(f"'limit' must be an int between 1 and {_FILTER_MAX_LIMIT}, not {type(limit).__name__}. {hint}")
+    if not isinstance(limit, int):
+        raise TypeError(f"'limit' must be an integer, not {type(limit).__name__}. {hint}")
     if not 1 <= limit <= _FILTER_MAX_LIMIT:
         raise ValueError(f"'limit' must be between 1 and {_FILTER_MAX_LIMIT} (inclusive), got {limit}. {hint}")
 
