@@ -1864,7 +1864,7 @@ class InstancesAPI(APIClient):
                 ...     backup_on_exit=True,
                 ... )
                 >>> def do_work(nodes: NodeList) -> None:
-                ...     print(len(nodes))  # ¯\_(ツ)_/¯
+                ...     print(len(nodes))
                 >>>
                 >>> async with session:  # doctest: +SKIP
                 ...     await session.sync_until_live()
