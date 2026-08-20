@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from typing import Any
 from unittest.mock import MagicMock, create_autospec, patch
 
-from cognite.client import AsyncCogniteClient, ClientConfig, CogniteClient, global_config
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api.agents import AgentsAPI
 from cognite.client._api.ai import AIAPI
 from cognite.client._api.ai.tools import AIToolsAPI
@@ -184,6 +184,7 @@ from cognite.client._sync_api.workflows.executions import SyncWorkflowExecutionA
 from cognite.client._sync_api.workflows.tasks import SyncWorkflowTaskAPI
 from cognite.client._sync_api.workflows.triggers import SyncWorkflowTriggerAPI
 from cognite.client._sync_api.workflows.versions import SyncWorkflowVersionAPI
+from cognite.client.config import ClientConfig
 from cognite.client.credentials import Token
 
 
@@ -203,6 +204,23 @@ class _SpecSetEnforcer(type):
         return instance
 
 
+def mock_client_config() -> MagicMock:
+    return create_autospec(
+        ClientConfig,
+        instance=True,
+        client_name="client_name",
+        project="project",
+        credentials=create_autospec(Token, instance=True, token="token"),
+        api_subversion=None,
+        base_url=None,
+        cluster=None,
+        headers=None,
+        timeout=None,
+        file_transfer_timeout=None,
+        debug=False,
+    )
+
+
 class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
     """Mock for AsyncCogniteClient object
 
@@ -211,10 +229,8 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=AsyncCogniteClient, *args, **kwargs)
-        original_value = global_config.disable_pypi_version_check
-        global_config.disable_pypi_version_check = True
-        self.config = create_autospec(ClientConfig("mock", "mock", Token("mock"), base_url="mock"), spec_set=True)
-        global_config.disable_pypi_version_check = original_value
+        self.config = mock_client_config()
+        flip_spec_set_on(self.config)
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.
@@ -425,10 +441,8 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=CogniteClient, *args, **kwargs)
-        original_value = global_config.disable_pypi_version_check
-        global_config.disable_pypi_version_check = True
-        self.config = create_autospec(ClientConfig("mock", "mock", Token("mock"), base_url="mock"), spec_set=True)
-        global_config.disable_pypi_version_check = original_value
+        self.config = mock_client_config()
+        flip_spec_set_on(self.config)
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.
