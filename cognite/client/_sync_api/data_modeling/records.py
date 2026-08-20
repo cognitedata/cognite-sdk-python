@@ -1,6 +1,6 @@
 """
 ===============================================================================
-828de11d0b1ec3a690c7bce50cfeebb6
+92354ad43afbf455efb8431845c599f3
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -30,6 +30,8 @@ from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
+
+_FILTER_MAX_LIMIT = 1000
 
 
 class SyncRecordsAPI(SyncAPIClient):
@@ -321,7 +323,8 @@ class SyncRecordsAPI(SyncAPIClient):
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
-            limit (int): Maximum number of records to return (1-1000).
+            limit (int): Maximum number of records to return (1-1000). This endpoint returns a single
+                page and does not paginate, so a larger limit is an error rather than a silent cap.
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
 
@@ -379,7 +382,8 @@ class SyncRecordsAPI(SyncAPIClient):
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
                 to another unit.
-            limit (int): Maximum number of records to return in this page (1-1000). Defaults to 10.
+            limit (int): Maximum number of records to return (1-1000 per request; a larger limit is
+                served by following the cursor). Defaults to 10.
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
 
@@ -434,7 +438,8 @@ class SyncRecordsAPI(SyncAPIClient):
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
                 to another unit.
-            limit (int): Maximum number of records to return in this page (1-1000). Defaults to 10.
+            limit (int): Maximum number of records to return (1-1000 per request; a larger limit is
+                served by following the cursor). Defaults to 10.
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
 
