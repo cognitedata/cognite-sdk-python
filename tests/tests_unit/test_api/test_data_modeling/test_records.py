@@ -959,3 +959,19 @@ class TestRecordsAPIFilterLimit:
     def test_filter_rejects_unlimited(self, cognite_client: CogniteClient, stream_id: str, limit: object) -> None:
         with pytest.raises((TypeError, ValueError), match="'limit'"):
             cognite_client.data_modeling.records.filter(stream_id=stream_id, limit=limit)  # type: ignore[arg-type]
+
+class TestRecordPropertyPathValidation:
+    """The records DTOs take property paths too, with the same bare-string hazard."""
+
+    def test_record_target_unit_rejects_bare_string_property(self) -> None:
+        with pytest.raises(TypeError, match="'property' must be a sequence of strings"):
+            RecordTargetUnit("sp.c.temp", UnitReference("temperature:deg_c"))  # type: ignore[arg-type]
+
+    def test_record_source_selector_rejects_bare_string_properties(self) -> None:
+        with pytest.raises(TypeError, match="'properties' must be a sequence of strings"):
+            RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), "temp")  # type: ignore[arg-type]
+
+    def test_record_source_selector_rejects_no_properties(self) -> None:
+        # The API requires minItems: 1 for properties.
+        with pytest.raises(ValueError, match="'properties' must not be empty"):
+            RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), [])

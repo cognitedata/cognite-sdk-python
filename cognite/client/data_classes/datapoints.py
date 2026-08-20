@@ -1808,8 +1808,8 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
         df = pd.DataFrame(rows, index=index_values)
         df.index.name = "identifier"
 
-        # Drop status columns if they are all null
-        if include_status:
+        # Drop status columns if they are all null (empty lists have no such columns)
+        if include_status and "status_code" in df.columns:
             if df["status_code"].isna().all():  # symbol column will also be null
                 df = df.drop(columns=["status_code", "status_symbol"])
 
