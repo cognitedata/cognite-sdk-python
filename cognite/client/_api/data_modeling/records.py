@@ -458,10 +458,9 @@ class RecordsAPI(APIClient):
         yielded in chunks rather than one by one.
 
         Warning:
-            Every chunk is fetched with a separate API request - there is no smart fetching
-            behind the scenes - so a small ``chunk_size`` multiplies the number of requests
-            and comes at a hefty performance penalty. Keep the default of 1000 (the API
-            maximum) unless your per-chunk processing genuinely needs smaller checkpoints.
+            Every chunk is fetched with a separate API request, so a small ``chunk_size`` increases
+            the number of requests (i.e. comes at a high performance penalty). Keep the default of
+            1000 (the API maximum) unless your per-chunk processing genuinely needs smaller batches.
 
         Args:
             stream_id (str): External ID of the stream to sync.
