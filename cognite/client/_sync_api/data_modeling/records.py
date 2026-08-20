@@ -1,6 +1,6 @@
 """
 ===============================================================================
-854033356b2e6580a038464a0c174587
+e50d855222acc9a875059316cd3d6fce
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -30,6 +30,8 @@ from cognite.client.utils._async_helpers import SyncIterator, run_sync
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
+
+_FILTER_MAX_LIMIT = 1000
 
 
 class SyncRecordsAPI(SyncAPIClient):
@@ -321,7 +323,8 @@ class SyncRecordsAPI(SyncAPIClient):
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
-            limit (int): Maximum number of records to return (1-1000).
+            limit (int): Maximum number of records to return (1-1000). This endpoint returns a single
+                page and does not paginate, so a larger limit is an error rather than a silent cap.
             include_typing (bool): If True, include property type information on the returned
                 list's ``typing`` attribute.
 

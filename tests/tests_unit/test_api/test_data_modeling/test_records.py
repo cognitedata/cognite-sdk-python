@@ -1172,6 +1172,18 @@ class TestRecordDTOs:
         assert page.typing is None
 
 
+class TestRecordsAPIFilterLimit:
+    @pytest.mark.parametrize("limit", [1001, 5000])
+    def test_filter_rejects_limit_above_max(self, cognite_client: CogniteClient, stream_id: str, limit: int) -> None:
+        with pytest.raises(ValueError, match="'limit' must be between 1 and 1000"):
+            cognite_client.data_modeling.records.filter(stream_id=stream_id, limit=limit)
+
+    @pytest.mark.parametrize("limit", [None, -1])
+    def test_filter_rejects_unlimited(self, cognite_client: CogniteClient, stream_id: str, limit: object) -> None:
+        with pytest.raises((TypeError, ValueError), match="'limit'"):
+            cognite_client.data_modeling.records.filter(stream_id=stream_id, limit=limit)  # type: ignore[arg-type]
+
+
 class TestRecordPropertyPathValidation:
     """The records DTOs take property paths too, with the same bare-string hazard."""
 
