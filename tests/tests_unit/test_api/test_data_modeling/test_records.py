@@ -950,9 +950,6 @@ class TestRecordDTOs:
 
 
 class TestRecordsAPIFilterLimit:
-    """The filter endpoint returns a single page of at most 1000 records and has no cursor, so a
-    bigger limit is silently truncated to 1000 instead of being reported."""
-
     @pytest.mark.parametrize("limit", [1001, 5000])
     def test_filter_rejects_limit_above_max(self, cognite_client: CogniteClient, stream_id: str, limit: int) -> None:
         with pytest.raises(ValueError, match="'limit' must be between 1 and 1000"):
