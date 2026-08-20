@@ -230,7 +230,7 @@ class TestRecordsIntegration:
             assert page.cursor is not None
             seen.extend(record.external_id for record in page)
             pages += 1
-            assert pages < 20, "sync did not exhausted the feed"
+            assert pages < 20, "sync did not exhaust the feed"
 
         assert pages > 1, "expected the 3 ingested records to span more than one chunk of size 2"
         assert set(seen) == {record.external_id for record in ingested_records}

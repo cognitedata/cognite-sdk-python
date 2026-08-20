@@ -494,7 +494,7 @@ class RecordsAPI(APIClient):
                 >>> for chunk in client.data_modeling.records.sync(
                 ...     stream_id="my-stream", cursor="previously-stored-cursor"
                 ... ):
-                ...     pass  # process chunk, then persist chunk.cursor
+                ...     pass
 
             Fetch a single chunk with manual control, e.g. to poll at your own cadence:
 
@@ -508,7 +508,7 @@ class RecordsAPI(APIClient):
         if (initialize_cursor is None) == (cursor is None):
             raise ValueError("Pass exactly one of 'initialize_cursor' or 'cursor'.")
         if not (isinstance(chunk_size, int) and 1 <= chunk_size <= self._SYNC_LIMIT):
-            raise ValueError(f"'chunk_size' must be an integer between 1 and {self._SYNC_LIMIT}.")
+            raise ValueError(f"'chunk_size' must be an integer between 1 and {self._SYNC_LIMIT} (inclusive).")
         body: dict[str, Any] = {"limit": chunk_size}
         if initialize_cursor is not None:
             body["initializeCursor"] = initialize_cursor
