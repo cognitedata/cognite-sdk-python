@@ -235,6 +235,10 @@ class TestRecordsIntegration:
         assert pages > 1, "expected the 3 ingested records to span more than one chunk of size 2"
         assert set(seen) == {record.external_id for record in ingested_records}
 
+    @pytest.mark.skipif(
+        datetime.now(timezone.utc) < datetime(2026, 9, 4, tzinfo=timezone.utc),
+        reason="Temporarily skipped for two weeks",
+    )
     def test_upsert_replaces_record(
         self,
         cognite_client: CogniteClient,

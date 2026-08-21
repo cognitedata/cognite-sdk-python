@@ -11,6 +11,7 @@ from functools import cached_property
 from typing import (
     TYPE_CHECKING,
     Any,
+    ClassVar,
     Generic,
     Literal,
     Protocol,
@@ -30,8 +31,12 @@ from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import load_resource_to_dict, load_yaml_or_json
 from cognite.client.utils._identifier import IdentifierSequence, InstanceId
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._pandas_helpers import (
+    base_resource_to_pandas_fallback,
+    squeeze_single_row_list_df,
+)
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_camel_case, to_camel_case
-from cognite.client.utils._time import TIME_ATTRIBUTES, convert_and_isoformat_time_attrs
+from cognite.client.utils._time import convert_and_isoformat_time_attrs
 from cognite.client.utils.useful_types import is_sequence_not_str
 
 if TYPE_CHECKING:
@@ -77,6 +82,12 @@ class CogniteResource(ABC):
     """The CogniteResource is the main data class in the SDK and is used to add serialization and deserialization, and the to_pandas method,
     which together with _repr_html_ makes it easy to visualize data in a tabular format in e.g. Jupyter notebooks.
     """
+
+    # Certain methods (looking at you to_pandas) need to know the corresponding resource list class to avoid duplicating logic.
+    # Not all resource types have a list class counterpart, so this is annotated as optional. We enforce that subclasses get
+    # this attribute set by tests in test_meta.py (the allow-list lives there).
+    # _LIST_CLASS is populated dynamically (__init_subclass__) when a CogniteResourceList subclass defines _RESOURCE.
+    _LIST_CLASS: ClassVar[type[CogniteResourceList] | None] = None
 
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()
@@ -164,21 +175,21 @@ class CogniteResource(ABC):
         Returns:
             pandas.DataFrame: The dataframe.
         """
-        pd = local_import("pandas")
-
-        dumped = self.dump(camel_case=camel_case)
-
-        for element in ignore or []:
-            dumped.pop(element, None)
-
-        if convert_timestamps:
-            for k in TIME_ATTRIBUTES.intersection(dumped):
-                dumped[k] = pd.Timestamp(dumped[k], unit="ms")
-
-        if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
-            dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})
-
-        return pd.Series(dumped).to_frame(name="value")
+        # Delegate to the list class so the timestamp/metadata conversion logic only lives in one place.
+        if self._LIST_CLASS is not None:
+            return squeeze_single_row_list_df(
+                self._LIST_CLASS([self]).to_pandas(
+                    camel_case=camel_case,
+                    expand_metadata=expand_metadata,
+                    metadata_prefix=metadata_prefix,
+                    convert_timestamps=convert_timestamps,
+                ),
+                ignore=ignore,
+            )
+        # We also have a fallback for resource types that don't have a list class counterpart:
+        return base_resource_to_pandas_fallback(
+            self, camel_case, ignore, convert_timestamps, expand_metadata, metadata_prefix
+        )
 
     def _repr_html_(self) -> str:
         from cognite.client.utils._pandas_helpers import notebook_display_with_fallback
@@ -242,6 +253,22 @@ class WriteableCogniteResourceWithClientRef(
 
 class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     _RESOURCE: type[T_CogniteResource]
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        try:
+            # We only bind `_RESOURCE._LIST_CLASS` when this exact class defines _RESOURCE,
+            # i.e. dont look up in the MRO:
+            resource_cls = cls.__dict__["_RESOURCE"]
+        except KeyError:
+            return
+
+        # This is a bit defensive, and could be moved to tests since we "control the SDK". However, this will
+        # provide some insurance for users subclassing the SDK:
+        if isinstance(resource_cls, type) and issubclass(resource_cls, CogniteResource):
+            resource_cls._LIST_CLASS = cls
+        else:
+            raise TypeError(f"{cls.__name__}._RESOURCE must be a CogniteResource subclass, got {resource_cls!r}")
 
     def __init__(self, resources: Sequence[T_CogniteResource]) -> None:
         if resources:
