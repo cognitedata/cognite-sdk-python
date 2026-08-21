@@ -299,8 +299,57 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
             return {item.instance_id: item for item in self.data if item.instance_id is not None}
         return {}
 
+    def _clear_identifier_lookups(self) -> None:
+        """Invalidate the cached id/external_id/instance_id lookup maps.
+
+        They are ``cached_property`` values built lazily on the first ``get(...)``
+        call; dropping the cached values forces a rebuild so lookups reflect the
+        current items after any membership change.
+        """
+        for attr in ("_id_to_item", "_external_id_to_item", "_instance_id_to_item"):
+            self.__dict__.pop(attr, None)
+
+    def append(self, item: T_CogniteResource) -> None:
+        super().append(item)
+        self._clear_identifier_lookups()
+
+    def insert(self, i: int, item: T_CogniteResource) -> None:
+        super().insert(i, item)
+        self._clear_identifier_lookups()
+
+    def remove(self, item: T_CogniteResource) -> None:
+        super().remove(item)
+        self._clear_identifier_lookups()
+
+    def clear(self) -> None:
+        super().clear()
+        self._clear_identifier_lookups()
+
     def pop(self, i: int = -1) -> T_CogniteResource:
-        return super().pop(i)
+        item = super().pop(i)
+        self._clear_identifier_lookups()
+        return item
+
+    def __setitem__(self, i: SupportsIndex | slice, item: T_CogniteResource | Iterable[T_CogniteResource]) -> None:
+        super().__setitem__(i, item)  # type: ignore[index]
+        self._clear_identifier_lookups()
+
+    def __delitem__(self, i: SupportsIndex | slice) -> None:
+        super().__delitem__(i)
+        self._clear_identifier_lookups()
+
+    def __iadd__(  # type: ignore[misc]
+        self: T_CogniteResourceList, other: Iterable[T_CogniteResource]
+    ) -> T_CogniteResourceList:
+        # Delegate to extend() so `+=` gets the same duplicate-id check (and
+        # cache maintenance) as extend(), rather than bypassing it via UserList.
+        self.extend(other)
+        return self
+
+    def __imul__(self: T_CogniteResourceList, n: int) -> T_CogniteResourceList:
+        super().__imul__(n)
+        self._clear_identifier_lookups()
+        return self
 
     def __iter__(self) -> Iterator[T_CogniteResource]:
         return super().__iter__()

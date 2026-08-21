@@ -764,6 +764,51 @@ class TestCogniteResourceList:
         assert MyResource(id=1, external_id="1") == resource_list.get(external_id="1")
         assert MyResource(id=2, external_id="2") == resource_list.get(external_id="2")
 
+    def test_get_is_invalidated_by_mutations(self) -> None:
+        # The id/external_id lookup maps are cached on first `.get(...)`. Every
+        # membership-mutating operation must invalidate them, otherwise `.get()`
+        # returns stale (removed) or misses newly-added items.
+        resource_list = MyResourceList([MyResource(id=1, external_id="1"), MyResource(id=2, external_id="2")])
+
+        # Prime the cached lookup maps.
+        assert resource_list.get(id=1) == MyResource(id=1, external_id="1")
+
+        # Removals: the removed item must no longer be found.
+        assert resource_list.pop() == MyResource(id=2, external_id="2")
+        assert resource_list.get(id=2) is None
+
+        resource_list.remove(MyResource(id=1, external_id="1"))
+        assert resource_list.get(id=1) is None
+
+        # Additions: newly-added items must be found (by id and external_id).
+        resource_list.append(MyResource(id=3, external_id="3"))
+        assert resource_list.get(id=3) == MyResource(id=3, external_id="3")
+        assert resource_list.get(external_id="3") == MyResource(id=3, external_id="3")
+
+        resource_list.insert(0, MyResource(id=4, external_id="4"))
+        assert resource_list.get(id=4) == MyResource(id=4, external_id="4")
+
+        resource_list += MyResourceList([MyResource(id=5, external_id="5")])
+        assert resource_list.get(id=5) == MyResource(id=5, external_id="5")
+
+        # `+=` delegates to extend(), so it enforces the same duplicate-id check.
+        with pytest.raises(ValueError, match="introduce duplicates"):
+            resource_list += MyResourceList([MyResource(id=5, external_id="5")])
+
+        # __setitem__ replaces an item.
+        resource_list[0] = MyResource(id=6, external_id="6")
+        assert resource_list.get(id=4) is None
+        assert resource_list.get(id=6) == MyResource(id=6, external_id="6")
+
+        # __delitem__ removes by index.
+        del resource_list[0]
+        assert resource_list.get(id=6) is None
+
+        # clear() empties the list.
+        resource_list.clear()
+        assert resource_list.get(id=3) is None
+        assert resource_list.get(id=5) is None
+
     def test_constructor_bad_type(self) -> None:
         with pytest.raises(TypeError, match="must be of type 'MyResource'"):
             MyResourceList([1, 2, 3])
