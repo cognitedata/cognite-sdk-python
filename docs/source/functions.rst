@@ -30,7 +30,7 @@ Function schedules
    AsyncCogniteClient.functions.schedules
 
 Data classes
-^^^^^^^^^^^^
+------------
 .. automodule:: cognite.client.data_classes.functions
     :members:
     :show-inheritance:
