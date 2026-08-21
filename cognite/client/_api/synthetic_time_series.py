@@ -271,7 +271,11 @@ class SyntheticDatapointsAPI(APIClient):
                 )
 
             # We convert to str to ensure any sympy.Symbol is replaced with its name:
-            to_substitute[re.escape(str(k))] = "ts{" + sub_string + aggregate_str + target_unit_str + "}"
+            if not (k_str := str(k)).isidentifier():
+                raise ValueError(
+                    f"'{k}' is not a valid variable name. Variable names must be valid Python identifiers."
+                )
+            to_substitute[re.escape(k_str)] = "ts{" + sub_string + aggregate_str + target_unit_str + "}"
 
         # Substitute all variables in one go to avoid substitution of prior substitutions:
         pattern = re.compile(r"\b" + r"\b|\b".join(to_substitute) + r"\b")  # note: \b marks a word boundary
