@@ -13,6 +13,21 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.13.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.12.0...v8.13.0) (2026-08-13)
+
+
+### Features
+
+* **credentials:** let users choose the account for interactive login (DM-3512) ([#2730](https://github.com/cognitedata/cognite-sdk-python/issues/2730)) ([bef4f27](https://github.com/cognitedata/cognite-sdk-python/commit/bef4f27a836b2e93410fd2411e59043ee28a5cc0))
+* **functions:** add py314 to RunTime ([#2735](https://github.com/cognitedata/cognite-sdk-python/issues/2735)) ([cf66c51](https://github.com/cognitedata/cognite-sdk-python/commit/cf66c51a8b73c243a7d1a8f742fb137463386f67))
+* **streams:** rename StreamTemplateWriteSettings to StreamWriteSettings ([#2753](https://github.com/cognitedata/cognite-sdk-python/issues/2753)) ([801ee75](https://github.com/cognitedata/cognite-sdk-python/commit/801ee75c61c49024f79701ea10dacf46706b03fc))
+* **transformations:** add external data sources client API ([#2732](https://github.com/cognitedata/cognite-sdk-python/issues/2732)) ([60b6c36](https://github.com/cognitedata/cognite-sdk-python/commit/60b6c36e42c60020198f298ad784580e00c0bdc2))
+
+
+### Bug Fixes
+
+* **records:** validate property paths instead of splitting bare strings ([#2747](https://github.com/cognitedata/cognite-sdk-python/issues/2747)) ([b90a384](https://github.com/cognitedata/cognite-sdk-python/commit/b90a3847d0ee49e5eaa37b8ae980cf1b6fe4d0eb))
+
 ## [8.12.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.11.0...cognite-sdk-python-v8.12.0) (2026-08-05)
 
 
@@ -288,7 +303,7 @@ As of 2025-08-29, changes are grouped as follows
 - The specific exceptions `CogniteDuplicatedError` and `CogniteNotFoundError` should now always be used when appropriate (previously certain API endpoints always used `CogniteAPIError`).
 - `ModelFailedException` has changed name to `CogniteModelFailedError`.
 - For `class Transformation`, which used to have an async `run` method, this is now named `run_async` to unify the overall interface. The same applies to the `cancel` and `jobs` methods for the same class, and `update` and `wait` on `TransformationJob`.
-- **ClientConfig**: `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`. See the [Settings documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings) for details.
+- **ClientConfig**: `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`. See the [Settings documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/stable/settings.html#concurrency-settings) for details.
 - **ClientConfig**: `timeout` default has been increased from 30 sec to 60 sec.
 - **global_config**: New setting `follow_redirects` that controls whether or not to follow redirects. Defaults to `False`.
 - **global_config**: New setting `file_download_chunk_size` that allows you to override the chunk size for streaming file downloads. Defaults to `None` (auto).
