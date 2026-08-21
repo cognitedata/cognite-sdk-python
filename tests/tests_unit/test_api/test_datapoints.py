@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import asyncio
+import gc
+import itertools
 import math
 import re
 import unittest
 from collections.abc import Iterator
+from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
 from random import randint, random, shuffle
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -396,6 +401,90 @@ class TestInsertDatapoints:
 
         assert len(dump_sem_held) == 50
         assert all(dump_sem_held), "dp.dump() was called outside the semaphore context"
+
+
+class TestFetchAllDoesNotLeakTaskExceptions:
+    """Regression tests for the following scenario:
+
+    When more than one concurrent datapoints request failed, `EagerDpsFetcher._fetch_all` or
+    `ChunkingDpsFetcher._fetch_until_complete` used to reraise the first exception immediately
+    which would lead to user warnings of the type 'Task exception was not retrieved'.
+    """
+
+    @staticmethod
+    def _make_fails_eventually(counter: Iterator[int]) -> Any:
+        async def fails_eventually() -> Any:
+            if next(counter) == 0:
+                raise ConnectionError("simulated network failure (fast)")
+            await asyncio.sleep(5)
+            raise ConnectionError("simulated network failure (slow)")
+
+        return fails_eventually
+
+    @staticmethod
+    @contextmanager
+    def assert_no_unhandled_asyncio_exceptions() -> Iterator[list[dict[str, Any]]]:
+        loop = asyncio.get_running_loop()
+        captured: list[dict[str, Any]] = []
+
+        def record_exception_context(loop: asyncio.AbstractEventLoop, context: dict[str, Any]) -> None:
+            # 'loop' is required part of call signature but not needed for our purposes
+            captured.append(context)
+
+        loop.set_exception_handler(record_exception_context)
+        try:
+            yield captured
+        finally:
+            loop.set_exception_handler(None)  # Restore default
+
+    async def test_eager_fetcher(self) -> None:
+        # We need to skip __init__ so we use this horrible method:
+        fetcher = object.__new__(dps_api.EagerDpsFetcher)
+        fetcher.all_queries = []
+
+        fails_eventually = self._make_fails_eventually(itertools.count())
+        tasks = [asyncio.create_task(fails_eventually()) for _ in range(3)]
+        futures_dct: dict[asyncio.Task, Any] = {task: SimpleNamespace(parent=SimpleNamespace()) for task in tasks}
+        fetcher._create_initial_tasks = lambda use_numpy: (futures_dct, {})  # type: ignore[method-assign]
+
+        async def consume() -> None:
+            async for _ in fetcher._fetch_all(use_numpy=False):
+                pass
+
+        with self.assert_no_unhandled_asyncio_exceptions() as captured, pytest.raises(ConnectionError):
+            # If tasks aren't cancelled but awaited instead, this will time out well before the
+            # 5s sleep thus failing the test fast rather than just hanging:
+            await asyncio.wait_for(consume(), timeout=1)
+
+        gc.collect()  # Force collection of any would-be-orphaned tasks so a leak would show up
+        assert not futures_dct, "Not every scheduled task's result/exception was retrieved before raising"
+        assert sum(task.cancelled() for task in tasks) == 2, "Sibling tasks should have been cancelled, not awaited"
+        assert not captured, f"asyncio reported unhandled exception(s): {captured}"
+
+    async def test_chunking_fetcher(self) -> None:
+        fetcher = object.__new__(dps_api.ChunkingDpsFetcher)
+        fetcher.semaphore = asyncio.BoundedSemaphore(1)
+        fetcher.agg_subtask_pool, fetcher.raw_subtask_pool = [], []
+        fetcher.subtask_pools = (fetcher.agg_subtask_pool, fetcher.raw_subtask_pool)
+
+        fails_eventually = self._make_fails_eventually(itertools.count())
+        tasks = [asyncio.create_task(fails_eventually()) for _ in range(3)]
+        futures_dct: dict[asyncio.Task, Any] = {task: [] for task in tasks}
+        unknown_failed: list[BaseException] = []
+
+        async def consume() -> None:
+            await fetcher._fetch_until_complete(futures_dct, unknown_failed)
+            await fetcher._raise_if_unknown_failed(unknown_failed, futures_dct)
+
+        with self.assert_no_unhandled_asyncio_exceptions() as captured, pytest.raises(ConnectionError):
+            await asyncio.wait_for(consume(), timeout=1)
+
+        gc.collect()
+        assert not futures_dct, "Not every scheduled task's result/exception was retrieved"
+        assert len(unknown_failed) == 1, "Only the first (fast) failure should be recorded"
+        assert isinstance(unknown_failed[0], ConnectionError)
+        assert sum(task.cancelled() for task in tasks) == 2, "Sibling tasks should have been cancelled, not awaited"
+        assert not captured, f"asyncio reported unhandled exception(s): {captured}"
 
 
 @pytest.fixture
@@ -799,6 +888,10 @@ class TestPandasIntegration:
     def test_datapoints_list_empty(self) -> None:
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
+
+    def test_latest_datapoint_list_empty(self) -> None:
+        latest_list = LatestDatapointList([])
+        assert latest_list.to_pandas().empty
 
     @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_id_and_xid(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:

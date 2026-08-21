@@ -8,7 +8,7 @@ Cognite Python SDK
 [![Downloads](https://img.shields.io/pypi/dm/cognite-sdk)](https://pypistats.org/packages/cognite-sdk)
 [![GitHub](https://img.shields.io/github/license/cognitedata/cognite-sdk-python)](https://github.com/cognitedata/cognite-sdk-python/blob/master/LICENSE)
 [![codecov](https://codecov.io/gh/cognitedata/cognite-sdk-python/branch/master/graph/badge.svg)](https://codecov.io/gh/cognitedata/cognite-sdk-python)
-[![Documentation Status](https://readthedocs.com/projects/cognite-sdk-python/badge/?version=latest)](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
+[![Documentation Status](https://readthedocs.com/projects/cognite-sdk-python/badge/?version=stable)](https://cognite-sdk-python.readthedocs-hosted.com/en/stable/)
 [![PyPI version](https://badge.fury.io/py/cognite-sdk.svg)](https://pypi.org/project/cognite-sdk/)
 [![conda version](https://anaconda.org/conda-forge/cognite-sdk/badges/version.svg)](https://anaconda.org/conda-forge/cognite-sdk)
 [![mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org)
@@ -43,7 +43,7 @@ The synchronous `CogniteClient` remains fully supported and now wraps the async 
 See the [Migration Guide](MIGRATION_GUIDE.md) for a complete list of changes.
 
 ## Reference documentation
-* [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/latest/)
+* [SDK Documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/stable/)
 * [CDF API Documentation](https://doc.cognitedata.com/)
 * [Cognite Developer Documentation](https://docs.cognite.com/dev/)
 

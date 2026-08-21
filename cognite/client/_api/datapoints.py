@@ -120,22 +120,40 @@ class DpsFetchStrategy(ABC):
         )
         return res.items
 
-    def _raise_if_missing(self, to_raise: set[DatapointsQuery]) -> None:
-        if to_raise:
-            raise CogniteNotFoundError(
-                "Time series not found",
-                code=400,
-                missing=[q.identifier.as_dict(camel_case=False) for q in to_raise],
-                x_request_id="<no failing request was made>",
-                cluster=self.dps_client._config.cdf_cluster,
-                project=self.dps_client._config.project,
-            )
+    async def _raise_if_missing(
+        self, to_raise: set[DatapointsQuery], futures_dct: dict[asyncio.Task, Any] | None = None
+    ) -> None:
+        if not to_raise:
+            return
+        if futures_dct:
+            await self._cancel_remaining(futures_dct)
+        raise CogniteNotFoundError(
+            "Time series not found",
+            code=400,
+            missing=[q.identifier.as_dict(camel_case=False) for q in to_raise],
+            x_request_id="<no failing request was made>",
+            cluster=self.dps_client._config.cdf_cluster,
+            project=self.dps_client._config.project,
+        )
 
-    def _raise_if_unknown_failed(self, unknown_failed: list[BaseException]) -> None:
-        if unknown_failed:
-            # Typically this happens when asking for aggregates for a string time series.
-            # We don't do anything fancy like ExceptionGroup (Python 3.11+), just raise the first:
-            raise unknown_failed[0]
+    async def _raise_if_unknown_failed(
+        self, unknown_failed: list[BaseException], futures_dct: dict[asyncio.Task, Any] | None = None
+    ) -> None:
+        if not unknown_failed:
+            return
+        if futures_dct:
+            await self._cancel_remaining(futures_dct)
+        # Typically this happens when asking for aggregates for a string time series.
+        # We don't do anything fancy like ExceptionGroup (Python 3.11+), just raise the first:
+        raise unknown_failed[0]
+
+    @staticmethod
+    async def _cancel_remaining(futures_dct: dict[asyncio.Task, Any]) -> None:
+        # We already know we're going to raise so we cancel any outstanding task:
+        for task in futures_dct:
+            task.cancel()
+        await asyncio.gather(*futures_dct, return_exceptions=True)
+        futures_dct.clear()
 
     @abstractmethod
     def _fetch_all(self, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
@@ -155,6 +173,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
 
     async def _fetch_all(self, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
         missing_to_raise: set[DatapointsQuery] = set()
+        unknown_failed: list[BaseException] = []
         futures_dct, ts_task_lookup = self._create_initial_tasks(use_numpy)
 
         # Run until all top level tasks are complete:
@@ -162,12 +181,14 @@ class EagerDpsFetcher(DpsFetchStrategy):
             done, _ = await asyncio.wait(futures_dct, return_when=asyncio.FIRST_COMPLETED)
             for future in done:  # not guaranteed to be just one done task
                 ts_task = (subtask := futures_dct.pop(future)).parent
-                res = self._get_result_with_exception_handling(future, ts_task, ts_task_lookup, missing_to_raise)
+                res = self._get_result_with_exception_handling(
+                    future, ts_task, ts_task_lookup, missing_to_raise, unknown_failed
+                )
                 if res is None:
                     continue
-                elif missing_to_raise:
+                elif missing_to_raise or unknown_failed:
                     # We are going to raise anyway, kill task:
-                    ts_task.is_done = True  # The 'missing' may come from a different task, so we need this
+                    ts_task.is_done = True  # The 'missing'/failure may come from a different task, so we need this
                     continue
 
                 # We may dynamically split subtasks based on what % of time range was returned:
@@ -182,7 +203,13 @@ class EagerDpsFetcher(DpsFetchStrategy):
                 # Put the subtask back into the pool:
                 self._queue_new_subtasks(futures_dct, [subtask])
 
-        self._raise_if_missing(missing_to_raise)
+            if unknown_failed:
+                # Do not break here if there are 'missing_to_raise'; we want to accumulate all missing time series
+                # before raising a single CogniteNotFoundError with all identifiers.
+                break
+
+        await self._raise_if_unknown_failed(unknown_failed, futures_dct)
+        await self._raise_if_missing(missing_to_raise, futures_dct)
 
         # Return only non-missing time series tasks in correct order given by `all_queries`:
         for task in filter(None, map(ts_task_lookup.get, self.all_queries)):
@@ -218,13 +245,15 @@ class EagerDpsFetcher(DpsFetchStrategy):
         ts_task: BaseTaskOrchestrator,
         ts_task_lookup: dict[DatapointsQuery, BaseTaskOrchestrator],
         missing_to_raise: set[DatapointsQuery],
+        unknown_failed: list[BaseException],
     ) -> DataPointListItem | None:
         try:
             return future.result()[0]
         except CogniteAPIError as err:
-            # If the error is not "missing ts", we immediately reraise:
+            # If the error is not "missing ts", we record it to be reraised later:
             if not err.missing or err.code != 400:
-                raise
+                unknown_failed.append(err)
+                return None
             # The query decides if we can ignore it. If not, we store it so that we later can
             # raise one exception with -all- missing-non-ignorable time series:
             if not ts_task.query.ignore_unknown_ids:
@@ -232,6 +261,9 @@ class EagerDpsFetcher(DpsFetchStrategy):
 
             ts_task.is_done = True
             ts_task_lookup.pop(ts_task.query, None)
+            return None
+        except Exception as err:
+            unknown_failed.append(err)
             return None
 
 
@@ -280,8 +312,8 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             missing_to_raise.update(chunk_missing)
             ts_task_lookup.update(new_ts_tasks)
 
-        self._raise_if_unknown_failed(unknown_failed)
-        self._raise_if_missing(missing_to_raise)
+        await self._raise_if_unknown_failed(unknown_failed, initial_futures_dct)
+        await self._raise_if_missing(missing_to_raise, initial_futures_dct)
 
         if ts_tasks_left := self._update_queries_with_new_chunking_limit(ts_task_lookup):
             self._add_to_subtask_pools(
@@ -292,20 +324,32 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             )
             futures_dct: dict[asyncio.Task, list[BaseDpsFetchSubtask]] = {}
             await self._queue_new_subtasks(futures_dct)
-            await self._fetch_until_complete(futures_dct)
+            await self._fetch_until_complete(futures_dct, unknown_failed)
+            await self._raise_if_unknown_failed(unknown_failed, futures_dct)
 
         # Return only non-missing time series tasks in correct order given by `all_queries`:
         for task in filter(None, map(ts_task_lookup.get, self.all_queries)):
             yield task
 
-    async def _fetch_until_complete(self, futures_dct: dict[asyncio.Task, list[BaseDpsFetchSubtask]]) -> None:
+    async def _fetch_until_complete(
+        self, futures_dct: dict[asyncio.Task, list[BaseDpsFetchSubtask]], unknown_failed: list[BaseException]
+    ) -> None:
         while futures_dct:
             done, _ = await asyncio.wait(futures_dct, return_when=asyncio.FIRST_COMPLETED)
             res_lst_all, subtask_lst_all = [], []
             for future in done:  # not guaranteed to be just one done task
-                res_lst, subtask_lst = future.result(), futures_dct.pop(future)
+                subtask_lst = futures_dct.pop(future)
+                try:
+                    res_lst = future.result()
+                except Exception as exc:
+                    unknown_failed.append(exc)
+                    continue
+
                 subtask_lst_all.extend(subtask_lst)
                 res_lst_all.extend(res_lst)
+
+            if unknown_failed:
+                return  # We know we're going to raise, no point in continuing
 
             for subtask, res in zip(subtask_lst_all, res_lst_all):
                 # We may dynamically split subtasks based on what % of time range was returned:
@@ -588,7 +632,7 @@ class DatapointsAPI(APIClient):
         chunk_size_time_series: int | None = None,
         return_arrays: bool = True,
     ) -> AsyncIterator[DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList]:
-        """`Iterate through datapoints in chunks, for one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        """`Iterate through datapoints in chunks, for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_.
 
         Note:
             Control memory usage by specifying ``chunk_size_time_series``, how many time series to iterate simultaneously and ``chunk_size_datapoints``,

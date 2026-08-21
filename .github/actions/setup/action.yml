@@ -13,7 +13,8 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+    - id: setup-python
+      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
       with:
         python-version: ${{ inputs.python_version }}
 
@@ -27,7 +28,8 @@ runs:
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
       with:
         path: .venv
-        key: venv-${{ runner.os }}-${{ inputs.python_version }}-${{ inputs.extras }}-${{ hashFiles('**/poetry.lock') }}
+        # Use the exact resolved interpreter version
+        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ inputs.extras }}-${{ hashFiles('**/poetry.lock') }}
 
     - name: Install dependencies
       shell: bash
