@@ -212,9 +212,6 @@ class PrincipalList(CogniteResourceList[Principal]):
         return [principal.id for principal in self]
 
 
-Principal._LIST_CLASS = PrincipalList
-
-
 # Build the mapping AFTER all classes are defined
 _PRINCIPAL_CLS_BY_TYPE: dict[str, type[Principal]] = {
     subclass._type: subclass  # type: ignore[type-abstract]

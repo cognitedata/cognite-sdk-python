@@ -36,6 +36,3 @@ class LimitList(CogniteResourceList[Limit]):
     def as_ids(self) -> list[str]:
         """Returns a list of limit IDs."""
         return [limit.as_id() for limit in self]
-
-
-Limit._LIST_CLASS = LimitList

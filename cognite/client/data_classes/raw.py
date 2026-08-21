@@ -141,18 +141,12 @@ class RowWriteList(RowListCore[RowWrite]):
         return self
 
 
-RowWrite._LIST_CLASS = RowWriteList
-
-
 class RowList(RowListCore[Row]):
     _RESOURCE = Row
 
     def as_write(self) -> RowWriteList:
         """Returns this RowList as a RowWriteList"""
         return RowWriteList([row.as_write() for row in self.data])
-
-
-Row._LIST_CLASS = RowList
 
 
 class Table(WriteableCogniteResourceWithClientRef["TableWrite"]):
@@ -244,18 +238,12 @@ class TableWriteList(CogniteResourceList[TableWrite], NameTransformerMixin):
     _RESOURCE = TableWrite
 
 
-TableWrite._LIST_CLASS = TableWriteList
-
-
 class TableList(WriteableCogniteResourceList[TableWrite, Table], NameTransformerMixin):
     _RESOURCE = Table
 
     def as_write(self) -> TableWriteList:
         """Returns this TableList as a TableWriteList"""
         return TableWriteList([table.as_write() for table in self.data])
-
-
-Table._LIST_CLASS = TableList
 
 
 class Database(WriteableCogniteResourceWithClientRef["DatabaseWrite"]):
@@ -321,15 +309,9 @@ class DatabaseWriteList(CogniteResourceList[DatabaseWrite], NameTransformerMixin
     _RESOURCE = DatabaseWrite
 
 
-DatabaseWrite._LIST_CLASS = DatabaseWriteList
-
-
 class DatabaseList(WriteableCogniteResourceList[DatabaseWrite, Database], NameTransformerMixin):
     _RESOURCE = Database
 
     def as_write(self) -> DatabaseWriteList:
         """Returns this DatabaseList as a DatabaseWriteList"""
         return DatabaseWriteList([db.as_write() for db in self.data])
-
-
-Database._LIST_CLASS = DatabaseList

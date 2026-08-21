@@ -93,6 +93,3 @@ class SimulatorLog(CogniteResource):
 
 class SimulatorLogList(CogniteResourceList[SimulatorLog], IdTransformerMixin):
     _RESOURCE = SimulatorLog
-
-
-SimulatorLog._LIST_CLASS = SimulatorLogList

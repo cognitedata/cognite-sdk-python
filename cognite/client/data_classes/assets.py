@@ -523,9 +523,6 @@ class AssetWriteList(CogniteResourceList[AssetWrite], ExternalIDTransformerMixin
     _RESOURCE = AssetWrite
 
 
-AssetWrite._LIST_CLASS = AssetWriteList
-
-
 class AssetList(WriteableCogniteResourceListWithClientRef[AssetWrite, Asset], IdTransformerMixin):
     _RESOURCE = Asset
 
@@ -621,9 +618,6 @@ class AssetList(WriteableCogniteResourceListWithClientRef[AssetWrite, Asset], Id
         task_summary = await execute_async_tasks(tasks)
         # TODO: Using .results here may need to be changed to .joined_results()
         return resource_list_class(list(itertools.chain.from_iterable(task_summary.results)))
-
-
-Asset._LIST_CLASS = AssetList
 
 
 class AssetFilter(CogniteFilter):

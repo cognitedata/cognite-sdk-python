@@ -457,9 +457,6 @@ class MessageList(CogniteResourceList[Message]):
     _RESOURCE = Message
 
 
-Message._LIST_CLASS = MessageList
-
-
 @dataclass(frozen=True, slots=True)
 class ActionResult(CogniteResource, ABC):
     """Base class for action execution results."""
@@ -742,9 +739,6 @@ class AgentMessageList(CogniteResourceList[AgentMessage]):
     """List of agent messages."""
 
     _RESOURCE = AgentMessage
-
-
-AgentMessage._LIST_CLASS = AgentMessageList
 
 
 class AgentChatResponse(CogniteResource):

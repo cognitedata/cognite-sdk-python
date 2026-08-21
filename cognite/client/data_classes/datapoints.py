@@ -1388,9 +1388,6 @@ class SyntheticDatapointsList(CogniteResourceList[SyntheticDatapoints]):
         raise NotImplementedError
 
 
-SyntheticDatapoints._LIST_CLASS = SyntheticDatapointsList
-
-
 class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
     _RESOURCE = DatapointsArray
 
@@ -1471,9 +1468,6 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
         return [dps.dump(camel_case, convert_timestamps) for dps in self]
 
 
-DatapointsArray._LIST_CLASS = DatapointsArrayList
-
-
 class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
     _RESOURCE = Datapoints
 
@@ -1544,9 +1538,6 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
             include_status=include_status,
             include_unit=include_unit,
         )
-
-
-Datapoints._LIST_CLASS = DatapointsList
 
 
 class LatestDatapoint(CogniteResource):
@@ -1823,6 +1814,3 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
                 df = df.drop(columns=["status_code", "status_symbol"])
 
         return df
-
-
-LatestDatapoint._LIST_CLASS = LatestDatapointList

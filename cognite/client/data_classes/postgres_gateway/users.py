@@ -177,17 +177,11 @@ class UserWriteList(CogniteResourceList[UserWrite]):
     _RESOURCE = UserWrite
 
 
-UserWrite._LIST_CLASS = UserWriteList
-
-
 class UserList(WriteableCogniteResourceList[UserWrite, User]):
     _RESOURCE = User
 
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
-
-
-User._LIST_CLASS = UserList
 
 
 class UserCreatedList(WriteableCogniteResourceList[UserWrite, UserCreated]):
@@ -199,6 +193,3 @@ class UserCreatedList(WriteableCogniteResourceList[UserWrite, UserCreated]):
             f"The {UserWrite.__name__} contains the credentials for the user, which are not returned in the "
             f"response of the create endpoint."
         )
-
-
-UserCreated._LIST_CLASS = UserCreatedList

@@ -382,6 +382,3 @@ class UniqueResultList(CogniteResourceList):
     @property
     def unique(self) -> list[str | int | float | Label]:
         return [item.value for item in self]
-
-
-UniqueResult._LIST_CLASS = UniqueResultList

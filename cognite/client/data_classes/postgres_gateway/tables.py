@@ -86,9 +86,6 @@ class ColumnList(CogniteResourceList[Column]):
         return {column.name: {"type": column.type} for column in self.data}
 
 
-Column._LIST_CLASS = ColumnList
-
-
 class _TableCore(WriteableCogniteResource["TableWrite"], ABC):
     _type: str
 
@@ -308,17 +305,11 @@ class TableWriteList(CogniteResourceList[TableWrite]):
     _RESOURCE = TableWrite
 
 
-TableWrite._LIST_CLASS = TableWriteList
-
-
 class TableList(WriteableCogniteResourceList[TableWrite, Table]):
     _RESOURCE = Table
 
     def as_write(self) -> TableWriteList:
         return TableWriteList([item.as_write() for item in self.data])
-
-
-Table._LIST_CLASS = TableList
 
 
 _TABLE_WRITE_CLASS_BY_TYPE: dict[str, type[TableWrite]] = {

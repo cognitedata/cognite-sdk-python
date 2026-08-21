@@ -170,14 +170,8 @@ class SimulatorRoutineWriteList(CogniteResourceList[SimulatorRoutineWrite], Exte
     _RESOURCE = SimulatorRoutineWrite
 
 
-SimulatorRoutineWrite._LIST_CLASS = SimulatorRoutineWriteList
-
-
 class SimulatorRoutineList(WriteableCogniteResourceList[SimulatorRoutineWrite, SimulatorRoutine], IdTransformerMixin):
     _RESOURCE = SimulatorRoutine
 
     def as_write(self) -> SimulatorRoutineWriteList:
         return SimulatorRoutineWriteList([a.as_write() for a in self.data])
-
-
-SimulatorRoutine._LIST_CLASS = SimulatorRoutineList

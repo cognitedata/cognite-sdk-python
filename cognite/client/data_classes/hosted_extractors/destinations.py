@@ -151,14 +151,8 @@ class DestinationWriteList(CogniteResourceList[DestinationWrite], ExternalIDTran
     _RESOURCE = DestinationWrite
 
 
-DestinationWrite._LIST_CLASS = DestinationWriteList
-
-
 class DestinationList(WriteableCogniteResourceList[DestinationWrite, Destination], ExternalIDTransformerMixin):
     _RESOURCE = Destination
 
     def as_write(self) -> NoReturn:
         raise TypeError(f"{self.__class__.__name__} cannot be converted to a write object")
-
-
-Destination._LIST_CLASS = DestinationList

@@ -309,9 +309,6 @@ class SimulatorModelWriteList(CogniteResourceList[SimulatorModelWrite], External
     _RESOURCE = SimulatorModelWrite
 
 
-SimulatorModelWrite._LIST_CLASS = SimulatorModelWriteList
-
-
 class SimulatorModelList(WriteableCogniteResourceList[SimulatorModelWrite, SimulatorModel], IdTransformerMixin):
     _RESOURCE = SimulatorModel
 
@@ -319,14 +316,8 @@ class SimulatorModelList(WriteableCogniteResourceList[SimulatorModelWrite, Simul
         return SimulatorModelWriteList([a.as_write() for a in self.data])
 
 
-SimulatorModel._LIST_CLASS = SimulatorModelList
-
-
 class SimulatorModelRevisionWriteList(CogniteResourceList[SimulatorModelRevisionWrite], ExternalIDTransformerMixin):
     _RESOURCE = SimulatorModelRevisionWrite
-
-
-SimulatorModelRevisionWrite._LIST_CLASS = SimulatorModelRevisionWriteList
 
 
 class SimulatorModelRevisionList(
@@ -336,9 +327,6 @@ class SimulatorModelRevisionList(
 
     def as_write(self) -> SimulatorModelRevisionWriteList:
         return SimulatorModelRevisionWriteList([a.as_write() for a in self.data])
-
-
-SimulatorModelRevision._LIST_CLASS = SimulatorModelRevisionList
 
 
 class SimulatorModelUpdate(CogniteUpdate):
@@ -659,6 +647,3 @@ class SimulatorModelRevisionData(CogniteResource):
 
 class SimulatorModelRevisionDataList(CogniteResourceList[SimulatorModelRevisionData], ExternalIDTransformerMixin):
     _RESOURCE = SimulatorModelRevisionData
-
-
-SimulatorModelRevisionData._LIST_CLASS = SimulatorModelRevisionDataList

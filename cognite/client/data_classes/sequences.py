@@ -181,9 +181,6 @@ class SequenceColumnList(CogniteResourceList[SequenceColumn], ExternalIDTransfor
         return SequenceColumnWriteList([col.as_write() for col in self])
 
 
-SequenceColumn._LIST_CLASS = SequenceColumnList
-
-
 class SequenceColumnWriteList(CogniteResourceList[SequenceColumnWrite], ExternalIDTransformerMixin):
     _RESOURCE = SequenceColumnWrite
 
@@ -195,9 +192,6 @@ class SequenceColumnWriteList(CogniteResourceList[SequenceColumnWrite], External
             list[ValueType]: List of column value types
         """
         return [c.value_type for c in self]
-
-
-SequenceColumnWrite._LIST_CLASS = SequenceColumnWriteList
 
 
 class Sequence(WriteableCogniteResourceWithClientRef["SequenceWrite"]):
@@ -576,18 +570,12 @@ class SequenceWriteList(CogniteResourceList[SequenceWrite], ExternalIDTransforme
     _RESOURCE = SequenceWrite
 
 
-SequenceWrite._LIST_CLASS = SequenceWriteList
-
-
 class SequenceList(WriteableCogniteResourceList[SequenceWrite, Sequence], IdTransformerMixin):
     _RESOURCE = Sequence
 
     def as_write(self) -> SequenceWriteList:
         """Returns a writeable version of this sequence list."""
         return SequenceWriteList([item.as_write() for item in self])
-
-
-Sequence._LIST_CLASS = SequenceList
 
 
 RowValues: TypeAlias = int | str | float | None
@@ -854,8 +842,6 @@ class SequenceRowsList(CogniteResourceList[SequenceRows], IdTransformerMixin):
     def _repr_html_(self) -> str:
         return self.to_pandas(key="external_id", concat=True)._repr_html_()
 
-
-SequenceRows._LIST_CLASS = SequenceRowsList
 
 SequenceDataList = SequenceRowsList
 

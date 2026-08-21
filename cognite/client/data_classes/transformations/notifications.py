@@ -121,9 +121,6 @@ class TransformationNotificationWriteList(CogniteResourceList[TransformationNoti
     _RESOURCE = TransformationNotificationWrite
 
 
-TransformationNotificationWrite._LIST_CLASS = TransformationNotificationWriteList
-
-
 class TransformationNotificationList(
     WriteableCogniteResourceList[TransformationNotificationWrite, TransformationNotification],
     InternalIdTransformerMixin,
@@ -133,9 +130,6 @@ class TransformationNotificationList(
     def as_write(self) -> TransformationNotificationWriteList:
         """Returns this TransformationNotificationList instance"""
         return TransformationNotificationWriteList([item.as_write() for item in self.data])
-
-
-TransformationNotification._LIST_CLASS = TransformationNotificationList
 
 
 class TransformationNotificationFilter(CogniteFilter):

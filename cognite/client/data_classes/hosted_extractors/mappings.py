@@ -237,17 +237,11 @@ class MappingWriteList(CogniteResourceList[MappingWrite], ExternalIDTransformerM
     _RESOURCE = MappingWrite
 
 
-MappingWrite._LIST_CLASS = MappingWriteList
-
-
 class MappingList(WriteableCogniteResourceList[MappingWrite, Mapping], ExternalIDTransformerMixin):
     _RESOURCE = Mapping
 
     def as_write(self) -> MappingWriteList:
         return MappingWriteList([mapping.as_write() for mapping in self.data])
-
-
-Mapping._LIST_CLASS = MappingList
 
 
 class MappingUpdate(CogniteUpdate):

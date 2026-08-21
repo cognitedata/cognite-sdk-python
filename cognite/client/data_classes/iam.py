@@ -243,9 +243,6 @@ class GroupWriteList(CogniteResourceList[GroupWrite], NameTransformerMixin):
         return cls([cls._RESOURCE._load(res, allow_unknown) for res in resource_list])
 
 
-GroupWrite._LIST_CLASS = GroupWriteList
-
-
 class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformerMixin, InternalIdTransformerMixin):
     _RESOURCE = Group
 
@@ -277,9 +274,6 @@ class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformer
             pd = local_import("pandas")
             df.loc[df[key] == pd.Timestamp(-1, unit="ms"), key] = pd.NaT
         return df
-
-
-Group._LIST_CLASS = GroupList
 
 
 class SecurityCategoryCore(WriteableCogniteResource["SecurityCategoryWrite"], ABC):
@@ -340,9 +334,6 @@ class SecurityCategoryWriteList(CogniteResourceList[SecurityCategoryWrite], Name
     _RESOURCE = SecurityCategoryWrite
 
 
-SecurityCategoryWrite._LIST_CLASS = SecurityCategoryWriteList
-
-
 class SecurityCategoryList(
     WriteableCogniteResourceList[SecurityCategoryWrite, SecurityCategory],
     InternalIdTransformerMixin,
@@ -353,9 +344,6 @@ class SecurityCategoryList(
     def as_write(self) -> SecurityCategoryWriteList:
         """Returns a write version of this security category list."""
         return SecurityCategoryWriteList([s.as_write() for s in self])
-
-
-SecurityCategory._LIST_CLASS = SecurityCategoryList
 
 
 class ProjectSpec(CogniteResource):
@@ -518,9 +506,6 @@ class SessionList(CogniteResourceList[Session], IdTransformerMixin):
     _RESOURCE = Session
 
 
-Session._LIST_CLASS = SessionList
-
-
 class RevokedSession(CogniteResource):
     """A session that has been revoked.
 
@@ -567,9 +552,6 @@ class RevokedSession(CogniteResource):
 
 class RevokedSessionList(CogniteResourceList[RevokedSession], IdTransformerMixin):
     _RESOURCE = RevokedSession
-
-
-RevokedSession._LIST_CLASS = RevokedSessionList
 
 
 class ClientCredentials(CogniteResource):

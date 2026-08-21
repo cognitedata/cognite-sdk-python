@@ -365,17 +365,11 @@ class EventWriteList(CogniteResourceList[EventWrite], ExternalIDTransformerMixin
     _RESOURCE = EventWrite
 
 
-EventWrite._LIST_CLASS = EventWriteList
-
-
 class EventList(WriteableCogniteResourceList[EventWrite, Event], IdTransformerMixin):
     _RESOURCE = Event
 
     def as_write(self) -> EventWriteList:
         return EventWriteList([event.as_write() for event in self.data])
-
-
-Event._LIST_CLASS = EventList
 
 
 class EventProperty(EnumProperty):

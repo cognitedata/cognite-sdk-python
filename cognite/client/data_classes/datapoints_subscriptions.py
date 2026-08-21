@@ -552,9 +552,6 @@ class DatapointSubscriptionWriteList(CogniteResourceList[DataPointSubscriptionWr
     _RESOURCE = DataPointSubscriptionWrite
 
 
-DataPointSubscriptionWrite._LIST_CLASS = DatapointSubscriptionWriteList
-
-
 class DatapointSubscriptionList(
     WriteableCogniteResourceList[DataPointSubscriptionWrite, DatapointSubscription], ExternalIDTransformerMixin
 ):
@@ -565,14 +562,8 @@ class DatapointSubscriptionList(
         return DatapointSubscriptionWriteList([x.as_write() for x in self.data])
 
 
-DatapointSubscription._LIST_CLASS = DatapointSubscriptionList
-
-
 class TimeSeriesIDList(CogniteResourceList[TimeSeriesID], IdTransformerMixin):
     _RESOURCE = TimeSeriesID
-
-
-TimeSeriesID._LIST_CLASS = TimeSeriesIDList
 
 
 class DatapointSubscriptionProperty(EnumProperty):

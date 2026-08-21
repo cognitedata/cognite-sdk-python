@@ -74,9 +74,6 @@ class UserProfileList(CogniteResourceList[UserProfile]):
         raise NotImplementedError("UserProfileList does not support extend")
 
 
-UserProfile._LIST_CLASS = UserProfileList
-
-
 class UserProfilesConfiguration(CogniteResource):
     def __init__(self, enabled: bool) -> None:
         self.enabled = enabled

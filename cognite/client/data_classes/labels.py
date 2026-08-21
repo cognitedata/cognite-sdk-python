@@ -152,9 +152,6 @@ class LabelDefinitionWriteList(CogniteResourceList[LabelDefinitionWrite], Extern
     _RESOURCE = LabelDefinitionWrite
 
 
-LabelDefinitionWrite._LIST_CLASS = LabelDefinitionWriteList
-
-
 class LabelDefinitionList(
     WriteableCogniteResourceList[LabelDefinitionWrite, LabelDefinition], ExternalIDTransformerMixin
 ):
@@ -163,9 +160,6 @@ class LabelDefinitionList(
     def as_write(self) -> LabelDefinitionWriteList:
         """Returns this LabelDefinitionList in its write version."""
         return LabelDefinitionWriteList([item.as_write() for item in self.data])
-
-
-LabelDefinition._LIST_CLASS = LabelDefinitionList
 
 
 class Label(CogniteResource):

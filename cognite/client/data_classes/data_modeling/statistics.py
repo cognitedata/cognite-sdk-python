@@ -178,6 +178,3 @@ class ProjectStatistics(CogniteResource):
 
 class SpaceStatisticsList(CogniteResourceList[SpaceStatistics]):
     _RESOURCE = SpaceStatistics
-
-
-SpaceStatistics._LIST_CLASS = SpaceStatisticsList

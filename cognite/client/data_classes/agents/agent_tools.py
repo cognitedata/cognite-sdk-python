@@ -178,9 +178,6 @@ class SubagentList(CogniteResourceList[Subagent]):
     _RESOURCE = Subagent
 
 
-Subagent._LIST_CLASS = SubagentList
-
-
 @dataclass
 class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     """Configuration for knowledge graph query agent tools.
@@ -576,18 +573,12 @@ class AgentToolUpsertList(CogniteResourceList[AgentToolUpsert]):
     _RESOURCE = AgentToolUpsert
 
 
-AgentToolUpsert._LIST_CLASS = AgentToolUpsertList
-
-
 class AgentToolList(WriteableCogniteResourceList[AgentToolUpsert, AgentTool]):
     _RESOURCE = AgentTool
 
     def as_write(self) -> AgentToolUpsertList:
         """Returns this agent tool list as a writeable instance"""
         return AgentToolUpsertList([item.as_write() for item in self.data])
-
-
-AgentTool._LIST_CLASS = AgentToolList
 
 
 # Build the mapping AFTER all classes are defined

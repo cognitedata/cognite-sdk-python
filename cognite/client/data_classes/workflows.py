@@ -141,9 +141,6 @@ class WorkflowUpsertList(CogniteResourceList[WorkflowUpsert], ExternalIDTransfor
     _RESOURCE = WorkflowUpsert
 
 
-WorkflowUpsert._LIST_CLASS = WorkflowUpsertList
-
-
 class WorkflowList(WriteableCogniteResourceList[WorkflowUpsert, Workflow], ExternalIDTransformerMixin):
     """This class represents a list of workflows."""
 
@@ -152,9 +149,6 @@ class WorkflowList(WriteableCogniteResourceList[WorkflowUpsert, Workflow], Exter
     def as_write(self) -> WorkflowUpsertList:
         """Returns these workflows in the writing format."""
         return WorkflowUpsertList([workflow.as_write() for workflow in self.data])
-
-
-Workflow._LIST_CLASS = WorkflowList
 
 
 # Note on 'str': forward compatibility when new task types are added in the API that the SDK does not yet know about
@@ -1189,9 +1183,6 @@ class WorkflowVersionUpsertList(CogniteResourceList[WorkflowVersionUpsert]):
         return WorkflowIds([workflow_version.as_id() for workflow_version in self.data])
 
 
-WorkflowVersionUpsert._LIST_CLASS = WorkflowVersionUpsertList
-
-
 class WorkflowVersionList(WriteableCogniteResourceList[WorkflowVersionUpsert, WorkflowVersion]):
     """
     This class represents a list of workflow versions.
@@ -1206,9 +1197,6 @@ class WorkflowVersionList(WriteableCogniteResourceList[WorkflowVersionUpsert, Wo
     def as_write(self) -> WorkflowVersionUpsertList:
         """Returns a WorkflowVersionUpsertList object with the same data."""
         return WorkflowVersionUpsertList([workflow_version.as_write() for workflow_version in self.data])
-
-
-WorkflowVersion._LIST_CLASS = WorkflowVersionList
 
 
 class WorkflowExecution(CogniteResource):
@@ -1273,9 +1261,6 @@ class WorkflowExecutionList(CogniteResourceList[WorkflowExecution], InternalIdTr
     """
 
     _RESOURCE = WorkflowExecution
-
-
-WorkflowExecution._LIST_CLASS = WorkflowExecutionList
 
 
 class WorkflowExecutionDetailed(WorkflowExecution):
@@ -1837,9 +1822,6 @@ class WorkflowTriggerUpsertList(CogniteResourceList[WorkflowTriggerUpsert], Exte
     _RESOURCE = WorkflowTriggerUpsert
 
 
-WorkflowTriggerUpsert._LIST_CLASS = WorkflowTriggerUpsertList
-
-
 class WorkflowTriggerList(
     WriteableCogniteResourceList[WorkflowTriggerUpsert, WorkflowTrigger], ExternalIDTransformerMixin
 ):
@@ -1852,9 +1834,6 @@ class WorkflowTriggerList(
     def as_write(self) -> WorkflowTriggerUpsertList:
         """Returns a WorkflowTriggerUpsertList object with the same data."""
         return WorkflowTriggerUpsertList([workflow_trigger.as_write() for workflow_trigger in self.data])
-
-
-WorkflowTrigger._LIST_CLASS = WorkflowTriggerList
 
 
 class WorkflowTriggerRun(CogniteResource):
@@ -1913,6 +1892,3 @@ class WorkflowTriggerRunList(CogniteResourceList[WorkflowTriggerRun], ExternalID
     """This class represents a list of workflow trigger runs."""
 
     _RESOURCE = WorkflowTriggerRun
-
-
-WorkflowTriggerRun._LIST_CLASS = WorkflowTriggerRunList

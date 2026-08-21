@@ -57,9 +57,6 @@ class TransformationJobMetricList(CogniteResourceList[TransformationJobMetric], 
     _RESOURCE = TransformationJobMetric
 
 
-TransformationJobMetric._LIST_CLASS = TransformationJobMetricList
-
-
 class TransformationJob(CogniteResourceWithClientRef):
     """The transformation job resource allows following the status of execution of a transformation run.
 
@@ -252,9 +249,6 @@ class TransformationJob(CogniteResourceWithClientRef):
 
 class TransformationJobList(CogniteResourceList[TransformationJob], InternalIdTransformerMixin):
     _RESOURCE = TransformationJob
-
-
-TransformationJob._LIST_CLASS = TransformationJobList
 
 
 class TransformationJobFilter(CogniteFilter):

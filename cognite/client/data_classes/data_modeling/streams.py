@@ -150,9 +150,6 @@ class StreamList(CogniteResourceList[Stream], ExternalIDTransformerMixin):
     _RESOURCE = Stream
 
 
-Stream._LIST_CLASS = StreamList
-
-
 class StreamTemplate(CogniteResource):
     """Reference to a stream template by name.
 

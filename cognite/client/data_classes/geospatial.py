@@ -141,17 +141,11 @@ class FeatureTypeWriteList(CogniteResourceList[FeatureTypeWrite], ExternalIDTran
     _RESOURCE = FeatureTypeWrite
 
 
-FeatureTypeWrite._LIST_CLASS = FeatureTypeWriteList
-
-
 class FeatureTypeList(WriteableCogniteResourceList[FeatureTypeWrite, FeatureType], ExternalIDTransformerMixin):
     _RESOURCE = FeatureType
 
     def as_write(self) -> FeatureTypeWriteList:
         return FeatureTypeWriteList([feature_type.as_write() for feature_type in self])
-
-
-FeatureType._LIST_CLASS = FeatureTypeList
 
 
 @dataclass
@@ -473,17 +467,11 @@ class FeatureWriteList(FeatureListCore[FeatureWrite]):
         return self
 
 
-FeatureWrite._LIST_CLASS = FeatureWriteList
-
-
 class FeatureList(FeatureListCore[Feature]):
     _RESOURCE = Feature
 
     def as_write(self) -> FeatureWriteList:
         return FeatureWriteList([feature.as_write() for feature in self])
-
-
-Feature._LIST_CLASS = FeatureList
 
 
 def nan_to_none(column_value: Any) -> Any:
@@ -508,9 +496,6 @@ class FeatureAggregate(CogniteResource):
 
 class FeatureAggregateList(CogniteResourceList[FeatureAggregate]):
     _RESOURCE = FeatureAggregate
-
-
-FeatureAggregate._LIST_CLASS = FeatureAggregateList
 
 
 class CoordinateReferenceSystemCore(WriteableCogniteResource["CoordinateReferenceSystemWrite"], ABC):
@@ -573,9 +558,6 @@ class CoordinateReferenceSystemWriteList(CogniteResourceList[CoordinateReference
     _RESOURCE = CoordinateReferenceSystemWrite
 
 
-CoordinateReferenceSystemWrite._LIST_CLASS = CoordinateReferenceSystemWriteList
-
-
 class CoordinateReferenceSystemList(
     WriteableCogniteResourceList[CoordinateReferenceSystemWrite, CoordinateReferenceSystem]
 ):
@@ -585,9 +567,6 @@ class CoordinateReferenceSystemList(
         return CoordinateReferenceSystemWriteList(
             [coordinate_reference_system.as_write() for coordinate_reference_system in self]
         )
-
-
-CoordinateReferenceSystem._LIST_CLASS = CoordinateReferenceSystemList
 
 
 class OrderSpec:
@@ -676,9 +655,6 @@ class GeospatialComputedItemList(CogniteResourceList[GeospatialComputedItem]):
     "A list of items computed from geospatial."
 
     _RESOURCE = GeospatialComputedItem
-
-
-GeospatialComputedItem._LIST_CLASS = GeospatialComputedItemList
 
 
 class GeospatialComputedResponse(CogniteResource):

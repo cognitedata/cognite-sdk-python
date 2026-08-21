@@ -297,9 +297,6 @@ class DocumentList(CogniteResourceList[Document], IdTransformerMixin):
     _RESOURCE = Document
 
 
-Document._LIST_CLASS = DocumentList
-
-
 @dataclass
 class Highlight(CogniteResource):
     """
@@ -359,9 +356,6 @@ class DocumentHighlight(CogniteResource):
 
 class DocumentHighlightList(CogniteResourceList[DocumentHighlight]):
     _RESOURCE = DocumentHighlight
-
-
-DocumentHighlight._LIST_CLASS = DocumentHighlightList
 
 
 class DocumentUniqueResult(UniqueResult): ...

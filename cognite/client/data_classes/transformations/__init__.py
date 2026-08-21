@@ -634,17 +634,11 @@ class TransformationWriteList(CogniteResourceList[TransformationWrite], External
     _RESOURCE = TransformationWrite
 
 
-TransformationWrite._LIST_CLASS = TransformationWriteList
-
-
 class TransformationList(WriteableCogniteResourceList[TransformationWrite, Transformation], IdTransformerMixin):
     _RESOURCE = Transformation
 
     def as_write(self) -> TransformationWriteList:
         return TransformationWriteList([transformation.as_write() for transformation in self.data])
-
-
-Transformation._LIST_CLASS = TransformationList
 
 
 class TagsFilter:
