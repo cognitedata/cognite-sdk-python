@@ -4031,14 +4031,14 @@ files = [
 
 [[package]]
 name = "types-protobuf"
-version = "4.25.0.20240417"
+version = "5.29.1.20250403"
 description = "Typing stubs for protobuf"
 optional = false
-python-versions = ">=3.8"
+python-versions = ">=3.9"
 groups = ["dev"]
 files = [
-    {file = "types-protobuf-4.25.0.20240417.tar.gz", hash = "sha256:c34eff17b9b3a0adb6830622f0f302484e4c089f533a46e3f147568313544352"},
-    {file = "types_protobuf-4.25.0.20240417-py3-none-any.whl", hash = "sha256:e9b613227c2127e3d4881d75d93c93b4d6fd97b5f6a099a0b654a05351c8685d"},
+    {file = "types_protobuf-5.29.1.20250403-py3-none-any.whl", hash = "sha256:c71de04106a2d54e5b2173d0a422058fae0ef2d058d70cf369fb797bf61ffa59"},
+    {file = "types_protobuf-5.29.1.20250403.tar.gz", hash = "sha256:7ff44f15022119c9d7558ce16e78b2d485bf7040b4fadced4dd069bb5faf77a2"},
 ]
 
 [[package]]
@@ -4210,4 +4210,4 @@ yaml = ["PyYAML"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">= 3.10, <4"
-content-hash = "b2d9a66fd4ddf5545933c80046025d03d8d9c1bb7574200f6354c9d0feef8aeb"
+content-hash = "91492ebb38fab08bd4c747952fb9caef3ed6103745382ac41044194c6f8b6baa"
