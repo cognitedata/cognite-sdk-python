@@ -209,7 +209,9 @@ def test_list_class_resource_back_reference(list_cls: type, list_classes_without
 def test_standalone_to_pandas_allowlist() -> None:
     # Resource classes that define their own to_pandas without a list class to delegate to.
     # These are intentional exceptions — domain-specific data shapes where the standard
-    # "delegate to list type" pattern doesn't apply. Adding a new class here requires justification.
+    # "delegate to list type" pattern doesn't apply.
+    #
+    # NOTE: Adding a new class here requires justification on why list delegation is not appropriate:
     expected_standalone = {
         Datapoint,  # Time series datapoint — tabular layout, not a standard resource
         DiagramConvertItem,  # Embedded inside DiagramConvertResults, no standalone list type
@@ -229,7 +231,8 @@ def test_standalone_to_pandas_allowlist() -> None:
     assert not unexpected, (
         f"New resource class(es) with a standalone to_pandas found: "
         f"{sorted(c.__name__ for c in unexpected)}. "
-        f"Either add a list class and set _LIST_CLASS, or add to the allowlist above with a comment."
+        f"Either add a list class (with _RESOURCE so binding happens automatically), "
+        f"or add to the allowlist above with a comment."
     )
 
 
