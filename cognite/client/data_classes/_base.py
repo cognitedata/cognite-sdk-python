@@ -85,8 +85,8 @@ class CogniteResource(ABC):
 
     # Certain methods (looking at you to_pandas) need to know the corresponding resource list class to avoid duplicating logic.
     # Not all resource types have a list class counterpart, so this is annotated as optional. We enforce that subclasses get
-    # this attribute set by in test_meta.py (the allow-list lives there).
-    # Set the _LIST_CLASS after both classes are defined (the list class has a _RESOURCE attribute pointing back):
+    # this attribute set by tests in test_meta.py (the allow-list lives there).
+    # _LIST_CLASS is populated dynamically (__init_subclass__) when a CogniteResourceList subclass defines _RESOURCE.
     _LIST_CLASS: ClassVar[type[CogniteResourceList] | None] = None
 
     def __eq__(self, other: Any) -> bool:
@@ -253,6 +253,22 @@ class WriteableCogniteResourceWithClientRef(
 
 class CogniteResourceList(UserList, Generic[T_CogniteResource]):
     _RESOURCE: type[T_CogniteResource]
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+        try:
+            # We only bind `_RESOURCE._LIST_CLASS` when this exact class defines _RESOURCE,
+            # i.e. dont look up in the MRO:
+            resource_cls = cls.__dict__["_RESOURCE"]
+        except KeyError:
+            return
+
+        # This is a bit defensive, and could be moved to tests since we "control the SDK". However, this will
+        # provide some insurance for users subclassing the SDK:
+        if isinstance(resource_cls, type) and issubclass(resource_cls, CogniteResource):
+            resource_cls._LIST_CLASS = cls
+        else:
+            raise TypeError(f"{cls.__name__}._RESOURCE must be a CogniteResource subclass, got {resource_cls!r}")
 
     def __init__(self, resources: Sequence[T_CogniteResource]) -> None:
         if resources:
