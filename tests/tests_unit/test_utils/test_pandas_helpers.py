@@ -32,14 +32,14 @@ def force_pandas_major_version(monkeypatch: MonkeyPatch) -> Iterator[Callable[[i
 
     def _force(major_version: int) -> None:
         monkeypatch.setattr(pdh, "pandas_major_version", lambda: major_version)
-        pdh.is_pandas_v2_or_lower.cache_clear()  # type: ignore [attr-defined]
-        pdh.timestamp_dtype_unit.cache_clear()  # type: ignore [attr-defined]
+        pdh.is_pandas_v2_or_lower.cache_clear()
+        pdh.timestamp_dtype_unit.cache_clear()
 
     yield _force
 
     # Ensure the next test sees the real pandas major-version branch after monkeypatch teardown.
-    pdh.is_pandas_v2_or_lower.cache_clear()  # type: ignore [attr-defined]
-    pdh.timestamp_dtype_unit.cache_clear()  # type: ignore [attr-defined]
+    pdh.is_pandas_v2_or_lower.cache_clear()
+    pdh.timestamp_dtype_unit.cache_clear()
 
 
 @pytest.mark.dsl
