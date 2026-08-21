@@ -20,6 +20,7 @@ from httpx import Response
 from pytest_httpx import HTTPXMock
 
 import cognite.client._api.datapoints as dps_api  # for mocking
+import cognite.client._api.datapoints_io as dps_fetchers_api
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.datapoints import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
@@ -439,7 +440,7 @@ class TestFetchAllDoesNotLeakTaskExceptions:
 
     async def test_eager_fetcher(self) -> None:
         # We need to skip __init__ so we use this horrible method:
-        fetcher = object.__new__(dps_api.EagerDpsFetcher)
+        fetcher = object.__new__(dps_fetchers_api.EagerDpsFetcher)
         fetcher.all_queries = []
 
         fails_eventually = self._make_fails_eventually(itertools.count())
@@ -462,7 +463,7 @@ class TestFetchAllDoesNotLeakTaskExceptions:
         assert not captured, f"asyncio reported unhandled exception(s): {captured}"
 
     async def test_chunking_fetcher(self) -> None:
-        fetcher = object.__new__(dps_api.ChunkingDpsFetcher)
+        fetcher = object.__new__(dps_fetchers_api.ChunkingDpsFetcher)
         fetcher.semaphore = asyncio.BoundedSemaphore(1)
         fetcher.agg_subtask_pool, fetcher.raw_subtask_pool = [], []
         fetcher.subtask_pools = (fetcher.agg_subtask_pool, fetcher.raw_subtask_pool)
