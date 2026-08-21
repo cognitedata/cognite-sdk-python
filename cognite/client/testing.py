@@ -204,21 +204,36 @@ class _SpecSetEnforcer(type):
         return instance
 
 
-def mock_client_config() -> MagicMock:
-    return create_autospec(
-        ClientConfig,
-        instance=True,
-        client_name="client_name",
-        project="project",
-        credentials=create_autospec(Token, instance=True, token="token"),
-        api_subversion=None,
-        base_url=None,
-        cluster=None,
-        headers=None,
-        timeout=None,
-        file_transfer_timeout=None,
-        debug=False,
-    )
+def create_client_config_mock() -> MagicMock:
+    """
+    Creates a strict mock of ClientConfig that safely bypasses __init__ side-effects.
+
+    Why this setup is non-trivial:
+    - We cannot instantiate a real `ClientConfig` because its __init__ triggers side-effects like PyPI
+    version checks and logger configurations.
+    - We cannot simply use `create_autospec` with `instance=True` because that loses all instance
+    attributes defined in __init__.
+
+    The Workaround: We initialize a loose mock and manually set all instance variables (annoying but safe).
+    After seeding, we flip `_spec_set = True`.
+    """
+    config = MagicMock(spec=ClientConfig)
+
+    config.client_name = "Who am I? None of your business!"
+    config.project = "mock-project"
+    config.credentials = create_autospec(Token("abc"))
+    config.api_subversion = "v42"
+    config.base_url = "https://mock_cluster.cognitedata.com"
+    config.headers = {}
+    config.timeout = 60
+    config.file_transfer_timeout = 600
+    config.debug = False
+    # Non-init attributes:
+    config._cluster = "mock_cluster"
+    config.cdf_cluster = "mock_cluster"
+
+    flip_spec_set_on(config)
+    return config
 
 
 class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
@@ -229,8 +244,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=AsyncCogniteClient, *args, **kwargs)
-        self.config = mock_client_config()
-        flip_spec_set_on(self.config)
+        self.config = create_client_config_mock()
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.
@@ -441,8 +455,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=CogniteClient, *args, **kwargs)
-        self.config = mock_client_config()
-        flip_spec_set_on(self.config)
+        self.config = create_client_config_mock()
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.
