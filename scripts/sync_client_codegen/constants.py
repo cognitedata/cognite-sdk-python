@@ -4,6 +4,7 @@ FOUR_SPACES = " " * 4
 EIGHT_SPACES = " " * 8
 KNOWN_FILES_SKIP_LIST = {
     Path("cognite/client/_api/datapoint_tasks.py"),
+    Path("cognite/client/_api/datapoints_io.py"),
     Path("cognite/client/_api/functions/utils.py"),
 }
 MAYBE_IMPORTS = (
