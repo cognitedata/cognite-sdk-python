@@ -5,8 +5,8 @@ import datetime
 import functools
 import itertools
 import math
-from collections import Counter, defaultdict
-from collections.abc import AsyncIterator, Iterator, MutableSequence, Sequence
+from collections import defaultdict
+from collections.abc import AsyncIterator, Iterator, Sequence
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -27,7 +27,7 @@ from cognite.client._api.datapoint_tasks import (
     _DpsQueryValidator,
     _FullDatapointsQuery,
 )
-from cognite.client._api.datapoints_io import ChunkingDpsFetcher, EagerDpsFetcher
+from cognite.client._api.datapoints_io import ChunkingDpsFetcher, EagerDpsFetcher, RetrieveLatestDpsFetcher
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_DATAPOINTS_CHUNK_SIZE
@@ -49,11 +49,9 @@ from cognite.client.utils._auxiliary import (
     find_duplicates,
     is_positive_int,
     split_into_chunks,
-    unpack_items,
-    unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
-from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
+from cognite.client.utils._identifier import Identifier, IdentifierSequenceCore
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._time import (
     timestamp_to_ms,
@@ -2037,212 +2035,3 @@ class DatapointsPoster:
         if dps.status_code is None:
             return list(map(_InsertDatapoint, timestamps, values))
         return list(map(_InsertDatapoint, timestamps, values, dps.status_code.tolist()))
-
-
-class RetrieveLatestDpsFetcher:
-    def __init__(
-        self,
-        id: int | LatestDatapointQuery | Sequence[int | LatestDatapointQuery] | None,
-        external_id: str | LatestDatapointQuery | SequenceNotStr[str | LatestDatapointQuery] | None,
-        instance_id: NodeId | LatestDatapointQuery | Sequence[NodeId | LatestDatapointQuery] | None,
-        before: int | str | datetime.datetime | None,
-        target_unit: str | None,
-        target_unit_system: str | None,
-        include_status: bool,
-        ignore_bad_datapoints: bool,
-        treat_uncertain_as_bad: bool,
-        ignore_unknown_ids: bool,
-        dps_client: DatapointsAPI,
-    ) -> None:
-        self.default_before = before
-        self.default_unit = target_unit
-        self.default_unit_system = target_unit_system
-        self.default_include_status = include_status
-        self.default_ignore_bad_datapoints = ignore_bad_datapoints
-        self.default_treat_uncertain_as_bad = treat_uncertain_as_bad
-
-        self.settings_before: dict[tuple[str, int], int | str | datetime.datetime | None] = {}
-        self.settings_target_unit: dict[tuple[str, int], str | None] = {}
-        self.settings_target_unit_system: dict[tuple[str, int], str | None] = {}
-        self.settings_include_status: dict[tuple[str, int], bool | None] = {}
-        self.settings_ignore_bad_datapoints: dict[tuple[str, int], bool | None] = {}
-        self.settings_treat_uncertain_as_bad: dict[tuple[str, int], bool | None] = {}
-
-        self.ignore_unknown_ids = ignore_unknown_ids
-        self.dps_client = dps_client
-        self.semaphore = self.dps_client._get_semaphore("read")
-
-        parsed_ids = cast(int | Sequence[int] | None, self._parse_user_input(id, "id"))
-        parsed_xids = cast(str | SequenceNotStr[str] | None, self._parse_user_input(external_id, "external_id"))
-        parsed_inst_ids = cast(NodeId | Sequence[NodeId] | None, self._parse_user_input(instance_id, "instance_id"))
-        self._is_singleton = IdentifierSequence.load(parsed_ids, parsed_xids, parsed_inst_ids).is_singleton()
-        self._all_identifiers = self._prepare_requests(parsed_ids, parsed_xids, parsed_inst_ids)
-
-    @property
-    def input_is_singleton(self) -> bool:
-        return self._is_singleton
-
-    @staticmethod
-    def _get_and_check_identifier(
-        query: LatestDatapointQuery,
-        identifier_type: Literal["id", "external_id", "instance_id"],
-    ) -> int | str:
-        if query.identifier.name() != identifier_type:
-            raise ValueError(f"Missing '{identifier_type}' from: '{query}'")
-        return query.identifier.as_primitive()
-
-    def _parse_user_input(
-        self,
-        user_input: Any,
-        identifier_type: Literal["id", "external_id", "instance_id"],
-    ) -> int | str | list[int] | list[str] | None:
-        if user_input is None:
-            return None
-        # We depend on 'IdentifierSequence.load' to parse given ids/xids later, so we need to
-        # memorize the individual 'before'-settings when/where given:
-        elif isinstance(user_input, LatestDatapointQuery):
-            as_primitive = self._get_and_check_identifier(user_input, identifier_type)
-            idx = (identifier_type, 0)
-            self.settings_before[idx] = user_input.before
-            self.settings_target_unit[idx] = user_input.target_unit
-            self.settings_target_unit_system[idx] = user_input.target_unit_system
-            self.settings_include_status[idx] = user_input.include_status
-            self.settings_ignore_bad_datapoints[idx] = user_input.ignore_bad_datapoints
-            self.settings_treat_uncertain_as_bad[idx] = user_input.treat_uncertain_as_bad
-            return as_primitive
-        elif isinstance(user_input, MutableSequence):
-            user_input = user_input[:]  # Modify a shallow copy to avoid side effects
-            for i, inp in enumerate(user_input):
-                if isinstance(inp, LatestDatapointQuery):
-                    as_primitive = self._get_and_check_identifier(inp, identifier_type)
-                    idx = (identifier_type, i)
-                    self.settings_before[idx] = inp.before
-                    self.settings_target_unit[idx] = inp.target_unit
-                    self.settings_target_unit_system[idx] = inp.target_unit_system
-                    self.settings_include_status[idx] = inp.include_status
-                    self.settings_ignore_bad_datapoints[idx] = inp.ignore_bad_datapoints
-                    self.settings_treat_uncertain_as_bad[idx] = inp.treat_uncertain_as_bad
-                    user_input[i] = as_primitive  # mutating while iterating like a boss
-        return user_input
-
-    def _prepare_requests(
-        self,
-        parsed_ids: int | Sequence[int] | None,
-        parsed_xids: str | SequenceNotStr[str] | None,
-        parsed_inst_ids: NodeId | Sequence[NodeId] | None,
-    ) -> list[dict]:
-        all_ids, all_xids, all_inst_ids = [], [], []
-        if parsed_ids is not None:
-            all_ids = IdentifierSequence.load(parsed_ids, None).as_dicts()
-        if parsed_xids is not None:
-            all_xids = IdentifierSequence.load(None, parsed_xids).as_dicts()
-        if parsed_inst_ids is not None:
-            all_inst_ids = IdentifierSequence.load(None, None, parsed_inst_ids).as_dicts()
-
-        # We want all before = "now" (and those using the same relative time specifiers, like "4d-ago")
-        # queries to get the same time domain to fetch:
-        frozen_time_now = timestamp_to_ms("now")
-
-        for identifiers, identifier_type in zip(
-            [all_ids, all_xids, all_inst_ids], ["id", "external_id", "instance_id"]
-        ):
-            for i, dct in enumerate(identifiers):
-                idx = (identifier_type, i)
-                i_before = self.settings_before.get(idx) or self.default_before
-                if i_before is None or i_before == "now":
-                    dct["before"] = frozen_time_now
-                else:
-                    dct["before"] = timestamp_to_ms(i_before)
-
-                i_target_unit = self.settings_target_unit.get(idx) or self.default_unit
-                i_target_unit_system = self.settings_target_unit_system.get(idx) or self.default_unit_system
-                if i_target_unit is not None and i_target_unit_system is not None:
-                    raise ValueError("You must use either 'target_unit' or 'target_unit_system', not both.")
-                if i_target_unit is not None:
-                    dct["targetUnit"] = i_target_unit
-                if i_target_unit_system is not None:
-                    dct["targetUnitSystem"] = i_target_unit_system
-
-                # Careful logic: "Not given" vs "given" vs "default" with "truthy/falsy":
-                if self.settings_include_status.get(idx) is True or (
-                    self.settings_include_status.get(idx) is None and self.default_include_status is True
-                ):
-                    dct["includeStatus"] = True
-
-                if self.settings_ignore_bad_datapoints.get(idx) is False or (
-                    self.settings_ignore_bad_datapoints.get(idx) is None and self.default_ignore_bad_datapoints is False
-                ):
-                    dct["ignoreBadDataPoints"] = False
-
-                if self.settings_treat_uncertain_as_bad.get(idx) is False or (
-                    self.settings_treat_uncertain_as_bad.get(idx) is None
-                    and self.default_treat_uncertain_as_bad is False
-                ):
-                    dct["treatUncertainAsBad"] = False
-
-        all_ids.extend(all_xids)
-        all_ids.extend(all_inst_ids)
-        return all_ids
-
-    def _post_fix_status_codes_and_stringified_floats_and_add_before(
-        self, result: list[dict[str, Any]]
-    ) -> list[dict[str, Any]]:
-        # Due to 'ignore_unknown_ids', we can't just zip queries & results and iterate... sadness
-        if self.ignore_unknown_ids and len(result) < len(self._all_identifiers):
-            # Duplicates can come from different identifier types, but they will have the same 'id':
-            duplicate_check = Counter(r["id"] for r in result)
-            if dupes := [id_ for id_, count in duplicate_check.items() if count > 1]:
-                raise RuntimeError(
-                    "When using retrieve_latest (datapoint) with ignore_unknown_ids=True, identifiers must be unique! "
-                    "You cannot get around this by passing several of [id, external_id, instance_id] for the same "
-                    f"underlying time series. Duplicates: {dupes}."
-                )
-            ids_exists = (
-                {("id", r["id"]) for r in result}
-                .union({("xid", r.get("externalId")) for r in result})
-                .union({("inst_id", NodeId._load_if(r.get("instanceId"))) for r in result})
-                .difference({("xid", None), ("inst_id", None)})
-            )  # fmt: skip
-            self._all_identifiers = [
-                query
-                for query in self._all_identifiers
-                if ids_exists.intersection(
-                    (
-                        ("id", query.get("id")),
-                        ("xid", query.get("externalId")),
-                        ("inst_id", NodeId._load_if(query.get("instanceId"))),
-                    )
-                )
-            ]
-        for query, res in zip(self._all_identifiers, result):
-            res["before"] = query["before"]
-            if not (dps := res["datapoints"]):
-                continue
-
-            (dp,) = dps
-            if query.get("includeStatus") is True:
-                dp.setdefault("status", {"code": 0, "symbol": "Good"})  # Not returned from API by default
-            if query.get("ignoreBadDataPoints") is False:
-                # Bad data can have value missing (we translate to None):
-                dp.setdefault("value", None)
-                if not res["isString"]:
-                    dp["value"] = _json.convert_to_float(dp["value"])
-        return result
-
-    async def fetch_datapoints(self) -> list[dict[str, Any]]:
-        tasks = [
-            AsyncSDKTask(
-                self.dps_client._post,
-                url_path=self.dps_client._RESOURCE_PATH + "/latest",
-                json={"items": chunk, "ignoreUnknownIds": self.ignore_unknown_ids},
-                semaphore=self.semaphore,
-            )
-            for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
-        ]
-        tasks_summary = await execute_async_tasks(tasks)
-        tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=unpack_items_in_payload,
-            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
-        )
-        result = tasks_summary.joined_results(unpack_items)
-        return self._post_fix_status_codes_and_stringified_floats_and_add_before(result)
