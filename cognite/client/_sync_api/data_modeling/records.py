@@ -1,14 +1,14 @@
 """
 ===============================================================================
-c176207a8937da241d09fb2fc3cacb24
+68d31d4e64debf768ecc1d41dbaf71d7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from collections.abc import Iterator, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
@@ -26,7 +26,7 @@ from cognite.client.data_classes.data_modeling.records import (
     TimeRange,
 )
 from cognite.client.data_classes.filters import Filter
-from cognite.client.utils._async_helpers import run_sync
+from cognite.client.utils._async_helpers import SyncIterator, run_sync
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -356,6 +356,7 @@ class SyncRecordsAPI(SyncAPIClient):
             )
         )
 
+    @overload
     def sync(
         self,
         stream_id: str,
@@ -364,60 +365,12 @@ class SyncRecordsAPI(SyncAPIClient):
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,
         target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
-        limit: int = 10,
+        chunk_size: int = 1000,
         include_typing: bool = False,
-    ) -> SyncRecordList:
-        """
-        `Sync records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/syncRecords>`_.
+    ) -> Iterator[SyncRecordList]: ...
 
-        Returns the first page of the change feed (new, updated and deleted records). Provide
-        ``initialize_cursor`` to start from a relative time such as ``"7d-ago"``. Persist the returned
-        :attr:`SyncRecordList.cursor` and pass it to :meth:`sync_resume` on the next call to continue;
-        :attr:`SyncRecordList.has_next` indicates whether more changes are immediately available.
-
-        Args:
-            stream_id (str): External ID of the stream to sync.
-            initialize_cursor (str): Where to start, as a relative duration like ``"7d-ago"``.
-            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
-            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
-                to another unit.
-            limit (int): Maximum number of records to return (1-1000 per request; a larger limit is
-                served by following the cursor). Defaults to 10.
-            include_typing (bool): If True, include property type information on the returned
-                list's ``typing`` attribute.
-
-        Returns:
-            SyncRecordList: One page of change records, with ``cursor`` and ``has_next`` set.
-
-        Examples:
-
-            Initialize a sync, process the page, then resume from the cursor later:
-
-                >>> from cognite.client import CogniteClient
-                >>> client = CogniteClient()
-                >>> page = client.data_modeling.records.sync(
-                ...     stream_id="my-stream", initialize_cursor="7d-ago"
-                ... )
-                >>> for record in page:
-                ...     pass  # process record; record.status is created/updated/deleted
-                >>> next_page = client.data_modeling.records.sync_resume(
-                ...     stream_id="my-stream", cursor=page.cursor
-                ... )
-        """
-        return run_sync(
-            self.__async_client.data_modeling.records.sync(
-                stream_id=stream_id,
-                initialize_cursor=initialize_cursor,
-                filter=filter,
-                sources=sources,
-                target_units=target_units,
-                limit=limit,
-                include_typing=include_typing,
-            )
-        )
-
-    def sync_resume(
+    @overload
+    def sync(
         self,
         stream_id: str,
         *,
@@ -425,35 +378,93 @@ class SyncRecordsAPI(SyncAPIClient):
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,
         target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
-        limit: int = 10,
+        chunk_size: int = 1000,
         include_typing: bool = False,
-    ) -> SyncRecordList:
+    ) -> Iterator[SyncRecordList]: ...
+
+    def sync(
+        self,
+        stream_id: str,
+        *,
+        initialize_cursor: str | None = None,
+        cursor: str | None = None,
+        filter: Filter | None = None,
+        sources: Sequence[RecordSourceSelector] | None = None,
+        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        chunk_size: int = 1000,
+        include_typing: bool = False,
+    ) -> Iterator[SyncRecordList]:
         """
-        Resume syncing records from a stream using a cursor from :meth:`sync` or :meth:`sync_resume`.
+        `Sync records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/syncRecords>`_.
+
+        Iterate over the change feed (new, updated and deleted records), yielding one chunk of
+        records per request until the feed is exhausted (``has_next`` is False). Pass exactly one of
+        ``initialize_cursor`` (to start from a relative time such as ``"7d-ago"``) or ``cursor``
+        (to resume from where a previous sync left off). Each yielded :class:`SyncRecordList`
+        carries the ``cursor`` to persist for resuming later; this is also why records are always
+        yielded in chunks rather than one by one.
+
+        Warning:
+            Every chunk is fetched with a separate API request, so a small ``chunk_size`` increases
+            the number of requests (i.e. comes at a high performance penalty). Keep the default of
+            1000 (the API maximum) unless your per-chunk processing genuinely needs smaller batches.
 
         Args:
             stream_id (str): External ID of the stream to sync.
-            cursor (str): Resume from a cursor returned by a previous sync call.
+            initialize_cursor (str | None): Where to start, as a relative duration like ``"7d-ago"``.
+                Mutually exclusive with ``cursor``.
+            cursor (str | None): Resume from a cursor from a previously yielded chunk. Mutually
+                exclusive with ``initialize_cursor``.
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
             sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
             target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
                 to another unit.
-            limit (int): Maximum number of records to return (1-1000 per request; a larger limit is
-                served by following the cursor). Defaults to 10.
-            include_typing (bool): If True, include property type information on the returned
+            chunk_size (int): Number of records per yielded chunk, between 1 and 1000. Defaults to 1000.
+            include_typing (bool): If True, include property type information on each yielded
                 list's ``typing`` attribute.
 
-        Returns:
-            SyncRecordList: One page of change records, with ``cursor`` and ``has_next`` set.
-        """
-        return run_sync(
-            self.__async_client.data_modeling.records.sync_resume(
+        Yields:
+            SyncRecordList: One chunk of change records, with ``cursor`` and ``has_next`` set.
+
+        Examples:
+
+            Iterate over all changes from the last 7 days, persisting the cursor after
+            each processed chunk:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> for chunk in client.data_modeling.records.sync(
+                ...     stream_id="my-stream", initialize_cursor="7d-ago"
+                ... ):
+                ...     for record in chunk:
+                ...         pass  # process record; record.status is created/updated/deleted
+                ...     last_cursor = chunk.cursor
+
+            Later, sync only what changed since then by resuming from the stored cursor:
+
+                >>> for chunk in client.data_modeling.records.sync(
+                ...     stream_id="my-stream", cursor="previously-stored-cursor"
+                ... ):
+                ...     pass
+
+            Fetch chunks with manual control, e.g. to poll at your own cadence. Store the
+            iterator in a variable to keep pulling chunks from where you left off:
+
+                >>> feed = client.data_modeling.records.sync(
+                ...     stream_id="my-stream", cursor="previously-stored-cursor"
+                ... )
+                >>> first_chunk = next(feed)
+                >>> second_chunk = next(feed)
+        """  # noqa: DOC404
+        yield from SyncIterator(
+            self.__async_client.data_modeling.records.sync(  # type: ignore [call-overload, misc]
                 stream_id=stream_id,
+                initialize_cursor=initialize_cursor,
                 cursor=cursor,
                 filter=filter,
                 sources=sources,
                 target_units=target_units,
-                limit=limit,
+                chunk_size=chunk_size,
                 include_typing=include_typing,
             )
         )
