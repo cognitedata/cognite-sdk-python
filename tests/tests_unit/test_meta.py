@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from cognite.client._api.data_modeling.instances import _NodeOrEdgeApplyResultList
 from cognite.client._api.iam.groups import _GroupListAdapter
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes._base import (
@@ -172,6 +173,9 @@ def list_classes_without_resource() -> set[type]:
         EdgeListWithCursor,
         # Internal adapter used only within the IAM groups API client:
         _GroupListAdapter,
+        # Internal DM adapter over both node/edge apply result types. Intentionally does not
+        # use _RESOURCE because it validates mixed types in its own constructor.
+        _NodeOrEdgeApplyResultList,
     }
 
 
@@ -186,9 +190,6 @@ def test_all_list_classes_define_resource(list_cls: type, list_classes_without_r
         return
 
     resource_cls = list_cls.__dict__["_RESOURCE"]
-    if isinstance(resource_cls, tuple):
-        return  # Internal multi-resource list classes (e.g. _NodeOrEdgeApplyResultList) — no _LIST_CLASS needed
-
     assert resource_cls._LIST_CLASS is list_cls, (
         f"{list_cls.__name__}._RESOURCE = {resource_cls.__name__}, "
         f"but {resource_cls.__name__}._LIST_CLASS = {resource_cls._LIST_CLASS}"
@@ -200,8 +201,6 @@ def test_list_class_resource_back_reference(list_cls: type, list_classes_without
     if list_cls in list_classes_without_resource or "_RESOURCE" not in list_cls.__dict__:
         return
     resource_cls = list_cls.__dict__["_RESOURCE"]
-    if isinstance(resource_cls, tuple):
-        return
     assert resource_cls._LIST_CLASS is list_cls, (
         f"{resource_cls.__name__}._LIST_CLASS should be {list_cls.__name__}, got {resource_cls._LIST_CLASS}"
     )
