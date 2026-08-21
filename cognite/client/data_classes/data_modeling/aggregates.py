@@ -40,9 +40,13 @@ _AGGREGATES_HINT = (
 
 
 def _validate_aggregates(
-    aggregates: Any, argument: str = "aggregates"
+    aggregates: Mapping[str, Aggregate | dict[str, Any]] | None, argument: str = "aggregates"
 ) -> Mapping[str, Aggregate | dict[str, Any]] | None:
-    """Validate a mapping of client-defined aggregate IDs to aggregate specs."""
+    """Validate a mapping of client-defined aggregate IDs to aggregate specs.
+
+    A raw dict value is the dumped form of a bucket aggregate, e.g. ``{"uniqueValues": {"property":
+    [...], "aggregates": {...}}}``, so its own nested ``aggregates`` (if any) is validated too.
+    """
     if aggregates is None:
         return None
     if not isinstance(aggregates, Mapping):
@@ -55,14 +59,28 @@ def _validate_aggregates(
                 f"{argument!r}[{aggregate_id!r}] must be an Aggregate or dict, "
                 f"not {type(aggregate).__name__}. {_AGGREGATES_HINT}"
             )
+        if isinstance(aggregate, Mapping):
+            for body in aggregate.values():
+                if isinstance(body, Mapping) and "aggregates" in body:
+                    _validate_aggregates(body["aggregates"], f"{argument}[{aggregate_id!r}]['aggregates']")
     return aggregates
 
 
-def _validate_filters(filters: Any, argument: str = "filters") -> Sequence[Filter | dict[str, Any]]:
-    """Validate the list of filter expressions one bucket is created per."""
-    hint = "Each filter creates one bucket, so a single filter must still be given as a list."
-    if isinstance(filters, (Filter, Mapping)) or isinstance(filters, str) or not isinstance(filters, Sequence):
-        raise TypeError(f"{argument!r} must be a sequence of Filter or dict, not {type(filters).__name__}. {hint}")
+def _validate_filters(
+    filters: Filter | Mapping[str, Any] | Sequence[Filter | Mapping[str, Any]], argument: str = "filters"
+) -> Sequence[Filter | Mapping[str, Any]]:
+    """Validate the filters a Filters aggregate buckets matched items by, one bucket per filter.
+
+    As with most sequence arguments in the SDK, a single filter is accepted and wrapped into a
+    one-item list rather than rejected, so ``Filters(filters=filters.MatchAll())`` works too.
+    """
+    if isinstance(filters, (Filter, Mapping)):
+        filters = [filters]
+    hint = "Each filter creates one bucket."
+    if isinstance(filters, str) or not isinstance(filters, Sequence):
+        raise TypeError(
+            f"{argument!r} must be a Filter, dict, or sequence of those, not {type(filters).__name__}. {hint}"
+        )
     if invalid := [filter for filter in filters if not isinstance(filter, (Filter, Mapping))]:
         raise TypeError(
             f"{argument!r} must be a sequence of Filter or dict, but got an entry "
@@ -295,7 +313,7 @@ class Filters(Aggregate):
 
     def __init__(
         self,
-        filters: Sequence[Filter | dict[str, Any]],
+        filters: Filter | Mapping[str, Any] | Sequence[Filter | Mapping[str, Any]],
         aggregates: Mapping[str, Aggregate | dict[str, Any]] | None = None,
     ) -> None:
         self.filters = _validate_filters(filters)

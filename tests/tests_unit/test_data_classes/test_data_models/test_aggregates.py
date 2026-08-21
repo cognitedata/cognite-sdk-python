@@ -305,9 +305,18 @@ class TestAggregateContainerValidation:
             with pytest.raises(TypeError, match="'aggregates'"):
                 build([Count()])
 
-    def test_filters_aggregate_rejects_a_single_filter(self) -> None:
-        with pytest.raises(TypeError, match="'filters' must be a sequence"):
-            Filters(filters=filters.MatchAll())  # type: ignore[arg-type]
+    def test_filters_aggregate_wraps_a_single_filter_in_a_list(self) -> None:
+        single_filter = filters.MatchAll()
+        assert Filters(filters=single_filter).filters == [single_filter]
+
+    def test_nested_aggregates_validated_recursively_inside_raw_dicts(self) -> None:
+        # A raw dict aggregate value is the dumped form of a bucket aggregate, so its own nested
+        # `aggregates` (here holding a plain string instead of an Aggregate or dict) must be
+        # validated too, not just shipped off verbatim.
+        bad_nested = {"uniqueValues": {"property": ["sp", "c", "player"], "aggregates": {"x": "not-an-aggregate"}}}
+        with pytest.raises(TypeError, match="must be an Aggregate or dict") as exc_info:
+            UniqueValues(["sp", "c", "score"], aggregates={"outer": bad_nested})
+        assert "outer" in str(exc_info.value)
 
 
 class TestAggregatePropertyPathValidation:
