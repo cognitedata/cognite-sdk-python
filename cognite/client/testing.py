@@ -204,7 +204,7 @@ class _SpecSetEnforcer(type):
         return instance
 
 
-def create_client_config_mock() -> MagicMock:
+def _create_client_config_mock() -> MagicMock:
     """
     Creates a strict mock of ClientConfig that safely bypasses __init__ side-effects.
 
@@ -244,7 +244,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=AsyncCogniteClient, *args, **kwargs)
-        self.config = create_client_config_mock()
+        self.config = _create_client_config_mock()
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.
@@ -455,7 +455,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=CogniteClient, *args, **kwargs)
-        self.config = create_client_config_mock()
+        self.config = _create_client_config_mock()
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.
