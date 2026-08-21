@@ -304,7 +304,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
         return item
 
     def __setitem__(self, i: SupportsIndex | slice, item: T_CogniteResource | Iterable[T_CogniteResource]) -> None:
-        super().__setitem__(i, item)  # type: ignore[index, assignment]
+        super().__setitem__(i, item)  # type: ignore[index]
         self._clear_identifier_lookups()
 
     def __delitem__(self, i: SupportsIndex | slice) -> None:
