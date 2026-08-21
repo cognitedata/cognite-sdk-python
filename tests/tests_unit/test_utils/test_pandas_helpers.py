@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from typing import Any
 
 import pytest
@@ -27,7 +27,7 @@ class _ResourceWithoutListClass(CogniteResource):
 
 
 @pytest.fixture
-def force_pandas_major_version(monkeypatch: MonkeyPatch) -> Callable[[int], None]:
+def force_pandas_major_version(monkeypatch: MonkeyPatch) -> Iterator[Callable[[int], None]]:
     """Override pandas major version for a test and reset helper caches."""
 
     def _force(major_version: int) -> None:
@@ -35,7 +35,11 @@ def force_pandas_major_version(monkeypatch: MonkeyPatch) -> Callable[[int], None
         pdh.is_pandas_v2_or_lower.cache_clear()  # type: ignore [attr-defined]
         pdh.timestamp_dtype_unit.cache_clear()  # type: ignore [attr-defined]
 
-    return _force
+    yield _force
+
+    # Ensure the next test sees the real pandas major-version branch after monkeypatch teardown.
+    pdh.is_pandas_v2_or_lower.cache_clear()  # type: ignore [attr-defined]
+    pdh.timestamp_dtype_unit.cache_clear()  # type: ignore [attr-defined]
 
 
 @pytest.mark.dsl

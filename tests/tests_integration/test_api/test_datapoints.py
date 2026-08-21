@@ -72,6 +72,7 @@ from cognite.client.utils._time import (
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 from tests.utils import (
+    PANDAS_TS_UNIT,
     get_or_raise,
     override_semaphore,
     random_aggregates,
@@ -1601,7 +1602,7 @@ class TestRetrieveRawDatapointsAPI:
                 utc=True,  # pandas is not great at parameter names
             )
             .tz_convert("Europe/Oslo")
-            .as_unit("ms")
+            .as_unit(PANDAS_TS_UNIT)
         )
         expected_to_summer_index = expected_index[:5]
         expected_to_winter_index = expected_index[5:]
@@ -2226,7 +2227,7 @@ class TestRetrieveAggregateDatapointsAPI:
                 utc=True,  # pandas is still not great at parameter names
             )
             .tz_convert("Europe/Oslo")
-            .as_unit("ms")
+            .as_unit(PANDAS_TS_UNIT)
         )
         expected_to_summer_index = expected_index[:4]
         expected_to_winter_index = expected_index[4:]
