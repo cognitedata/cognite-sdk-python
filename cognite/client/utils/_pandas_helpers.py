@@ -6,6 +6,7 @@ import re
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import cache
 from inspect import signature
 from numbers import Integral
 from typing import TYPE_CHECKING, Any, Literal
@@ -64,6 +65,7 @@ def pandas_major_version() -> int:
     return int(__version__.split(".")[0])
 
 
+@cache
 def is_pandas_v2_or_lower() -> bool:
     """Pandas v2 (and lower) always defaulted to nanosecond-precision timestamps, so a lot of user code
     (implicitly or not) relies on that. Pandas v3 instead infers precision from the input on a case-by-case
@@ -73,6 +75,7 @@ def is_pandas_v2_or_lower() -> bool:
     return pandas_major_version() < 3
 
 
+@cache
 def timestamp_dtype_unit() -> Literal["ns", "ms"]:
     """The datetime64 resolution to use for all timestamp columns/indices produced by the SDK, see
     `is_pandas_v2_or_lower` for the reasoning."""
