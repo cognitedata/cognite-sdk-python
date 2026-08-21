@@ -19,10 +19,9 @@ from _pytest.monkeypatch import MonkeyPatch
 from httpx import Response
 from pytest_httpx import HTTPXMock
 
-import cognite.client._api.datapoints as dps_api  # for mocking
-import cognite.client._api.datapoints_io as dps_fetchers_api
+import cognite.client._api.datapoints_io as dps_io  # for mocking
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.datapoints import _InsertDatapoint
+from cognite.client._api.datapoints_io import _InsertDatapoint
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import LatestDatapoint, LatestDatapointList
@@ -440,7 +439,7 @@ class TestFetchAllDoesNotLeakTaskExceptions:
 
     async def test_eager_fetcher(self) -> None:
         # We need to skip __init__ so we use this horrible method:
-        fetcher = object.__new__(dps_fetchers_api.EagerDpsFetcher)
+        fetcher = object.__new__(dps_io.EagerDpsFetcher)
         fetcher.all_queries = []
 
         fails_eventually = self._make_fails_eventually(itertools.count())
@@ -463,7 +462,7 @@ class TestFetchAllDoesNotLeakTaskExceptions:
         assert not captured, f"asyncio reported unhandled exception(s): {captured}"
 
     async def test_chunking_fetcher(self) -> None:
-        fetcher = object.__new__(dps_fetchers_api.ChunkingDpsFetcher)
+        fetcher = object.__new__(dps_io.ChunkingDpsFetcher)
         fetcher.semaphore = asyncio.BoundedSemaphore(1)
         fetcher.agg_subtask_pool, fetcher.raw_subtask_pool = [], []
         fetcher.subtask_pools = (fetcher.agg_subtask_pool, fetcher.raw_subtask_pool)
@@ -1169,7 +1168,7 @@ class TestDatapointsPoster:
         async def override_insert_dps(self: Any, payload: list[dict]) -> None:
             calls.append(deepcopy(payload))
 
-        monkeypatch.setattr(dps_api.DatapointsPoster, "_insert_datapoints", override_insert_dps)
+        monkeypatch.setattr(dps_io.DatapointsPoster, "_insert_datapoints", override_insert_dps)
         dps_limit, ts_limit, last_chunk_size = limits
         monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", dps_limit)
         monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", ts_limit)
@@ -1196,7 +1195,7 @@ class TestDatapointsPoster:
         async def override_insert_dps(self: Any, payload: list[dict]) -> None:
             calls.append(deepcopy(payload))
 
-        monkeypatch.setattr(dps_api.DatapointsPoster, "_insert_datapoints", override_insert_dps)
+        monkeypatch.setattr(dps_io.DatapointsPoster, "_insert_datapoints", override_insert_dps)
         dps_limit, ts_limit = randint(200, 2000), randint(2, 20)
         dps_client = cognite_client.time_series.data
         monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", dps_limit)

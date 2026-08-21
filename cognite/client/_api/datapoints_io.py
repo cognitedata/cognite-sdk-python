@@ -6,16 +6,21 @@ import heapq
 import itertools
 import math
 from abc import ABC, abstractmethod
-from collections import Counter
-from collections.abc import AsyncIterator, Iterable, MutableSequence, Sequence
+from collections import Counter, defaultdict
+from collections.abc import AsyncIterator, Iterable, Iterator, MutableSequence, Sequence
 from itertools import chain
+from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
+    NamedTuple,
+    TypeGuard,
     TypeVar,
     cast,
 )
+
+from typing_extensions import Self
 
 from cognite.client._api.datapoint_tasks import (
     BaseDpsFetchSubtask,
@@ -23,6 +28,8 @@ from cognite.client._api.datapoint_tasks import (
 )
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes import (
+    Datapoints,
+    DatapointsArray,
     DatapointsArrayList,
     DatapointsList,
     DatapointsQuery,
@@ -32,16 +39,18 @@ from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import (
+    exactly_one_is_not_none,
     split_into_chunks,
     split_into_n_parts,
     unpack_items,
     unpack_items_in_payload,
 )
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
-from cognite.client.utils._identifier import IdentifierSequence, IdentifierSequenceCore
+from cognite.client.utils._identifier import Identifier, IdentifierSequence, IdentifierSequenceCore
 from cognite.client.utils._time import (
     timestamp_to_ms,
 )
+from cognite.client.utils._validation import validate_user_input_dict_with_identifier
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
@@ -534,6 +543,184 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         agg_queries = [q for q in agg_queries if not q.is_missing]
         raw_queries = [q for q in raw_queries if not q.is_missing]
         return (agg_queries, raw_queries), to_raise
+
+
+class _InsertDatapoint(NamedTuple):
+    ts: int | datetime.datetime
+    value: str | float
+    status_code: int | None = None
+    status_symbol: str | None = None
+
+    @classmethod
+    def from_dict(cls, dct: dict[str, Any]) -> Self:
+        if status := dct.get("status"):
+            return cls(dct["timestamp"], dct["value"], status.get("code"), status.get("symbol"))
+        return cls(dct["timestamp"], dct["value"])
+
+    def dump(self) -> dict[str, Any]:
+        dumped: dict[str, Any] = {"timestamp": timestamp_to_ms(self.ts), "value": self.value}
+        if self.status_code:  # also skip if 0
+            dumped["status"] = {"code": self.status_code}
+        if self.status_symbol and self.status_symbol != "Good":
+            dumped.setdefault("status", {})["symbol"] = self.status_symbol
+        # Out-of-range float values must be passed as strings:
+        dumped["value"] = _json.convert_nonfinite_float_to_str(dumped["value"])
+        return dumped
+
+
+class DatapointsPoster:
+    def __init__(self, dps_client: DatapointsAPI) -> None:
+        self.dps_client = dps_client
+        self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
+        self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
+
+    async def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
+        to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
+        if not to_insert:
+            return
+        # To ensure we stay below the max limit on objects per request, we first chunk based on it:
+        # (with 10k limit this is almost always just one chunk)
+        tasks = [
+            AsyncSDKTask(self._insert_datapoints, task)
+            for chunk in split_into_chunks(to_insert, self.ts_limit)
+            for task in self._create_payload_tasks(chunk)
+        ]
+        summary = await execute_async_tasks(tasks)
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=itemgetter(0),
+            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
+        )
+
+    def _verify_and_prepare_dps_objects(
+        self, dps_object_lst: list[dict[str, Any]]
+    ) -> list[tuple[Identifier, list[_InsertDatapoint]]]:
+        dps_to_insert: dict[Identifier, list[_InsertDatapoint]] = defaultdict(list)
+        for obj in dps_object_lst:
+            if not obj["datapoints"]:
+                continue
+            identifier = validate_user_input_dict_with_identifier(obj, required_keys={"datapoints"})
+            validated_dps = self._parse_and_validate_dps(obj["datapoints"])
+            dps_to_insert[identifier].extend(validated_dps)
+        return list(dps_to_insert.items())
+
+    def _parse_and_validate_dps(self, dps: Datapoints | DatapointsArray | list[tuple | dict]) -> list[_InsertDatapoint]:
+        if isinstance(dps, Datapoints):
+            self._verify_dps_object_for_insertion(dps)
+            return self._extract_raw_data_from_datapoints(dps)
+        elif isinstance(dps, DatapointsArray):
+            self._verify_dps_object_for_insertion(dps)
+            return self._extract_raw_data_from_datapoints_array(dps)
+
+        if not isinstance(dps, SequenceNotStr):
+            raise TypeError(f"Datapoints to be inserted must be a list, not {type(dps)}")
+        if self._dps_are_insert_ready(dps):
+            return dps  # Internal SDK shortcut to avoid casting
+        elif self._dps_are_tuples(dps):
+            return [_InsertDatapoint(*tpl) for tpl in dps]
+        elif self._dps_are_dicts(dps):
+            try:
+                return [_InsertDatapoint.from_dict(dp) for dp in dps]
+            except KeyError:
+                raise KeyError(
+                    "A datapoint is missing one or both keys ['value', 'timestamp']. Note: 'status' is optional."
+                )
+        raise TypeError(
+            "Datapoints to be inserted must be of type Datapoints or DatapointsArray (with raw datapoints), "
+            f"or be a list containing tuples or dicts, not {type(dps[0])}"
+        )
+
+    @staticmethod
+    def _dps_are_insert_ready(dps: list[Any]) -> TypeGuard[list[_InsertDatapoint]]:
+        # Not a real type guard, but we don't want to make millions of isinstance checks when
+        # the documentation is clear on what types we accept:
+        return isinstance(dps[0], _InsertDatapoint)
+
+    @staticmethod
+    def _dps_are_tuples(dps: list[Any]) -> TypeGuard[list[tuple]]:
+        # Not a real type guard, see '_dps_are_insert_ready'.
+        return isinstance(dps[0], tuple)
+
+    @staticmethod
+    def _dps_are_dicts(dps: list[Any]) -> TypeGuard[list[dict]]:
+        # Not a real type guard, see '_dps_are_insert_ready'.
+        return isinstance(dps[0], dict)
+
+    def _create_payload_tasks(
+        self, post_dps_objects: list[tuple[Identifier, list[_InsertDatapoint]]]
+    ) -> Iterator[list[dict[str, Any]]]:
+        payload = []
+        n_left = self.dps_limit
+        for identifier, dps in post_dps_objects:
+            for next_chunk, is_full in self._split_datapoints(dps, n_left, self.dps_limit):
+                payload.append({**identifier.as_dict(), "datapoints": next_chunk})
+                if is_full:
+                    yield payload
+                    payload = []
+                    n_left = self.dps_limit
+                else:
+                    n_left -= len(next_chunk)
+        if payload:
+            yield payload
+
+    async def _insert_datapoints(self, payload: list[dict[str, Any]]) -> None:
+        # Acquire the semaphore before converting to memory-intensive format:
+        async with self.dps_client._get_semaphore("write"):
+            for dct in payload:
+                dct["datapoints"] = [dp.dump() for dp in dct["datapoints"]]
+            await self.dps_client._post(
+                url_path=self.dps_client._RESOURCE_PATH,
+                json={"items": payload},
+                headers=None,
+                semaphore=None,  # Already holding the semaphore above
+            )
+        # ...and clean up after insert
+        # (needed because a ref preventing gc is held to these until the whole job is done):
+        for dct in payload:
+            dct["datapoints"].clear()
+
+    @staticmethod
+    def _split_datapoints(lst: list[_T], n_first: int, n: int) -> Iterator[tuple[list[_T], bool]]:
+        # Returns chunks with a boolean answering "are we there yet"
+        chunk = lst[:n_first]
+        yield chunk, len(chunk) == n_first
+
+        for i in range(n_first, len(lst), n):
+            chunk = lst[i : i + n]
+            yield chunk, len(chunk) == n
+
+    @staticmethod
+    def _verify_dps_object_for_insertion(dps: Datapoints | DatapointsArray) -> None:
+        if dps.value is None:
+            raise ValueError(f"Only raw datapoints are supported when inserting data from ``{type(dps).__name__}``")
+        if (n_ts := len(dps.timestamp)) != (n_dps := len(dps.value)):
+            raise ValueError(f"Number of timestamps ({n_ts}) does not match number of datapoints ({n_dps}) to insert")
+
+        if dps.status_code is not None and dps.status_symbol is not None:
+            if n_ts != (n_codes := len(dps.status_code)):
+                raise ValueError(
+                    f"Number of status codes ({n_codes}) does not match the number of datapoints ({n_ts}) to insert"
+                )
+        elif exactly_one_is_not_none(dps.status_code, dps.status_symbol):
+            # Let's not silently ignore someone that have manually instantiated a dps object with just one status:
+            raise ValueError("One of status code/symbol is missing on datapoints object")
+
+    def _extract_raw_data_from_datapoints(self, dps: Datapoints) -> list[_InsertDatapoint]:
+        if dps.status_code is None:
+            return list(map(_InsertDatapoint, dps.timestamp, dps.value))  # type: ignore [arg-type]
+        return list(map(_InsertDatapoint, dps.timestamp, dps.value, dps.status_code))  # type: ignore [arg-type]
+
+    def _extract_raw_data_from_datapoints_array(self, dps: DatapointsArray) -> list[_InsertDatapoint]:
+        # Using `tolist()` converts to the nearest compatible built-in Python type (in C code):
+        values = dps.value.tolist()  # type: ignore [union-attr]
+        timestamps = dps.timestamp.astype("datetime64[ms]").astype("int64").tolist()
+
+        if dps.null_timestamps:
+            # 'Missing' and NaN can not be differentiated when we read from numpy arrays:
+            values = [None if ts in dps.null_timestamps else dp for ts, dp in zip(timestamps, values)]
+
+        if dps.status_code is None:
+            return list(map(_InsertDatapoint, timestamps, values))
+        return list(map(_InsertDatapoint, timestamps, values, dps.status_code.tolist()))
 
 
 class RetrieveLatestDpsFetcher:
