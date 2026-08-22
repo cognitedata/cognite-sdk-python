@@ -1,6 +1,6 @@
 [project]
 name = "cognite-sdk"
-version = "8.13.0"
+version = "8.14.0"
 
 description = "Cognite Python SDK"
 readme = "README.md"
