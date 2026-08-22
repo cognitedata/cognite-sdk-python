@@ -76,9 +76,20 @@ from cognite.client.data_classes.workflows import (
 from cognite.client.testing import AsyncCogniteClientMock
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._concurrency import CRUDConcurrency
+from cognite.client.utils._pandas_helpers import timestamp_dtype_unit
 from cognite.client.utils._text import random_string
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# The resolution the SDK uses for pandas timestamp columns/indices depends on the installed pandas
+# major version, see `timestamp_dtype_unit` for the reasoning. Tests asserting exact dtypes should
+# build their expectations relative to this instead of hardcoding "ms" (or "ns"):
+try:
+    PANDAS_TS_UNIT: Literal["ns", "ms"] = timestamp_dtype_unit()
+except ModuleNotFoundError:
+    # When we test with '--test-deps-only-core', pandas is not installed. For simplicity of imports, we still
+    # define PANDAS_TS_UNIT here:
+    PANDAS_TS_UNIT = "ms"
 
 T_Type = TypeVar("T_Type", bound=type)
 
