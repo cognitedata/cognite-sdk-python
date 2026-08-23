@@ -170,6 +170,14 @@ class FunctionSchedulesAPI(APIClient):
             limit = 10_000
 
         _ensure_at_most_one_id_given(function_id, function_external_id)
+
+        if isinstance(function_external_id, str):
+            function = await self._cognite_client.functions.retrieve(external_id=function_external_id)
+            if function is None:
+                # NOTE: Unknown function ID also returns an empty list
+                return FunctionSchedulesList([])
+            function_id = function.id
+
         filter = FunctionSchedulesFilter(
             name=name,
             function_id=function_id,
