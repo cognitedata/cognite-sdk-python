@@ -182,7 +182,7 @@ class TestFunctionSchedulesAPI:
 
             with subtests.test(msg="List with function external ID"):
                 schedules = cognite_client.functions.schedules.list(function_external_id=a_function.external_id)
-                assert schedules[0].id == created.id
+                assert any(s.id == created.id for s in schedules)
 
             with subtests.test(msg="List with unknown function external ID"):
                 schedules = cognite_client.functions.schedules.list(function_external_id="unknown_external_id")
