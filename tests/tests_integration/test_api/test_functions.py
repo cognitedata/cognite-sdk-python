@@ -152,7 +152,9 @@ class TestFunctionsAPI:
 
 
 class TestFunctionSchedulesAPI:
-    def test_create_retrieve_delete(self, cognite_client: CogniteClient, a_function: Function) -> None:
+    def test_create_retrieve_delete(
+        self, cognite_client: CogniteClient, a_function: Function, subtests: pytest.Subtests
+    ) -> None:
         my_schedule = FunctionScheduleWrite(
             name="python-sdk-test-schedule",
             cron_expression="0 0 1 1 *",
@@ -177,6 +179,14 @@ class TestFunctionSchedulesAPI:
             retrieved = cognite_client.functions.schedules.retrieve(id=created.id)
             assert isinstance(retrieved, FunctionSchedule)
             assert retrieved.dump() == created.dump()
+
+            with subtests.test(msg="List with function external ID"):
+                schedules = cognite_client.functions.schedules.list(function_external_id=a_function.external_id)
+                assert any(s.id == created.id for s in schedules)
+
+            with subtests.test(msg="List with unknown function external ID"):
+                schedules = cognite_client.functions.schedules.list(function_external_id="unknown_external_id")
+                assert len(schedules) == 0
 
             cognite_client.functions.schedules.delete(id=created.id)
         finally:
