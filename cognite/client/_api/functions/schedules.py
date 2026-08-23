@@ -181,7 +181,6 @@ class FunctionSchedulesAPI(APIClient):
         filter = FunctionSchedulesFilter(
             name=name,
             function_id=function_id,
-            function_external_id=function_external_id,
             created_time=created_time,
             cron_expression=cron_expression,
         ).dump(camel_case=True)
