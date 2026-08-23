@@ -14,7 +14,7 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
-    from cognite.client.data_classes.filters import Prefix
+    from cognite.client.data_classes import filters
 
 
 class MeteringAPI(APIClient):
@@ -119,7 +119,7 @@ class MeteringAPI(APIClient):
 
     async def list(
         self,
-        filter: Prefix | None = None,
+        filter: filters.Prefix | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
         start: int | str | datetime.datetime | None = None,
         end: int | str | datetime.datetime | None = None,
@@ -130,7 +130,7 @@ class MeteringAPI(APIClient):
         Lists all available meters for a specific project. Optionally filter by meter ID prefix using a ``Prefix`` filter.
 
         Args:
-            filter (Prefix | None): Optional ``Prefix`` filter to apply on the ``meterId`` property (only ``Prefix`` filters are supported).
+            filter (filters.Prefix | None): Optional ``Prefix`` filter to apply on the ``meterId`` property (only ``Prefix`` filters are supported).
             limit (int | None): Maximum number of meters to return. Defaults to 25. Set to ``None`` or ``-1`` to return all meters.
             start (int | str | datetime.datetime | None): Start of the time range for historical data. Accepts milliseconds since epoch, a ``datetime`` object, or a relative time string like ``"2w-ago"``. **Must be provided together with** ``number_of_datapoints`` to get time-series data. If omitted, only meter metadata is returned without time-series data.
             end (int | str | datetime.datetime | None): End of the time range for historical data. Accepts milliseconds since epoch, a ``datetime`` object, or a relative time string like ``"now"``. Only relevant when ``start`` is provided. Defaults to the current time on the server if omitted.
