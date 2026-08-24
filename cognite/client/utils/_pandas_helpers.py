@@ -89,6 +89,36 @@ def to_pandas_timestamp(ms: int, tz: str | datetime.timezone | None = None) -> p
     return pd.Timestamp(ms, unit="ms", tz=tz).as_unit(timestamp_dtype_unit())
 
 
+def to_pandas_datetime_index(
+    timestamps: list[int],
+    timezone: str | datetime.timezone | ZoneInfo | None,
+    assume_utc: bool = False,
+) -> pd.DatetimeIndex:
+    """Create a DatetimeIndex from epoch-millisecond timestamps with SDK timestamp resolution."""
+    import pandas as pd
+
+    if assume_utc or timezone is not None:
+        dt_index = pd.to_datetime(timestamps, unit="ms", utc=True)
+    else:
+        dt_index = pd.to_datetime(timestamps, unit="ms")
+
+    if timezone is not None:
+        dt_index = dt_index.tz_convert(convert_tz_for_pandas(timezone))
+    return dt_index.as_unit(timestamp_dtype_unit())
+
+
+def _to_pandas_datetime_index_from_numpy(
+    timestamps: NumpyDatetime64NSArray,
+    timezone: str | datetime.timezone | ZoneInfo | None,
+) -> pd.DatetimeIndex:
+    import pandas as pd
+
+    dt_index = pd.to_datetime(timestamps, utc=timezone is not None)
+    if timezone is not None:
+        dt_index = dt_index.tz_convert(convert_tz_for_pandas(timezone))
+    return dt_index.as_unit(timestamp_dtype_unit())
+
+
 def convert_tz_for_pandas(tz: str | datetime.timezone | ZoneInfo | None) -> str | datetime.timezone | None:
     if tz is None or isinstance(tz, (str, datetime.timezone)):
         return tz
@@ -421,22 +451,12 @@ def _create_timestamp_index(
     timestamps: list[int] | NumpyDatetime64NSArray, timezone: str | datetime.timezone | ZoneInfo | None
 ) -> pd.DatetimeIndex:
     import numpy as np
-    import pandas as pd
 
-    unit = timestamp_dtype_unit()
-    match timestamps, timezone:
-        case list(), None:
-            return pd.to_datetime(timestamps, unit="ms").as_unit(unit)
-        case list(), _:
-            return (
-                pd.to_datetime(timestamps, unit="ms", utc=True)
-                .tz_convert(convert_tz_for_pandas(timezone))
-                .as_unit(unit)
-            )
-        case np.ndarray(), None:
-            return pd.to_datetime(timestamps).as_unit(unit)
-        case np.ndarray(), _:
-            return pd.to_datetime(timestamps, utc=True).as_unit(unit).tz_convert(convert_tz_for_pandas(timezone))
+    match timestamps:
+        case list():
+            return to_pandas_datetime_index(timestamps, timezone)
+        case np.ndarray():
+            return _to_pandas_datetime_index_from_numpy(timestamps, timezone)
         case _:
             raise TypeError("Timestamps must be either list[int] or numpy.ndarray")
 
