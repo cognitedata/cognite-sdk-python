@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal, cast
 
 from cognite.client._constants import OMITTED, Omitted
 from cognite.client.data_classes.data_modeling import DirectRelationReference
+from cognite.client.data_classes.data_modeling.data_types import StateSetEntry
 from cognite.client.data_classes.data_modeling.ids import ViewId
 from cognite.client.data_classes.data_modeling.instances import (
     PropertyOptions,
@@ -3635,9 +3636,177 @@ class CogniteSourceableNode(_CogniteSourceableProperties, TypedNode):
         )
 
 
+class _CogniteStateSetProperties:
+    states = PropertyOptions("states")
+    source_id = PropertyOptions("sourceId")
+    source_context = PropertyOptions("sourceContext")
+    source_created_time = PropertyOptions("sourceCreatedTime")
+    source_updated_time = PropertyOptions("sourceUpdatedTime")
+    source_created_user = PropertyOptions("sourceCreatedUser")
+    source_updated_user = PropertyOptions("sourceUpdatedUser")
+
+    @classmethod
+    def get_source(cls) -> ViewId:
+        return ViewId("cdf_cdm", "CogniteStateSet", "v1")
+
+
+class CogniteStateSetApply(_CogniteStateSetProperties, TypedNodeApply):
+    """This represents the writing format of Cognite state set.
+
+    It is used when data is written to CDF.
+
+    Represents a set of valid states for state time series.
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite state set.
+        states (list[StateSetEntry | dict[str, Any]]): A list of valid states. Each state contains a numeric value and a string value, and may include a description.
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        *,
+        states: list[StateSetEntry | dict[str, Any]],
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
+        existing_version: int | None = None,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+    ) -> None:
+        TypedNodeApply.__init__(self, space, external_id, existing_version, type)
+        self.states = [StateSetEntry.load(state) for state in states]
+        self.name = name
+        self.description = description
+        self.tags = tags
+        self.aliases = aliases
+        self.source_id = source_id
+        self.source_context = source_context
+        self.source = DirectRelationReference.load(source) if source else source
+        self.source_created_time = source_created_time
+        self.source_updated_time = source_updated_time
+        self.source_created_user = source_created_user
+        self.source_updated_user = source_updated_user
+
+    def _dump_properties(self) -> dict[str, Any]:
+        properties = super()._dump_properties()
+        properties["states"] = [state.dump() for state in self.states]
+        return properties
+
+
+class CogniteStateSet(_CogniteStateSetProperties, TypedNode):
+    """This represents the reading format of Cognite state set.
+
+    It is used when data is read from CDF.
+
+    Represents a set of valid states for state time series.
+
+    Args:
+        space (str): The space where the node is located.
+        external_id (str): The external id of the Cognite state set.
+        version (int): DMS version.
+        last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        states (list[StateSetEntry | dict[str, Any]]): A list of valid states. Each state contains a numeric value and a string value, and may include a description.
+        name (str | None): Name of the instance
+        description (str | None): Description of the instance
+        tags (list[str] | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | None): Alternative names for the node
+        source_id (str | None): Identifier from the source system
+        source_context (str | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | None): Direct relation to a source system
+        source_created_time (datetime | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        type (DirectRelationReference | None): Direct relation pointing to the type node.
+        deleted_time (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds. Timestamp when the instance was soft deleted. Note that deleted instances are filtered out of query results, but present in sync results
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: int,
+        last_updated_time: int,
+        created_time: int,
+        *,
+        states: list[StateSetEntry | dict[str, Any]],
+        name: str | None = None,
+        description: str | None = None,
+        tags: list[str] | None = None,
+        aliases: list[str] | None = None,
+        source_id: str | None = None,
+        source_context: str | None = None,
+        source: DirectRelationReference | None = None,
+        source_created_time: datetime | None = None,
+        source_updated_time: datetime | None = None,
+        source_created_user: str | None = None,
+        source_updated_user: str | None = None,
+        type: DirectRelationReference | None = None,
+        deleted_time: int | None = None,
+    ) -> None:
+        TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
+        self.states = [StateSetEntry.load(state) for state in states]
+        self.name = name
+        self.description = description
+        self.tags = tags
+        self.aliases = aliases
+        self.source_id = source_id
+        self.source_context = source_context
+        self.source = DirectRelationReference.load(source) if source else source
+        self.source_created_time = source_created_time
+        self.source_updated_time = source_updated_time
+        self.source_created_user = source_created_user
+        self.source_updated_user = source_updated_user
+
+    def as_write(self) -> CogniteStateSetApply:
+        return CogniteStateSetApply(
+            self.space,
+            self.external_id,
+            states=self.states,
+            name=self.name,
+            description=self.description,
+            tags=self.tags,
+            aliases=self.aliases,
+            source_id=self.source_id,
+            source_context=self.source_context,
+            source=self.source,
+            source_created_time=self.source_created_time,
+            source_updated_time=self.source_updated_time,
+            source_created_user=self.source_created_user,
+            source_updated_user=self.source_updated_user,
+            existing_version=self.version,
+            type=self.type,
+        )
+
+
 class _CogniteTimeSeriesProperties:
     is_step = PropertyOptions("isStep")
     time_series_type = PropertyOptions("type")
+    state_set = PropertyOptions("stateSet")
     source_id = PropertyOptions("sourceId")
     source_context = PropertyOptions("sourceContext")
     source_created_time = PropertyOptions("sourceCreatedTime")
@@ -3662,7 +3831,8 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite time series.
         is_step (bool): Specifies whether the time series is a step time series or not.
-        time_series_type (Literal['numeric', 'string']): Specifies the data type of the data points.
+        time_series_type (Literal['numeric', 'string', 'state']): Specifies the data type of the data points.
+        state_set (DirectRelationReference | tuple[str, str] | Omitted | None): The state set of the time series. It is only in effect when the 'time_series_type' is 'state'.
         name (str | Omitted | None): Name of the instance
         description (str | Omitted | None): Description of the instance
         tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
@@ -3688,7 +3858,8 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
         external_id: str,
         *,
         is_step: bool,
-        time_series_type: Literal["numeric", "string"],
+        time_series_type: Literal["numeric", "string", "state"],
+        state_set: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
         name: str | Omitted | None = OMITTED,
         description: str | Omitted | None = OMITTED,
         tags: list[str] | Omitted | None = OMITTED,
@@ -3721,6 +3892,7 @@ class CogniteTimeSeriesApply(_CogniteTimeSeriesProperties, TypedNodeApply):
         self.source_updated_time = source_updated_time
         self.source_created_user = source_created_user
         self.source_updated_user = source_updated_user
+        self.state_set = DirectRelationReference.load(state_set) if state_set else state_set
         self.source_unit = source_unit
         self.unit = DirectRelationReference.load(unit) if unit else unit
         self.assets = [DirectRelationReference.load(a) for a in assets] if assets else assets
@@ -3741,7 +3913,8 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, TypedNode):
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         is_step (bool): Specifies whether the time series is a step time series or not.
-        time_series_type (Literal['numeric', 'string']): Specifies the data type of the data points.
+        time_series_type (Literal['numeric', 'string', 'state']): Specifies the data type of the data points.
+        state_set (DirectRelationReference | None): The state set of the time series. It is only in effect when the 'time_series_type' is 'state'.
         name (str | None): Name of the instance
         description (str | None): Description of the instance
         tags (list[str] | None): Text based labels for generic use, limited to 1000
@@ -3770,7 +3943,8 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, TypedNode):
         created_time: int,
         *,
         is_step: bool,
-        time_series_type: Literal["numeric", "string"],
+        time_series_type: Literal["numeric", "string", "state"],
+        state_set: DirectRelationReference | None = None,
         name: str | None = None,
         description: str | None = None,
         tags: list[str] | None = None,
@@ -3803,6 +3977,7 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, TypedNode):
         self.source_updated_time = source_updated_time
         self.source_created_user = source_created_user
         self.source_updated_user = source_updated_user
+        self.state_set = DirectRelationReference.load(state_set) if state_set else state_set
         self.source_unit = source_unit
         self.unit = DirectRelationReference.load(unit) if unit else unit
         self.assets = [DirectRelationReference.load(a) for a in assets] if assets else assets
@@ -3813,7 +3988,7 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, TypedNode):
             self.space,
             self.external_id,
             is_step=self.is_step,
-            time_series_type=self.time_series_type,
+            time_series_type=cast(Literal["numeric", "string", "state"], self.time_series_type),
             name=self.name,
             description=self.description,
             tags=self.tags,
@@ -3825,6 +4000,7 @@ class CogniteTimeSeries(_CogniteTimeSeriesProperties, TypedNode):
             source_updated_time=self.source_updated_time,
             source_created_user=self.source_created_user,
             source_updated_user=self.source_updated_user,
+            state_set=self.state_set,
             source_unit=self.source_unit,
             unit=self.unit,
             assets=self.assets,  # type: ignore[arg-type]
