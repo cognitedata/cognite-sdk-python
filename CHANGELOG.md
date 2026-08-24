@@ -13,6 +13,24 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.14.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.13.0...v8.14.0) (2026-08-24)
+
+
+### Features
+
+* **config:** Add `ssl_config` to `global_config` (DM-3969) ([#2720](https://github.com/cognitedata/cognite-sdk-python/issues/2720)) ([3a76a19](https://github.com/cognitedata/cognite-sdk-python/commit/3a76a19acd52ebb75d897f77d07779b2022eaa86))
+* **data modeling:** merge records sync and sync_resume into a chunk-yielding generator ([#2755](https://github.com/cognitedata/cognite-sdk-python/issues/2755)) ([0fbe857](https://github.com/cognitedata/cognite-sdk-python/commit/0fbe85710fc5cb0955cb5d8708095af7c5b41db5))
+
+
+### Bug Fixes
+
+* **datapoints:** cancel and await outstanding tasks also on failure ([#2775](https://github.com/cognitedata/cognite-sdk-python/issues/2775)) ([36ed7de](https://github.com/cognitedata/cognite-sdk-python/commit/36ed7de04c86f0675b9ad36fe8813333dd85824a))
+* **datapoints:** passing emtpy list of time series ids to retrieve latest datapoints no longer fails when converted to pandas ([#2769](https://github.com/cognitedata/cognite-sdk-python/issues/2769)) ([c70d872](https://github.com/cognitedata/cognite-sdk-python/commit/c70d872abf2423222c0a0f46c2e6620430c13925))
+* **mocks:** add config to Cognite client mock ([#2770](https://github.com/cognitedata/cognite-sdk-python/issues/2770)) ([6e3837d](https://github.com/cognitedata/cognite-sdk-python/commit/6e3837d1e2cc169793551620493ebddcf0d6e7bb))
+* **pandas:** Support pandas v3 timestamp semantics while preserving v2 behavior (DM-3534) ([#2780](https://github.com/cognitedata/cognite-sdk-python/issues/2780)) ([6da7399](https://github.com/cognitedata/cognite-sdk-python/commit/6da73997d8b71cdf20ac632d453104fd9baacf82))
+* **records:** reject a filter limit above 1000 instead of truncating ([#2751](https://github.com/cognitedata/cognite-sdk-python/issues/2751)) ([c758433](https://github.com/cognitedata/cognite-sdk-python/commit/c758433e86ec8117810bcf1875945887a38b5d5f))
+* **SyntaxWarning:** Fix unnecessary SyntaxWarning in SyncApi (docstring not marked as r(aw)) ([#2771](https://github.com/cognitedata/cognite-sdk-python/issues/2771)) ([e97333d](https://github.com/cognitedata/cognite-sdk-python/commit/e97333d651a97fd2a096216c375d524a56c18807))
+
 ## [8.13.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.12.0...v8.13.0) (2026-08-13)
 
 
