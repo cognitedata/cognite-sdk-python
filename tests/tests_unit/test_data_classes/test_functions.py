@@ -111,7 +111,8 @@ class TestFunctionCall:
 
 class TestFunctionCallLog:
     @pytest.fixture(scope="class")
-    def entries(self) -> list[tuple[datetime.datetime, str]]:
+    @classmethod
+    def entries(cls) -> list[tuple[datetime.datetime, str]]:
         start_ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123000, tzinfo=datetime.timezone.utc)
         ms_delta = datetime.timedelta(milliseconds=100)
         return [(start_ts + i * ms_delta, f"line {i}") for i in range(10)]

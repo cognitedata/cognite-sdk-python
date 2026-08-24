@@ -303,7 +303,7 @@ def test_unknown_filter_type() -> None:
     assert unknown.dump() == {"unknown": {}}
 
 
-@pytest.mark.parametrize("property_cls", filter(lambda cls: hasattr(cls, "metadata_key"), all_subclasses(EnumProperty)))
+@pytest.mark.parametrize("property_cls", [cls for cls in all_subclasses(EnumProperty) if hasattr(cls, "metadata_key")])
 def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> None:
     # Bug prior to 6.32.4 would dump user given keys in camelCase
     flt = f.Equals(property_cls.metadata_key("key_foo_Bar_baz"), "value_foo Bar_baz")  # type: ignore [attr-defined]
