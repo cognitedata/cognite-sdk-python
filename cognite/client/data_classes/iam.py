@@ -18,6 +18,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.capabilities import Capability, ProjectCapabilityList
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._pandas_helpers import to_pandas_timestamp
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -272,7 +273,7 @@ class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformer
         key = "deletedTime" if camel_case else "deleted_time"
         if convert_timestamps and key in df:
             pd = local_import("pandas")
-            df.loc[df[key] == pd.Timestamp(-1, unit="ms"), key] = pd.NaT
+            df.loc[df[key] == to_pandas_timestamp(-1), key] = pd.NaT
         return df
 
 

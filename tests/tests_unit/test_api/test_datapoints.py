@@ -27,7 +27,7 @@ from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import LatestDatapoint, LatestDatapointList
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._time import datetime_to_ms
-from tests.utils import get_or_raise, get_url, jsgz_load, random_gamma_dist_integer
+from tests.utils import PANDAS_TS_UNIT, get_or_raise, get_url, jsgz_load, random_gamma_dist_integer
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -704,7 +704,9 @@ class TestPandasIntegration:
         import pandas as pd
 
         d = Datapoint(timestamp=0, value=2, max=3)
-        expected_df = pd.DataFrame({"value": [2], "max": [3]}, index=[pd.Timestamp(0, unit="ms")])
+        expected_df = pd.DataFrame(
+            {"value": [2], "max": [3]}, index=[pd.Timestamp(0, unit="ms").as_unit(PANDAS_TS_UNIT)]
+        )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(), check_like=True)
 
     def test_datapoints(self) -> None:
@@ -722,7 +724,7 @@ class TestPandasIntegration:
         expected_df = pd.DataFrame(
             # Since ID is not unique, we use stand-in column names initially, then replace:
             {"first-col": [2, 3, 4.0], "second-col": [3, 4, 5.0]},
-            index=pd.to_datetime(range(1, 4), unit="ms"),
+            index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples(
             [(1, "average"), (1, "step_interpolation")],
@@ -734,11 +736,15 @@ class TestPandasIntegration:
         import pandas as pd
 
         d = Datapoints(id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], average=[2, 3, 4])
-        expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame(
+            {1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT)
+        )
         expected_df.columns = pd.Index([1], name="identifier")
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=False))
 
-        expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame(
+            {1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT)
+        )
         expected_df.columns = pd.MultiIndex.from_tuples([(1, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=True))
 
@@ -757,7 +763,7 @@ class TestPandasIntegration:
         )
         expected_df = pd.DataFrame(
             {"abc": [2, 3, 4.0], "also-abc": [3, 4, 5.0]},
-            index=pd.to_datetime(range(1, 4), unit="ms"),
+            index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples(
             [("abc", "average"), ("abc", "step_interpolation")],
@@ -835,7 +841,7 @@ class TestPandasIntegration:
                 "col4": [3, 4, 5, None],
                 "col5": [1, None, 3, 4.0],
             },
-            index=pd.to_datetime(range(1, 5), unit="ms"),
+            index=pd.to_datetime(range(1, 5), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples(
             [(1, "average"), (1, "step_interpolation"), ("foo", "count"), ("foo", "step_interpolation"), (3, "")],
@@ -849,7 +855,9 @@ class TestPandasIntegration:
         d1 = Datapoints(id=2, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], max=[2, 3, 4])
         d2 = Datapoints(id=3, is_string=False, is_step=False, type="numeric", timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
-        expected_df = pd.DataFrame({1: [2, 3, 4.0], 2: [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame(
+            {1: [2, 3, 4.0], 2: [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT)
+        )
         expected_df.columns = pd.MultiIndex.from_tuples([(2, "max"), (3, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
         expected_df.columns = pd.Index([2, 3], name="identifier")
@@ -863,7 +871,7 @@ class TestPandasIntegration:
         dps_list = DatapointsList([d1, d2])
         expected_df = pd.DataFrame(
             {1: [2, 3, 4.0], 2: [1, None, 3]},
-            index=pd.to_datetime(range(1, 4), unit="ms"),
+            index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples([(2, "max"), (2, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
@@ -880,7 +888,7 @@ class TestPandasIntegration:
 
         expected_df = pd.DataFrame(
             {1: [1, 2, 3, None, None], 2: [None, None, 3, 4, 5]},
-            index=pd.to_datetime(range(1, 6), unit="ms"),
+            index=pd.to_datetime(range(1, 6), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.Index([1, 2], name="identifier")
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)

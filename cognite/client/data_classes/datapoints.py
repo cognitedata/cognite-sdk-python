@@ -37,6 +37,8 @@ from cognite.client.utils._pandas_helpers import (
     convert_dps_to_dataframe,
     convert_tz_for_pandas,
     notebook_display_with_fallback,
+    to_pandas_datetime_index,
+    to_pandas_timestamp,
 )
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -541,7 +543,7 @@ class Datapoint(CogniteResource):
 
         timestamp = dumped.pop("timestamp")
         tz = convert_tz_for_pandas(self.timezone)
-        return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms", tz=tz)])
+        return pd.DataFrame(dumped, index=[to_pandas_timestamp(timestamp, tz=tz)])
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -1334,10 +1336,9 @@ class SyntheticDatapoints(CogniteResource):
         """
         pd = local_import("pandas")
 
-        tz = convert_tz_for_pandas(self.timezone)
-        index = pd.to_datetime(self.timestamp, unit="ms", utc=True)
-        if tz is not None:
-            index = index.tz_convert(tz)
+        # Note: Unlike `create_timestamp_index`, we deliberately keep the index UTC-aware even when no
+        # timezone is given (this is existing/documented behavior for synthetic datapoints):
+        index = to_pandas_datetime_index(self.timestamp, self.timezone, assume_utc=True)
 
         data: dict[str, Any] = {self.expression: self.value}
         # Only include error column if requested AND there's at least one non-null error

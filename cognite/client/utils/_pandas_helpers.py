@@ -6,6 +6,7 @@ import re
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import cache
 from inspect import signature
 from numbers import Integral
 from typing import TYPE_CHECKING, Any, Literal
@@ -62,6 +63,60 @@ def pandas_major_version() -> int:
     from pandas import __version__
 
     return int(__version__.split(".")[0])
+
+
+@cache
+def is_pandas_v2_or_lower() -> bool:
+    """Pandas v2 (and lower) always defaulted to nanosecond-precision timestamps, so a lot of user code
+    (implicitly or not) relies on that. Pandas v3 instead infers precision from the input on a case-by-case
+    basis, which for us would give arbitrary/unpredictable results, so from v3 onwards we instead pin all
+    timestamp columns/indices produced by the SDK to millisecond precision, matching CDF's native resolution.
+    """
+    return pandas_major_version() < 3
+
+
+@cache
+def timestamp_dtype_unit() -> Literal["ns", "ms"]:
+    """The datetime64 resolution to use for all timestamp columns/indices produced by the SDK, see
+    `is_pandas_v2_or_lower` for the reasoning."""
+    return "ns" if is_pandas_v2_or_lower() else "ms"
+
+
+def to_pandas_timestamp(ms: int, tz: str | datetime.timezone | None = None) -> pd.Timestamp:
+    """Create a pandas Timestamp from milliseconds since epoch, at the resolution given by `timestamp_dtype_unit`."""
+    import pandas as pd
+
+    return pd.Timestamp(ms, unit="ms", tz=tz).as_unit(timestamp_dtype_unit())
+
+
+def to_pandas_datetime_index(
+    timestamps: list[int],
+    timezone: str | datetime.timezone | ZoneInfo | None,
+    assume_utc: bool = False,
+) -> pd.DatetimeIndex:
+    """Create a DatetimeIndex from epoch-millisecond timestamps with SDK timestamp resolution."""
+    import pandas as pd
+
+    if assume_utc or timezone is not None:
+        dt_index = pd.to_datetime(timestamps, unit="ms", utc=True)
+    else:
+        dt_index = pd.to_datetime(timestamps, unit="ms")
+
+    if timezone is not None:
+        dt_index = dt_index.tz_convert(convert_tz_for_pandas(timezone))
+    return dt_index.as_unit(timestamp_dtype_unit())
+
+
+def _to_pandas_datetime_index_from_numpy(
+    timestamps: NumpyDatetime64NSArray,
+    timezone: str | datetime.timezone | ZoneInfo | None,
+) -> pd.DatetimeIndex:
+    import pandas as pd
+
+    dt_index = pd.to_datetime(timestamps, utc=timezone is not None)
+    if timezone is not None:
+        dt_index = dt_index.tz_convert(convert_tz_for_pandas(timezone))
+    return dt_index.as_unit(timestamp_dtype_unit())
 
 
 def convert_tz_for_pandas(tz: str | datetime.timezone | ZoneInfo | None) -> str | datetime.timezone | None:
@@ -144,8 +199,23 @@ def convert_nullable_int_cols(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def convert_timestamp_columns_to_datetime(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert CDF time-attribute columns from epoch milliseconds to pandas datetimes.
+
+    Expects a DataFrame produced from CDF resources where any columns in
+    ``TIME_ATTRIBUTES`` (for example ``created_time`` or ``last_updated_time``)
+    are integer Unix timestamps in milliseconds.
+
+    The output datetime resolution depends on pandas version:
+    ``datetime64[ns]`` for pandas <= 2 and ``datetime64[ms]`` for newer versions.
+
+    Other columns are left unchanged.
+    """
     to_convert = df.columns.intersection(TIME_ATTRIBUTES)
-    df[to_convert] = (1_000_000 * df[to_convert]).astype("datetime64[ns]")
+    if is_pandas_v2_or_lower():
+        # astype("datetime64[ns]") interprets raw ints as nanoseconds, so we need to convert first:
+        df[to_convert] = (1_000_000 * df[to_convert]).astype("datetime64[ns]")
+    else:
+        df[to_convert] = df[to_convert].astype("datetime64[ms]")
     return df
 
 
@@ -381,17 +451,12 @@ def _create_timestamp_index(
     timestamps: list[int] | NumpyDatetime64NSArray, timezone: str | datetime.timezone | ZoneInfo | None
 ) -> pd.DatetimeIndex:
     import numpy as np
-    import pandas as pd
 
-    match timestamps, timezone:
-        case list(), None:
-            return pd.to_datetime(timestamps, unit="ms")
-        case list(), _:
-            return pd.to_datetime(timestamps, unit="ms", utc=True).tz_convert(convert_tz_for_pandas(timezone))
-        case np.ndarray(), None:
-            return pd.to_datetime(timestamps)
-        case np.ndarray(), _:
-            return pd.to_datetime(timestamps, utc=True).tz_convert(convert_tz_for_pandas(timezone))
+    match timestamps:
+        case list():
+            return to_pandas_datetime_index(timestamps, timezone)
+        case np.ndarray():
+            return _to_pandas_datetime_index_from_numpy(timestamps, timezone)
         case _:
             raise TypeError("Timestamps must be either list[int] or numpy.ndarray")
 
@@ -421,7 +486,7 @@ def base_resource_to_pandas_fallback(
 
     if convert_timestamps:
         for k in TIME_ATTRIBUTES.intersection(dumped):
-            dumped[k] = pd.Timestamp(dumped[k], unit="ms")
+            dumped[k] = to_pandas_timestamp(dumped[k])
 
     if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
         dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})

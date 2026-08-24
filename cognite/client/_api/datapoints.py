@@ -50,6 +50,7 @@ from cognite.client.utils._auxiliary import (
 )
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._pandas_helpers import to_pandas_timestamp
 from cognite.client.utils._time import (
     timestamp_to_ms,
 )
@@ -1183,8 +1184,8 @@ class DatapointsAPI(APIClient):
             include_status=include_status,
             include_unit=include_unit,
         )
-        start = pd.Timestamp(min(q.start_ms for q in fetcher.agg_queries), unit="ms")
-        end = pd.Timestamp(max(q.end_ms for q in fetcher.agg_queries), unit="ms")
+        start = to_pandas_timestamp(min(q.start_ms for q in fetcher.agg_queries))
+        end = to_pandas_timestamp(max(q.end_ms for q in fetcher.agg_queries))
         (granularity,) = grans_given
         # Pandas understand "Cognite granularities" except `m` (minutes) which we must translate:
         freq = cast(str, granularity).replace("m", "min")
