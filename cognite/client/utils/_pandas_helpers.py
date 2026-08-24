@@ -169,6 +169,17 @@ def convert_nullable_int_cols(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def convert_timestamp_columns_to_datetime(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert CDF time-attribute columns from epoch milliseconds to pandas datetimes.
+
+    Expects a DataFrame produced from CDF resources where any columns in
+    ``TIME_ATTRIBUTES`` (for example ``created_time`` or ``last_updated_time``)
+    are integer Unix timestamps in milliseconds.
+
+    The output datetime resolution depends on pandas version:
+    ``datetime64[ns]`` for pandas <= 2 and ``datetime64[ms]`` for newer versions.
+
+    Other columns are left unchanged.
+    """
     to_convert = df.columns.intersection(TIME_ATTRIBUTES)
     if is_pandas_v2_or_lower():
         # astype("datetime64[ns]") interprets raw ints as nanoseconds, so we need to convert first:
