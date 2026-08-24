@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import ast
 from collections.abc import Callable, Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -129,3 +131,30 @@ class TestTimestampResolution:
         assert str(df_v2["last_updated_time"].dtype) == "datetime64[ns]"
         assert str(df_v3["last_updated_time"].dtype) == "datetime64[ms]"
         assert df_v2["last_updated_time"].dtype != df_v3["last_updated_time"].dtype
+
+
+@pytest.mark.dsl
+def test_pandas_timestamp_constructors_only_used_in_pandas_helpers() -> None:
+    repo_root = Path(__file__).resolve().parents[3]
+    package_root = repo_root / "cognite" / "client"
+    allowed_files = {"cognite/client/utils/_pandas_helpers.py"}
+    disallowed = {"to_datetime", "Timestamp"}
+
+    violations: list[str] = []
+    for py_file in package_root.rglob("*.py"):
+        rel_path = py_file.relative_to(repo_root).as_posix()
+        if rel_path in allowed_files:
+            continue
+
+        tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=rel_path)
+        for node in ast.walk(tree):
+            match node:
+                case ast.Call(
+                    func=ast.Attribute(value=ast.Name(id=pd_name), attr=method),
+                    lineno=lineno,
+                ) if pd_name in ("pd", "pandas") and method in disallowed:
+                    violations.append(f"{rel_path}:{lineno} uses {pd_name}.{method}()")
+
+    assert not violations, (
+        f"Direct pandas timestamp constructors must be centralized in _pandas_helpers.py: {', '.join(sorted(violations))}"
+    )
