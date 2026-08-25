@@ -82,7 +82,8 @@ class TestWorkflowIds:
 
 class TestWorkflowExecutionDetailed:
     @pytest.fixture(scope="class")
-    def execution_data(self) -> dict[str, Any]:
+    @classmethod
+    def execution_data(cls) -> dict[str, Any]:
         test_data = Path(__file__).parent / "data/workflow_execution.json"
         with test_data.open() as f:
             return json.load(f)

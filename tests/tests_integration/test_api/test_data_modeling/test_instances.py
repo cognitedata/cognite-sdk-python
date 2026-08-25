@@ -1669,7 +1669,8 @@ class TestSyncSessionWithCache:
     """
 
     @pytest.fixture(scope="class")
-    def sync_security_category(self, cognite_client: CogniteClient) -> int:
+    @classmethod
+    def sync_security_category(cls, cognite_client: CogniteClient) -> int:
         from cognite.client.data_classes.iam import SecurityCategoryWrite
 
         existing = cognite_client.iam.security_categories.list(limit=1)

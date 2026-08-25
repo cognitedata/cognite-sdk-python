@@ -1313,13 +1313,8 @@ class TestRetrieveRawDatapointsAPI:
                     assert isinstance(r.is_step, bool)
                     assert isinstance(r.is_string, bool)
 
-    @pytest.mark.parametrize(
-        "retrieve_method_name, kwargs",
-        itertools.product(
-            ["retrieve", "retrieve_arrays", "retrieve_dataframe"],
-            [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")],
-        ),
-    )
+    @pytest.mark.parametrize("retrieve_method_name", ["retrieve", "retrieve_arrays", "retrieve_dataframe"])
+    @pytest.mark.parametrize("kwargs", [dict(target_unit="temperature:deg_f"), dict(target_unit_system="Imperial")])
     def test_retrieve_methods_in_target_unit(
         self,
         retrieve_method_name: str,
