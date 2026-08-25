@@ -26,6 +26,9 @@ from cognite.client._api.datapoint_tasks import (
     BaseDpsFetchSubtask,
     BaseTaskOrchestrator,
 )
+from cognite.client._proto.data_point_insertion_request_pb2 import (
+    DataPointInsertionRequest,
+)
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes import (
     Datapoints,
@@ -34,6 +37,7 @@ from cognite.client.data_classes import (
     DatapointsList,
     DatapointsQuery,
     LatestDatapointQuery,
+    StateDatapointsInsert,
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
@@ -721,6 +725,70 @@ class DatapointsPoster:
         if dps.status_code is None:
             return list(map(_InsertDatapoint, timestamps, values))
         return list(map(_InsertDatapoint, timestamps, values, dps.status_code.tolist()))
+
+
+class StateDatapointsPoster:
+    def __init__(self, dps_client: DatapointsAPI) -> None:
+        self.dps_client = dps_client
+        self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
+        self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
+
+    async def insert(self, items: list[StateDatapointsInsert]) -> None:
+        # The Time Series API rejects duplicate instanceId entries within a single request with 422,
+        # so we need to merge any potential duplicates upfront:
+        merged: dict[NodeId, list] = {}
+        for obj in items:
+            if not obj.datapoints:
+                continue
+            node_id = NodeId.load(obj.instance_id)
+            merged.setdefault(node_id, []).extend(obj.datapoints)
+        if not merged:
+            return
+        deduped = [StateDatapointsInsert(instance_id=nid, datapoints=dps) for nid, dps in merged.items()]
+        tasks = [AsyncSDKTask(self._insert_datapoints, chunk) for chunk in self._create_payload_chunks(deduped)]
+        summary = await execute_async_tasks(tasks)
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: [NodeId.load(obj.instance_id) for obj in task[0]],
+            task_list_element_unwrap_fn=lambda node_id: {
+                "instance_id": node_id.dump(camel_case=False, include_instance_type=False)
+            },
+        )
+
+    def _create_payload_chunks(self, items: list[StateDatapointsInsert]) -> Iterator[list[StateDatapointsInsert]]:
+        # Chunks respect both ts-per-request and datapoints-per-request limits.
+        chunk: list[StateDatapointsInsert] = []
+        n_dps_left = self.dps_limit
+        for elem in items:
+            dps = elem.datapoints
+            offset, n_dps = 0, len(dps)
+            while offset < n_dps:
+                end = offset + n_dps_left
+                slice_ = dps[offset:end]
+                offset = end
+                chunk.append(StateDatapointsInsert(instance_id=elem.instance_id, datapoints=slice_))
+                n_dps_left -= len(slice_)
+                if n_dps_left == 0 or len(chunk) >= self.ts_limit:
+                    yield chunk
+                    chunk = []
+                    n_dps_left = self.dps_limit
+        if chunk:
+            yield chunk
+
+    async def _insert_datapoints(self, chunk: list[StateDatapointsInsert]) -> None:
+        # Acquire the semaphore before building the (potentially large) protobuf message:
+        async with self.dps_client._get_semaphore("write"):
+            content = self._to_protobuf(chunk).SerializeToString()
+            await self.dps_client._post(
+                url_path=self.dps_client._RESOURCE_PATH,
+                content=content,
+                headers={"content-type": "application/protobuf"},
+                api_subversion="beta",
+                semaphore=None,
+            )
+
+    @staticmethod
+    def _to_protobuf(chunk: list[StateDatapointsInsert]) -> DataPointInsertionRequest:
+        return DataPointInsertionRequest(items=[obj._to_proto_dict() for obj in chunk])
 
 
 class RetrieveLatestDpsFetcher:

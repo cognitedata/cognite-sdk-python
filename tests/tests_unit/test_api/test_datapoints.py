@@ -21,8 +21,15 @@ from pytest_httpx import HTTPXMock
 
 import cognite.client._api.datapoints_io as dps_io  # for mocking
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.datapoints_io import _InsertDatapoint
-from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
+from cognite.client._api.datapoints_io import StateDatapointsPoster, _InsertDatapoint
+from cognite.client.data_classes import (
+    Datapoint,
+    Datapoints,
+    DatapointsList,
+    LatestDatapointQuery,
+    StateDatapointsInsert,
+    StateDatapointWrite,
+)
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import LatestDatapoint, LatestDatapointList
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
@@ -1234,3 +1241,151 @@ class TestDatapointsPoster:
             assert 0 < n_dps <= dps_limit
             assert 0 < len(call) <= ts_limit
         assert expected_n_dps == tot_n_dps
+
+
+def _make_poster(dps_limit: int, ts_limit: int) -> StateDatapointsPoster:
+    poster = StateDatapointsPoster.__new__(StateDatapointsPoster)
+    poster.dps_limit = dps_limit
+    poster.ts_limit = ts_limit
+    return poster
+
+
+class TestStateDatapointsPoster:
+    def _items(self, *args: tuple[Any, list[int]]) -> list[StateDatapointsInsert]:
+        return [
+            StateDatapointsInsert(instance_id, [StateDatapointWrite(ts, numeric_value=0) for ts in dps])
+            for instance_id, dps in args
+        ]
+
+    def test_chunks_single_ts_within_dps_limit(self) -> None:
+        poster = _make_poster(dps_limit=10, ts_limit=100)
+        items = self._items((NodeId("sp", "a"), list(range(5))))
+        chunks = list(poster._create_payload_chunks(items))
+        assert len(chunks) == 1
+        assert len(chunks[0][0].datapoints) == 5
+
+    def test_chunks_single_ts_split_across_dps_limit(self) -> None:
+        poster = _make_poster(dps_limit=3, ts_limit=100)
+        items = self._items((NodeId("sp", "a"), list(range(7))))
+        chunks = list(poster._create_payload_chunks(items))
+        assert len(chunks) == 3
+        assert [len(c[0].datapoints) for c in chunks] == [3, 3, 1]
+
+    def test_chunks_respects_ts_limit(self) -> None:
+        poster = _make_poster(dps_limit=100, ts_limit=2)
+        items = self._items(
+            (NodeId("sp", "a"), [1]),
+            (NodeId("sp", "b"), [2]),
+            (NodeId("sp", "c"), [3]),
+        )
+        chunks = list(poster._create_payload_chunks(items))
+        assert len(chunks) == 2
+        assert len(chunks[0]) == 2
+        assert len(chunks[1]) == 1
+
+    def test_chunks_both_limits_interact(self) -> None:
+        # dps_limit forces A to split after 2 dps; ts_limit then closes the second chunk when B is added
+        poster = _make_poster(dps_limit=2, ts_limit=2)
+        items = self._items(
+            (NodeId("sp", "a"), [1, 2, 3]),  # 3 dps → split into [1,2] and [3]
+            (NodeId("sp", "b"), [4]),
+            (NodeId("sp", "c"), [5]),
+        )
+        chunks = list(poster._create_payload_chunks(items))
+        assert len(chunks) == 3
+        # First chunk: A's first 2 dps (hit dps_limit)
+        assert chunks[0] == [StateDatapointsInsert(NodeId("sp", "a"), items[0].datapoints[:2])]
+        # Second chunk: A's remaining 1 dp + B's 1 dp (hit ts_limit)
+        assert len(chunks[1]) == 2
+        # Third chunk: C
+        assert len(chunks[2]) == 1
+
+    def test_chunks_empty_items_produce_no_chunks(self) -> None:
+        poster = _make_poster(dps_limit=10, ts_limit=10)
+        assert list(poster._create_payload_chunks([])) == []
+
+    @pytest.mark.parametrize(
+        "id_a, id_b",
+        [
+            (NodeId("sp", "a"), NodeId("sp", "b")),
+            (("sp", "a"), ("sp", "b")),
+            (NodeId("sp", "a"), ("sp", "b")),  # mixed forms for same-key check
+        ],
+    )
+    def test_insert_merges_duplicate_instance_ids(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        monkeypatch: MonkeyPatch,
+        id_a: Any,
+        id_b: Any,
+    ) -> None:
+        chunks_sent: list[list[StateDatapointsInsert]] = []
+
+        async def capture(self: Any, chunk: list[StateDatapointsInsert]) -> None:
+            chunks_sent.append(chunk)
+
+        monkeypatch.setattr(dps_io.StateDatapointsPoster, "_insert_datapoints", capture)
+
+        cognite_client.time_series.data.insert_states(
+            [
+                StateDatapointsInsert(id_a, [StateDatapointWrite(1000, numeric_value=0)]),
+                StateDatapointsInsert(id_b, [StateDatapointWrite(2000, numeric_value=1)]),
+                StateDatapointsInsert(id_a, [StateDatapointWrite(3000, numeric_value=2)]),
+            ]
+        )
+
+        all_items = [item for chunk in chunks_sent for item in chunk]
+        id_a_node = NodeId.load(id_a)
+        id_b_node = NodeId.load(id_b)
+
+        # Both A entries merged → 2 datapoints; B stays as-is → 1 datapoint
+        a_items = [i for i in all_items if NodeId.load(i.instance_id) == id_a_node]
+        b_items = [i for i in all_items if NodeId.load(i.instance_id) == id_b_node]
+        assert sum(len(i.datapoints) for i in a_items) == 2
+        assert sum(len(i.datapoints) for i in b_items) == 1
+
+    def test_insert_nodeid_and_tuple_treated_as_same_key(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        chunks_sent: list[list[StateDatapointsInsert]] = []
+
+        async def capture(self: Any, chunk: list[StateDatapointsInsert]) -> None:
+            chunks_sent.append(chunk)
+
+        monkeypatch.setattr(dps_io.StateDatapointsPoster, "_insert_datapoints", capture)
+
+        cognite_client.time_series.data.insert_states(
+            [
+                StateDatapointsInsert(("sp", "ts"), [StateDatapointWrite(1000, numeric_value=0)]),
+                StateDatapointsInsert(NodeId("sp", "ts"), [StateDatapointWrite(2000, numeric_value=1)]),
+            ]
+        )
+
+        all_items = [item for chunk in chunks_sent for item in chunk]
+        # Should have been merged into one item with 2 datapoints
+        assert len(all_items) == 1
+        assert len(all_items[0].datapoints) == 2
+
+    def test_insert_all_empty_is_noop(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        called = []
+
+        async def capture(self: Any, chunk: list[StateDatapointsInsert]) -> None:
+            called.append(chunk)
+
+        monkeypatch.setattr(dps_io.StateDatapointsPoster, "_insert_datapoints", capture)
+
+        cognite_client.time_series.data.insert_states(
+            [
+                StateDatapointsInsert(NodeId("sp", "ts"), []),
+            ]
+        )
+        assert called == []

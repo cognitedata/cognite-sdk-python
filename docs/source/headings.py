@@ -150,6 +150,7 @@ headings = {
     "AsyncCogniteClient.time_series.data.retrieve_dataframe": "Retrieve datapoints in pandas dataframe",
     "AsyncCogniteClient.time_series.data.retrieve_latest": "Retrieve latest datapoint",
     "AsyncCogniteClient.time_series.data.insert_multiple": "Insert datapoints into multiple time series",
+    "AsyncCogniteClient.time_series.data.insert_states": "Insert datapoints into one or more state time series",
     "AsyncCogniteClient.time_series.data.delete_ranges": "Delete ranges of datapoints",
     "AsyncCogniteClient.time_series.data.insert_dataframe": "Insert pandas dataframe",
     "AsyncCogniteClient.time_series.data.__call__": "Iterate through datapoints in chunks",

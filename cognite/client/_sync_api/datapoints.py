@@ -1,6 +1,6 @@
 """
 ===============================================================================
-499679e86fb6bf2bf4d45ca784b2a86c
+8466f83bfa3f2fbd343259f87b0a98de
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -26,6 +26,7 @@ from cognite.client.data_classes import (
     LatestDatapoint,
     LatestDatapointList,
     LatestDatapointQuery,
+    StateDatapointsInsert,
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import Aggregate
@@ -1355,6 +1356,8 @@ class SyncDatapointsAPI(SyncAPIClient):
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
 
+            State time series are not supported by this method; use :py:meth:`~DatapointsAPI.insert_states` instead.
+
         Examples:
 
             Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value.
@@ -1447,6 +1450,8 @@ class SyncDatapointsAPI(SyncAPIClient):
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
 
+            State time series are not supported by this method; use :py:meth:`~DatapointsAPI.insert_states` instead.
+
         Examples:
 
             Your datapoints can be a list of dictionaries, each containing datapoints for a different (presumably) time series. These dictionaries
@@ -1522,6 +1527,95 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> client.time_series.data.insert_multiple(to_insert)
         """
         return run_sync(self.__async_client.time_series.data.insert_multiple(datapoints=datapoints))
+
+    def insert_states(self, items: Sequence[StateDatapointsInsert]) -> None:
+        """
+        Insert datapoints into one or more state time series.
+
+        State time series are a specialized time series type designed for tracking discrete operational
+        states of industrial equipment. Unlike numeric or string time series, they have a predefined set
+        of valid states and support specialized aggregations optimized for analyzing state changes over
+        time. Each state is a ``(numericValue, stringValue)`` pair, e.g. ``(1, "on")`` or ``(0, "off")``,
+        and the set of valid pairs for a given time series is defined by its associated state set.
+
+        Each datapoint may carry a numeric value, a string value, or both (they must be consistent
+        with the time series' state set). It may also carry only a status code/symbol, e.g. to mark a
+        period as ``Bad``.
+
+        Warning:
+            State time series are in `public beta <https://docs.cognite.com/cdf/product_feature_status#public-beta>`_.
+
+        Args:
+            items (Sequence[StateDatapointsInsert]): One ``StateDatapointsInsert`` per target state time series. Each carries the ``instance_id`` and the datapoints to write.
+
+        Examples:
+
+            Insert state datapoints into two state time series, by using their numeric state values:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes import (
+                ...     StateDatapointsInsert,
+                ...     StateDatapointWrite,
+                ...     StatusCode,
+                ... )
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>>
+                >>> first_insert = StateDatapointsInsert(
+                ...     instance_id=NodeId("my-space", "first-state-ts"),
+                ...     datapoints=[
+                ...         StateDatapointWrite(1700000000000, -1),
+                ...         StateDatapointWrite(1700000001000, 13),
+                ...     ],
+                ... )
+                >>> second_insert = StateDatapointsInsert(
+                ...     instance_id=("my-space", "second-state-ts"),  # tuple form is accepted
+                ...     datapoints=[
+                ...         StateDatapointWrite(datetime(2018, 7, 2), 42),
+                ...         StateDatapointWrite(datetime(2018, 7, 8), 0),
+                ...     ],
+                ... )
+                >>> client.time_series.data.insert_states([first_insert, second_insert])
+
+            The datapoints to insert can also be given by the string state value (or a matching combination).
+            Status codes can also be specified:
+
+                >>> datapoints = [
+                ...     StateDatapointWrite(11, numeric_value=0),
+                ...     StateDatapointWrite(12, string_value="OFF"),
+                ...     StateDatapointWrite(13, numeric_value=0, string_value="OFF"),
+                ...     StateDatapointWrite(14, 1, status_code=StatusCode.Good),
+                ...     StateDatapointWrite(15, string_value="OFF", status_symbol=StatusCode.Uncertain),
+                ...     # Datapoints marked bad can have no numeric/string value:
+                ...     StateDatapointWrite(16, status_code=StatusCode.Bad),
+                ... ]
+
+            Datapoints can also be given as dicts, matching the API's JSON shape (status codes/symbols
+            must be given as a nested ``status`` sub-dict, matching the API):
+
+                >>> client.time_series.data.insert_states(
+                ...     [
+                ...         StateDatapointsInsert(
+                ...             instance_id=NodeId("my-space", "my-state-ts"),
+                ...             datapoints=[
+                ...                 {
+                ...                     "timestamp": 1700000000000,
+                ...                     "numeric_value": 0,
+                ...                     "string_value": "off",
+                ...                 },
+                ...                 {
+                ...                     "timestamp": 1700000001000,
+                ...                     "numeric_value": 1,
+                ...                     "string_value": "on",
+                ...                 },
+                ...                 {"timestamp": 1700000002000, "status": {"symbol": "Bad"}},
+                ...             ],
+                ...         )
+                ...     ]
+                ... )
+        """
+        return run_sync(self.__async_client.time_series.data.insert_states(items=items))
 
     def delete_range(
         self,

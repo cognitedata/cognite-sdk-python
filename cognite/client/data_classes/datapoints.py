@@ -53,7 +53,9 @@ from cognite.client.utils._time import (
     datetime_to_ms,
     ms_to_datetime,
     parse_str_timezone,
+    timestamp_to_ms,
 )
+from cognite.client.utils.useful_types import is_sequence_not_str
 
 if NUMPY_IS_AVAILABLE:
     import numpy as np
@@ -110,6 +112,115 @@ class StatusCode(IntEnum):
     Good = 0x0
     Uncertain = 0x40000000  # aka 1 << 30 aka 1073741824
     Bad = 0x80000000  # aka 1 << 31 aka 2147483648
+
+
+@dataclass(slots=True, frozen=True)
+class StateDatapointWrite:
+    """A datapoint for a state time series, ready to be inserted.
+
+    A state datapoint carries a numeric value, a string value, or both (they must be consistent
+    per the time series' state mapping). Only datapoints with a bad status code/symbol can have
+    both fields missing.
+
+    Args:
+        timestamp (int | datetime.datetime): Timestamp for the datapoint. Milliseconds since epoch or a timezone-aware datetime object.
+        numeric_value (int | None): The integer state value. Default: None.
+        string_value (str | None): The string state value. Default: None.
+        status_code (int | None): Status code for the datapoint (e.g. ``StatusCode.Bad``). Only one of code and symbol is required. If both are given, they must match. Default: None.
+        status_symbol (str | None): Status symbol for the datapoint (e.g. ``"Bad"``). Default: None.
+    """
+
+    timestamp: int | datetime.datetime
+    numeric_value: int | None = None
+    string_value: str | None = None
+    status_code: int | None = None
+    status_symbol: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.numeric_value is not None or self.string_value is not None:
+            return
+        # Let's fail early if the user has provided a status code/symbol, but we won't go as far as to
+        # check the given code/symbol value; that is the API's job:
+        if self.status_code is None and self.status_symbol is None:
+            raise ValueError(
+                "A state datapoint without numeric/string value must carry a bad status code or symbol "
+                '(e.g. status_symbol="Bad")'
+            )
+
+    def dump(self, camel_case: bool = True) -> dict[str, int | str | dict[str, int | str]]:
+        out: dict[str, int | str | dict[str, int | str]] = {"timestamp": timestamp_to_ms(self.timestamp)}
+        if self.numeric_value is not None:
+            out["numericValue" if camel_case else "numeric_value"] = self.numeric_value
+        if self.string_value is not None:
+            out["stringValue" if camel_case else "string_value"] = self.string_value
+        if self.status_code is not None or self.status_symbol is not None:
+            status: dict[str, int | str] = {}
+            if self.status_code is not None:
+                status["code"] = self.status_code
+            if self.status_symbol is not None:
+                status["symbol"] = self.status_symbol
+            out["status"] = status
+        return out
+
+    @classmethod
+    def load(cls, data: StateDatapointWrite | dict[str, Any]) -> StateDatapointWrite:
+        if isinstance(data, cls):
+            return data
+
+        if not isinstance(data, dict):
+            raise TypeError(
+                f"Each state datapoint must be either a 'StateDatapointWrite' or a 'dict', not {type(data)}"
+            )
+        status = data.get("status") or {}
+        return cls(
+            timestamp=data["timestamp"],
+            numeric_value=data.get("numeric_value"),
+            string_value=data.get("string_value"),
+            status_code=status.get("code"),
+            status_symbol=status.get("symbol"),
+        )
+
+
+@dataclass
+class StateDatapointsInsert:
+    """A batch of state datapoints to be inserted targeting a single state time series.
+
+    Args:
+        instance_id (NodeId | tuple[str, str]): Instance id of the state time series to insert datapoints into. May be given as a ``NodeId`` or a ``(space, external_id)`` tuple.
+        datapoints (Sequence[StateDatapointWrite | dict[str, Any]]): Datapoints to insert. Each datapoint can be a ``StateDatapointWrite`` (or a dict)
+    """
+
+    instance_id: NodeId | tuple[str, str]
+    datapoints: Sequence[StateDatapointWrite | dict[str, Any]]
+
+    def __post_init__(self) -> None:
+        if not is_sequence_not_str(self.datapoints):
+            raise TypeError(f"'datapoints' must be a sequence, not {type(self.datapoints)}")
+
+    @classmethod
+    def load(cls, data: StateDatapointsInsert | dict[str, Any]) -> StateDatapointsInsert:
+        if isinstance(data, cls):
+            return data
+        if not isinstance(data, dict):
+            raise TypeError(f"Expected a 'StateDatapointsInsert' or a 'dict', not {type(data)}")
+        return cls(
+            instance_id=NodeId.load(data["instance_id"]),
+            datapoints=data["datapoints"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "instanceId" if camel_case else "instance_id": NodeId.load(self.instance_id).dump(
+                camel_case=camel_case, include_instance_type=False
+            ),
+            "datapoints": [StateDatapointWrite.load(dp).dump(camel_case=camel_case) for dp in self.datapoints],
+        }
+
+    def _to_proto_dict(self) -> dict[str, Any]:
+        # Dumps the data in a shape that the protobuf constructor expects for DataPointInsertionItem
+        dumped = self.dump(camel_case=True)
+        dumped["stateDatapoints"] = {"datapoints": dumped.pop("datapoints")}
+        return dumped
 
 
 @dataclass(slots=True, frozen=True)

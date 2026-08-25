@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import math
 from datetime import timedelta, timezone
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import pytest
 
-from cognite.client.data_classes import Datapoint, DatapointsArray
+from cognite.client.data_classes import Datapoint, DatapointsArray, StateDatapointsInsert, StateDatapointWrite
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
@@ -117,3 +118,118 @@ class TestToPandas:
         )
         exp_df.columns = pd.Index([123, "foo", NodeId(space="s", external_id="x")], name="identifier")
         pd.testing.assert_frame_equal(df, exp_df)
+
+
+class TestStateDatapointWrite:
+    @pytest.mark.parametrize(
+        "kwargs, expected",
+        [
+            ({"numeric_value": 5}, {"timestamp": 1000, "numericValue": 5}),
+            ({"string_value": "on"}, {"timestamp": 1000, "stringValue": "on"}),
+            (
+                {"numeric_value": -1, "string_value": "off"},
+                {"timestamp": 1000, "numericValue": -1, "stringValue": "off"},
+            ),
+            ({"status_code": 0x80000000}, {"timestamp": 1000, "status": {"code": 0x80000000}}),
+            ({"status_symbol": "Bad"}, {"timestamp": 1000, "status": {"symbol": "Bad"}}),
+            (
+                {"status_code": 0x80000000, "status_symbol": "Bad"},
+                {"timestamp": 1000, "status": {"code": 0x80000000, "symbol": "Bad"}},
+            ),
+        ],
+    )
+    def test_dump(self, kwargs: dict[str, Any], expected: dict[str, Any]) -> None:
+        assert StateDatapointWrite(timestamp=1000, **kwargs).dump() == expected
+
+    def test_dump_snake_case(self) -> None:
+        dp = StateDatapointWrite(1000, numeric_value=-1, string_value="off", status_symbol="Good")
+        assert dp.dump(camel_case=False) == {
+            "timestamp": 1000,
+            "numeric_value": -1,
+            "string_value": "off",
+            "status": {"symbol": "Good"},
+        }
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"numeric_value": 5},
+            {"string_value": "idle"},
+            {"numeric_value": 0, "string_value": "off"},
+            {"status_symbol": "Bad"},
+            {"status_code": 0x80000000},
+        ],
+    )
+    def test_load_dump_roundtrip(self, kwargs: dict[str, Any]) -> None:
+        obj = StateDatapointWrite(timestamp=1000, **kwargs)
+        assert StateDatapointWrite.load(obj.dump(camel_case=False)) == obj
+
+    def test_load_returns_self_if_instance(self) -> None:
+        obj = StateDatapointWrite(1000, numeric_value=0)
+        assert StateDatapointWrite.load(obj) is obj
+
+    def test_load_raises_on_invalid_type(self) -> None:
+        with pytest.raises(TypeError, match="StateDatapointWrite"):
+            StateDatapointWrite.load([1000, 0])  # type: ignore[arg-type]
+
+    def test_no_value_and_no_status_raises(self) -> None:
+        with pytest.raises(ValueError, match="bad status"):
+            StateDatapointWrite(timestamp=1000)
+
+    @pytest.mark.parametrize("kwargs", [{"status_code": 0x80000000}, {"status_symbol": "Bad"}])
+    def test_status_only_without_value_is_valid(self, kwargs: dict[str, Any]) -> None:
+        dp = StateDatapointWrite(timestamp=1000, **kwargs)
+        assert dp.numeric_value is None and dp.string_value is None
+
+
+class TestStateDatapointsInsert:
+    SP, XID = "my-space", "my-ts"
+
+    def _make(self, instance_id: Any = None, dps: Any = None) -> StateDatapointsInsert:
+        if instance_id is None:
+            instance_id = NodeId(self.SP, self.XID)
+        if dps is None:
+            dps = [StateDatapointWrite(1000, numeric_value=0)]
+        return StateDatapointsInsert(instance_id=instance_id, datapoints=dps)
+
+    def test_dump_camel_case(self) -> None:
+        assert self._make().dump() == {
+            "instanceId": {"space": self.SP, "externalId": self.XID},
+            "datapoints": [{"timestamp": 1000, "numericValue": 0}],
+        }
+
+    def test_dump_snake_case(self) -> None:
+        assert self._make().dump(camel_case=False) == {
+            "instance_id": {"space": self.SP, "external_id": self.XID},
+            "datapoints": [{"timestamp": 1000, "numeric_value": 0}],
+        }
+
+    def test_load_dump_roundtrip(self) -> None:
+        obj = self._make()
+        back = StateDatapointsInsert.load(obj.dump(camel_case=False))
+        assert NodeId.load(back.instance_id) == NodeId(self.SP, self.XID)
+        assert len(back.datapoints) == 1
+
+    @pytest.mark.parametrize("instance_id", [NodeId("sp", "xid"), ("sp", "xid")])
+    def test_load_accepts_various_instance_id_forms(self, instance_id: Any) -> None:
+        data = {"instance_id": instance_id, "datapoints": [{"timestamp": 1000, "numeric_value": 0}]}
+        obj = StateDatapointsInsert.load(data)
+        assert NodeId.load(obj.instance_id) == NodeId("sp", "xid")
+
+    def test_load_returns_self_if_instance(self) -> None:
+        obj = self._make()
+        assert StateDatapointsInsert.load(obj) is obj
+
+    def test_load_raises_on_invalid_type(self) -> None:
+        with pytest.raises(TypeError, match="StateDatapointsInsert"):
+            StateDatapointsInsert.load("not-a-dict")  # type: ignore[arg-type]
+
+    def test_to_proto_dict(self) -> None:
+        assert self._make()._to_proto_dict() == {
+            "instanceId": {"space": self.SP, "externalId": self.XID},
+            "stateDatapoints": {"datapoints": [{"timestamp": 1000, "numericValue": 0}]},
+        }
+
+    def test_non_sequence_datapoints_raises(self) -> None:
+        with pytest.raises(TypeError, match="sequence"):
+            StateDatapointsInsert(instance_id=NodeId("sp", "xid"), datapoints="bad")  # type: ignore[arg-type]
