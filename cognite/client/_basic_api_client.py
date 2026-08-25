@@ -362,11 +362,13 @@ class BasicAsyncAPIClient:
         api_subversion: str | None = None,
         *,
         semaphore: asyncio.BoundedSemaphore | None,
+        content: str | bytes | AsyncIterator[bytes] | None = None,
     ) -> CogniteHTTPResponse:
         is_retryable, full_url = resolve_url(self, "POST", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
-        # We want to control json dumping, so we pass it along to httpx.Client.post as 'content'
-        content = self._handle_json_dump(json, full_headers)
+        if content is None:
+            # We want to control json dumping, so we pass it along to httpx.Client.post as 'content'
+            content = self._handle_json_dump(json, full_headers)
 
         http_client = self._select_async_http_client(is_retryable)
         try:
@@ -389,8 +391,8 @@ class BasicAsyncAPIClient:
     async def _put(
         self,
         url_path: str,
-        content: str | bytes | AsyncIterator[bytes] | None = None,
         json: dict[str, Any] | None = None,
+        content: str | bytes | AsyncIterator[bytes] | None = None,
         params: dict[str, Any] | None = None,
         headers: dict[str, Any] | None = None,
         follow_redirects: bool = False,
