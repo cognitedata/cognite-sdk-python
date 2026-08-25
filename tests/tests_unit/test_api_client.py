@@ -239,6 +239,16 @@ class TestBasicRequests:
         exc_msg = exc_info.value.args[0]
         assert "contain NaN(s) or +/- Inf!" not in exc_msg
 
+    @pytest.mark.parametrize("method_name", ["_post", "_put"])
+    async def test_request_raises_if_both_content_and_json_passed(
+        self, api_client_with_token: APIClient, method_name: str
+    ) -> None:
+        method = getattr(api_client_with_token, method_name)
+
+        exp_err_msg = f"Only one of 'content' and 'json' can be passed to '{method_name}'"
+        with pytest.raises(ValueError, match=exp_err_msg):
+            await method(URL_PATH, content=b"raw", json={"any": "OK"}, semaphore=None)
+
     def test_client_with_base_url_including_path_segments(self, cognite_client: AsyncCogniteClient) -> None:
         client = APIClient(
             ClientConfig(
