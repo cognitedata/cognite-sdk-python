@@ -364,6 +364,8 @@ class BasicAsyncAPIClient:
         semaphore: asyncio.BoundedSemaphore | None,
         content: str | bytes | AsyncIterator[bytes] | None = None,
     ) -> CogniteHTTPResponse:
+        if content is not None and json is not None:
+            raise ValueError("Only one of 'content' and 'json' can be passed to '_post'")
         is_retryable, full_url = resolve_url(self, "POST", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         if content is None:
@@ -401,6 +403,8 @@ class BasicAsyncAPIClient:
         *,
         semaphore: asyncio.BoundedSemaphore | None,
     ) -> CogniteHTTPResponse:
+        if content is not None and json is not None:
+            raise ValueError("Only one of 'content' and 'json' can be passed to '_put'")
         _, full_url = resolve_url(self, "PUT", url_path)
 
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
