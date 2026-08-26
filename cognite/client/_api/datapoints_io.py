@@ -8,7 +8,6 @@ import math
 from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from collections.abc import AsyncIterator, Iterable, Iterator, MutableSequence, Sequence
-from itertools import chain
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -26,6 +25,9 @@ from cognite.client._api.datapoint_tasks import (
     BaseDpsFetchSubtask,
     BaseTaskOrchestrator,
 )
+from cognite.client._proto.data_point_insertion_request_pb2 import (
+    DataPointInsertionRequest,
+)
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes import (
     Datapoints,
@@ -34,6 +36,7 @@ from cognite.client.data_classes import (
     DatapointsList,
     DatapointsQuery,
     LatestDatapointQuery,
+    StateDatapointsInsert,
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
@@ -300,7 +303,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
         if ts_tasks_left := self._update_queries_with_new_chunking_limit(ts_task_lookup):
             self._add_to_subtask_pools(
-                chain.from_iterable(
+                itertools.chain.from_iterable(
                     task.split_into_subtasks(concurrency_limit=self.concurrency_limit, n_tot_queries=len(ts_tasks_left))
                     for task in ts_tasks_left
                 )
@@ -401,7 +404,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                 first_dps_batch=res,
                 first_limit=initial_query_limits[query],
             )
-            for res, query in zip(res, chain(*chunk_queues))
+            for res, query in zip(res, itertools.chain(*chunk_queues))
         }
         return ts_tasks, to_raise
 
@@ -535,7 +538,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             | {("externalId", r.externalId) for r in res}
             | {("instanceId", NodeId(r.instanceId.space, r.instanceId.externalId)) for r in res}
         )
-        for query in chain(agg_queries, raw_queries):
+        for query in itertools.chain(agg_queries, raw_queries):
             query.is_missing = query.identifier.as_tuple() not in not_missing
             # Only raise for those time series that can't be missing (individually customisable parameter):
             if query.is_missing and not query.ignore_unknown_ids:
@@ -721,6 +724,75 @@ class DatapointsPoster:
         if dps.status_code is None:
             return list(map(_InsertDatapoint, timestamps, values))
         return list(map(_InsertDatapoint, timestamps, values, dps.status_code.tolist()))
+
+
+class StateDatapointsPoster:
+    # This is very similar to the existing class DatapointsPoster, but for good reasons:
+    # - State datapoints are different enough from regular datapoints that it is good to separate logic
+    # - State datapoints are only supported for instance ID identifiers
+    # - DatapointsPoster uses JSON, while this uses protobuf binary encoding for efficiency!
+    def __init__(self, dps_client: DatapointsAPI) -> None:
+        self.dps_client = dps_client
+        self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
+        self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
+
+    async def insert(self, items: Sequence[StateDatapointsInsert]) -> None:
+        if (deduped := self._merge_duplicates(items)) is None:
+            return
+        tasks = [AsyncSDKTask(self._insert_datapoints, chunk) for chunk in self._create_payload_chunks(deduped)]
+        summary = await execute_async_tasks(tasks)
+        summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: [NodeId.load(obj.instance_id) for obj in task[0]],
+            task_list_element_unwrap_fn=lambda node_id: {
+                "instance_id": node_id.dump(camel_case=False, include_instance_type=False)
+            },
+        )
+
+    @staticmethod
+    def _merge_duplicates(items: Sequence[StateDatapointsInsert]) -> Iterator[StateDatapointsInsert] | None:
+        # The Time Series API rejects duplicate instanceId entries within a single request with 422,
+        # so we need to merge any potential duplicates upfront:
+        merged: defaultdict[NodeId, list] = defaultdict(list)
+        for obj in items:
+            if obj.datapoints:
+                merged[NodeId.load(obj.instance_id)].extend(obj.datapoints)
+        if merged:
+            return itertools.starmap(StateDatapointsInsert, merged.items())
+        return None
+
+    def _create_payload_chunks(self, items: Iterable[StateDatapointsInsert]) -> Iterator[list[StateDatapointsInsert]]:
+        # We need to chunk efficiently while also respecting both the "number of ts per request" limit and the
+        # "max number of datapoints per request" limit:
+        chunk: list[StateDatapointsInsert] = []
+        n_dps_left = self.dps_limit
+        for elem in items:
+            dps = elem.datapoints
+            offset, n_dps = 0, len(dps)
+            while offset < n_dps:
+                end = offset + n_dps_left
+                slice_ = dps[offset:end]
+                offset = end
+                chunk.append(StateDatapointsInsert(elem.instance_id, slice_))
+                n_dps_left -= len(slice_)
+                if n_dps_left == 0 or len(chunk) >= self.ts_limit:
+                    yield chunk
+                    chunk = []
+                    n_dps_left = self.dps_limit
+        if chunk:
+            yield chunk
+
+    async def _insert_datapoints(self, chunk: list[StateDatapointsInsert]) -> None:
+        # Acquire the semaphore before building the (potentially large) protobuf message:
+        async with self.dps_client._get_semaphore("write"):
+            content = DataPointInsertionRequest(items=[item._to_proto_dict() for item in chunk]).SerializeToString()
+            await self.dps_client._post(
+                url_path=self.dps_client._RESOURCE_PATH,
+                content=content,
+                headers={"content-type": "application/protobuf"},
+                api_subversion="beta",
+                semaphore=None,
+            )
+            del content  # why not
 
 
 class RetrieveLatestDpsFetcher:
