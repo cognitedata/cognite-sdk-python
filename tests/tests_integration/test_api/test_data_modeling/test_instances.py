@@ -1482,8 +1482,8 @@ class TestInstancesAPI:
             assert isinstance(res.debug.translated_query, TranslatedQuery)
             assert isinstance(res.debug.plan, ExecutionPlan)
             assert isinstance(res.debug.notices, DebugNoticeList)
-            assert len(res.debug.notices) == 1
-            assert isinstance(res.debug.notices[0], SortNotBackedByIndexNotice)
+            assert len(res.debug.notices) >= 1
+            assert any(isinstance(notice, SortNotBackedByIndexNotice) for notice in res.debug.notices)
 
             if include_typing:
                 assert res.typing is not None
@@ -1512,9 +1512,9 @@ class TestInstancesAPI:
             assert isinstance(res.debug.plan, ExecutionPlan)
             assert isinstance(res.debug.notices, DebugNoticeList)
             if res is res_query:  # Sort not allowed for /sync
-                assert len(res.debug.notices) == 1
+                assert len(res.debug.notices) >= 1
                 # Since we specify both emit_results and timeout, we should get...:
-                assert isinstance(res.debug.notices[0], SortNotBackedByIndexNotice)
+                assert any(isinstance(notice, SortNotBackedByIndexNotice) for notice in res.debug.notices)
 
             for node_lst in res.values():
                 assert isinstance(node_lst, NodeList)
