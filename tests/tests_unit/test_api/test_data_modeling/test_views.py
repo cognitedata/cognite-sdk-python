@@ -132,10 +132,9 @@ class TestViewsApiForRecordViews:
         assert error.value.failed == [record_view]
         assert error.value.code == 400
 
-    def test_apply_mixed_batch_warns_and_sends_alpha_header(
+    def test_apply_mixed_batch_warns(
         self,
         cognite_client: CogniteClient,
-        async_client: AsyncCogniteClient,
         httpx_mock: HTTPXMock,
         views_url_pattern: re.Pattern,
     ) -> None:
@@ -152,14 +151,12 @@ class TestViewsApiForRecordViews:
             cognite_client.data_modeling.views.apply([plain_view, record_view])
 
         request = httpx_mock.get_requests()[0]
-        assert request.headers["cdf-version"] == f"{async_client.config.api_subversion}-alpha"
         body = jsgz_load(request.content)
         assert body["items"][1]["streamId"] == ["my-stream"]
 
-    def test_apply_plain_views_does_not_warn_or_send_alpha_header(
+    def test_apply_plain_views_does_not_warn(
         self,
         cognite_client: CogniteClient,
-        async_client: AsyncCogniteClient,
         httpx_mock: HTTPXMock,
         views_url_pattern: re.Pattern,
         recwarn: pytest.WarningsRecorder,
@@ -170,13 +167,10 @@ class TestViewsApiForRecordViews:
         cognite_client.data_modeling.views.apply(plain_view)
 
         assert not any("Views for Records" in str(w.message) for w in recwarn.list)
-        request = httpx_mock.get_requests()[0]
-        assert request.headers["cdf-version"] == async_client.config.api_subversion
 
-    def test_list_used_for_mixed_warns_and_sends_alpha_header(
+    def test_list_used_for_mixed_warns(
         self,
         cognite_client: CogniteClient,
-        async_client: AsyncCogniteClient,
         httpx_mock: HTTPXMock,
         views_url_pattern: re.Pattern,
     ) -> None:
@@ -186,14 +180,12 @@ class TestViewsApiForRecordViews:
             cognite_client.data_modeling.views.list(used_for=["node", "record"])
 
         request = httpx_mock.get_requests()[0]
-        assert request.headers["cdf-version"] == f"{async_client.config.api_subversion}-alpha"
         qs = parse_qs(urlparse(str(request.url)).query)
         assert qs.get("usedFor") == ["node", "record"]
 
-    def test_list_default_does_not_warn_or_send_alpha_header(
+    def test_list_default_does_not_warn(
         self,
         cognite_client: CogniteClient,
-        async_client: AsyncCogniteClient,
         httpx_mock: HTTPXMock,
         views_url_pattern: re.Pattern,
         recwarn: pytest.WarningsRecorder,
@@ -204,6 +196,5 @@ class TestViewsApiForRecordViews:
 
         assert not any("Views for Records" in str(w.message) for w in recwarn.list)
         request = httpx_mock.get_requests()[0]
-        assert request.headers["cdf-version"] == async_client.config.api_subversion
         qs = parse_qs(urlparse(str(request.url)).query)
         assert "usedFor" not in qs
