@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any, Literal, cast
 
+from typing_extensions import override
+
 from cognite.client.data_classes._base import CogniteFilter, CogniteSort
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.data_classes.simulators.runs import SimulatorRunStatus, SimulatorRunType
@@ -100,6 +102,7 @@ class PropertySort(CogniteSort):
     ):
         super().__init__(property, order)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         prop = cast(str, self.property)
@@ -115,6 +118,7 @@ class SimulationRunsSort(CogniteSort):
     ):
         super().__init__(property, order)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         prop = cast(str, self.property)

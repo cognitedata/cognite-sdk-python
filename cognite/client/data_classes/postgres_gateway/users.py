@@ -4,7 +4,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Any, Literal, NoReturn
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -51,6 +51,7 @@ class UserWrite(_UserCore):
             credentials=SessionCredentials._load_if(resource.get("credentials")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if isinstance(self.credentials, SessionCredentials):
@@ -58,6 +59,7 @@ class UserWrite(_UserCore):
 
         return output
 
+    @override
     def as_write(self) -> UserWrite:
         return self
 
@@ -96,6 +98,7 @@ class User(_UserCore):
             session_id=resource.get("sessionId"),
         )
 
+    @override
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
 
@@ -180,6 +183,7 @@ class UserWriteList(CogniteResourceList[UserWrite]):
 class UserList(WriteableCogniteResourceList[UserWrite, User]):
     _RESOURCE = User
 
+    @override
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to a write object")
 
@@ -187,6 +191,7 @@ class UserList(WriteableCogniteResourceList[UserWrite, User]):
 class UserCreatedList(WriteableCogniteResourceList[UserWrite, UserCreated]):
     _RESOURCE = UserCreated
 
+    @override
     def as_write(self) -> NoReturn:
         raise TypeError(
             f"{type(self).__name__} cannot be converted to a {UserWrite.__name__} object. "

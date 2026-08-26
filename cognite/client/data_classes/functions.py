@@ -716,6 +716,7 @@ class FunctionCall(CogniteResourceWithClientRef):
         )
 
     def as_write(self) -> NoReturn:
+        """FunctionCall is purely a read/response object and cannot be converted to a write object"""
         raise RuntimeError("FunctionCall is purely a read/response object and cannot be converted to a write object")
 
     async def get_response_async(self) -> dict[str, object] | None:

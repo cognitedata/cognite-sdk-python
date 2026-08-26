@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from enum import auto
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, get_args, overload
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -274,6 +274,7 @@ class Sequence(WriteableCogniteResourceWithClientRef["SequenceWrite"]):
             columns=self.columns.as_write(),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if self.columns is not None:
@@ -374,6 +375,7 @@ class SequenceWrite(WriteableCogniteResource["SequenceWrite"]):
             data_set_id=resource.get("dataSetId"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         dumped["columns"] = self.columns.dump(camel_case)
@@ -690,6 +692,7 @@ class SequenceRows(CogniteResource):
         """Returns a list of lists of values"""
         return [list(row.values) for row in self.rows]
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the sequence data into a json serializable Python data type.
 

@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal, TypeAlias, TypeVar, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -45,6 +45,7 @@ class ViewCore(DataModelingSchemaResource["ViewApply"], ABC):
         self.implements: list[ViewId] = implements or []
         self.version = version
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
 
@@ -127,6 +128,7 @@ class ViewApply(ViewCore):
             properties=properties,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "properties" in output:
@@ -221,6 +223,7 @@ class RecordViewApply(CogniteResource):
             properties=properties,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.implements:
@@ -233,6 +236,7 @@ class RecordViewApply(CogniteResource):
         return output
 
     def as_write(self) -> RecordViewApply:
+        """Returns this RecordViewApply instance as a write object."""
         return self
 
     def referenced_containers(self) -> set[ContainerId]:
@@ -327,6 +331,7 @@ class View(ViewCore):
         """Whether this view is used for Records"""
         return self.used_for == "record"
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if "properties" in output:
@@ -410,6 +415,7 @@ class View(ViewCore):
             properties=properties,
         )
 
+    @override
     def as_write(self) -> ViewApply:
         return self.as_apply()
 
@@ -468,6 +474,7 @@ class ViewList(WriteableCogniteResourceList[ViewApply, View]):
         """
         return [v.as_id() for v in self]
 
+    @override
     def as_write(self) -> ViewApplyList:
         return self.as_apply()
 
@@ -532,6 +539,7 @@ class ViewProperty(CogniteResource, ABC):
         else:
             return MappedProperty.load(resource)
 
+    @override
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
@@ -547,6 +555,7 @@ class ViewPropertyApply(CogniteResource, ABC):
         else:
             return MappedPropertyApply.load(resource)
 
+    @override
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
@@ -570,6 +579,7 @@ class MappedPropertyApply(ViewPropertyApply):
             source=ViewId._load_if(resource.get("source")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         key = "containerPropertyIdentifier" if camel_case else "container_property_identifier"
         output: dict[str, Any] = {
@@ -621,6 +631,7 @@ class MappedProperty(ViewProperty):
             object.__setattr__(prop, "constraint_state", PropertyConstraintState._load(constraint_state))
         return prop
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         output["container"] = self.container.dump(camel_case, include_type=False)
@@ -669,6 +680,7 @@ class ConnectionDefinition(ViewProperty, ABC):
 
         return cast(Self, UnknownCogniteResource(resource))
 
+    @override
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
@@ -709,6 +721,7 @@ class EdgeConnection(ConnectionDefinition, ABC):
 
         return instance
 
+    @override
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = asdict(self)
@@ -724,6 +737,7 @@ class EdgeConnection(ConnectionDefinition, ABC):
 
 @dataclass
 class SingleEdgeConnection(EdgeConnection):
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         if camel_case:
@@ -746,6 +760,7 @@ class SingleEdgeConnection(EdgeConnection):
 
 @dataclass
 class MultiEdgeConnection(EdgeConnection):
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         if camel_case:
@@ -799,6 +814,7 @@ class ReverseDirectRelation(ConnectionDefinition, ABC):
             description=resource.get("description"),
         )
 
+    @override
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
@@ -811,6 +827,7 @@ class ReverseDirectRelation(ConnectionDefinition, ABC):
 
 @dataclass
 class SingleReverseDirectRelation(ReverseDirectRelation):
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         if camel_case:
@@ -831,6 +848,7 @@ class SingleReverseDirectRelation(ReverseDirectRelation):
 
 @dataclass
 class MultiReverseDirectRelation(ReverseDirectRelation):
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         if camel_case:
@@ -867,6 +885,7 @@ class ConnectionDefinitionApply(ViewPropertyApply, ABC):
             return cast(Self, MultiReverseDirectRelationApply.load(resource))
         return cast(Self, UnknownCogniteResource(resource))
 
+    @override
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
@@ -912,6 +931,7 @@ class EdgeConnectionApply(ConnectionDefinitionApply, ABC):
             instance.direction = resource["direction"]
         return instance
 
+    @override
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict:
         output: dict[str, Any] = {
@@ -933,6 +953,7 @@ class EdgeConnectionApply(ConnectionDefinitionApply, ABC):
 
 @dataclass
 class SingleEdgeConnectionApply(EdgeConnectionApply):
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         if camel_case:
@@ -945,6 +966,7 @@ class SingleEdgeConnectionApply(EdgeConnectionApply):
 
 @dataclass
 class MultiEdgeConnectionApply(EdgeConnectionApply):
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         if camel_case:
@@ -992,6 +1014,7 @@ class ReverseDirectRelationApply(ConnectionDefinitionApply, ABC):
 
         return instance
 
+    @override
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
@@ -1008,6 +1031,7 @@ class ReverseDirectRelationApply(ConnectionDefinitionApply, ABC):
 
 @dataclass
 class SingleReverseDirectRelationApply(ReverseDirectRelationApply):
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         if camel_case:
@@ -1020,6 +1044,7 @@ class SingleReverseDirectRelationApply(ReverseDirectRelationApply):
 
 @dataclass
 class MultiReverseDirectRelationApply(ReverseDirectRelationApply):
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         if camel_case:

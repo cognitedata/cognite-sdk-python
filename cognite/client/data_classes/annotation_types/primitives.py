@@ -4,7 +4,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._importing import local_import
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
 
 
 class VisionResource(CogniteResource, ABC):
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 

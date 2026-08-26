@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -35,6 +35,7 @@ class UnitConversion:
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dumps the instance into a json serializable Python data type."""
         return {
             "multiplier": self.multiplier,
             "offset": self.offset,
@@ -122,6 +123,7 @@ class Unit(CogniteResource):
             source_reference=resource.get("sourceReference"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         dumped["conversion"] = self.conversion.dump(camel_case)
@@ -155,6 +157,7 @@ class UnitSystem(CogniteResource):
             quantities=[UnitID._load(quantity) for quantity in resource["quantities"]],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"name": self.name, "quantities": [quantity.dump(camel_case) for quantity in self.quantities]}
 

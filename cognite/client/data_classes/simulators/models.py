@@ -4,7 +4,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -37,6 +37,7 @@ class SimulatorModelRevisionWrite(WriteableCogniteResource["SimulatorModelRevisi
         self.description = description
         self.external_dependencies = external_dependencies
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.external_dependencies is not None:
@@ -44,6 +45,7 @@ class SimulatorModelRevisionWrite(WriteableCogniteResource["SimulatorModelRevisi
 
         return output
 
+    @override
     def as_write(self) -> SimulatorModelRevisionWrite:
         return self
 
@@ -140,6 +142,7 @@ class SimulatorModelRevision(WriteableCogniteResourceWithClientRef["SimulatorMod
             else None,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.external_dependencies is not None:
@@ -147,6 +150,7 @@ class SimulatorModelRevision(WriteableCogniteResourceWithClientRef["SimulatorMod
 
         return output
 
+    @override
     def as_write(self) -> SimulatorModelRevisionWrite:
         """Returns this SimulatorModelRevision in its write version."""
         return SimulatorModelRevisionWrite(
@@ -225,6 +229,7 @@ class SimulatorModelCore(WriteableCogniteResource["SimulatorModelWrite"], ABC):
 
 
 class SimulatorModelWrite(SimulatorModelCore):
+    @override
     def as_write(self) -> SimulatorModelWrite:
         return self
 
@@ -312,6 +317,7 @@ class SimulatorModelWriteList(CogniteResourceList[SimulatorModelWrite], External
 class SimulatorModelList(WriteableCogniteResourceList[SimulatorModelWrite, SimulatorModel], IdTransformerMixin):
     _RESOURCE = SimulatorModel
 
+    @override
     def as_write(self) -> SimulatorModelWriteList:
         return SimulatorModelWriteList([a.as_write() for a in self.data])
 
@@ -325,6 +331,7 @@ class SimulatorModelRevisionList(
 ):
     _RESOURCE = SimulatorModelRevision
 
+    @override
     def as_write(self) -> SimulatorModelRevisionWriteList:
         return SimulatorModelRevisionWriteList([a.as_write() for a in self.data])
 
@@ -384,6 +391,7 @@ class SimulatorModelRevisionDependency(CogniteResource):
             arguments=resource["arguments"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["file"] = (
@@ -473,6 +481,7 @@ class SimulatorFlowsheetProperty(CogniteResource):
     def _load_list(cls, resource: list[dict[str, Any]]) -> list[SimulatorFlowsheetProperty]:
         return [cls._load(item) for item in resource]
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.unit is not None:
@@ -513,6 +522,7 @@ class SimulatorFlowsheetGraphicalObject(CogniteResource):
             active=resource.get("active"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.position is not None:
@@ -543,6 +553,7 @@ class SimulatorFlowsheetObjectNode(CogniteResource):
             properties=SimulatorFlowsheetProperty._load_list(resource["properties"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.graphical_object is not None:
@@ -570,6 +581,7 @@ class SimulatorFlowsheet(CogniteResource):
     def _load_list(cls, resource: list[dict[str, Any]]) -> list[SimulatorFlowsheet]:
         return [cls._load(item) for item in resource]
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["simulatorObjectNodes"] = [item.dump(camel_case=camel_case) for item in self.simulator_object_nodes]
@@ -634,6 +646,7 @@ class SimulatorModelRevisionData(CogniteResource):
             last_updated_time=resource["lastUpdatedTime"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.flowsheets is not None:

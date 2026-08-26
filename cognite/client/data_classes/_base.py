@@ -24,7 +24,7 @@ from typing import (
     runtime_checkable,
 )
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.utils import _json_extended as _json
@@ -209,6 +209,7 @@ class UnknownCogniteResource(CogniteResource):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(resource)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         # TODO: Recursive key conversion can modify user data if present:
         return convert_all_keys_recursive(self.__data, camel_case=camel_case)
@@ -220,6 +221,7 @@ T_WriteClass = TypeVar("T_WriteClass", bound=CogniteResource)
 class WriteableCogniteResource(CogniteResource, Generic[T_WriteClass]):
     @abstractmethod
     def as_write(self) -> T_WriteClass:
+        """Return a write version of this resource."""
         raise NotImplementedError
 
 
@@ -246,6 +248,7 @@ class CogniteResourceWithClientRef(CogniteResource, _WithClientMixin):
 class WriteableCogniteResourceWithClientRef(
     WriteableCogniteResource[T_WriteClass], CogniteResourceWithClientRef, Generic[T_WriteClass]
 ):
+    @override
     @abstractmethod
     def as_write(self) -> T_WriteClass:
         raise NotImplementedError
@@ -484,6 +487,7 @@ class WriteableCogniteResourceList(
 ):
     @abstractmethod
     def as_write(self) -> CogniteResourceList[T_WriteClass]:
+        """Return a write version of this resource list."""
         raise NotImplementedError
 
 
@@ -535,6 +539,7 @@ class WriteableCogniteResourceListWithClientRef(
 ):
     @abstractmethod
     def as_write(self) -> CogniteResourceList[T_WriteClass]:
+        """Return a write version of this resource list."""
         raise NotImplementedError
 
 
@@ -813,6 +818,7 @@ class CogniteSort:
             raise ValueError(f"Unable to load {cls.__name__} from {data}")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the sort object to a dictionary."""
         prop = self.property
         if isinstance(prop, EnumProperty):
             prop = prop.as_reference()

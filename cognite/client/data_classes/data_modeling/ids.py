@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from typing import Any, ClassVar, Literal, Protocol, TypeVar, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.utils._identifier import (
@@ -36,6 +36,7 @@ class DataModelingId(AbstractDataclass):
         return self.space, self.external_id
 
     def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, str]:
+        """Dump the instance into a json serializable Python data type."""
         output = asdict(self)
         if include_type:
             output["type"] = self._type
@@ -73,6 +74,7 @@ class VersionedDataModelingId(AbstractDataclass):
         return self.space, self.external_id, self.version
 
     def dump(self, camel_case: bool = True, include_type: bool = True) -> dict[str, str]:
+        """Dump the instance into a json serializable Python data type."""
         output = asdict(self)
         if include_type:
             output["type"] = self._type
@@ -107,6 +109,7 @@ T_Versioned_DataModeling_Id = TypeVar("T_Versioned_DataModeling_Id", bound=Versi
 class NodeId(InstanceId):
     _instance_type: ClassVar[Literal["node", "edge"]] = "node"
 
+    @override
     def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
         output = super().dump(camel_case=camel_case)
         if include_instance_type:
@@ -118,6 +121,7 @@ class NodeId(InstanceId):
 class EdgeId(InstanceId):
     _instance_type: ClassVar[Literal["node", "edge"]] = "edge"
 
+    @override
     def dump(self, camel_case: bool = True, include_instance_type: bool = True) -> dict[str, str]:
         output = super().dump(camel_case=camel_case)
         if include_instance_type:
@@ -167,6 +171,7 @@ class PropertyId(CogniteResource):
             return ContainerId.load(view_or_container_id)
         raise ValueError(f"Invalid type {view_or_container_id}")
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "source": self.source.dump(camel_case=camel_case, include_type=True),

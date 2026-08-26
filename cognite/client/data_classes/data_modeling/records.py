@@ -5,7 +5,7 @@ from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -60,6 +60,7 @@ class RecordSource(CogniteResource):
             properties=resource["properties"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "source": self.source.dump(camel_case=camel_case),
@@ -94,6 +95,7 @@ class RecordWrite(WriteableCogniteResource["RecordWrite"]):
             sources=[RecordSource._load(s) for s in resource.get("sources", [])],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "space": self.space,
@@ -101,6 +103,7 @@ class RecordWrite(WriteableCogniteResource["RecordWrite"]):
             "sources": [s.dump(camel_case=camel_case) for s in self.sources],
         }
 
+    @override
     def as_write(self) -> RecordWrite:
         return self
 
@@ -137,6 +140,7 @@ class RecordsAggregation(CogniteResource):
             typing=TypeInformation._load(resource["typing"]) if "typing" in resource else None,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"aggregates": aggs._dump_results(self.aggregates, camel_case)}
         if self.typing is not None:
@@ -182,6 +186,7 @@ class Record(WriteableCogniteResource["RecordWrite"]):
             properties=resource.get("properties"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "space": self.space,
@@ -227,6 +232,7 @@ class RecordList(WriteableCogniteResourceList[RecordWrite, Record]):
     def as_ids(self) -> list[RecordId]:
         return [record.as_id() for record in self]
 
+    @override
     def as_write(self) -> RecordWriteList:
         return RecordWriteList([record.as_write() for record in self])
 
@@ -267,6 +273,7 @@ class TimeRange(CogniteResource):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(gte=resource.get("gte"), gt=resource.get("gt"), lte=resource.get("lte"), lt=resource.get("lt"))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             key: value
@@ -295,6 +302,7 @@ class RecordSourceSelector(CogniteResource):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(source=RecordContainerId.load(resource["source"]), properties=resource["properties"])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"source": self.source.dump(camel_case=camel_case), "properties": self.properties}
 
@@ -321,6 +329,7 @@ class RecordTargetUnit(CogniteResource):
             else UnitSystemReference.load(resource["unit"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"property": self.property, "unit": self.unit.dump(camel_case=camel_case)}
 
@@ -345,6 +354,7 @@ class RecordTargetUnits(CogniteResource):
             return cls(unit_system_name=resource["unitSystemName"])
         return cls()
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if self.unit_system_name is not None:
             return {"unitSystemName" if camel_case else "unit_system_name": self.unit_system_name}
@@ -393,6 +403,7 @@ class SyncRecord(Record):
             properties=resource.get("properties"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["status"] = self.status

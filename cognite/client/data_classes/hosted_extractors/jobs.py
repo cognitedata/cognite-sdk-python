@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, ClassVar, Literal, TypeAlias, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -53,6 +53,7 @@ class JobFormat(CogniteResource, ABC):
             return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, job_cls._load_job(resource))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["type"] = self._type
@@ -87,6 +88,7 @@ class ValueFormat(JobFormat):
             prefix=Prefix._load_if(resource.get("prefix")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.prefix:
@@ -109,6 +111,7 @@ class RockwellFormat(JobFormat):
             prefix=Prefix._load_if(resource.get("prefix")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.prefix:
@@ -147,6 +150,7 @@ class CogniteFormat(JobFormat):
             prefix=Prefix._load_if(resource.get("prefix")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.prefix:
@@ -213,6 +217,7 @@ class IncrementalLoad(CogniteResource, ABC):
             return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, incremental_load_cls._load_incremental_load(resource))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["type"] = self._type
@@ -289,6 +294,7 @@ class RestConfig(JobConfig):
             pagination=IncrementalLoad._load_if(resource.get("pagination")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.incremental_load:
@@ -308,6 +314,7 @@ class _JobCore(WriteableCogniteResource["JobWrite"]):
         self.format = format
         self.config = config
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["format"] = self.format.dump(camel_case)
@@ -334,6 +341,7 @@ class JobWrite(_JobCore):
 
     """
 
+    @override
     def as_write(self) -> JobWrite:
         return self
 
@@ -386,6 +394,7 @@ class Job(_JobCore):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
+    @override
     def as_write(self) -> JobWrite:
         return JobWrite(
             external_id=self.external_id,
@@ -417,6 +426,7 @@ class JobWriteList(CogniteResourceList[JobWrite], ExternalIDTransformerMixin):
 class JobList(WriteableCogniteResourceList[JobWrite, Job], ExternalIDTransformerMixin):
     _RESOURCE = Job
 
+    @override
     def as_write(self) -> JobWriteList:
         return JobWriteList([job.as_write() for job in self.data])
 

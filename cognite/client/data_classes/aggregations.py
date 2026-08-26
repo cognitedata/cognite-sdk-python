@@ -15,6 +15,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import override
+
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, UnknownCogniteResource
 from cognite.client.data_classes.labels import Label
 from cognite.client.utils._text import convert_all_keys_recursive
@@ -42,6 +44,7 @@ class Aggregation(CogniteResource, ABC):
             return Histogram(property=resource["histogram"]["property"], interval=resource["histogram"]["interval"])
         return cast(Aggregation, UnknownCogniteResource(resource))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = {self._aggregation_name: {"property": self.property}}
         if camel_case:
@@ -93,6 +96,7 @@ class Histogram(Aggregation):
 
     interval: float
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output[self._aggregation_name]["interval"] = self.interval
@@ -130,6 +134,7 @@ class AggregatedValue(CogniteResource, ABC):
             case _:
                 return cast(AggregatedValue, UnknownCogniteResource(resource))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"aggregate": self._aggregate, "property": self.property}
 
@@ -140,6 +145,7 @@ class AggregatedNumberedValue(AggregatedValue, ABC):
 
     value: float | None
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.value is not None:
@@ -187,6 +193,7 @@ class Bucket:
     count: int
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the instance into a json serializable Python data type."""
         return {"start": self.start, "count": self.count}
 
 
@@ -199,6 +206,7 @@ class Buckets(UserList, MutableSequence[Bucket]):
         super().__init__(buckets)
 
     def dump(self, camel_case: bool = True) -> list[dict[str, Any]]:
+        """Dump the list of buckets into a json serializable Python data type."""
         return [bucket.dump(camel_case) for bucket in self.data]
 
     @property
@@ -240,6 +248,7 @@ class HistogramValue(AggregatedValue):
         if isinstance(self.buckets, Collection):
             self.buckets = Buckets(self.buckets)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["interval"] = self.interval
@@ -254,6 +263,7 @@ class AggregationFilter(ABC):
     _filter_name: ClassVar[str]
 
     def dump(self) -> dict[str, Any]:
+        """Dump the filter into a json serializable Python data type."""
         return {self._filter_name: self._filter_body()}
 
     @abstractmethod

@@ -4,7 +4,7 @@ import asyncio
 from enum import Enum
 from typing import Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -210,6 +210,7 @@ class TransformationJob(CogniteResourceWithClientRef):
     def wait(self, polling_interval: float = 5, timeout: float | None = None) -> TransformationJob:
         return run_sync(self.wait_async(polling_interval, timeout))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.destination:

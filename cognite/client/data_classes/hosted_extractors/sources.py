@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, ClassVar, Literal, NoReturn, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -56,6 +56,7 @@ class SourceWrite(CogniteResource, ABC):
             raise TypeError(f"Unknown source type: {type_}")
         return cast(Self, source_cls._load_source(resource))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["type"] = self._type
@@ -95,6 +96,7 @@ class Source(WriteableCogniteResource[T_WriteClass], ABC):
             return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, source_class._load_source(resource))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["type"] = self._type
@@ -107,6 +109,7 @@ class SourceUpdate(CogniteUpdate, ABC):
     def __init__(self, external_id: str) -> None:
         super().__init__(external_id=external_id)
 
+    @override
     def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["type"] = self._type
@@ -126,6 +129,7 @@ class SourceWriteList(CogniteResourceList[SourceWrite], ExternalIDTransformerMix
 class SourceList(WriteableCogniteResourceList[SourceWrite, Source], ExternalIDTransformerMixin):
     _RESOURCE = Source
 
+    @override
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write")
 
@@ -165,6 +169,7 @@ class EventHubSourceWrite(SourceWrite):
         self.consumer_group = consumer_group
 
     def as_write(self) -> SourceWrite:
+        """Return a write version of this source."""
         return self
 
     @classmethod
@@ -216,6 +221,7 @@ class EventHubSource(Source):
         self.created_time = created_time
         self.last_updated_time = last_updated_time
 
+    @override
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
 
@@ -313,9 +319,11 @@ class _MQTTSource(Source, ABC):
             last_updated_time=resource["lastUpdatedTime"],
         )
 
+    @override
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.authentication is not None:
@@ -423,6 +431,7 @@ class _MQTTSourceWrite(SourceWrite, ABC):
             auth_certificate=AuthCertificateWrite._load_if(resource.get("authCertificate")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if isinstance(self.authentication, AuthenticationWrite):
@@ -513,6 +522,7 @@ class KafkaSourceWrite(SourceWrite):
             auth_certificate=AuthCertificateWrite._load_if(resource.get("authCertificate")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["bootstrapBrokers" if camel_case else "bootstrap_brokers"] = [
@@ -580,9 +590,11 @@ class KafkaSource(Source):
             last_updated_time=resource["lastUpdatedTime"],
         )
 
+    @override
     def as_write(self) -> KafkaSourceWrite:
         raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["bootstrapBrokers" if camel_case else "bootstrap_brokers"] = [
@@ -700,6 +712,7 @@ class RestSourceWrite(SourceWrite):
 
         return cls(**args)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if isinstance(self.ca_certificate, CACertificateWrite):
@@ -762,9 +775,11 @@ class RestSource(Source):
             authentication=Authentication._load_if(resource.get("authentication")),
         )
 
+    @override
     def as_write(self) -> RestSourceWrite:
         raise TypeError(f"{type(self).__name__} cannot be converted to write as id does not contain the secrets")
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.ca_certificate is not None:
@@ -850,6 +865,7 @@ class AuthenticationWrite(CogniteResource, ABC):
             raise TypeError(f"Unknown authentication type: {type_}")
         return cast(Self, authentication_cls._load_authentication(resource))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["type"] = self._type
@@ -964,6 +980,7 @@ class Authentication(CogniteResource, ABC):
             return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, authentication_class._load_authentication(resource))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["type"] = self._type

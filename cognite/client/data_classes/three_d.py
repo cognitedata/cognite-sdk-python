@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteLabelUpdate,
@@ -269,6 +269,7 @@ class ThreeDModelRevisionCore(WriteableCogniteResource["ThreeDModelRevisionWrite
         self.camera = camera
         self.metadata = metadata
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.camera, RevisionCameraProperties):
@@ -405,6 +406,7 @@ class ThreeDModelRevisionWrite(ThreeDModelRevisionCore):
             metadata=resource.get("metadata"),
         )
 
+    @override
     def as_write(self) -> ThreeDModelRevisionWrite:
         """Returns this ThreedModelRevisionWrite instance."""
         return self
@@ -493,6 +495,7 @@ class ThreeDModelRevisionList(
 ):
     _RESOURCE = ThreeDModelRevision
 
+    @override
     def as_write(self) -> ThreeDModelRevisionWriteList:
         """Returns this ThreedModelRevisionList in a write version."""
         return ThreeDModelRevisionWriteList([item.as_write() for item in self.data])
@@ -545,6 +548,7 @@ class ThreeDNode(CogniteResource):
             bounding_box=BoundingBox3D._load_if(resource.get("boundingBox")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.bounding_box, BoundingBox3D):
@@ -607,6 +611,7 @@ class ThreeDAssetMapping(ThreeDAssetMappingCore):
             subtree_size=resource.get("subtreeSize"),
         )
 
+    @override
     def as_write(self) -> ThreeDAssetMappingWrite:
         """Returns this ThreedAssetMapping in a write version."""
         return ThreeDAssetMappingWrite(
@@ -634,6 +639,7 @@ class ThreeDAssetMappingWrite(ThreeDAssetMappingCore):
             asset_id=resource.get("assetId"),
         )
 
+    @override
     def as_write(self) -> ThreeDAssetMappingWrite:
         """Returns this ThreedAssetMappingWrite instance."""
         return self
@@ -646,6 +652,7 @@ class ThreeDAssetMappingWriteList(CogniteResourceList[ThreeDAssetMappingWrite]):
 class ThreeDAssetMappingList(WriteableCogniteResourceList[ThreeDAssetMappingWrite, ThreeDAssetMapping]):
     _RESOURCE = ThreeDAssetMapping
 
+    @override
     def as_write(self) -> ThreeDAssetMappingWriteList:
         """Returns this ThreedAssetMappingList in a write version."""
         return ThreeDAssetMappingWriteList([item.as_write() for item in self.data])

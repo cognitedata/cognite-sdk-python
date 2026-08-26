@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal, TypeAlias, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -63,6 +63,7 @@ class Column(CogniteResource):
             type=resource["type"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "propertyName": self.name,
@@ -92,6 +93,7 @@ class _TableCore(WriteableCogniteResource["TableWrite"], ABC):
     def __init__(self, tablename: str):
         self.tablename = tablename
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"tablename": self.tablename, "type": self._type}
 
@@ -102,6 +104,7 @@ class TableWrite(_TableCore, ABC):
     This is the write/request format of the table.
     """
 
+    @override
     def as_write(self) -> Self:
         return self
 
@@ -150,6 +153,7 @@ class RawTableWrite(TableWrite):
             columns=ColumnList._load_columns(data["columns"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["options"] = self.options.dump(camel_case=camel_case)
@@ -180,6 +184,7 @@ class ViewTableWrite(TableWrite):
             options=ViewId.load(data["options"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["options"] = self.options.dump(camel_case=camel_case, include_type=False)
@@ -250,12 +255,14 @@ class RawTable(Table):
             created_time=data.get("createdTime"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["options"] = self.options.dump(camel_case=camel_case)
         output["columns"] = self.columns.dump(camel_case=camel_case)
         return output
 
+    @override
     def as_write(self) -> RawTableWrite:
         return RawTableWrite(
             tablename=self.tablename,
@@ -289,11 +296,13 @@ class ViewTable(Table):
             created_time=data.get("created_time"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["options"] = self.options.dump(camel_case=camel_case)
         return output
 
+    @override
     def as_write(self) -> ViewTableWrite:
         return ViewTableWrite(
             tablename=self.tablename,
@@ -308,6 +317,7 @@ class TableWriteList(CogniteResourceList[TableWrite]):
 class TableList(WriteableCogniteResourceList[TableWrite, Table]):
     _RESOURCE = Table
 
+    @override
     def as_write(self) -> TableWriteList:
         return TableWriteList([item.as_write() for item in self.data])
 

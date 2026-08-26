@@ -4,6 +4,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
+from typing_extensions import override
+
 from cognite.client.data_classes._base import (
     CogniteResourceList,
     ExternalIDTransformerMixin,
@@ -98,6 +100,7 @@ class AgentUpsert(AgentCore):
         # This is useful while the API is evolving and new fields are added.
         self._unknown_properties: dict[str, object] = {}
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.tools:
@@ -198,6 +201,7 @@ class Agent(AgentCore):
         # This is useful while the API is evolving and new fields are added.
         self._unknown_properties: dict[str, object] = {}
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.tools is not None:

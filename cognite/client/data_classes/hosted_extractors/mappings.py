@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, ClassVar, Literal, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -49,6 +49,7 @@ class InputMapping(CogniteResource, ABC):
             return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, job_cls._load_input(resource))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["type"] = self._type
@@ -82,6 +83,7 @@ class ProtoBufInput(InputMapping):
             files=[ProtoBufFile._load(file) for file in resource["files"]],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "type": self._type,
@@ -128,6 +130,7 @@ class _MappingCore(WriteableCogniteResource["MappingWrite"]):
         self.mapping = mapping
         self.published = published
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["mapping"] = self.mapping.dump(camel_case)
@@ -172,9 +175,11 @@ class MappingWrite(_MappingCore):
             input=InputMapping._load(resource["input"]) if "input" in resource else JSONInput(),
         )
 
+    @override
     def as_write(self) -> MappingWrite:
         return self
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if isinstance(self.input, InputMapping):
@@ -222,11 +227,13 @@ class Mapping(_MappingCore):
             last_updated_time=resource["lastUpdatedTime"],
         )
 
+    @override
     def as_write(self) -> MappingWrite:
         return MappingWrite(
             external_id=self.external_id, mapping=self.mapping, published=self.published, input=self.input
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["input"] = self.input.dump(camel_case)
@@ -240,6 +247,7 @@ class MappingWriteList(CogniteResourceList[MappingWrite], ExternalIDTransformerM
 class MappingList(WriteableCogniteResourceList[MappingWrite, Mapping], ExternalIDTransformerMixin):
     _RESOURCE = Mapping
 
+    @override
     def as_write(self) -> MappingWriteList:
         return MappingWriteList([mapping.as_write() for mapping in self.data])
 
