@@ -191,20 +191,31 @@ def state_dps_insert() -> StateDatapointsInsert:
 
 
 class TestStateDatapointsInsert:
-    def test_dump_camel_case(self, state_dps_insert: StateDatapointsInsert) -> None:
-        assert state_dps_insert.dump() == {
-            "instanceId": {"space": "my-space", "externalId": "my-ts"},
-            "datapoints": [{"timestamp": 1000, "numericValue": 0}],
-        }
+    @pytest.mark.parametrize(
+        "camel_case, expected",
+        [
+            (
+                True,
+                {
+                    "instanceId": {"space": "my-space", "externalId": "my-ts"},
+                    "datapoints": [{"timestamp": 1000, "numericValue": 0}],
+                },
+            ),
+            (
+                False,
+                {
+                    "instance_id": {"space": "my-space", "external_id": "my-ts"},
+                    "datapoints": [{"timestamp": 1000, "numeric_value": 0}],
+                },
+            ),
+        ],
+    )
+    def test_dump(self, state_dps_insert: StateDatapointsInsert, camel_case: bool, expected: dict) -> None:
+        assert state_dps_insert.dump(camel_case=camel_case) == expected
 
-    def test_dump_snake_case(self, state_dps_insert: StateDatapointsInsert) -> None:
-        assert state_dps_insert.dump(camel_case=False) == {
-            "instance_id": {"space": "my-space", "external_id": "my-ts"},
-            "datapoints": [{"timestamp": 1000, "numeric_value": 0}],
-        }
-
-    def test_load_dump_roundtrip(self, state_dps_insert: StateDatapointsInsert) -> None:
-        back = StateDatapointsInsert.load(state_dps_insert.dump())
+    @pytest.mark.parametrize("camel_case", [True, False])
+    def test_load_dump_roundtrip(self, state_dps_insert: StateDatapointsInsert, camel_case: bool) -> None:
+        back = StateDatapointsInsert.load(state_dps_insert.dump(camel_case=camel_case))
         assert NodeId.load(back.instance_id) == NodeId("my-space", "my-ts")
         assert len(back.datapoints) == 1
 

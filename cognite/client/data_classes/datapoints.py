@@ -203,8 +203,16 @@ class StateDatapointsInsert:
             return data
         if not isinstance(data, dict):
             raise TypeError(f"Expected a 'StateDatapointsInsert' or a 'dict', not {type(data)}")
+        try:
+            # For historic reasons we accept snake_case alternative here. See StateDatapointWrite.load for reasoning
+            instance_id = NodeId.load(data["instanceId"])
+        except KeyError:
+            if (maybe := NodeId._load_if(data.get("instance_id"))) is None:
+                raise
+            instance_id = maybe
+
         return cls(
-            instance_id=NodeId.load(data["instanceId"]),
+            instance_id=instance_id,
             # Keep datapoints as raw dicts/objects since the attribute is documented mutable (and the dict type is supported).
             # We defer using StateDatapointWrite.load().dump() until dump() to avoid double work:
             datapoints=data["datapoints"],
