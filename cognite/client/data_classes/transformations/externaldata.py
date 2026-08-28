@@ -122,7 +122,7 @@ class OneLakeSettingsWrite(CogniteResource):
     """Connection settings for the external data source.
 
     Args:
-        credentials (OneLakeCredentialsWrite): Azure credentials for the upsert.
+        credentials (OneLakeCredentialsWrite): Azure credentials for the data source.
         location_description (OneLakeLocationDescription): Fabric workspace and lakehouse identifiers.
     """
 
@@ -146,7 +146,7 @@ class OneLakeSettingsWrite(CogniteResource):
 
 
 class ExternalDataSourceWrite(CogniteResource, ABC):
-    """Upsert model for an external data source to create or replace in CDF.
+    """Write model for an external data source to create in CDF.
 
     Format-specific subclasses (e.g. :class:`OneLakeExternalDataSourceWrite`) hold typed settings.
 
@@ -191,11 +191,11 @@ class ExternalDataSourceWrite(CogniteResource, ABC):
 
 
 class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
-    """Upsert model for registering a Fabric OneLake external data source in CDF.
+    """Write model for registering a Fabric OneLake external data source in CDF.
 
     Registers Azure credentials and lakehouse location so transforms can read via ``ext_onelake()``.
-    Does not write data into OneLake. Each upsert replaces the stored data source in full, so every
-    request must contain complete ``settings`` including ``client_secret``.
+    Does not write data into OneLake. Fails if a data source with the given ``external_id`` already
+    exists; it is not merged or replaced.
 
     Args:
         external_id (str): External ID for the data source. Must be unique.
@@ -205,7 +205,7 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
 
     Examples:
 
-        Construct a Fabric OneLake source for upsert:
+        Construct a Fabric OneLake source for creation:
 
             >>> import os
             >>> from cognite.client.data_classes.transformations.externaldata import (

@@ -13,6 +13,7 @@ from cognite.client.data_classes.transformations.externaldata import (
     OneLakeLocationDescription,
     OneLakeSettingsWrite,
 )
+from cognite.client.exceptions import CogniteDuplicatedError
 from cognite.client.utils._text import random_string
 
 # The OneLake data source is verified against a live Fabric lakehouse, so these tests only run when
@@ -32,7 +33,7 @@ pytestmark = pytest.mark.skipif(
 
 
 class TestExternalDataSources:
-    def test_upsert_list_verify_usability_delete(self, cognite_client: CogniteClient) -> None:
+    def test_create_list_verify_usability_delete(self, cognite_client: CogniteClient) -> None:
         api = cognite_client.transformations.external_data_sources
         external_id = f"sdk-integration-test-{random_string(6, string.ascii_letters)}"
         data_source = OneLakeExternalDataSourceWrite(
@@ -52,11 +53,14 @@ class TestExternalDataSources:
         )
         created = False
         try:
-            upserted = api.upsert(data_source)
+            source = api.create(data_source)
             created = True
-            assert isinstance(upserted, OneLakeExternalDataSource)
-            assert upserted.external_id == external_id
-            assert upserted.settings.credentials.client_id == os.environ["ONELAKE_CLIENT_ID"]
+            assert isinstance(source, OneLakeExternalDataSource)
+            assert source.external_id == external_id
+            assert source.settings.credentials.client_id == os.environ["ONELAKE_CLIENT_ID"]
+
+            with pytest.raises(CogniteDuplicatedError):
+                api.create(data_source)
 
             assert external_id in api.list(limit=-1).as_external_ids()
 

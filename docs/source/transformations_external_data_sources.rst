@@ -46,7 +46,7 @@ Every operation is governed by ``transformationsExternalDataSourcesAcl``, availa
 Operation                                 Action
 ========================================= ==========
 ``list()``                                ``READ``
-``upsert()``                              ``WRITE``
+``create()``                              ``WRITE``
 ``delete()``                              ``WRITE``
 ``verify_usability()``                    ``USE``
 ========================================= ==========
@@ -57,8 +57,9 @@ transformation and destination capabilities.
 Register a data source
 ----------------------
 
-An upsert creates the data source if it does not exist and replaces it in full if it does, matched on
-external ID. Every request must therefore carry complete settings, including the client secret:
+Creating a data source requires a unique external ID. If an external ID you submit already exists for
+the project, the request is rejected with a 409 and no items are created — there is no in-place update.
+To modify an existing data source, delete it and create a replacement (see `Rotate credentials`_):
 
 .. code-block:: python
 
@@ -90,7 +91,7 @@ external ID. Every request must therefore carry complete settings, including the
             ),
         ),
     )
-    registered = client.transformations.external_data_sources.upsert(data_source)
+    registered = client.transformations.external_data_sources.create(data_source)
 
 Verify that a data source is usable
 -----------------------------------
@@ -176,10 +177,13 @@ Rotate credentials
 ------------------
 
 Because a read model never carries the client secret, it cannot be turned back into a write model —
-``as_write()`` raises a ``TypeError``. Rotating a secret means building a new write model with the new
-secret and upserting it under the same external ID, which replaces the stored data source:
+``as_write()`` raises a ``TypeError``. There is no update endpoint for this resource, so rotating a
+secret (or changing any other setting) means deleting the existing data source and creating a
+replacement with the same external ID:
 
 .. code-block:: python
+
+    client.transformations.external_data_sources.delete("fabric-lakehouse-prod")
 
     rotated = OneLakeExternalDataSourceWrite(
         external_id="fabric-lakehouse-prod",
@@ -197,7 +201,7 @@ secret and upserting it under the same external ID, which replaces the stored da
             ),
         ),
     )
-    client.transformations.external_data_sources.upsert(rotated)
+    client.transformations.external_data_sources.create(rotated)
 
 Delete a data source
 --------------------
