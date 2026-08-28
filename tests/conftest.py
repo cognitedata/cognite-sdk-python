@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import os
 import platform
+import random
+from collections import defaultdict
 from collections.abc import Callable, Iterator
+from pathlib import Path
 from typing import Any
 
 import dotenv
@@ -123,5 +127,54 @@ def apply_coredeps_skips(config: pytest.Config, items: list[pytest.Item]) -> Non
             item.add_marker(skip_core)
 
 
+def shuffle_test_modules(items: list[pytest.Item]) -> None:
+    """Shuffles test file (module) execution order in CI to prevent issues and smear out load.
+
+    Why this exists:
+    When GitHub Actions launches a matrix build (OS x Python version), dozens of worker processes
+    execute the test suite in lockstep (currently 2 x 5 = 10). Because collection is deterministic by
+    default, every runner hits the exact same Cognite CDF endpoints simultaneously, causing high peak
+    traffic, increasing the chance for rate-limit errors on shared resources.
+
+    How this function works:
+    - Deterministic per matrix job: Generates a seed based on GITHUB_RUN_ID, GITHUB_JOB,
+      RUNNER_OS, and the Python version. This forces each matrix runner (e.g., Linux 3.10
+      and Windows 3.14) to run test files in a completely different order.
+    - xdist-safe: All 8 workers inside the SAME matrix runner calculate the exact same
+      seed, preserving `--dist loadscope` scheduling efficiency.
+    - Module-level only: Shuffles test files while preserving the internal test order
+      within each file, protecting sequential tests and module-scoped fixtures.
+
+    When running tests locally this logic is skipped entirely. There's no "matrix parallelism",
+    so just using the standard & predictable test ordering makes debugging easier.
+    """
+    if os.getenv("GITHUB_ACTIONS") != "true":
+        return
+
+    # Build a seed unique to each matrix runner using Github Actions env vars + the Python runtime:
+    seed_parts = (
+        os.getenv("GITHUB_RUN_ID", ""),  # Differentiates workflow runs
+        os.getenv("GITHUB_RUN_ATTEMPT", ""),  # Differentiates workflow retries
+        os.getenv("GITHUB_JOB", ""),  # Job ID defined in your workflow file
+        os.getenv("RUNNER_OS", ""),  # Operating system (Linux/Windows)
+        platform.python_version(),
+    )
+    rng = random.Random(":".join(seed_parts))
+
+    # We need to group all tests by their resolved file path:
+    modules: defaultdict[Path, list[pytest.Item]] = defaultdict(list)
+    for item in items:
+        modules[item.path].append(item)
+
+    shuffled_modules = list(modules.keys())
+    rng.shuffle(shuffled_modules)
+
+    # We need to mutate 'items' in-place with out new ordering:
+    items.clear()
+    items.extend(item for module in shuffled_modules for item in modules[module])
+
+
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     apply_coredeps_skips(config, items)
+    if items:
+        shuffle_test_modules(items)
