@@ -15,6 +15,7 @@ from cognite.client.data_classes.transformations.externaldata import (
     OneLakeLocationDescription,
     OneLakeSettingsWrite,
 )
+from cognite.client.exceptions import CogniteDuplicatedError
 from tests.utils import get_url, jsgz_load
 
 
@@ -117,7 +118,7 @@ class TestTransformationExternalDataSourcesAPI:
         assert [len(chunk) for chunk in chunks] == [25, 5]
         assert all(isinstance(chunk, ExternalDataSourceList) for chunk in chunks)
 
-    def test_upsert_single(
+    def test_create_single(
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
@@ -128,7 +129,7 @@ class TestTransformationExternalDataSourcesAPI:
             method="POST", url=external_data_url, status_code=201, json={"items": [onelake_read_item]}
         )
 
-        result = cognite_client.transformations.external_data_sources.upsert(make_write_source("fabric-lakehouse-prod"))
+        result = cognite_client.transformations.external_data_sources.create(make_write_source("fabric-lakehouse-prod"))
 
         assert isinstance(result, OneLakeExternalDataSource)
         assert result.external_id == "fabric-lakehouse-prod"
@@ -144,7 +145,7 @@ class TestTransformationExternalDataSourcesAPI:
             "locationDescription": {"workspaceId": "my-workspace-id", "containerId": "my-container-id"},
         }
 
-    def test_upsert_multiple(
+    def test_create_multiple(
         self,
         cognite_client: CogniteClient,
         httpx_mock: HTTPXMock,
@@ -156,13 +157,37 @@ class TestTransformationExternalDataSourcesAPI:
             method="POST", url=external_data_url, status_code=201, json={"items": [onelake_read_item, second_item]}
         )
 
-        result = cognite_client.transformations.external_data_sources.upsert(
+        result = cognite_client.transformations.external_data_sources.create(
             [make_write_source("fabric-lakehouse-prod"), make_write_source("fabric-lakehouse-staging")]
         )
 
         assert isinstance(result, ExternalDataSourceList)
         assert result.as_external_ids() == ["fabric-lakehouse-prod", "fabric-lakehouse-staging"]
         assert len(jsgz_load(httpx_mock.get_requests()[-1].content)["items"]) == 2
+
+    def test_create_existing_external_id_raises_duplicated(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        external_data_url: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=external_data_url,
+            status_code=409,
+            json={
+                "error": {
+                    "code": 409,
+                    "message": "Duplicated external ids",
+                    "duplicated": [{"externalId": "fabric-lakehouse-prod"}],
+                }
+            },
+        )
+
+        with pytest.raises(CogniteDuplicatedError) as exc_info:
+            cognite_client.transformations.external_data_sources.create(make_write_source("fabric-lakehouse-prod"))
+
+        assert exc_info.value.duplicated == [{"externalId": "fabric-lakehouse-prod"}]
 
     def test_delete(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, external_data_url: str) -> None:
         httpx_mock.add_response(method="POST", url=external_data_url + "/delete", status_code=200, json={})
