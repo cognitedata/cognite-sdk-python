@@ -112,10 +112,16 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+def apply_coredeps_skips(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Skip @pytest.mark.coredeps tests unless --test-deps-only-core is set."""
     if config.getoption("--test-deps-only-core"):
-        return None
+        return
+
     skip_core = pytest.mark.skip(reason="need --test-deps-only-core option to run")
     for item in items:
         if "coredeps" in item.keywords:
             item.add_marker(skip_core)
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    apply_coredeps_skips(config, items)
