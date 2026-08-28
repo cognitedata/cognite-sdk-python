@@ -161,7 +161,7 @@ def shuffle_test_modules(items: list[pytest.Item]) -> None:
     )
     rng = random.Random(":".join(seed_parts))
 
-    # We need to group all tests by their resolved file path:
+    # We need to group all tests by their file paths:
     modules: defaultdict[Path, list[pytest.Item]] = defaultdict(list)
     for item in items:
         modules[item.path].append(item)
@@ -169,7 +169,7 @@ def shuffle_test_modules(items: list[pytest.Item]) -> None:
     shuffled_modules = list(modules.keys())
     rng.shuffle(shuffled_modules)
 
-    # We need to mutate 'items' in-place with out new ordering:
+    # We need to mutate 'items' in-place with our new ordering:
     items.clear()
     items.extend(item for module in shuffled_modules for item in modules[module])
 
