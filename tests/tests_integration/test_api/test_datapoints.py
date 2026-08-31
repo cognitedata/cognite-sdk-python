@@ -614,6 +614,17 @@ def state_ts_b(
     "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
 )
 class TestInsertStateDatapoints:
+    def test_insert_single_state_datapoints_insert(
+        self,
+        cognite_client: CogniteClient,
+        state_ts: NodeApplyResult,
+    ) -> None:
+        single_insert = StateDatapointsInsert(
+            instance_id=state_ts.as_id(),
+            datapoints=[StateDatapointWrite(1699999999000, -1)],
+        )
+        cognite_client.time_series.data.insert_states(single_insert)
+
     @pytest.mark.parametrize(
         "datapoints",
         (
@@ -643,7 +654,7 @@ class TestInsertStateDatapoints:
             ],
         ),
     )
-    def test_insert_state_datapoints(
+    def test_insert_state_datapoints_to_multiple_ts(
         self,
         cognite_client: CogniteClient,
         state_ts: NodeApplyResult,
