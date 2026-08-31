@@ -195,6 +195,7 @@ class VersionedIdLike(IdLike, Protocol):
 ContainerIdentifier = ContainerId | tuple[str, str]
 ConstraintIdentifier = tuple[ContainerId, str]
 IndexIdentifier = tuple[ContainerId, str]
+PropertyPath = SequenceNotStr[str] | tuple[ContainerId | ViewId, str] | PropertyId
 ViewIdentifier = ViewId | tuple[str, str] | tuple[str, str, str]
 DataModelIdentifier = DataModelId | tuple[str, str] | tuple[str, str, str]
 NodeIdentifier = NodeId | tuple[str, str, str]

@@ -4,12 +4,13 @@ import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, final
+from typing import Any, Literal, NoReturn, TypeAlias, cast, final
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
 from cognite.client.data_classes.labels import Label
 from cognite.client.data_classes.shared import Geometry
 from cognite.client.utils._auxiliary import all_concrete_subclasses
@@ -17,11 +18,7 @@ from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr, is_sequence_not_str
 
-if TYPE_CHECKING:
-    from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId
-
-
-PropertyReference: TypeAlias = str | SequenceNotStr[str] | EnumProperty
+PropertyReference: TypeAlias = str | SequenceNotStr[str] | EnumProperty | tuple[ContainerId | ViewId, str] | PropertyId
 
 
 @dataclass
@@ -71,6 +68,15 @@ def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
 def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] | tuple[str, ...]:
     if isinstance(property_, EnumProperty):
         return property_.as_reference()
+    elif isinstance(property_, PropertyId):
+        return list(property_.source.as_property_ref(property_.property))
+    elif (
+        isinstance(property_, tuple)
+        and len(property_) == 2
+        and isinstance(property_[0], (ContainerId, ViewId))
+        and isinstance(property_[1], str)
+    ):
+        return list(property_[0].as_property_ref(property_[1]))
     elif isinstance(property_, str):
         return [to_camel_case(property_) if camel_case else property_]
     elif isinstance(property_, (list, tuple)):

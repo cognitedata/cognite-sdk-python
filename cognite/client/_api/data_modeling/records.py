@@ -153,6 +153,25 @@ class RecordsAPI(APIClient):
                 ...     ),
                 ...     stream_id="my-stream",
                 ... )
+
+            Ingest a record through a view instead of a container:
+
+                >>> from cognite.client.data_classes.data_modeling.records import RecordViewId
+                >>> client.data_modeling.records.ingest(
+                ...     RecordWrite(
+                ...         space="my-space",
+                ...         external_id="rec-2",
+                ...         sources=[
+                ...             RecordSource(
+                ...                 source=RecordViewId(
+                ...                     space="my-space", external_id="my-view", version="v1"
+                ...                 ),
+                ...                 properties={"temperature": 22.5},
+                ...             )
+                ...         ],
+                ...     ),
+                ...     stream_id="my-stream",
+                ... )
         """
         self._warning.warn()
         item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
@@ -174,7 +193,7 @@ class RecordsAPI(APIClient):
         Creates or fully updates records. Only valid for mutable streams (returns 422 on
         immutable). When a record with the same ``space + externalId`` already exists it is
         fully replaced (this endpoint does not do partial property updates); otherwise it is
-        created.
+        created. As for ingest, a record source may reference a container or a view.
 
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
@@ -227,6 +246,12 @@ class RecordsAPI(APIClient):
         include_typing: bool = False,
     ) -> RecordsAggregation:
         """`Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_.
+
+        Aggregate ``property`` references can address container properties directly or through
+        a view. Note that when a view is involved, all aggregate property references in the
+        request combined can address at most one property source: either a single view and
+        nothing else, or any number of containers. This restriction does not apply to ``filter``
+        or ``target_units``.
 
         Args:
             aggregates (Mapping[str, Aggregate | dict[str, Any]]): Aggregate request tree keyed
@@ -378,7 +403,7 @@ class RecordsAPI(APIClient):
             last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
                 immutable streams** (must include a lower bound).
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
+            sources (Sequence[RecordSourceSelector] | None): Which container or view properties to return.
             sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
             limit (int): Maximum number of records to return (1-1000). This endpoint returns a single
                 page and does not paginate, so a larger limit is an error rather than a silent cap.
@@ -485,7 +510,7 @@ class RecordsAPI(APIClient):
             cursor (str | None): Resume from a cursor from a previously yielded chunk. Mutually
                 exclusive with ``initialize_cursor``.
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
+            sources (Sequence[RecordSourceSelector] | None): Which container or view properties to return.
             target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
                 to another unit.
             chunk_size (int): Number of records per yielded chunk, between 1 and 1000. Defaults to 1000.
