@@ -627,34 +627,50 @@ class TestInsertStateDatapoints:
 
     @pytest.mark.parametrize(
         "datapoints",
-        (
-            [
-                StateDatapointWrite(1700000000000, -1),
-                StateDatapointWrite(1700000001000, string_value="idle"),
-                StateDatapointWrite(timestamp=1700000002000, numeric_value=1, string_value="on"),
-                StateDatapointWrite(timestamp=1700000003000, status_symbol="Bad"),
-            ],
-            # We also allow passing dicts for convenience:
-            [
-                {"timestamp": 1700000004000, "numeric_value": 0, "string_value": "idle"},
-                {"timestamp": 1700000005000, "status": {"symbol": "Bad"}},
-            ],
-            # ...also verify that the mixed case works:
-            [
-                {"timestamp": 1700000006000, "numericValue": -1},
-                StateDatapointWrite(timestamp=1700000007000, string_value="off"),
-            ],
-            # Only status, no numeric/string value:
-            [
-                StateDatapointWrite(timestamp=1700000008000, status_symbol="Bad"),
-            ],
-            # datetime timestamp (exercises timestamp_to_ms end-to-end):
-            [
-                StateDatapointWrite(timestamp=datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc), numeric_value=0),
-            ],
-        ),
+        [
+            pytest.param(
+                [
+                    StateDatapointWrite(1700000000000, -1),
+                    StateDatapointWrite(1700000001000, string_value="idle"),
+                    StateDatapointWrite(timestamp=1700000002000, numeric_value=1, string_value="on"),
+                    StateDatapointWrite(timestamp=1700000003000, status_symbol="Bad"),
+                ],
+                id="StateDatapointWrite objects",
+            ),
+            pytest.param(
+                [
+                    {"timestamp": 1700000004000, "numeric_value": 0, "string_value": "idle"},
+                    {"timestamp": 1700000005000, "status": {"symbol": "Bad"}},
+                ],
+                id="Raw dictionaries for convenience",
+            ),
+            pytest.param(
+                [
+                    {"timestamp": 1700000006000, "numericValue": -1},
+                    StateDatapointWrite(timestamp=1700000007000, string_value="off"),
+                ],
+                id="Mixed dictionaries and StateDatapointWrite objects",
+            ),
+            pytest.param(
+                [
+                    StateDatapointWrite(timestamp=1700000008000, status_symbol="Bad"),
+                ],
+                id="Only status without numeric or string value",
+            ),
+            pytest.param(
+                [
+                    {"timestamp": datetime(2021, 1, 15, tzinfo=ZoneInfo("Europe/Oslo")), "numericValue": -1},
+                    StateDatapointWrite(datetime(2022, 1, 15, tzinfo=ZoneInfo("Europe/Oslo")), numeric_value=0),
+                    {"timestamp": datetime(2023, 1, 15, tzinfo=timezone.utc), "numericValue": -1},
+                    StateDatapointWrite(datetime(2024, 1, 15, tzinfo=timezone.utc), numeric_value=0),
+                    {"timestamp": datetime(2025, 1, 15, tzinfo=None), "numericValue": -1},
+                    StateDatapointWrite(datetime(2026, 1, 15, tzinfo=None), numeric_value=0),
+                ],
+                id="Datapoints with naive and aware datetime timestamps",
+            ),
+        ],
     )
-    def test_insert_state_datapoints_to_multiple_ts(
+    def test_insert_state_datapoints_as_sequence(
         self,
         cognite_client: CogniteClient,
         state_ts: NodeApplyResult,
