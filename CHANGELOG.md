@@ -13,6 +13,19 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.15.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.14.0...v8.15.0) (2026-08-31)
+
+
+### Features
+
+* **CDM:** CogniteStateSet to cdm/v1.py + StateSetEntry helper class (DM-4075) ([#2785](https://github.com/cognitedata/cognite-sdk-python/issues/2785)) ([cf33cff](https://github.com/cognitedata/cognite-sdk-python/commit/cf33cffe47712a3919f1785ad8bd80297b437e0c))
+* **state time series:** Add insert method for states datapoints (DM-4078) ([#2797](https://github.com/cognitedata/cognite-sdk-python/issues/2797)) ([76ca320](https://github.com/cognitedata/cognite-sdk-python/commit/76ca320e87712d97a897028999ec3e7e895e38cd))
+
+
+### Bug Fixes
+
+* **transformations:** external data sources endpoint is create-only, not upsert ([#2799](https://github.com/cognitedata/cognite-sdk-python/issues/2799)) ([b9eb747](https://github.com/cognitedata/cognite-sdk-python/commit/b9eb747f2455529b39782bc1d134d110785362ea))
+
 ## [8.14.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.13.0...v8.14.0) (2026-08-24)
 
 
