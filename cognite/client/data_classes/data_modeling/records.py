@@ -81,9 +81,9 @@ def _load_record_source_id(data: RecordSourceIdentifier | dict[str, Any]) -> Rec
     if isinstance(data, dict):
         source_type = data.get("type")
         if source_type == "view" or (source_type is None and "version" in data):
-            return RecordViewId(space=data["space"], external_id=data["externalId"], version=data["version"])
+            return RecordViewId.load(data)
         if source_type in ("container", None):
-            return RecordContainerId(space=data["space"], external_id=data["externalId"])
+            return RecordContainerId.load(data)
         raise ValueError(f"Record source 'type' must be 'container' or 'view', but was {source_type!r}")
     raise TypeError(f"Cannot load record source from {type(data).__name__}")
 

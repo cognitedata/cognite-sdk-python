@@ -28,7 +28,7 @@ from cognite.client.data_classes.data_modeling.aggregates import (
     UnknownResult,
 )
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
-from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, PropertyPath, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, TypeInformation
 from cognite.client.data_classes.data_modeling.records import (
     Record,
@@ -1297,6 +1297,19 @@ class TestRecordSourceViews:
         assert loaded.source.version == "v1"
         assert loaded.properties == {"temp": 25.0}
 
+    def test_source_accepts_snake_case_dict(self) -> None:
+        view_src = RecordSource(
+            source={"space": "sp", "external_id": "my_view", "version": "v1"},  # type: ignore[arg-type]
+            properties={"temp": 25.0},
+        )
+        assert view_src.source == RecordViewId("sp", "my_view", "v1")
+
+        container_src = RecordSource(
+            source={"space": "sp", "external_id": "my_container"},  # type: ignore[arg-type]
+            properties={"pressure": 1.0},
+        )
+        assert container_src.source == RecordContainerId("sp", "my_container")
+
     def test_source_load_rejects_unknown_type(self) -> None:
         raw = {"source": {"space": "sp", "externalId": "x", "type": "node"}, "properties": {}}
         with pytest.raises(ValueError, match="must be 'container' or 'view', but was 'node'"):
@@ -1508,12 +1521,13 @@ class TestRecordsAggregateWithViews:
         rec_view = RecordViewId("my_space", "my_view", "v1")
 
         # Every accepted way of referencing a view property should dump identically:
-        for property_ in [
+        properties: list[PropertyPath] = [
             (view, "temperature"),
             (rec_view, "temperature"),
             view.as_property_ref("temperature"),
             PropertyId(view, "temperature"),
-        ]:
+        ]
+        for property_ in properties:
             avg = Average(property=property_)
             assert avg.dump() == {"avg": {"property": ["my_space", "my_view/v1", "temperature"]}}
 
