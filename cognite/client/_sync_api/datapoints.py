@@ -1,6 +1,6 @@
 """
 ===============================================================================
-bc8d74f37515222d1f708028672b52c6
+a5572acd9445d7262dd9014faaf228ff
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -1528,7 +1528,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         """
         return run_sync(self.__async_client.time_series.data.insert_multiple(datapoints=datapoints))
 
-    def insert_states(self, items: Sequence[StateDatapointsInsert]) -> None:
+    def insert_states(self, items: StateDatapointsInsert | Sequence[StateDatapointsInsert]) -> None:
         """
         Insert datapoints into one or more state time series.
 
@@ -1546,11 +1546,11 @@ class SyncDatapointsAPI(SyncAPIClient):
             State time series are in `public preview <https://docs.cognite.com/cdf/product_feature_status#public-preview>`_.
 
         Args:
-            items (Sequence[StateDatapointsInsert]): One ``StateDatapointsInsert`` per target state time series. Each carries the ``instance_id`` and the datapoints to write.
+            items (StateDatapointsInsert | Sequence[StateDatapointsInsert]): One ``StateDatapointsInsert`` per target state time series. Each carries the ``instance_id`` and the datapoints to write.
 
         Examples:
 
-            Insert state datapoints into two state time series, by using their numeric state values:
+            Insert state datapoints into a state time series, by using the numeric state values:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> from cognite.client.data_classes import (
@@ -1563,13 +1563,17 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>>
-                >>> first_insert = StateDatapointsInsert(
+                >>> to_insert = StateDatapointsInsert(
                 ...     instance_id=NodeId("my-space", "first-state-ts"),
                 ...     datapoints=[
                 ...         StateDatapointWrite(1700000000000, -1),
                 ...         StateDatapointWrite(1700000001000, 13),
                 ...     ],
                 ... )
+                >>> client.time_series.data.insert_states(to_insert)
+
+            To insert into multiple state time series, simply pass a list of ``StateDatapointsInsert`` objects:
+
                 >>> second_insert = StateDatapointsInsert(
                 ...     instance_id=("my-space", "second-state-ts"),  # tuple form is accepted
                 ...     datapoints=[
@@ -1577,7 +1581,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...         StateDatapointWrite(datetime(2018, 7, 8), 0),
                 ...     ],
                 ... )
-                >>> client.time_series.data.insert_states([first_insert, second_insert])
+                >>> client.time_series.data.insert_states([to_insert, second_insert])
 
             The datapoints to insert can also be given by the string state value (or a matching combination).
             Status codes can also be specified:
@@ -1592,8 +1596,8 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     StateDatapointWrite(16, status_code=StatusCode.Bad),
                 ... ]
 
-            Datapoints can also be given as dicts, matching the API's JSON shape (status codes/symbols
-            must be given as a nested ``status`` sub-dict, matching the API):
+            Datapoints can also be given as dicts, matching the API's JSON shape (both snake_case and camelCase
+            accepted). Note that status codes/symbols must be given as a nested ``status`` sub-dict:
 
                 >>> client.time_series.data.insert_states(
                 ...     [
