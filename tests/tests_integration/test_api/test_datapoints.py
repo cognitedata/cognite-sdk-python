@@ -562,6 +562,28 @@ def state_set(
     return node
 
 
+def _create_state_time_series(
+    external_id: str,
+    cognite_client: CogniteClient,
+    async_client: AsyncCogniteClient,
+    space_for_time_series: Space,
+    state_set: NodeApplyResult,
+) -> NodeApplyResult:
+    from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
+
+    state_ts = CogniteTimeSeriesApply(
+        space=space_for_time_series.space,
+        external_id=external_id,
+        is_step=False,
+        time_series_type="state",
+        state_set=(state_set.space, state_set.external_id),
+    )
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(async_client.data_modeling.instances, "_api_subversion", "beta")
+        (node,) = cognite_client.data_modeling.instances.apply(state_ts).nodes
+    return node
+
+
 @pytest.fixture(scope="session")
 def state_ts(
     cognite_client: CogniteClient,
@@ -570,20 +592,13 @@ def state_ts(
     os_and_py_version: str,
     state_set: NodeApplyResult,
 ) -> NodeApplyResult:
-    from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
-
-    state_ts = CogniteTimeSeriesApply(
-        space=space_for_time_series.space,
+    return _create_state_time_series(
         external_id=f"dms-state-time-series-{os_and_py_version}",
-        is_step=False,
-        time_series_type="state",
-        state_set=(state_set.space, state_set.external_id),
+        cognite_client=cognite_client,
+        async_client=async_client,
+        space_for_time_series=space_for_time_series,
+        state_set=state_set,
     )
-    # State time series require beta flag:
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(async_client.data_modeling.instances, "_api_subversion", "beta")
-        (node,) = cognite_client.data_modeling.instances.apply(state_ts).nodes
-    return node
 
 
 @pytest.fixture(scope="session")
@@ -594,19 +609,13 @@ def state_ts_b(
     os_and_py_version: str,
     state_set: NodeApplyResult,
 ) -> NodeApplyResult:
-    from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
-
-    state_ts = CogniteTimeSeriesApply(
-        space=space_for_time_series.space,
+    return _create_state_time_series(
         external_id=f"dms-state-time-series-b-{os_and_py_version}",
-        is_step=False,
-        time_series_type="state",
-        state_set=(state_set.space, state_set.external_id),
+        cognite_client=cognite_client,
+        async_client=async_client,
+        space_for_time_series=space_for_time_series,
+        state_set=state_set,
     )
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(async_client.data_modeling.instances, "_api_subversion", "beta")
-        (node,) = cognite_client.data_modeling.instances.apply(state_ts).nodes
-    return node
 
 
 @pytest.mark.allow_no_semaphore(
