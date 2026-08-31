@@ -13,6 +13,39 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.14.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.13.0...v8.14.0) (2026-08-24)
+
+
+### Features
+
+* **config:** Add `ssl_config` to `global_config` (DM-3969) ([#2720](https://github.com/cognitedata/cognite-sdk-python/issues/2720)) ([3a76a19](https://github.com/cognitedata/cognite-sdk-python/commit/3a76a19acd52ebb75d897f77d07779b2022eaa86))
+* **data modeling:** merge records sync and sync_resume into a chunk-yielding generator ([#2755](https://github.com/cognitedata/cognite-sdk-python/issues/2755)) ([0fbe857](https://github.com/cognitedata/cognite-sdk-python/commit/0fbe85710fc5cb0955cb5d8708095af7c5b41db5))
+
+
+### Bug Fixes
+
+* **datapoints:** cancel and await outstanding tasks also on failure ([#2775](https://github.com/cognitedata/cognite-sdk-python/issues/2775)) ([36ed7de](https://github.com/cognitedata/cognite-sdk-python/commit/36ed7de04c86f0675b9ad36fe8813333dd85824a))
+* **datapoints:** passing emtpy list of time series ids to retrieve latest datapoints no longer fails when converted to pandas ([#2769](https://github.com/cognitedata/cognite-sdk-python/issues/2769)) ([c70d872](https://github.com/cognitedata/cognite-sdk-python/commit/c70d872abf2423222c0a0f46c2e6620430c13925))
+* **mocks:** add config to Cognite client mock ([#2770](https://github.com/cognitedata/cognite-sdk-python/issues/2770)) ([6e3837d](https://github.com/cognitedata/cognite-sdk-python/commit/6e3837d1e2cc169793551620493ebddcf0d6e7bb))
+* **pandas:** Support pandas v3 timestamp semantics while preserving v2 behavior (DM-3534) ([#2780](https://github.com/cognitedata/cognite-sdk-python/issues/2780)) ([6da7399](https://github.com/cognitedata/cognite-sdk-python/commit/6da73997d8b71cdf20ac632d453104fd9baacf82))
+* **records:** reject a filter limit above 1000 instead of truncating ([#2751](https://github.com/cognitedata/cognite-sdk-python/issues/2751)) ([c758433](https://github.com/cognitedata/cognite-sdk-python/commit/c758433e86ec8117810bcf1875945887a38b5d5f))
+* **SyntaxWarning:** Fix unnecessary SyntaxWarning in SyncApi (docstring not marked as r(aw)) ([#2771](https://github.com/cognitedata/cognite-sdk-python/issues/2771)) ([e97333d](https://github.com/cognitedata/cognite-sdk-python/commit/e97333d651a97fd2a096216c375d524a56c18807))
+
+## [8.13.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.12.0...v8.13.0) (2026-08-13)
+
+
+### Features
+
+* **credentials:** let users choose the account for interactive login (DM-3512) ([#2730](https://github.com/cognitedata/cognite-sdk-python/issues/2730)) ([bef4f27](https://github.com/cognitedata/cognite-sdk-python/commit/bef4f27a836b2e93410fd2411e59043ee28a5cc0))
+* **functions:** add py314 to RunTime ([#2735](https://github.com/cognitedata/cognite-sdk-python/issues/2735)) ([cf66c51](https://github.com/cognitedata/cognite-sdk-python/commit/cf66c51a8b73c243a7d1a8f742fb137463386f67))
+* **streams:** rename StreamTemplateWriteSettings to StreamWriteSettings ([#2753](https://github.com/cognitedata/cognite-sdk-python/issues/2753)) ([801ee75](https://github.com/cognitedata/cognite-sdk-python/commit/801ee75c61c49024f79701ea10dacf46706b03fc))
+* **transformations:** add external data sources client API ([#2732](https://github.com/cognitedata/cognite-sdk-python/issues/2732)) ([60b6c36](https://github.com/cognitedata/cognite-sdk-python/commit/60b6c36e42c60020198f298ad784580e00c0bdc2))
+
+
+### Bug Fixes
+
+* **records:** validate property paths instead of splitting bare strings ([#2747](https://github.com/cognitedata/cognite-sdk-python/issues/2747)) ([b90a384](https://github.com/cognitedata/cognite-sdk-python/commit/b90a3847d0ee49e5eaa37b8ae980cf1b6fe4d0eb))
+
 ## [8.12.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.11.0...cognite-sdk-python-v8.12.0) (2026-08-05)
 
 
@@ -288,7 +321,7 @@ As of 2025-08-29, changes are grouped as follows
 - The specific exceptions `CogniteDuplicatedError` and `CogniteNotFoundError` should now always be used when appropriate (previously certain API endpoints always used `CogniteAPIError`).
 - `ModelFailedException` has changed name to `CogniteModelFailedError`.
 - For `class Transformation`, which used to have an async `run` method, this is now named `run_async` to unify the overall interface. The same applies to the `cancel` and `jobs` methods for the same class, and `update` and `wait` on `TransformationJob`.
-- **ClientConfig**: `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`. See the [Settings documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings) for details.
+- **ClientConfig**: `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`. See the [Settings documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/stable/settings.html#concurrency-settings) for details.
 - **ClientConfig**: `timeout` default has been increased from 30 sec to 60 sec.
 - **global_config**: New setting `follow_redirects` that controls whether or not to follow redirects. Defaults to `False`.
 - **global_config**: New setting `file_download_chunk_size` that allows you to override the chunk size for streaming file downloads. Defaults to `None` (auto).

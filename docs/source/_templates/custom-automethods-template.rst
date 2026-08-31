@@ -9,6 +9,10 @@
 .. autosummary::
     :toctree:
     :template: custom-accessor-template.rst
+
+{% if "__call__" in members %}
+    {{ name }}.__call__
+{%  endif %}
 {% for item in methods %}
 {%- if item != "__init__" %}
     {{ name }}.{{ item }}

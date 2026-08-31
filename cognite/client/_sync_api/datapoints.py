@@ -1,6 +1,6 @@
 """
 ===============================================================================
-30f1b7fcc4ce65c780d6361683bbe0d1
+499679e86fb6bf2bf4d45ca784b2a86c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -13,9 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 from zoneinfo import ZoneInfo
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.datapoint_tasks import (
-    BaseDpsFetchSubtask,
-)
+from cognite.client._api.datapoint_tasks import BaseDpsFetchSubtask
 from cognite.client._constants import DEFAULT_DATAPOINTS_CHUNK_SIZE
 from cognite.client._sync_api.synthetic_time_series import SyncSyntheticDatapointsAPI
 from cognite.client._sync_api_client import SyncAPIClient
@@ -97,7 +95,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         return_arrays: bool = True,
     ) -> Iterator[DatapointsArray | DatapointsArrayList | Datapoints | DatapointsList]:
         """
-        `Iterate through datapoints in chunks, for one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_
+        `Iterate through datapoints in chunks, for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_.
 
         Note:
             Control memory usage by specifying ``chunk_size_time_series``, how many time series to iterate simultaneously and ``chunk_size_datapoints``,

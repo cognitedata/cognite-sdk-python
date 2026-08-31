@@ -5,7 +5,7 @@ import datetime
 import json
 from abc import abstractmethod
 from collections import ChainMap, defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, MutableSequence, Sequence
 from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
 from functools import cached_property, partial
@@ -37,6 +37,8 @@ from cognite.client.utils._pandas_helpers import (
     convert_dps_to_dataframe,
     convert_tz_for_pandas,
     notebook_display_with_fallback,
+    to_pandas_datetime_index,
+    to_pandas_timestamp,
 )
 from cognite.client.utils._text import (
     convert_all_keys_to_camel_case,
@@ -51,7 +53,9 @@ from cognite.client.utils._time import (
     datetime_to_ms,
     ms_to_datetime,
     parse_str_timezone,
+    timestamp_to_ms,
 )
+from cognite.client.utils.useful_types import is_sequence_not_str
 
 if NUMPY_IS_AVAILABLE:
     import numpy as np
@@ -108,6 +112,125 @@ class StatusCode(IntEnum):
     Good = 0x0
     Uncertain = 0x40000000  # aka 1 << 30 aka 1073741824
     Bad = 0x80000000  # aka 1 << 31 aka 2147483648
+
+
+@dataclass(slots=True, frozen=True)
+class StateDatapointWrite:
+    """A datapoint for a state time series, ready to be inserted.
+
+    A state datapoint carries a numeric value, a string value, or both (they must be consistent
+    per the time series' state mapping). Only datapoints with a bad status code/symbol can have
+    both fields missing.
+
+    Args:
+        timestamp (int | datetime.datetime): Timestamp for the datapoint. Milliseconds since epoch or a timezone-aware datetime object.
+        numeric_value (int | None): The integer state value. Default: None.
+        string_value (str | None): The string state value. Default: None.
+        status_code (int | None): Status code for the datapoint (e.g. ``StatusCode.Bad``). Only one of code and symbol is required. If both are given, they must match. Default: None.
+        status_symbol (str | None): Status symbol for the datapoint (e.g. ``"Bad"``). Default: None.
+    """
+
+    timestamp: int | datetime.datetime
+    numeric_value: int | None = None
+    string_value: str | None = None
+    status_code: int | None = None
+    status_symbol: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.numeric_value is not None or self.string_value is not None:
+            return
+        # Let's fail early if the user has provided a status code/symbol, but we won't go as far as to
+        # check the given code/symbol value; that is the API's job:
+        if self.status_code is None and self.status_symbol is None:
+            raise ValueError(
+                "A state datapoint without numeric/string value must carry a bad status code or symbol "
+                '(e.g. status_symbol="Bad")'
+            )
+
+    def dump(self, camel_case: bool = True) -> dict[str, int | str | dict[str, int | str]]:
+        out: dict[str, int | str | dict[str, int | str]] = {"timestamp": timestamp_to_ms(self.timestamp)}
+        if self.numeric_value is not None:
+            out["numericValue" if camel_case else "numeric_value"] = self.numeric_value
+        if self.string_value is not None:
+            out["stringValue" if camel_case else "string_value"] = self.string_value
+        if status := {k: v for k, v in (("code", self.status_code), ("symbol", self.status_symbol)) if v is not None}:
+            out["status"] = status
+        return out
+
+    @classmethod
+    def load(cls, data: StateDatapointWrite | dict[str, Any]) -> StateDatapointWrite:
+        if isinstance(data, cls):
+            return data
+
+        if not isinstance(data, dict):
+            raise TypeError(
+                f"Each state datapoint must be either a 'StateDatapointWrite' or a 'dict', not {type(data)}"
+            )
+        status = data.get("status") or {}
+        # Note: Contrary to normal load methods, we also accept snake_case here. This is because passing dicts with datapoints
+        #       to be inserted is the "old" way of doing things in the SDK, and we want this process to stay "familiar":
+        return cls(
+            timestamp=data["timestamp"],
+            numeric_value=data.get("numericValue", data.get("numeric_value")),
+            string_value=data.get("stringValue", data.get("string_value")),
+            status_code=status.get("code"),
+            status_symbol=status.get("symbol"),
+        )
+
+
+# Note: Not frozen on purpose, we expect users may build the datapoints list incrementally.
+#       We also use MutableSequence in the type hint.
+@dataclass(frozen=False)
+class StateDatapointsInsert:
+    """A batch of state datapoints to be inserted targeting a single state time series.
+
+    Args:
+        instance_id (NodeId | tuple[str, str]): Instance id of the state time series to insert datapoints into. May be given as a ``NodeId`` or a ``(space, external_id)`` tuple.
+        datapoints (MutableSequence[StateDatapointWrite | dict[str, Any]]): Datapoints to insert. Each datapoint can be a ``StateDatapointWrite`` (or a dict)
+    """
+
+    instance_id: NodeId | tuple[str, str]
+    datapoints: MutableSequence[StateDatapointWrite | dict[str, Any]]
+
+    def __post_init__(self) -> None:
+        # ...but we allow non-mutable sequences:
+        if not is_sequence_not_str(self.datapoints):
+            raise TypeError(f"'datapoints' must be a sequence (e.g. 'list'), not {type(self.datapoints)}")
+
+    @classmethod
+    def load(cls, data: StateDatapointsInsert | dict[str, Any]) -> StateDatapointsInsert:
+        if isinstance(data, cls):
+            return data
+        if not isinstance(data, dict):
+            raise TypeError(f"Expected a 'StateDatapointsInsert' or a 'dict', not {type(data)}")
+        try:
+            # For historic reasons we accept snake_case alternative here. See StateDatapointWrite.load for reasoning
+            instance_id = NodeId.load(data["instanceId"])
+        except KeyError:
+            if (maybe := NodeId._load_if(data.get("instance_id"))) is None:
+                raise
+            instance_id = maybe
+
+        return cls(
+            instance_id=instance_id,
+            # Keep datapoints as raw dicts/objects since the attribute is documented mutable (and the dict type is supported).
+            # We defer using StateDatapointWrite.load().dump() until dump() to avoid double work:
+            datapoints=data["datapoints"],
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {
+            "instanceId" if camel_case else "instance_id": NodeId.load(self.instance_id).dump(
+                camel_case=camel_case, include_instance_type=False
+            ),
+            "datapoints": [StateDatapointWrite.load(dp).dump(camel_case=camel_case) for dp in self.datapoints],
+        }
+
+    def _to_proto_dict(self) -> dict[str, Any]:
+        # Dumps the data in a shape that the protobuf constructor expects for DataPointInsertionItem
+        dumped = self.dump(camel_case=True)
+        dumped["stateDatapoints"] = {"datapoints": dumped.pop("datapoints")}
+        return dumped
 
 
 @dataclass(slots=True, frozen=True)
@@ -541,7 +664,7 @@ class Datapoint(CogniteResource):
 
         timestamp = dumped.pop("timestamp")
         tz = convert_tz_for_pandas(self.timezone)
-        return pd.DataFrame(dumped, index=[pd.Timestamp(timestamp, unit="ms", tz=tz)])
+        return pd.DataFrame(dumped, index=[to_pandas_timestamp(timestamp, tz=tz)])
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -1334,10 +1457,9 @@ class SyntheticDatapoints(CogniteResource):
         """
         pd = local_import("pandas")
 
-        tz = convert_tz_for_pandas(self.timezone)
-        index = pd.to_datetime(self.timestamp, unit="ms", utc=True)
-        if tz is not None:
-            index = index.tz_convert(tz)
+        # Note: Unlike `create_timestamp_index`, we deliberately keep the index UTC-aware even when no
+        # timezone is given (this is existing/documented behavior for synthetic datapoints):
+        index = to_pandas_datetime_index(self.timestamp, self.timezone, assume_utc=True)
 
         data: dict[str, Any] = {self.expression: self.value}
         # Only include error column if requested AND there's at least one non-null error
@@ -1808,8 +1930,8 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
         df = pd.DataFrame(rows, index=index_values)
         df.index.name = "identifier"
 
-        # Drop status columns if they are all null
-        if include_status:
+        # Drop status columns if they are all null (empty lists have no such columns)
+        if include_status and "status_code" in df.columns:
             if df["status_code"].isna().all():  # symbol column will also be null
                 df = df.drop(columns=["status_code", "status_symbol"])
 

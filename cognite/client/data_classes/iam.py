@@ -18,6 +18,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.capabilities import Capability, ProjectCapabilityList
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._pandas_helpers import to_pandas_timestamp
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -192,23 +193,6 @@ class Group(GroupCore):
             members=resource.get("members"),
         )
 
-    def to_pandas(
-        self,
-        expand_metadata: bool = False,
-        metadata_prefix: str = "metadata.",
-        ignore: list[str] | None = None,
-        camel_case: bool = False,
-        convert_timestamps: bool = True,
-    ) -> pd.DataFrame:
-        df = super().to_pandas(expand_metadata, metadata_prefix, ignore, camel_case, convert_timestamps)
-
-        # The API uses -1 to represent "no deleted time". It looks weird if deleted = False,
-        # but deleted_time = 1969-12-31 23:59:59.999:
-        key = "deletedTime" if camel_case else "deleted_time"
-        if self.deleted_time == -1 and convert_timestamps and key in df.index:
-            df.at[key, "value"] = local_import("pandas").NaT
-        return df
-
 
 class GroupWrite(GroupCore):
     """Groups are used to give principals the capabilities to access CDF resources. One principal
@@ -289,7 +273,7 @@ class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformer
         key = "deletedTime" if camel_case else "deleted_time"
         if convert_timestamps and key in df:
             pd = local_import("pandas")
-            df.loc[df[key] == pd.Timestamp(-1, unit="ms"), key] = pd.NaT
+            df.loc[df[key] == to_pandas_timestamp(-1), key] = pd.NaT
         return df
 
 

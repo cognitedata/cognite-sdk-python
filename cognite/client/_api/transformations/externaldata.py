@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator, Sequence
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -97,32 +97,27 @@ class TransformationExternalDataSourcesAPI(APIClient):
         )
 
     @overload
-    async def upsert(
-        self, data_source: ExternalDataSourceWrite, upsert_mode: Literal["replace"] = "replace"
-    ) -> ExternalDataSource: ...
+    async def create(self, data_source: ExternalDataSourceWrite) -> ExternalDataSource: ...
 
     @overload
-    async def upsert(
-        self, data_source: Sequence[ExternalDataSourceWrite], upsert_mode: Literal["replace"] = "replace"
-    ) -> ExternalDataSourceList: ...
+    async def create(self, data_source: Sequence[ExternalDataSourceWrite]) -> ExternalDataSourceList: ...
 
-    async def upsert(
-        self,
-        data_source: ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite],
-        upsert_mode: Literal["replace"] = "replace",
+    async def create(
+        self, data_source: ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]
     ) -> ExternalDataSource | ExternalDataSourceList:
-        """`Upsert external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/upsertExternalDataSources>`_.
+        """`Create external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/createExternalDataSources>`_.
 
-        Each item replaces the stored data source in full, so every request must contain complete settings
-        including the client secret. Reading a data source never returns the client secret, so re-registering
-        one means constructing a new write object with the secret filled in.
+        Fails with a 409 if any external ID in the request already exists for the project; no items
+        are created in that case. To modify an existing data source, delete it and create a replacement.
 
         Args:
-            data_source (ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]): The data source(s) to create or replace.
-            upsert_mode (Literal['replace']): How existing data sources are updated. Currently only "replace" is supported, which fully replaces the existing data source. Defaults to "replace".
+            data_source (ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]): The data source(s) to create.
 
         Returns:
-            ExternalDataSource | ExternalDataSourceList: The created or replaced data source(s).
+            ExternalDataSource | ExternalDataSourceList: The created data source(s).
+
+        Raises:
+            CogniteDuplicatedError: If an external ID in the request already exists for the project.
 
         Examples:
 
@@ -154,7 +149,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
                 ...         ),
                 ...     ),
                 ... )
-                >>> res = client.transformations.external_data_sources.upsert(data_source)
+                >>> res = client.transformations.external_data_sources.create(data_source)
         """
         self._warning.warn()
         return await self._create_multiple(

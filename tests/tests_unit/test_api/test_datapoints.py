@@ -1,12 +1,17 @@
 from __future__ import annotations
 
+import asyncio
+import gc
+import itertools
 import math
 import re
 import unittest
 from collections.abc import Iterator
+from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
-from random import randint, random, shuffle
+from random import choice, randint, random, shuffle
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 import pytest
@@ -14,15 +19,22 @@ from _pytest.monkeypatch import MonkeyPatch
 from httpx import Response
 from pytest_httpx import HTTPXMock
 
-import cognite.client._api.datapoints as dps_api  # for mocking
+import cognite.client._api.datapoints_io as dps_io  # for mocking
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.datapoints import _InsertDatapoint
-from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
+from cognite.client._api.datapoints_io import StateDatapointsPoster, _InsertDatapoint
+from cognite.client.data_classes import (
+    Datapoint,
+    Datapoints,
+    DatapointsList,
+    LatestDatapointQuery,
+    StateDatapointsInsert,
+    StateDatapointWrite,
+)
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import LatestDatapoint, LatestDatapointList
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._time import datetime_to_ms
-from tests.utils import get_or_raise, get_url, jsgz_load, random_gamma_dist_integer
+from tests.utils import PANDAS_TS_UNIT, get_or_raise, get_url, jsgz_load, random_gamma_dist_integer
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -398,6 +410,90 @@ class TestInsertDatapoints:
         assert all(dump_sem_held), "dp.dump() was called outside the semaphore context"
 
 
+class TestFetchAllDoesNotLeakTaskExceptions:
+    """Regression tests for the following scenario:
+
+    When more than one concurrent datapoints request failed, `EagerDpsFetcher._fetch_all` or
+    `ChunkingDpsFetcher._fetch_until_complete` used to reraise the first exception immediately
+    which would lead to user warnings of the type 'Task exception was not retrieved'.
+    """
+
+    @staticmethod
+    def _make_fails_eventually(counter: Iterator[int]) -> Any:
+        async def fails_eventually() -> Any:
+            if next(counter) == 0:
+                raise ConnectionError("simulated network failure (fast)")
+            await asyncio.sleep(5)
+            raise ConnectionError("simulated network failure (slow)")
+
+        return fails_eventually
+
+    @staticmethod
+    @contextmanager
+    def assert_no_unhandled_asyncio_exceptions() -> Iterator[list[dict[str, Any]]]:
+        loop = asyncio.get_running_loop()
+        captured: list[dict[str, Any]] = []
+
+        def record_exception_context(loop: asyncio.AbstractEventLoop, context: dict[str, Any]) -> None:
+            # 'loop' is required part of call signature but not needed for our purposes
+            captured.append(context)
+
+        loop.set_exception_handler(record_exception_context)
+        try:
+            yield captured
+        finally:
+            loop.set_exception_handler(None)  # Restore default
+
+    async def test_eager_fetcher(self) -> None:
+        # We need to skip __init__ so we use this horrible method:
+        fetcher = object.__new__(dps_io.EagerDpsFetcher)
+        fetcher.all_queries = []
+
+        fails_eventually = self._make_fails_eventually(itertools.count())
+        tasks = [asyncio.create_task(fails_eventually()) for _ in range(3)]
+        futures_dct: dict[asyncio.Task, Any] = {task: SimpleNamespace(parent=SimpleNamespace()) for task in tasks}
+        fetcher._create_initial_tasks = lambda use_numpy: (futures_dct, {})  # type: ignore[method-assign]
+
+        async def consume() -> None:
+            async for _ in fetcher._fetch_all(use_numpy=False):
+                pass
+
+        with self.assert_no_unhandled_asyncio_exceptions() as captured, pytest.raises(ConnectionError):
+            # If tasks aren't cancelled but awaited instead, this will time out well before the
+            # 5s sleep thus failing the test fast rather than just hanging:
+            await asyncio.wait_for(consume(), timeout=1)
+
+        gc.collect()  # Force collection of any would-be-orphaned tasks so a leak would show up
+        assert not futures_dct, "Not every scheduled task's result/exception was retrieved before raising"
+        assert sum(task.cancelled() for task in tasks) == 2, "Sibling tasks should have been cancelled, not awaited"
+        assert not captured, f"asyncio reported unhandled exception(s): {captured}"
+
+    async def test_chunking_fetcher(self) -> None:
+        fetcher = object.__new__(dps_io.ChunkingDpsFetcher)
+        fetcher.semaphore = asyncio.BoundedSemaphore(1)
+        fetcher.agg_subtask_pool, fetcher.raw_subtask_pool = [], []
+        fetcher.subtask_pools = (fetcher.agg_subtask_pool, fetcher.raw_subtask_pool)
+
+        fails_eventually = self._make_fails_eventually(itertools.count())
+        tasks = [asyncio.create_task(fails_eventually()) for _ in range(3)]
+        futures_dct: dict[asyncio.Task, Any] = {task: [] for task in tasks}
+        unknown_failed: list[BaseException] = []
+
+        async def consume() -> None:
+            await fetcher._fetch_until_complete(futures_dct, unknown_failed)
+            await fetcher._raise_if_unknown_failed(unknown_failed, futures_dct)
+
+        with self.assert_no_unhandled_asyncio_exceptions() as captured, pytest.raises(ConnectionError):
+            await asyncio.wait_for(consume(), timeout=1)
+
+        gc.collect()
+        assert not futures_dct, "Not every scheduled task's result/exception was retrieved"
+        assert len(unknown_failed) == 1, "Only the first (fast) failure should be recorded"
+        assert isinstance(unknown_failed[0], ConnectionError)
+        assert sum(task.cancelled() for task in tasks) == 2, "Sibling tasks should have been cancelled, not awaited"
+        assert not captured, f"asyncio reported unhandled exception(s): {captured}"
+
+
 @pytest.fixture
 def mock_delete_datapoints(
     httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
@@ -615,7 +711,9 @@ class TestPandasIntegration:
         import pandas as pd
 
         d = Datapoint(timestamp=0, value=2, max=3)
-        expected_df = pd.DataFrame({"value": [2], "max": [3]}, index=[pd.Timestamp(0, unit="ms")])
+        expected_df = pd.DataFrame(
+            {"value": [2], "max": [3]}, index=[pd.Timestamp(0, unit="ms").as_unit(PANDAS_TS_UNIT)]
+        )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(), check_like=True)
 
     def test_datapoints(self) -> None:
@@ -633,7 +731,7 @@ class TestPandasIntegration:
         expected_df = pd.DataFrame(
             # Since ID is not unique, we use stand-in column names initially, then replace:
             {"first-col": [2, 3, 4.0], "second-col": [3, 4, 5.0]},
-            index=pd.to_datetime(range(1, 4), unit="ms"),
+            index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples(
             [(1, "average"), (1, "step_interpolation")],
@@ -645,11 +743,15 @@ class TestPandasIntegration:
         import pandas as pd
 
         d = Datapoints(id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], average=[2, 3, 4])
-        expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame(
+            {1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT)
+        )
         expected_df.columns = pd.Index([1], name="identifier")
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=False))
 
-        expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame(
+            {1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT)
+        )
         expected_df.columns = pd.MultiIndex.from_tuples([(1, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=True))
 
@@ -668,7 +770,7 @@ class TestPandasIntegration:
         )
         expected_df = pd.DataFrame(
             {"abc": [2, 3, 4.0], "also-abc": [3, 4, 5.0]},
-            index=pd.to_datetime(range(1, 4), unit="ms"),
+            index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples(
             [("abc", "average"), ("abc", "step_interpolation")],
@@ -746,7 +848,7 @@ class TestPandasIntegration:
                 "col4": [3, 4, 5, None],
                 "col5": [1, None, 3, 4.0],
             },
-            index=pd.to_datetime(range(1, 5), unit="ms"),
+            index=pd.to_datetime(range(1, 5), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples(
             [(1, "average"), (1, "step_interpolation"), ("foo", "count"), ("foo", "step_interpolation"), (3, "")],
@@ -760,7 +862,9 @@ class TestPandasIntegration:
         d1 = Datapoints(id=2, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], max=[2, 3, 4])
         d2 = Datapoints(id=3, is_string=False, is_step=False, type="numeric", timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
-        expected_df = pd.DataFrame({1: [2, 3, 4.0], 2: [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame(
+            {1: [2, 3, 4.0], 2: [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT)
+        )
         expected_df.columns = pd.MultiIndex.from_tuples([(2, "max"), (3, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
         expected_df.columns = pd.Index([2, 3], name="identifier")
@@ -774,7 +878,7 @@ class TestPandasIntegration:
         dps_list = DatapointsList([d1, d2])
         expected_df = pd.DataFrame(
             {1: [2, 3, 4.0], 2: [1, None, 3]},
-            index=pd.to_datetime(range(1, 4), unit="ms"),
+            index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples([(2, "max"), (2, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
@@ -791,7 +895,7 @@ class TestPandasIntegration:
 
         expected_df = pd.DataFrame(
             {1: [1, 2, 3, None, None], 2: [None, None, 3, 4, 5]},
-            index=pd.to_datetime(range(1, 6), unit="ms"),
+            index=pd.to_datetime(range(1, 6), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.Index([1, 2], name="identifier")
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
@@ -799,6 +903,10 @@ class TestPandasIntegration:
     def test_datapoints_list_empty(self) -> None:
         dps_list = DatapointsList([])
         assert dps_list.to_pandas().empty
+
+    def test_latest_datapoint_list_empty(self) -> None:
+        latest_list = LatestDatapointList([])
+        assert latest_list.to_pandas().empty
 
     @pytest.mark.allow_no_semaphore
     def test_insert_dataframe_id_and_xid(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
@@ -1075,7 +1183,7 @@ class TestDatapointsPoster:
         async def override_insert_dps(self: Any, payload: list[dict]) -> None:
             calls.append(deepcopy(payload))
 
-        monkeypatch.setattr(dps_api.DatapointsPoster, "_insert_datapoints", override_insert_dps)
+        monkeypatch.setattr(dps_io.DatapointsPoster, "_insert_datapoints", override_insert_dps)
         dps_limit, ts_limit, last_chunk_size = limits
         monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", dps_limit)
         monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", ts_limit)
@@ -1102,7 +1210,7 @@ class TestDatapointsPoster:
         async def override_insert_dps(self: Any, payload: list[dict]) -> None:
             calls.append(deepcopy(payload))
 
-        monkeypatch.setattr(dps_api.DatapointsPoster, "_insert_datapoints", override_insert_dps)
+        monkeypatch.setattr(dps_io.DatapointsPoster, "_insert_datapoints", override_insert_dps)
         dps_limit, ts_limit = randint(200, 2000), randint(2, 20)
         dps_client = cognite_client.time_series.data
         monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", dps_limit)
@@ -1133,3 +1241,125 @@ class TestDatapointsPoster:
             assert 0 < n_dps <= dps_limit
             assert 0 < len(call) <= ts_limit
         assert expected_n_dps == tot_n_dps
+
+
+def create_state_dps_poster(dps_limit: int, ts_limit: int) -> StateDatapointsPoster:
+    # In these unit tests, we don't need the actual DatapointsAPI instance, we just need the
+    # two limit attributes to be set:
+    return StateDatapointsPoster(
+        dps_client=SimpleNamespace(_DPS_INSERT_LIMIT=dps_limit, _POST_DPS_OBJECTS_LIMIT=ts_limit),  # type: ignore [arg-type]
+    )
+
+
+def create_state_dps_insert_items(*args: tuple[Any, list[int]]) -> list[StateDatapointsInsert]:
+    def maybe_dict_maybe_dataclass(ts: int) -> dict[str, int] | StateDatapointWrite:
+        if choice((True, False)):
+            return {"timestamp": ts, "numeric_value": randint(-2, 2)}
+        return StateDatapointWrite(ts, numeric_value=randint(-2, 2))
+
+    return [
+        StateDatapointsInsert(
+            instance_id=instance_id,
+            datapoints=[maybe_dict_maybe_dataclass(ts) for ts in dps],
+        )
+        for instance_id, dps in args
+    ]
+
+
+class TestStateDatapointsPoster:
+    def test_chunks_single_ts_within_dps_limit(self) -> None:
+        poster = create_state_dps_poster(dps_limit=10, ts_limit=100)
+        items = create_state_dps_insert_items((NodeId("sp", "a"), list(range(5))))
+        chunks = tuple(poster._create_payload_chunks(items))  # consume entire iterator
+        assert len(chunks) == 1
+        assert len(chunks[0][0].datapoints) == 5
+
+    def test_chunks_single_ts_split_across_dps_limit(self) -> None:
+        poster = create_state_dps_poster(dps_limit=3, ts_limit=100)
+        items = create_state_dps_insert_items((NodeId("sp", "a"), list(range(7))))
+        chunks = tuple(poster._create_payload_chunks(items))
+        assert len(chunks) == 3
+        assert [len(c[0].datapoints) for c in chunks] == [3, 3, 1]
+
+    def test_chunks_respects_ts_limit(self) -> None:
+        poster = create_state_dps_poster(dps_limit=100, ts_limit=2)
+        items = create_state_dps_insert_items(
+            (NodeId("sp", "a"), [1]),
+            (NodeId("sp", "b"), [2]),
+            (NodeId("sp", "c"), [3]),
+        )
+        chunks = tuple(poster._create_payload_chunks(items))
+        assert len(chunks) == 2
+        assert len(chunks[0]) == 2
+        assert len(chunks[1]) == 1
+
+    def test_chunks_both_limits_interact(self) -> None:
+        poster = create_state_dps_poster(dps_limit=4, ts_limit=2)
+        items = create_state_dps_insert_items(
+            (NodeId("sp", "A"), [1]),
+            (NodeId("sp", "B"), [2, 3]),
+            (NodeId("sp", "C"), [4, 5, 6, 7, 8]),
+        )
+        chunks = tuple(poster._create_payload_chunks(items))
+        assert len(chunks) == 3
+        c1, c2, c3 = chunks
+        assert (len(c1), len(c2), len(c3)) == (2, 1, 1)
+
+        # We expect first chunk to be from A and B (hits ts-limit)
+        # Second chunk to be from C (hits dps-limit)
+        # Third chunk to be from C (last remaining dps)
+        timestamps = [
+            [
+                dp.timestamp if isinstance(dp, StateDatapointWrite) else dp["timestamp"]
+                for insert in chunk
+                for dp in insert.datapoints
+            ]
+            for chunk in chunks
+        ]
+        assert timestamps == [[1, 2, 3], [4, 5, 6, 7], [8]]
+
+        assert c1[0].instance_id == NodeId("sp", "A")
+        assert c1[1].instance_id == NodeId("sp", "B")
+        assert c2[0].instance_id == NodeId("sp", "C")
+        assert c3[0].instance_id == NodeId("sp", "C")
+
+    def test_chunks_empty_items_produce_no_chunks(self) -> None:
+        poster = create_state_dps_poster(dps_limit=10, ts_limit=10)
+        assert tuple(poster._create_payload_chunks([])) == ()
+
+    @pytest.mark.parametrize(
+        "id_a, id_b, exp_a, exp_b",
+        [
+            (NodeId("sp", "a"), NodeId("sp", "b"), 2, 1),
+            (("sp", "a"), ("sp", "b"), 2, 1),
+            (NodeId("sp", "a"), ("sp", "b"), 2, 1),  # mixed forms, distinct nodes
+            (("sp", "x"), NodeId("sp", "x"), 3, 3),  # same node expressed as tuple vs NodeId
+        ],
+    )
+    def test_insert_merges_duplicate_instance_ids(self, id_a: Any, id_b: Any, exp_a: int, exp_b: int) -> None:
+        items = [
+            StateDatapointsInsert(id_a, [StateDatapointWrite(1000, numeric_value=0)]),
+            StateDatapointsInsert(id_b, [StateDatapointWrite(2000, numeric_value=1)]),
+            StateDatapointsInsert(id_a, [StateDatapointWrite(3000, numeric_value=2)]),
+        ]
+        result_iter = StateDatapointsPoster._merge_duplicates(items)
+        assert result_iter is not None
+
+        result = tuple(result_iter)
+        assert all(isinstance(i.instance_id, NodeId) for i in result)
+
+        id_a_node, id_b_node = NodeId.load(id_a), NodeId.load(id_b)
+        a_items = [i for i in result if NodeId.load(i.instance_id) == id_a_node]
+        b_items = [i for i in result if NodeId.load(i.instance_id) == id_b_node]
+        assert sum(len(i.datapoints) for i in a_items) == exp_a
+        assert sum(len(i.datapoints) for i in b_items) == exp_b
+
+        # datapoints per node should keep insertion order:
+        a_ts = [dp.timestamp for i in a_items for dp in i.datapoints]  # type: ignore [union-attr]
+        b_ts = [dp.timestamp for i in b_items for dp in i.datapoints]  # type: ignore [union-attr]
+        assert a_ts == sorted(a_ts)
+        assert b_ts == sorted(b_ts)
+
+    def test_insert_all_empty_is_noop(self) -> None:
+        items = [StateDatapointsInsert(NodeId("sp", "ts"), [])]
+        assert StateDatapointsPoster._merge_duplicates(items) is None

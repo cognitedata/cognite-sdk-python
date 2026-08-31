@@ -1,6 +1,6 @@
 """
 ===============================================================================
-8a68955cabb05edf6b593b4560f01814
+efc34b01e5ba2da8b6d7f803bede9c00
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +8,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -89,33 +89,28 @@ class SyncTransformationExternalDataSourcesAPI(SyncAPIClient):
         return run_sync(self.__async_client.transformations.external_data_sources.list(limit=limit))
 
     @overload
-    def upsert(
-        self, data_source: ExternalDataSourceWrite, upsert_mode: Literal["replace"] = "replace"
-    ) -> ExternalDataSource: ...
+    def create(self, data_source: ExternalDataSourceWrite) -> ExternalDataSource: ...
 
     @overload
-    def upsert(
-        self, data_source: Sequence[ExternalDataSourceWrite], upsert_mode: Literal["replace"] = "replace"
-    ) -> ExternalDataSourceList: ...
+    def create(self, data_source: Sequence[ExternalDataSourceWrite]) -> ExternalDataSourceList: ...
 
-    def upsert(
-        self,
-        data_source: ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite],
-        upsert_mode: Literal["replace"] = "replace",
+    def create(
+        self, data_source: ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]
     ) -> ExternalDataSource | ExternalDataSourceList:
         """
-        `Upsert external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/upsertExternalDataSources>`_.
+        `Create external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/createExternalDataSources>`_.
 
-        Each item replaces the stored data source in full, so every request must contain complete settings
-        including the client secret. Reading a data source never returns the client secret, so re-registering
-        one means constructing a new write object with the secret filled in.
+        Fails with a 409 if any external ID in the request already exists for the project; no items
+        are created in that case. To modify an existing data source, delete it and create a replacement.
 
         Args:
-            data_source (ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]): The data source(s) to create or replace.
-            upsert_mode (Literal['replace']): How existing data sources are updated. Currently only "replace" is supported, which fully replaces the existing data source. Defaults to "replace".
+            data_source (ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]): The data source(s) to create.
 
         Returns:
-            ExternalDataSource | ExternalDataSourceList: The created or replaced data source(s).
+            ExternalDataSource | ExternalDataSourceList: The created data source(s).
+
+        Raises:
+            CogniteDuplicatedError: If an external ID in the request already exists for the project.
 
         Examples:
 
@@ -147,13 +142,9 @@ class SyncTransformationExternalDataSourcesAPI(SyncAPIClient):
                 ...         ),
                 ...     ),
                 ... )
-                >>> res = client.transformations.external_data_sources.upsert(data_source)
+                >>> res = client.transformations.external_data_sources.create(data_source)
         """
-        return run_sync(
-            self.__async_client.transformations.external_data_sources.upsert(
-                data_source=data_source, upsert_mode=upsert_mode
-            )
-        )
+        return run_sync(self.__async_client.transformations.external_data_sources.create(data_source=data_source))
 
     def delete(self, external_id: str | SequenceNotStr[str]) -> None:
         """

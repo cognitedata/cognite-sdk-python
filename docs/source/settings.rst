@@ -49,6 +49,56 @@ You can set global configuration options like this:
 
 You should **assume that these must be set prior to instantiating** an ``AsyncCogniteClient`` or ``CogniteClient`` in order for them to *take effect*.
 
+SSL / Certificate configuration
+--------------------------------
+By default the SDK verifies TLS certificates against the `certifi <https://pypi.org/project/certifi/>`_ CA bundle (Mozilla's curated root list).
+If your environment uses a corporate or custom root CA — for example an internal PKI — you have a few options:
+
+**Option 1: Environment variables (no code change required)**
+
+Set ``SSL_CERT_FILE`` or ``SSL_CERT_DIR`` before starting your process. The SDK's underlying ``httpx`` transport picks these
+up automatically when no custom ``ssl_context`` is configured:
+
+.. code:: bash
+
+    export SSL_CERT_FILE=/etc/ssl/certs/my-corp-bundle.pem
+
+**Option 2: OS trust store**
+
+Use Python's built-in ``ssl`` module to create a context that reads from the operating system's trust store
+(macOS Keychain, Windows Certificate Store, or the system ``/etc/ssl/certs`` directory on Linux).
+This is useful when your IT department pushes corporate root CAs via OS-level policy:
+
+.. code:: python
+
+    import ssl
+    from cognite.client import global_config
+
+    global_config.ssl_context = ssl.create_default_context()
+
+**Option 3: Custom CA bundle file**
+
+Load a specific PEM file directly:
+
+.. code:: python
+
+    import ssl
+    from cognite.client import global_config
+
+    global_config.ssl_context = ssl.create_default_context(cafile="/path/to/ca-bundle.pem")
+
+**Disabling SSL verification entirely** (not recommended outside development):
+
+.. code:: python
+
+    from cognite.client import global_config
+
+    global_config.disable_ssl = True
+
+.. note::
+    ``ssl_context`` and ``SSL_CERT_FILE``/``SSL_CERT_DIR`` must be configured **before the first API request** is made.
+    ``disable_ssl = True`` takes precedence over any ``ssl_context`` that has been set.
+
 Concurrency Settings
 --------------------
 The SDK allows you to control how many concurrent API requests are made for different categories of APIs

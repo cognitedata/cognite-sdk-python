@@ -1,6 +1,6 @@
 """
 ===============================================================================
-c0fa2584c449180c323f8b8b94af8789
+a2a99ff24ede65b8cb87fb19cba0dde7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -1358,7 +1358,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 ...     backup_on_exit=True,
                 ... )
                 >>> def do_work(nodes: NodeList) -> None:
-                ...     print(len(nodes))  # ¯\_(ツ)_/¯
+                ...     print(len(nodes))
                 >>>
                 >>> async with session:  # doctest: +SKIP
                 ...     await session.sync_until_live()
