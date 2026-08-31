@@ -78,6 +78,7 @@ from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._concurrency import CRUDConcurrency
 from cognite.client.utils._pandas_helpers import timestamp_dtype_unit
 from cognite.client.utils._text import random_string
+from cognite.client.utils.useful_types import SequenceNotStr
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -536,7 +537,13 @@ class FakeCogniteResourceGenerator:
             return self.create_value(first_not_none)
         elif container_type is typing.Literal:
             return self._random.choice(args)
-        elif container_type in [list, typing.Sequence, collections.abc.Sequence, collections.abc.Collection]:
+        elif container_type in [
+            list,
+            typing.Sequence,
+            collections.abc.Sequence,
+            collections.abc.Collection,
+            SequenceNotStr,
+        ]:
             return [self.create_value(first_not_none) for _ in range(3)]
         elif container_type in [dict, collections.abc.MutableMapping, collections.abc.Mapping]:
             if first_not_none is None:
