@@ -26,6 +26,7 @@ from cognite.client._api.datapoints_io import (
     DatapointsPoster,
     EagerDpsFetcher,
     RetrieveLatestDpsFetcher,
+    StateDatapointsPoster,
     _InsertDatapoint,
 )
 from cognite.client._api.synthetic_time_series import SyntheticDatapointsAPI
@@ -40,6 +41,7 @@ from cognite.client.data_classes import (
     LatestDatapoint,
     LatestDatapointList,
     LatestDatapointQuery,
+    StateDatapointsInsert,
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import Aggregate
@@ -48,6 +50,7 @@ from cognite.client.utils._auxiliary import (
     is_positive_int,
     split_into_chunks,
 )
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import to_pandas_timestamp
@@ -84,6 +87,12 @@ class DatapointsAPI(APIClient):
         self._POST_DPS_OBJECTS_LIMIT = 10_000
 
         self.query_validator = _DpsQueryValidator(dps_limit_raw=self._DPS_LIMIT_RAW, dps_limit_agg=self._DPS_LIMIT_AGG)
+        self._insert_states_warning = FeaturePreviewWarning(
+            api_maturity="beta",
+            sdk_maturity="alpha",
+            feature_name="State time series datapoints",
+            pluralize=True,
+        )
 
     def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
@@ -1525,6 +1534,8 @@ class DatapointsAPI(APIClient):
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
 
+            State time series are not supported by this method; use :meth:`insert_states` instead.
+
         Examples:
 
             Your datapoints can be a list of tuples where the first element is the timestamp and the second element is the value.
@@ -1615,6 +1626,8 @@ class DatapointsAPI(APIClient):
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
 
+            State time series are not supported by this method; use :meth:`insert_states` instead.
+
         Examples:
 
             Your datapoints can be a list of dictionaries, each containing datapoints for a different (presumably) time series. These dictionaries
@@ -1692,6 +1705,113 @@ class DatapointsAPI(APIClient):
         if not isinstance(datapoints, Sequence):
             raise TypeError("Input to 'insert_multiple' must be a list of dictionaries")
         await DatapointsPoster(self).insert(datapoints)
+
+    async def insert_states(self, items: StateDatapointsInsert | Sequence[StateDatapointsInsert]) -> None:
+        """Insert datapoints into one or more state time series.
+
+        State time series are a specialized time series type designed for tracking discrete operational
+        states of industrial equipment. Unlike numeric or string time series, they have a predefined set
+        of valid states and support specialized aggregations optimized for analyzing state changes over
+        time. Each state is a ``(numericValue, stringValue)`` pair, e.g. ``(1, "on")`` or ``(0, "off")``,
+        and the set of valid pairs for a given time series is defined by its associated state set.
+
+        Each datapoint may carry a numeric value, a string value, or both (they must be consistent
+        with the time series' state set). It may also carry only a status code/symbol, e.g. to mark a
+        period as ``Bad``.
+
+        Warning:
+            State time series are in `public preview <https://docs.cognite.com/cdf/product_feature_status#public-preview>`_.
+
+        Args:
+            items (StateDatapointsInsert | Sequence[StateDatapointsInsert]): One ``StateDatapointsInsert`` per target state time series. Each carries the ``instance_id`` and the datapoints to write.
+
+        Examples:
+
+            Insert state datapoints into a state time series, by using the numeric state values:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes import (
+                ...     StateDatapointsInsert,
+                ...     StateDatapointWrite,
+                ...     StatusCode,
+                ... )
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> from datetime import datetime
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>>
+                >>> to_insert = StateDatapointsInsert(
+                ...     instance_id=NodeId("my-space", "first-state-ts"),
+                ...     datapoints=[
+                ...         StateDatapointWrite(1700000000000, -1),
+                ...         StateDatapointWrite(1700000001000, 13),
+                ...     ],
+                ... )
+                >>> client.time_series.data.insert_states(to_insert)
+
+            To insert into multiple state time series, simply pass a list of ``StateDatapointsInsert`` objects:
+
+                >>> second_insert = StateDatapointsInsert(
+                ...     instance_id=("my-space", "second-state-ts"),  # tuple form is accepted
+                ...     datapoints=[
+                ...         StateDatapointWrite(datetime(2018, 7, 2), 42),
+                ...         StateDatapointWrite(datetime(2018, 7, 8), 0),
+                ...     ],
+                ... )
+                >>> client.time_series.data.insert_states([to_insert, second_insert])
+
+            The datapoints to insert can also be given by the string state value (or a matching combination).
+            Status codes can also be specified:
+
+                >>> datapoints = [
+                ...     StateDatapointWrite(11, numeric_value=0),
+                ...     StateDatapointWrite(12, string_value="OFF"),
+                ...     StateDatapointWrite(13, numeric_value=0, string_value="OFF"),
+                ...     StateDatapointWrite(14, 1, status_code=StatusCode.Good),
+                ...     StateDatapointWrite(15, string_value="OFF", status_symbol=StatusCode.Uncertain),
+                ...     # Datapoints marked bad can have no numeric/string value:
+                ...     StateDatapointWrite(16, status_code=StatusCode.Bad),
+                ... ]
+
+            Datapoints can also be given as dicts, matching the API's JSON shape (both snake_case and camelCase
+            accepted). Note that status codes/symbols must be given as a nested ``status`` sub-dict:
+
+                >>> client.time_series.data.insert_states(
+                ...     [
+                ...         StateDatapointsInsert(
+                ...             instance_id=NodeId("my-space", "my-state-ts"),
+                ...             datapoints=[
+                ...                 {
+                ...                     "timestamp": 1700000000000,
+                ...                     "numeric_value": 0,
+                ...                     "string_value": "off",
+                ...                 },
+                ...                 {
+                ...                     "timestamp": 1700000001000,
+                ...                     "numeric_value": 1,
+                ...                     "string_value": "on",
+                ...                 },
+                ...                 {"timestamp": 1700000002000, "status": {"symbol": "Bad"}},
+                ...             ],
+                ...         )
+                ...     ]
+                ... )
+
+        """
+        self._insert_states_warning.warn()
+        if isinstance(items, StateDatapointsInsert):
+            items = [items]
+        elif not isinstance(items, Sequence):
+            raise TypeError(
+                "Input to 'insert_states' must be a 'StateDatapointsInsert' or sequence of 'StateDatapointsInsert', "
+                f"not {type(items).__name__}"
+            )
+
+        for item in items:
+            if not isinstance(item, StateDatapointsInsert):
+                raise TypeError(f"Each element of 'items' must be a 'StateDatapointsInsert', not {type(item).__name__}")
+
+        await StateDatapointsPoster(self).insert(items)
 
     async def delete_range(
         self,
