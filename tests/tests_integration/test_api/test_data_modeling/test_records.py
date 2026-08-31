@@ -196,22 +196,27 @@ class TestRecordsIntegration:
         """
         tag = ingested_records[0].sources[0].properties["name"]
         tagged = filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag)
-        seen: list[str] = []
-        pages = 0
-        for page in cognite_client.data_modeling.records.sync(
-            stream_id=mutable_stream.external_id,
-            initialize_cursor="1m-ago",
-            sources=sources,
-            filter=tagged,
-        ):
-            assert page.cursor is not None
-            seen.extend(record.external_id for record in page)
-            pages += 1
-            assert pages < 20, "sync did not exhaust the feed"
-            if page.has_next is False:
-                break
 
-        assert set(seen) == {record.external_id for record in ingested_records}
+        def sync_yields_every_record() -> None:
+            seen: list[str] = []
+            pages = 0
+            for page in cognite_client.data_modeling.records.sync(
+                stream_id=mutable_stream.external_id,
+                initialize_cursor="1m-ago",
+                sources=sources,
+                filter=tagged,
+            ):
+                assert page.cursor is not None
+                seen.extend(record.external_id for record in page)
+                pages += 1
+                assert pages < 20, "sync did not exhaust the feed"
+                if page.has_next is False:
+                    break
+
+            assert set(seen) == {record.external_id for record in ingested_records}
+
+        # The change feed lags behind filter queries, so the records may not all be in it yet.
+        assert_eventually(sync_yields_every_record)
 
     def test_sync_iterates_until_feed_exhausted(
         self,
@@ -228,22 +233,28 @@ class TestRecordsIntegration:
         """
         tag = ingested_records[0].sources[0].properties["name"]
         tagged = filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag)
-        seen: list[str] = []
-        pages = 0
-        for page in cognite_client.data_modeling.records.sync(
-            stream_id=mutable_stream.external_id,
-            initialize_cursor="1m-ago",
-            sources=sources,
-            filter=tagged,
-            chunk_size=2,
-        ):
-            assert page.cursor is not None
-            seen.extend(record.external_id for record in page)
-            pages += 1
-            assert pages < 20, "sync did not exhaust the feed"
 
-        assert pages > 1, "expected the 3 ingested records to span more than one chunk of size 2"
-        assert set(seen) == {record.external_id for record in ingested_records}
+        def feed_yields_every_record_in_chunks() -> None:
+            seen: list[str] = []
+            pages = 0
+            for page in cognite_client.data_modeling.records.sync(
+                stream_id=mutable_stream.external_id,
+                initialize_cursor="1m-ago",
+                sources=sources,
+                filter=tagged,
+                chunk_size=2,
+            ):
+                assert page.cursor is not None
+                seen.extend(record.external_id for record in page)
+                pages += 1
+                assert pages < 20, "sync did not exhaust the feed"
+
+            # Asserted before the page count: a short feed is why the chunking assert would trip.
+            assert set(seen) == {record.external_id for record in ingested_records}
+            assert pages > 1, "expected the 3 ingested records to span more than one chunk of size 2"
+
+        # The change feed lags behind filter queries, so the records may not all be in it yet.
+        assert_eventually(feed_yields_every_record_in_chunks)
 
     @pytest.mark.skipif(
         datetime.now(timezone.utc) < datetime(2026, 9, 4, tzinfo=timezone.utc),
