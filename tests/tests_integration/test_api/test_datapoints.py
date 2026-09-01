@@ -870,28 +870,28 @@ def use_beta_header_for_dps_client(async_client: AsyncCogniteClient) -> Iterator
 @pytest.mark.dsl
 @pytest.mark.usefixtures("use_beta_header_for_dps_client")
 class TestRetrieveStateDatapoints:
-    def test_retrieve_state_datapoints_gets_correct_ts_type(
+    def test_retrieve_state_datapoints_empty(
         self,
         cognite_client: CogniteClient,
         empty_state_ts: NodeApplyResult,
     ) -> None:
-        # Note: We do not have retrieve support yet, but it works as long as the time series is empty.
-        # TODO: Once retrieve works, this can be reworked into a more meaningful test.
         ts_id = empty_state_ts.as_id()
-        ts = cognite_client.time_series.retrieve(instance_id=ts_id)
-        assert ts is not None
-        if ts.count() > 0:
-            pytest.skip("Time series is not empty, so in order to not break CI for no reason, we skip for now")
-
-        dps = cognite_client.time_series.data.retrieve(instance_id=ts_id)
-        assert isinstance(dps, Datapoints)
-        assert dps.type == "state"
-        assert dps.to_pandas().empty
-
-        dps_arr = cognite_client.time_series.data.retrieve_arrays(instance_id=ts_id)
-        assert isinstance(dps_arr, DatapointsArray)
-        assert dps_arr.type == "state"
-        assert dps_arr.to_pandas().empty
+        dps_lst = cognite_client.time_series.data.retrieve(
+            instance_id=[
+                DatapointsQuery(instance_id=ts_id, limit=0),
+                DatapointsQuery(instance_id=ts_id, limit=1),  # should also be empty
+            ],
+            start="1h-ahead",
+            end="2h-ahead",
+        )
+        for dps in dps_lst:
+            assert isinstance(dps, Datapoints)
+            assert dps.type == "state"
+            assert len(dps) == 0
+            assert dps.timestamp == []
+            assert dps.value is None
+            assert dps.numeric_states == []
+            assert dps.string_states == []
 
 
 @pytest.fixture
