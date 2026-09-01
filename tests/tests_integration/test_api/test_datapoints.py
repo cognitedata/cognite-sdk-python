@@ -7,6 +7,7 @@ python scripts/create_ts_for_integration_tests.py
 
 from __future__ import annotations
 
+import functools
 import itertools
 import math
 import random
@@ -67,7 +68,7 @@ from cognite.client.data_classes.datapoints import (
     MinDatapointWithStatus,
 )
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
-from cognite.client.utils._text import to_camel_case, to_snake_case
+from cognite.client.utils._text import random_string, to_camel_case, to_snake_case
 from cognite.client.utils._time import (
     MAX_TIMESTAMP_MS,
     MIN_TIMESTAMP_MS,
@@ -703,6 +704,101 @@ class TestInsertStateDatapoints:
             [StateDatapointsInsert(instance_id=state_ts.as_id(), datapoints=datapoints)]
         )
 
+    @pytest.mark.usefixtures("use_beta_header_for_dps_client")
+    def test_insert_state_dps_then_modify_state_set(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        space_for_time_series: Space,
+        request: pytest.FixtureRequest,
+    ) -> None:
+        # This test requires quite a lot of setup, so stay with me:
+        # 1. We need a (small) state set and a time series that uses it
+        # 2. Some datapoints, at least one per state
+        xid = f"dms-state-set-modify-test-{random_string(10)}"
+        node_id = NodeId(space_for_time_series.space, xid)
+        apply_ss_fn = functools.partial(
+            _create_state_set,
+            cognite_client=cognite_client,
+            async_client=async_client,
+            space=space_for_time_series,
+            external_id=xid,
+            name="PySDK integration test state set for modify test",
+        )
+        ss = apply_ss_fn(states=[StateSetEntry(10, "ten"), StateSetEntry(20, "twenty")])
+
+        # We create a time series with the same NodeId and add some cleanup logic to delete it after
+        # the test is done (or if it fails). The beauty of Data Modeling is that a node can be its
+        # own state set as well heh.. at least makes clean-up easier.
+        request.addfinalizer(lambda: cognite_client.data_modeling.instances.delete(node_id))
+        _create_state_time_series(
+            external_id=xid,
+            cognite_client=cognite_client,
+            async_client=async_client,
+            space_for_time_series=space_for_time_series,
+            state_set=ss,
+        )
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=node_id,
+                datapoints=[
+                    StateDatapointWrite(timestamp=1010, status_symbol="Bad"),
+                    StateDatapointWrite(timestamp=2020, numeric_value=10),
+                    StateDatapointWrite(timestamp=3030, string_value="ten"),
+                    StateDatapointWrite(timestamp=4040, numeric_value=20),
+                    StateDatapointWrite(timestamp=5050, string_value="twenty"),
+                ],
+            )
+        )
+        # Now, the real test begins:
+        # 3. Implicitly drop the state with numeric value 20
+        # 4. Add new state with numeric value 30:
+        ss = apply_ss_fn(states=[StateSetEntry(10, "ten"), StateSetEntry(30, "thirty")])
+
+        # 5. Insert new datapoints into the same time series:
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=node_id,
+                datapoints=[
+                    StateDatapointWrite(timestamp=6060, numeric_value=10),
+                    StateDatapointWrite(timestamp=7070, string_value="ten"),
+                    StateDatapointWrite(timestamp=8080, numeric_value=30),
+                    StateDatapointWrite(timestamp=9090, string_value="thirty"),
+                ],
+            )
+        )
+        dps_with_bad, dps_no_bad = cognite_client.time_series.data.retrieve(
+            instance_id=[
+                DatapointsQuery(instance_id=node_id, ignore_bad_datapoints=False),
+                DatapointsQuery(instance_id=node_id, ignore_bad_datapoints=True),
+            ],
+            limit=50,
+        )
+        exp_numeric_states = [10, 10, 20, 20, 10, 10, 30, 30]
+        exp_string_states = ["ten", "ten", None, None, "ten", "ten", "thirty", "thirty"]
+        assert dps_no_bad.numeric_states == exp_numeric_states
+        assert dps_no_bad.string_states == exp_string_states
+
+        # Ensure the bad datapoint with "double None" is present in the "dont ignore bad" response:
+        assert dps_with_bad.string_states == [None, *exp_string_states]
+        assert dps_with_bad.numeric_states == [None, *exp_numeric_states]
+
+        # Ensure writing state dp with 20 or "twenty" now fails:
+        with pytest.raises(CogniteAPIError) as e:
+            cognite_client.time_series.data.insert_states(
+                StateDatapointsInsert(
+                    instance_id=node_id,
+                    datapoints=[
+                        StateDatapointWrite(timestamp=101010, numeric_value=20),
+                        StateDatapointWrite(timestamp=111110, string_value="twenty"),
+                    ],
+                )
+            )
+        assert e.value.code == 400
+        contains_numeric = "numericValue 20 is not part of the state set" in e.value.message
+        contains_string = 'stringValue "twenty" is not part of the state set' in e.value.message
+        assert contains_numeric or contains_string
+
     def test_insert_duplicate_instance_ids_in_same_request(
         self,
         cognite_client: CogniteClient,
@@ -764,7 +860,7 @@ def empty_state_ts(
     )
 
 
-@pytest.fixture(scope="class")
+@pytest.fixture
 def use_beta_header_for_dps_client(async_client: AsyncCogniteClient) -> Iterator[None]:
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(async_client.time_series.data, "_api_subversion", "beta")
