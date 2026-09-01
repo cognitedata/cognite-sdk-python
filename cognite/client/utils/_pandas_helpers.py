@@ -136,6 +136,8 @@ def concat_dps_dataframe_list(
     include_granularity_name: bool,
     include_status: bool,
     include_unit: bool,
+    exclude_numeric_states: bool,
+    exclude_string_states: bool,
 ) -> pd.DataFrame:
     import pandas as pd
 
@@ -153,7 +155,15 @@ def concat_dps_dataframe_list(
         )
     # Since we use a MultiIndex for the dataframe columns, these do not join nicely in pd.concat, so we need
     # to do that manually ourselves after combining.
-    columns_lst = [_extract_column_info_from_dps_for_dataframe(dps, include_status=include_status) for dps in dps_lst]
+    columns_lst = [
+        _extract_column_info_from_dps_for_dataframe(
+            dps,
+            include_status=include_status,
+            exclude_numeric_states=exclude_numeric_states,
+            exclude_string_states=exclude_string_states,
+        )
+        for dps in dps_lst
+    ]
     counter = itertools.count()  # Ensure unique column names initially
     dfs = [
         pd.DataFrame(
@@ -269,9 +279,16 @@ def convert_dps_to_dataframe(
     include_granularity_name: bool,
     include_status: bool,
     include_unit: bool,
+    exclude_numeric_states: bool,
+    exclude_string_states: bool,
 ) -> pd.DataFrame:
     pd = local_import("pandas")
-    columns = _extract_column_info_from_dps_for_dataframe(dps, include_status=include_status)
+    columns = _extract_column_info_from_dps_for_dataframe(
+        dps,
+        include_status=include_status,
+        exclude_numeric_states=exclude_numeric_states,
+        exclude_string_states=exclude_string_states,
+    )
     df = pd.DataFrame(
         # We initially use integer indexing to allow duplicate column names:
         {i: col.as_array() for i, col in enumerate(columns)},
