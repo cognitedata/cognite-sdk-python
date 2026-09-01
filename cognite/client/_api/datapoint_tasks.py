@@ -996,6 +996,9 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         return Datapoints(timestamp=[], **self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _get_result(self) -> Datapoints | DatapointsArray:
+        if self.is_state_dps:
+            raise NotImplementedError("Retrieving aggregate state datapoints is not yet supported.")
+
         if not self.ts_data or self.query.limit == 0:
             return self._create_empty_result()
 
