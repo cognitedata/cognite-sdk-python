@@ -22,7 +22,7 @@ from typing import (
 from zoneinfo import ZoneInfo
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
-from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
+from cognite.client._proto.data_point_list_response_pb2 import TIMESERIES_TYPE_STATE, DataPointListItem, TimeSeriesType
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
@@ -39,12 +39,14 @@ from cognite.client.utils._datapoints import (
     AggregateDatapoints,
     DatapointsRaw,
     DpsUnpackFns,
+    StateDatapoints,
     _DataContainer,
     create_aggregates_arrays_from_dps_container,
     create_aggregates_list_from_dps_container,
     create_array_from_dps_container,
     create_list_from_dps_container,
     create_object_array_from_container,
+    create_state_lists_from_dps_container,
     decide_numpy_dtype_from_is_string,
     ensure_int,
     ensure_int_numpy,
@@ -527,6 +529,7 @@ class BaseTaskOrchestrator(ABC):
         self.raw_dtype_numpy: type[np.object_] | type[np.float64] | None = None
         self._is_done = False
         self._final_result: Datapoints | DatapointsArray | None = None
+        self._is_state_dps: bool
 
         self.ts_data: _DataContainer = defaultdict(list)
         self.dps_data: _DataContainer = defaultdict(list)
@@ -580,6 +583,13 @@ class BaseTaskOrchestrator(ABC):
             return 0
         return len(self.ts_data[FIRST_IDX][0])
 
+    @property
+    def is_state_dps(self) -> bool:
+        return self._is_state_dps
+
+    def set_is_state_status(self, ts_type: TimeSeriesType) -> None:
+        self._is_state_dps = ts_type == TIMESERIES_TYPE_STATE
+
     def _extract_first_dps_batch(self, first_dps_batch: DataPointListItem, first_limit: int) -> None:
         dps = get_datapoints_from_proto(first_dps_batch)
         self._store_ts_info(first_dps_batch)
@@ -589,6 +599,7 @@ class BaseTaskOrchestrator(ABC):
         self._store_first_batch(dps, first_limit)
 
     def _store_ts_info(self, res: DataPointListItem) -> None:
+        self.set_is_state_status(res.type)
         self.ts_info.update(get_ts_info_from_proto(res))
         self.ts_info["timezone"] = self.query.original_timezone
         self.ts_info["granularity"] = self.query.original_granularity  # show '1quarter', not '3mo'
