@@ -847,14 +847,19 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             self.dps_data[idx].append(arr)
             if missing_idxs:
                 self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
+
         if self.query.include_status:
             self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
             self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol_numpy(dps))
 
     def _unpack_and_store_basic(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:
         self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
+
         if self.query.ignore_bad_datapoints:
-            self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps(dps))
+            if self.is_state_dps:
+                self.dps_data[idx].append(DpsUnpackFns.extract_raw_num_and_str_state_dps(cast(StateDatapoints, dps)))
+            else:
+                self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps(dps))
         else:
             self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_dps(dps))
         if self.query.include_status:
