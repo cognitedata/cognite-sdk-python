@@ -187,7 +187,7 @@ class BasicAsyncAPIClient:
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         self._config = config
         self._api_version = api_version
-        self._api_subversion = config.api_subversion
+        self.__api_subversion_override: str | None = None
         self._cognite_client = cognite_client
         self._init_async_http_clients()
 
@@ -206,6 +206,21 @@ class BasicAsyncAPIClient:
             config=AsyncHTTPClientWithRetryConfig(),
             refresh_auth_header=self._refresh_auth_header,
         )
+
+    @property
+    def _api_subversion(self) -> str:
+        """Get the API subversion to use for this API class.
+
+        Uses the API subversion from the ClientConfig, unless specifically overridden. To reset the override,
+        simply set `_api_subversion` to None.
+        """
+        if self.__api_subversion_override is None:
+            return self._config.api_subversion
+        return self.__api_subversion_override
+
+    @_api_subversion.setter
+    def _api_subversion(self, value: str | None) -> None:
+        self.__api_subversion_override = value
 
     def __getstate__(self) -> dict[str, Any]:
         """Prepare object for pickling by removing unpicklable async clients."""
