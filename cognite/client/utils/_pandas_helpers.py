@@ -308,24 +308,41 @@ def convert_dps_to_dataframe(
 class _DpsColumnInfo:
     """
     Used when converting Datapoints/DatapointsArray/DatapointsList/DatapointsArrayList to pandas DataFrame to help
-    avoid the madness of how many columns we should end up with based on status codes/symbols, number of aggregates etc.
+    avoid the absolute madness of how many columns we should end up:
+    - the raw datapoints (easy!)
+    - the number of classic aggregates (10+, but just 1 value per granularity interval)
+    - status codes & symbols (2 extra columns, if requested)
+    - state datapoints (2 columns, numeric and string states)
 
-    A single Datapoints/DatapointsArray can result in 10+ columns from aggregates, and 1 or 3 columns from raw datapoints,
-    with or without the 2 extra status info columns.
+    ...and not yet implemented, but I'm scared:
+    - state aggregate datapoints ("arbitrary" number of states, leading to possibly 200+ columns (1 value per state per gran. interval))
+
+    Thus, a single Datapoints/DatapointsArray can result in anything between 1 to 300 columns. Yey.
     """
 
     column_id: NodeId | str | int
-    data: list[float] | list[str] | list[int] | NumpyUInt32Array | NumpyInt64Array | NumpyFloat64Array | NumpyObjArray
+    data: (
+        list[float]
+        | list[str]
+        | list[str | None]
+        | list[int]
+        | NumpyUInt32Array
+        | NumpyInt64Array
+        | NumpyFloat64Array
+        | NumpyObjArray
+    )
     is_string: bool | None = None
     is_array: bool = False
     aggregate: str | None = None
     granularity: str | None = None
     unit_xid: str | None = None
     status_info: Literal["code", "symbol"] | None = None
+    state_type: Literal["numeric", "string"] | None = None
 
     def as_multi_index_tuple(self, include_aggregate: bool, include_granularity: bool, include_unit: bool) -> tuple:
         return (
             self.column_id,
+            self.state_type,
             self.status_info,  # since these split to separate cols, they are already filtered out if not wanted
             self.aggregate if include_aggregate else None,
             self.granularity if include_granularity else None,
