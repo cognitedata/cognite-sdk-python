@@ -805,7 +805,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             if not dp:
                 continue
             ts: list[int] | NumpyInt64Array = [dp[0]]
-            value: list[float | str] | NumpyFloat64Array | NumpyObjArray = [dp[1]]
+            value: list[float | str | tuple[int, str | None]] | NumpyFloat64Array | NumpyObjArray = [dp[1]]
             if self.use_numpy:
                 ts = np.array(ts, dtype=np.int64)
                 value = np.array(value, dtype=self.raw_dtype_numpy)
@@ -1008,6 +1008,9 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         return Datapoints(**self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:  # type: ignore [override]
+        if self.is_state_dps:
+            raise NotImplementedError("Retrieving aggregate state datapoints is not yet supported.")
+
         # Object aggregates are unpacked similarly for basic and numpy and only converted later (for numpy)
         if self.object_aggs:
             for agg, unpack_fn in zip(self.object_aggs, self.object_agg_unpack_fns):
