@@ -701,6 +701,8 @@ class Datapoint(CogniteResource):
         return cls(
             timestamp=resource["timestamp"],
             value=resource.get("value"),
+            numeric_state=resource.get("numericState"),
+            string_state=resource.get("stringState"),
             average=resource.get("average"),
             max=resource.get("max"),
             max_datapoint=max_datapoint,
