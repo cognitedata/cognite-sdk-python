@@ -828,7 +828,13 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             self._unpack_and_store_basic(idx, dps)
 
     def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:
+        if self.is_state_dps:
+            raise NotImplementedError(
+                "Retrieving raw state datapoints using `retrieve_arrays(...)` is not yet supported. "
+                "Please use `retrieve(...)` instead."
+            )
         self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
+
         assert self.raw_dtype_numpy is not None
         if self.query.ignore_bad_datapoints:
             self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
