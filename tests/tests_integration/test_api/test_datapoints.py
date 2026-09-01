@@ -593,7 +593,7 @@ def _create_state_set(
         name=name,
     )
     with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(async_client.config, "api_subversion", "beta")
+        mp.setattr(async_client.data_modeling.instances, "_api_subversion", "beta")
         (node,) = cognite_client.data_modeling.instances.apply(state_set_apply).nodes
     return node
 
