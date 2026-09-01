@@ -823,32 +823,37 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:  # type: ignore [override]
         if self.use_numpy:
-            self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
-            assert self.raw_dtype_numpy is not None
-            if self.query.ignore_bad_datapoints:
-                self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
-            else:
-                # After this step, missing values (represented with None) will become NaNs and thus become
-                # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
-                # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
-                # use the DatapointsArray to replicate datapoints (exactly).
-                arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps, self.raw_dtype_numpy)
-                self.dps_data[idx].append(arr)
-                if missing_idxs:
-                    self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
-            if self.query.include_status:
-                self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
-                self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol_numpy(dps))
-
+            self._unpack_and_store_numpy(idx, dps)
         else:
-            self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
-            if self.query.ignore_bad_datapoints:
-                self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps(dps))
-            else:
-                self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_dps(dps))
-            if self.query.include_status:
-                self.status_code[idx].append(DpsUnpackFns.extract_status_code(dps))
-                self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol(dps))
+            self._unpack_and_store_basic(idx, dps)
+
+    def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:
+        self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
+        assert self.raw_dtype_numpy is not None
+        if self.query.ignore_bad_datapoints:
+            self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
+        else:
+            # After this step, missing values (represented with None) will become NaNs and thus become
+            # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
+            # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
+            # use the DatapointsArray to replicate datapoints (exactly).
+            arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps, self.raw_dtype_numpy)
+            self.dps_data[idx].append(arr)
+            if missing_idxs:
+                self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
+        if self.query.include_status:
+            self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
+            self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol_numpy(dps))
+
+    def _unpack_and_store_basic(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:
+        self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
+        if self.query.ignore_bad_datapoints:
+            self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps(dps))
+        else:
+            self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_dps(dps))
+        if self.query.include_status:
+            self.status_code[idx].append(DpsUnpackFns.extract_status_code(dps))
+            self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol(dps))
 
     def _store_first_batch(self, dps: DatapointsAny, first_limit: int) -> None:
         if self.query.include_outside_points:
