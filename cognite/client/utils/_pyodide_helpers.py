@@ -4,6 +4,7 @@ import logging
 import os
 
 import cognite.client as cc  # Do not import individual entities
+from cognite.client._version import __api_subversion__
 from cognite.client.config import ClientConfig, global_config
 from cognite.client.credentials import CredentialProvider
 
@@ -116,7 +117,7 @@ class FusionNotebookConfig(ClientConfig):
     def __init__(
         self,
         client_name: str = "DSHubLite",
-        api_subversion: str | None = None,
+        api_subversion: str = __api_subversion__,
         headers: dict[str, str] | None = None,
         timeout: int | None = None,
         file_transfer_timeout: int | None = None,

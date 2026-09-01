@@ -847,6 +847,7 @@ class APIClient(BasicAsyncAPIClient):
         returns_items: bool = False,
         delete_endpoint: str = "/delete",
         override_semaphore: asyncio.BoundedSemaphore | None = None,
+        api_subversion: str | None = None,
     ) -> list | None:
         resource_path = (resource_path or self._RESOURCE_PATH) + delete_endpoint
         extra_body_fields = extra_body_fields or {}
@@ -859,6 +860,7 @@ class APIClient(BasicAsyncAPIClient):
                 params=params,
                 headers=headers,
                 semaphore=semaphore,
+                api_subversion=api_subversion,
             )
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
