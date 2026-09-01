@@ -568,6 +568,8 @@ class Datapoint(CogniteResource):
     Args:
         timestamp (int): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
         value (str | float | None): The raw data value. Can be string or numeric.
+        numeric_state (int | None): The numeric state value. Only returned for state time series.
+        string_state (str | None): The string state value. Only returned for state time series.
         average (float | None): The time-weighted average value in the aggregate interval.
         max (float | None): The maximum value in the aggregate interval.
         max_datapoint (MaxDatapoint | MaxDatapointWithStatus | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
@@ -595,6 +597,8 @@ class Datapoint(CogniteResource):
         self,
         timestamp: int,
         value: str | float | None = None,
+        numeric_state: int | None = None,
+        string_state: str | None = None,
         average: float | None = None,
         max: float | None = None,
         max_datapoint: MaxDatapoint | MaxDatapointWithStatus | None = None,
@@ -619,6 +623,8 @@ class Datapoint(CogniteResource):
     ) -> None:
         self.timestamp = timestamp
         self.value = value
+        self.numeric_state = numeric_state
+        self.string_state = string_state
         self.average = average
         self.max = max
         self.max_datapoint = max_datapoint
@@ -1066,6 +1072,8 @@ class Datapoints(CogniteResource):
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
         timestamp (list[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
         value (list[str] | list[float] | None): The raw data values. Can be string or numeric.
+        numeric_states (list[int] | None): The numeric state values. Only returned for state time series.
+        string_states (list[str | None] | None): The string state values. Only returned for state time series.
         average (list[float] | None): The time-weighted average values per aggregate interval.
         max (list[float] | None): The maximum values per aggregate interval.
         max_datapoint (list[MaxDatapoint] | list[MaxDatapointWithStatus] | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
@@ -1102,6 +1110,8 @@ class Datapoints(CogniteResource):
         granularity: str | None = None,
         timestamp: list[int] | None = None,
         value: list[str] | list[float] | None = None,
+        numeric_states: list[int] | None = None,
+        string_states: list[str | None] | None = None,
         average: list[float] | None = None,
         max: list[float] | None = None,
         max_datapoint: list[MaxDatapoint] | list[MaxDatapointWithStatus] | None = None,
@@ -1135,6 +1145,8 @@ class Datapoints(CogniteResource):
         self.granularity = granularity
         self.timestamp: list[int] = timestamp or []
         self.value = value
+        self.numeric_states = numeric_states
+        self.string_states = string_states
         self.average = average
         self.max = max
         self.max_datapoint = max_datapoint
