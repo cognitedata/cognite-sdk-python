@@ -22,6 +22,7 @@ from cognite.client._proto.data_point_list_response_pb2 import (
 from cognite.client._proto.data_points_pb2 import (
     AggregateDatapoint,
     NumericDatapoint,
+    StateDatapoint,
     StringDatapoint,
 )
 from cognite.client.data_classes.data_modeling import NodeId
@@ -44,14 +45,15 @@ if TYPE_CHECKING:
 AggregateDatapoints = RepeatedCompositeFieldContainer[AggregateDatapoint]
 NumericDatapoints = RepeatedCompositeFieldContainer[NumericDatapoint]
 StringDatapoints = RepeatedCompositeFieldContainer[StringDatapoint]
+StateDatapoints = RepeatedCompositeFieldContainer[StateDatapoint]
 
-DatapointAny = AggregateDatapoint | NumericDatapoint | StringDatapoint
-DatapointsAny = AggregateDatapoints | NumericDatapoints | StringDatapoints
+DatapointAny = AggregateDatapoint | NumericDatapoint | StringDatapoint | StateDatapoint
+DatapointsAny = AggregateDatapoints | NumericDatapoints | StringDatapoints | StateDatapoints
 
-DatapointRaw = NumericDatapoint | StringDatapoint
-DatapointsRaw = NumericDatapoints | StringDatapoints
+DatapointRaw = NumericDatapoint | StringDatapoint | StateDatapoint
+DatapointsRaw = NumericDatapoints | StringDatapoints | StateDatapoints
 
-RawDatapointValue = float | str
+RawDatapointValue = float | str | tuple[int, str | None]
 DatapointsId = int | DatapointsQuery | Sequence[int | DatapointsQuery]
 DatapointsExternalId = str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]
 DatapointsInstanceId = NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]
@@ -69,6 +71,20 @@ class DpsUnpackFns:
     raw_dp: Callable[[DatapointRaw], RawDatapointValue] = op.attrgetter("value")
 
     @staticmethod
+    def state_num_and_str_dp(dp: StateDatapoint) -> tuple[int, str | None]:
+        # A state data point can have a numeric value, but no string value. This happens if the numeric value
+        # is no longer part of the state set. The safe way to handle this is to use `.HasField("stringValue")`,
+        # however since string values are enforced to be at least 1 character long, we use the significantly
+        # faster `or None`.
+        #
+        # Timings for 100k state datapoints (the per request limit):
+        # >>> [dp.stringValue or None for dp in proto_dps]
+        # 10.7 ms ± 123 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+        # >>> [dp.stringValue if dp.HasField("stringValue") else None for dp in proto_dps]
+        # 16.8 ms ± 95.1 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+        return dp.numericValue, dp.stringValue or None
+
+    @staticmethod
     def custom_from_aggregates(lst: list[str]) -> Callable[[AggregateDatapoint], tuple[float, ...]]:
         return op.attrgetter(*lst)
 
@@ -84,7 +100,13 @@ class DpsUnpackFns:
     @staticmethod
     def nullable_raw_dp(dp: DatapointRaw) -> float | str:
         # We pretend like float is always returned to not break every dps annot. in the entire SDK..
-        return dp.value if not dp.nullValue else None  # type: ignore [return-value]
+        return dp.value if not dp.nullValue else None  # type: ignore [return-value, union-attr]
+
+    @staticmethod
+    def nullable_raw_state_dp(dp: StateDatapoint) -> tuple[int, str | None] | tuple[None, None]:
+        if dp.HasField("numericValue"):  # no need to also check stringValue, either both are set or none
+            return dp.numericValue, dp.stringValue or None  # see state_num_and_str_dp for why we use `or None`
+        return None, None
 
     # minDatapoint and maxDatapoint are also objects in the response. The proto lookups doesn't fail,
     # so we must be very careful to only attach status codes if requested.
@@ -122,7 +144,7 @@ class DpsUnpackFns:
 
     @classmethod
     def extract_raw_dps(cls, dps: DatapointsRaw) -> list[float | str]:  # Actually: exclusively either one
-        return list(map(cls.raw_dp, dps))
+        return list(map(cls.raw_dp, dps))  # type: ignore [arg-type]
 
     @classmethod
     def extract_raw_dps_numpy(cls, dps: DatapointsRaw, dtype: type[np.float64] | type[np.object_]) -> npt.NDArray[Any]:
@@ -147,6 +169,14 @@ class DpsUnpackFns:
                 add_missing(i)
         arr = np.array(values, dtype=dtype)
         return arr, missing
+
+    @classmethod
+    def extract_raw_num_and_str_state_dps(cls, dps: StateDatapoints) -> list[tuple[int, str | None]]:
+        return list(map(cls.state_num_and_str_dp, dps))
+
+    @classmethod
+    def extract_nullable_raw_num_and_str_state_dps(cls, dps: StateDatapoints) -> list[tuple[int | None, str | None]]:
+        return list(map(cls.nullable_raw_state_dp, dps))
 
     # --------------- #
     # Status code related extract functions:
@@ -293,6 +323,16 @@ def create_aggregates_arrays_from_dps_container(container: _DataContainer, n_agg
 
 def create_list_from_dps_container(container: _DataContainer) -> list:
     return list(chain.from_iterable(datapoints_in_order(container)))
+
+
+def create_state_lists_from_dps_container(container: _DataContainer) -> tuple[list[int], list[str | None]]:
+    # Doing 2 passes through the dps is actually the most performant(!). Benchmarking N = 1 mill:
+    # 1. zip(*...):                61.5 ms ± 824 μs
+    # 2. Single-pass .append():    44.1 ms ± 310 μs
+    # 3. Pre-allocated indexing:   36.3 ms ± 781 μs
+    # 4. Dual list comprehensions: 26.6 ms ± 229 μs
+    state_tuples = list(chain.from_iterable(datapoints_in_order(container)))
+    return [num for num, _ in state_tuples], [string for _, string in state_tuples]
 
 
 def create_aggregates_list_from_dps_container(container: _DataContainer) -> Iterator[list[list]]:
