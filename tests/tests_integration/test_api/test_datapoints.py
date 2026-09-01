@@ -746,19 +746,13 @@ def empty_state_ts(
     os_and_py_version: str,
     empty_state_set: NodeApplyResult,
 ) -> NodeApplyResult:
-    from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
-
-    state_ts = CogniteTimeSeriesApply(
-        space=space_for_time_series.space,
+    return _create_state_time_series(
         external_id=f"dms-state-ts-EMPTY-(please)-{os_and_py_version}",
-        is_step=False,
-        time_series_type="state",
-        state_set=(empty_state_set.space, empty_state_set.external_id),
+        cognite_client=cognite_client,
+        async_client=async_client,
+        space_for_time_series=space_for_time_series,
+        state_set=empty_state_set,
     )
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(async_client.data_modeling.instances, "_api_subversion", "beta")
-        (node,) = cognite_client.data_modeling.instances.apply(state_ts).nodes
-    return node
 
 
 @pytest.fixture(scope="class")
