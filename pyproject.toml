@@ -18,7 +18,7 @@ dependencies = [
     "authlib (>=1, <2)",
     "protobuf (>=5)",
     "packaging >=20",
-    "pip >=20", # make optional once poetry doesn't auto-remove it on "simple install"
+    "pip >=26.2", # make optional once poetry doesn't auto-remove it on "simple install"
     "typing_extensions >=4",
     # Windows does not have a ANSI database and need tzdata...:
     "tzdata >=2024.1; sys_platform == 'win32' or sys_platform=='emscripten'",
