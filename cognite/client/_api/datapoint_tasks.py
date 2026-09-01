@@ -721,11 +721,20 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         return 1  # millisecond
 
     def _create_empty_result(self) -> Datapoints | DatapointsArray:
-        status_cols: dict[str, Any] = {}
+        status_cols: dict[str, Any] = {}  # TODO: Perhaps better to make this "all info" instead of just status
         if not self.use_numpy:
             if self.query.include_status:
                 status_cols.update(status_code=[], status_symbol=[])
-            return Datapoints(**self.ts_info, timestamp=[], value=[], **status_cols)
+            if self.is_state_dps:
+                return Datapoints(**self.ts_info, timestamp=[], numeric_states=[], string_states=[], **status_cols)
+            else:
+                return Datapoints(**self.ts_info, timestamp=[], value=[], **status_cols)
+
+        if self.is_state_dps:
+            raise NotImplementedError(
+                "State datapoints are not yet supported when using `retrieve_arrays(...)`. "
+                "Please use `retrieve(...)` instead"
+            )
 
         if self.query.include_status:
             status_cols.update(status_code=np.array([], dtype=np.int32), status_symbol=np.array([], dtype=np.object_))
