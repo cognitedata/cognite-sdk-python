@@ -232,10 +232,16 @@ def convert_timestamp_columns_to_datetime(df: pd.DataFrame) -> pd.DataFrame:
 def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.DataFrame:
     import pandas as pd
 
+    # Columns already using a pandas nullable integer extension dtype (e.g. the Int32 dtype used
+    # for numeric state datapoints) survive pd.concat's outer-join just fine (missing rows are
+    # filled with pd.NA, dtype is preserved). Only plain numpy int/uint columns need help here,
+    # since those silently upcast to float64 if the join introduces missing rows for that column:
+    # TODO: status_code is still a plain numpy uint32 column, so it always lands here and gets
+    #       blanket-cast to Int64 below. We should switch it to the nullable UInt32.
     int_cols = [
         i
         for i, dtype in enumerate(itertools.chain.from_iterable(df.dtypes for df in dfs))
-        if issubclass(dtype.type, Integral)
+        if not pd.api.types.is_extension_array_dtype(dtype) and issubclass(dtype.type, Integral)
     ]
     # TODO: Performance optimization possible: The more unique each df.index is to the rest of the dfs, the
     # slower `pd.concat` scales. A manual "union(df.index for df in dfs)" + column insertion is faster for large
@@ -247,6 +253,7 @@ def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.
     if pandas_major_version() >= 2:
         df.isetitem(int_cols, df.iloc[:, int_cols].astype("Int64"))
     else:
+        # TODO: We specify pandas >= 2.1, so we can remove this branch.
         # As of pandas >=1.5.0, <2, converting float cols (that used to be int) to nullable int using iloc raises FutureWarning,
         # but the suggested code change (to use `frame.isetitem(...)`) results in the wrong dtype (object).
         # See Github Issue: https://github.com/pandas-dev/pandas/issues/49922
