@@ -256,10 +256,6 @@ class TestRecordsIntegration:
         # The change feed lags behind filter queries, so the records may not all be in it yet.
         assert_eventually(feed_yields_every_record_in_chunks)
 
-    @pytest.mark.skipif(
-        datetime.now(timezone.utc) < datetime(2026, 9, 4, tzinfo=timezone.utc),
-        reason="Temporarily skipped for two weeks",
-    )
     def test_upsert_replaces_record(
         self,
         cognite_client: CogniteClient,
@@ -284,10 +280,16 @@ class TestRecordsIntegration:
                 stream_id=mutable_stream.external_id,
                 last_updated_time=TimeRange(gt=an_hour_ago()),
                 sources=sources,
-                filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "value"], value=99.0),
+                filter=filters.And(
+                    filters.Equals(property=["space"], value=target.space),
+                    filters.Equals(property=["externalId"], value=target.external_id),
+                ),
                 limit=10,
             )
             assert [record.external_id for record in result] == [target.external_id]
+            record_properties = result[0].properties
+            assert record_properties is not None
+            assert record_properties[container_ref.space][container_ref.external_id]["value"] == 99.0
 
         assert_eventually(replacement_is_queryable)
 
