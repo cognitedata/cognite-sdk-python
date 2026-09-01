@@ -378,6 +378,45 @@ class _DpsColumnInfo:
             return np.array(self.data, dtype=np.float64)
 
 
+def _extract_raw_states_column_info(
+    dps: Datapoints,
+    identifier: NodeId | str | int,
+    include_status: bool,
+    exclude_numeric_states: bool,
+    exclude_string_states: bool,
+) -> list[_DpsColumnInfo]:
+    columns = []
+    if not exclude_numeric_states:
+        assert dps.numeric_states is not None
+        columns.append(
+            _DpsColumnInfo(
+                identifier,
+                data=dps.numeric_states,
+                is_string=False,
+                is_array=False,
+                state_type="numeric",
+            )
+        )
+    if not exclude_string_states:
+        assert dps.string_states is not None
+        columns.append(
+            _DpsColumnInfo(
+                identifier,
+                data=dps.string_states,
+                is_string=True,
+                is_array=False,
+                state_type="string",
+            )
+        )
+    if include_status:
+        if dps.status_code is not None:
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_code, is_array=False, status_info="code"))
+        if dps.status_symbol is not None:
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_symbol, is_array=False, status_info="symbol"))
+
+    return columns
+
+
 def _extract_raw_column_info(
     dps: Datapoints | DatapointsArray,
     identifier: NodeId | str | int,
