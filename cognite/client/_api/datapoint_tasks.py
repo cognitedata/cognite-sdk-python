@@ -861,7 +861,13 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             else:
                 self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps(dps))
         else:
-            self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_dps(dps))
+            if self.is_state_dps:
+                self.dps_data[idx].append(
+                    DpsUnpackFns.extract_nullable_raw_num_and_str_state_dps(cast(StateDatapoints, dps))
+                )
+            else:
+                self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_dps(dps))
+
         if self.query.include_status:
             self.status_code[idx].append(DpsUnpackFns.extract_status_code(dps))
             self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol(dps))
