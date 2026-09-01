@@ -773,17 +773,27 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                     **status_columns,
                 }
             )
-        if self.query.include_status:
-            status_columns.update(
-                status_code=create_list_from_dps_container(self.status_code),
-                status_symbol=create_list_from_dps_container(self.status_symbol),
+        else:
+            if self.query.include_status:
+                status_columns.update(
+                    status_code=create_list_from_dps_container(self.status_code),
+                    status_symbol=create_list_from_dps_container(self.status_symbol),
+                )
+            if self.is_state_dps:
+                value_col = None
+                num_state_col, str_state_col = create_state_lists_from_dps_container(self.dps_data)
+            else:
+                value_col = create_list_from_dps_container(self.dps_data)
+                num_state_col, str_state_col = None, None
+
+            return Datapoints(
+                **self.ts_info,
+                timestamp=create_list_from_dps_container(self.ts_data),
+                value=value_col,
+                numeric_states=num_state_col,
+                string_states=str_state_col,
+                **status_columns,
             )
-        return Datapoints(
-            **self.ts_info,
-            timestamp=create_list_from_dps_container(self.ts_data),
-            value=create_list_from_dps_container(self.dps_data),
-            **status_columns,
-        )
 
     def _include_outside_points_in_result(self) -> None:
         for dp, status_code, status_symbol, idx in zip(
