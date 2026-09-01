@@ -10,7 +10,7 @@ import pytest
 from cognite.client.data_classes import Datapoint, DatapointsArray, StateDatapointsInsert, StateDatapointWrite
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
-from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
+from cognite.client.data_classes.datapoints import Datapoints, DatapointsArrayList, DatapointsList
 from tests.utils import PANDAS_TS_UNIT
 
 
@@ -118,6 +118,118 @@ class TestToPandas:
         )
         exp_df.columns = pd.Index([123, "foo", NodeId(space="s", external_id="x")], name="identifier")
         pd.testing.assert_frame_equal(df, exp_df)
+
+
+@pytest.mark.dsl
+class TestStateDatapointsToPandas:
+    @pytest.fixture
+    def node_id(self) -> NodeId:
+        return NodeId("ss", "xx")
+
+    @pytest.fixture
+    def state_dps(self, node_id: NodeId) -> Datapoints:
+        return Datapoints(
+            id=123,
+            instance_id=node_id,
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=[1000, 2000, 3000, 4000],
+            # For bad datapoints, even numeric can be missing (None):
+            numeric_states=[0, 1, 0, None],  # type: ignore [list-item]
+            string_states=["off", "on", None, None],
+        )
+
+    def test_default_includes_both_state_columns(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import pandas as pd
+
+        df = state_dps.to_pandas()
+
+        assert list(df.columns) == [(node_id, "numeric"), (node_id, "string")]
+        assert df.columns.names == ["identifier", "state"]
+
+        numeric_values = df[node_id, "numeric"].tolist()
+        assert numeric_values[:-1] == [0, 1, 0]
+        assert numeric_values[3] is pd.NA
+        assert df[node_id, "numeric"].dtype == "Int32"
+        assert df[node_id, "string"].tolist() == ["off", "on", None, None]
+        assert df[node_id, "string"].dtype == "object"
+
+    def test_exclude_numeric_states(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        df = state_dps.to_pandas(exclude_numeric_states=True)
+
+        assert list(df.columns) == [(node_id, "string")]
+        assert df[node_id, "string"].tolist() == ["off", "on", None, None]
+
+    def test_exclude_string_states(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import pandas as pd
+
+        df = state_dps.to_pandas(exclude_string_states=True)
+
+        assert list(df.columns) == [(node_id, "numeric")]
+        numeric_values = df[node_id, "numeric"].tolist()
+        assert numeric_values[:3] == [0, 1, 0]
+        assert numeric_values[3] is pd.NA
+
+    def test_exclude_both_states_without_status_gives_empty_dataframe(
+        self, state_dps: Datapoints, node_id: NodeId
+    ) -> None:
+        df = state_dps.to_pandas(exclude_numeric_states=True, exclude_string_states=True, include_status=False)
+
+        assert df.shape == (4, 0)
+
+    def test_status_columns_included_alongside_state_columns(self) -> None:
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            timestamp=[1000, 2000],
+            numeric_states=[0, 1],
+            string_states=["off", "on"],
+            status_code=[0, 2147483648],
+            status_symbol=["Good", "Bad"],
+        )
+        df = dps.to_pandas()
+
+        assert set(df.columns) == {
+            (123, "numeric", ""),
+            (123, "string", ""),
+            (123, "", "code"),
+            (123, "", "symbol"),
+        }
+        assert df[123, "", "code"].tolist() == [0, 2147483648]
+        assert df[123, "", "symbol"].tolist() == ["Good", "Bad"]
+
+    def test_datapoints_array_with_state_type_raises(self) -> None:
+        import numpy as np
+
+        arr = DatapointsArray(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            timestamp=np.array([1000], dtype="datetime64[ns]"),
+        )
+        arr_lst = DatapointsArrayList([arr])
+
+        for dps in [arr, arr_lst]:
+            with pytest.raises(NotImplementedError, match="DatapointsArray are not supported"):
+                dps.to_pandas()  # type: ignore [attr-defined]
+
+    def test_mixed_state_and_numeric_dps_list_to_pandas(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        numeric_dps = Datapoints(
+            id=456,
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            timestamp=[1000, 2000, 3000, 4000],
+            value=[1.5, 2.5, 3.5, 4.5],
+        )
+        df = DatapointsList([state_dps, numeric_dps]).to_pandas()
+
+        assert set(df.columns) == {(node_id, "numeric"), (node_id, "string"), (456, "")}
+        assert df[(456, "")].tolist() == [1.5, 2.5, 3.5, 4.5]
 
 
 class TestStateDatapointWrite:
