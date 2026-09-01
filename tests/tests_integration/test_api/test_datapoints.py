@@ -893,6 +893,47 @@ class TestRetrieveStateDatapoints:
             assert dps.numeric_states == []
             assert dps.string_states == []
 
+    @pytest.mark.parametrize(
+        "retrieve_call",
+        [
+            pytest.param(
+                lambda client, ts_id: client.time_series.data.retrieve(
+                    instance_id=ts_id, aggregates="count", granularity="1h", limit=1
+                ),
+                id="aggregate states retrieve",
+            ),
+            pytest.param(
+                lambda client, ts_id: client.time_series.data.retrieve_arrays(
+                    instance_id=ts_id, aggregates="count", granularity="1h", limit=1
+                ),
+                id="aggregate states retrieve_arrays",
+            ),
+            pytest.param(
+                lambda client, ts_id: client.time_series.data.retrieve_arrays(instance_id=ts_id, limit=1),
+                id="raw states retrieve_arrays",
+            ),
+            pytest.param(
+                lambda client, ts_id: client.time_series.data.retrieve_dataframe(instance_id=ts_id, limit=1),
+                id="raw states retrieve_dataframe",
+            ),
+            pytest.param(
+                lambda client, ts_id: client.time_series.data.retrieve_dataframe(
+                    instance_id=ts_id, aggregates="count", granularity="1h", limit=1
+                ),
+                id="aggregate states retrieve_dataframe",
+            ),
+        ],
+    )
+    def test_unsupported_state_datapoint_retrievals_raise_not_implemented(
+        self,
+        cognite_client: CogniteClient,
+        empty_state_ts: NodeApplyResult,
+        retrieve_call: Callable,
+    ) -> None:
+        ts_id = empty_state_ts.as_id()
+        with pytest.raises(NotImplementedError, match=r"[sS]tate datapoints"):
+            retrieve_call(cognite_client, ts_id)
+
 
 @pytest.fixture
 def queries_for_iteration(all_test_time_series: TimeSeriesList) -> list[DatapointsQuery]:
