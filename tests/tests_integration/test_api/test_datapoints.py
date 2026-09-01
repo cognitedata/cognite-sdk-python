@@ -46,7 +46,12 @@ from cognite.client.data_classes import (
     TimeSeriesWrite,
 )
 from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData, Space
-from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeries
+from cognite.client.data_classes.data_modeling.cdm.v1 import (
+    CogniteStateSetApply,
+    CogniteTimeSeries,
+    CogniteTimeSeriesApply,
+)
+from cognite.client.data_classes.data_modeling.data_types import StateSetEntry
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.data_modeling.instances import NodeApplyResult
 from cognite.client.data_classes.data_modeling.spaces import SpaceApply
@@ -490,8 +495,6 @@ def space_for_time_series(cognite_client: CogniteClient) -> Iterator[Space]:
 def ts_create_in_dms(
     cognite_client: CogniteClient, space_for_time_series: Space, os_and_py_version: str
 ) -> NodeApplyResult:
-    from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
-
     dms_ts = CogniteTimeSeriesApply(
         space=space_for_time_series.space,
         # One per test runner, per OS, to avoid conflicts:
@@ -540,11 +543,10 @@ def state_set(
     space_for_time_series: Space,
     os_and_py_version: str,
 ) -> NodeApplyResult:
-    from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteStateSetApply
-    from cognite.client.data_classes.data_modeling.data_types import StateSetEntry
-
-    state_set_apply = CogniteStateSetApply(
-        space=space_for_time_series.space,
+    return _create_state_set(
+        cognite_client=cognite_client,
+        async_client=async_client,
+        space=space_for_time_series,
         external_id=f"dms-state-set-{os_and_py_version}",
         states=[
             StateSetEntry(-(2**31), "small"),
@@ -553,13 +555,7 @@ def state_set(
             StateSetEntry(1, "on"),
             StateSetEntry(2**31 - 1, "bigly"),
         ],
-        name="PySDK integration test state set",
     )
-    # State sets require beta flag:
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(async_client.data_modeling.instances, "_api_subversion", "beta")
-        (node,) = cognite_client.data_modeling.instances.apply(state_set_apply).nodes
-    return node
 
 
 def _create_state_time_series(
@@ -569,8 +565,6 @@ def _create_state_time_series(
     space_for_time_series: Space,
     state_set: NodeApplyResult,
 ) -> NodeApplyResult:
-    from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
-
     state_ts = CogniteTimeSeriesApply(
         space=space_for_time_series.space,
         external_id=external_id,
@@ -581,6 +575,26 @@ def _create_state_time_series(
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(async_client.data_modeling.instances, "_api_subversion", "beta")
         (node,) = cognite_client.data_modeling.instances.apply(state_ts).nodes
+    return node
+
+
+def _create_state_set(
+    cognite_client: CogniteClient,
+    async_client: AsyncCogniteClient,
+    space: Space,
+    external_id: str,
+    states: list,
+    name: str = "PySDK integration test state set",
+) -> NodeApplyResult:
+    state_set_apply = CogniteStateSetApply(
+        space=space.space,
+        external_id=external_id,
+        states=states,
+        name=name,
+    )
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(async_client.config, "api_subversion", "beta")
+        (node,) = cognite_client.data_modeling.instances.apply(state_set_apply).nodes
     return node
 
 
@@ -723,19 +737,14 @@ def empty_state_set(
     space_for_time_series: Space,
     os_and_py_version: str,
 ) -> NodeApplyResult:
-    from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteStateSetApply
-
-    state_set_apply = CogniteStateSetApply(
-        space=space_for_time_series.space,
+    return _create_state_set(
+        cognite_client=cognite_client,
+        async_client=async_client,
+        space=space_for_time_series,
         external_id=f"dms-state-set-EMPTY-{os_and_py_version}",
         states=[],  # how about no
         name="EMPTY PySDK integration test state set",
     )
-    # State sets require beta flag:
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(async_client.data_modeling.instances, "_api_subversion", "beta")
-        (node,) = cognite_client.data_modeling.instances.apply(state_set_apply).nodes
-    return node
 
 
 @pytest.fixture(scope="session")
