@@ -98,53 +98,49 @@ class DpsUnpackFns:
         dp = agg_dp.maxDatapoint
         return MaxDatapoint(dp.timestamp, dp.value)
 
-    @staticmethod
-    def min_datapoint_with_status(agg_dp: AggregateDatapoint) -> MinDatapointWithStatus:
+    @classmethod
+    def min_datapoint_with_status(cls, agg_dp: AggregateDatapoint) -> MinDatapointWithStatus:
         dp = agg_dp.minDatapoint
-        return MinDatapointWithStatus(
-            dp.timestamp, dp.value, DpsUnpackFns.status_code(dp), DpsUnpackFns.status_symbol(dp)
-        )
+        return MinDatapointWithStatus(dp.timestamp, dp.value, cls.status_code(dp), cls.status_symbol(dp))
 
-    @staticmethod
-    def max_datapoint_with_status(agg_dp: AggregateDatapoint) -> MaxDatapointWithStatus:
+    @classmethod
+    def max_datapoint_with_status(cls, agg_dp: AggregateDatapoint) -> MaxDatapointWithStatus:
         dp = agg_dp.maxDatapoint
-        return MaxDatapointWithStatus(
-            dp.timestamp, dp.value, DpsUnpackFns.status_code(dp), DpsUnpackFns.status_symbol(dp)
-        )
+        return MaxDatapointWithStatus(dp.timestamp, dp.value, cls.status_code(dp), cls.status_symbol(dp))
 
     # --------------- #
     # Above are functions that operate on single elements
     # Below are functions that operate on containers
     # --------------- #
-    @staticmethod
-    def extract_timestamps(dps: DatapointsAny) -> list[int]:
-        return list(map(DpsUnpackFns.ts, dps))
+    @classmethod
+    def extract_timestamps(cls, dps: DatapointsAny) -> list[int]:
+        return list(map(cls.ts, dps))
 
-    @staticmethod
-    def extract_timestamps_numpy(dps: DatapointsAny) -> npt.NDArray[np.int64]:
-        return np.fromiter(map(DpsUnpackFns.ts, dps), dtype=np.int64, count=len(dps))
+    @classmethod
+    def extract_timestamps_numpy(cls, dps: DatapointsAny) -> npt.NDArray[np.int64]:
+        return np.fromiter(map(cls.ts, dps), dtype=np.int64, count=len(dps))
 
-    @staticmethod
-    def extract_raw_dps(dps: DatapointsRaw) -> list[float | str]:  # Actually: exclusively either one
-        return list(map(DpsUnpackFns.raw_dp, dps))
+    @classmethod
+    def extract_raw_dps(cls, dps: DatapointsRaw) -> list[float | str]:  # Actually: exclusively either one
+        return list(map(cls.raw_dp, dps))
 
-    @staticmethod
-    def extract_raw_dps_numpy(dps: DatapointsRaw, dtype: type[np.float64] | type[np.object_]) -> npt.NDArray[Any]:
-        return np.fromiter(map(DpsUnpackFns.raw_dp, dps), dtype=dtype, count=len(dps))
+    @classmethod
+    def extract_raw_dps_numpy(cls, dps: DatapointsRaw, dtype: type[np.float64] | type[np.object_]) -> npt.NDArray[Any]:
+        return np.fromiter(map(cls.raw_dp, dps), dtype=dtype, count=len(dps))
 
-    @staticmethod
-    def extract_nullable_raw_dps(dps: DatapointsRaw) -> list[float | str]:  # actually list of [... | None]
-        return list(map(DpsUnpackFns.nullable_raw_dp, dps))
+    @classmethod
+    def extract_nullable_raw_dps(cls, dps: DatapointsRaw) -> list[float | str]:  # actually list of [... | None]
+        return list(map(cls.nullable_raw_dp, dps))
 
-    @staticmethod
+    @classmethod
     def extract_nullable_raw_dps_numpy(
-        dps: DatapointsRaw, dtype: type[np.float64] | type[np.object_]
+        cls, dps: DatapointsRaw, dtype: type[np.float64] | type[np.object_]
     ) -> tuple[npt.NDArray[Any], list[int]]:
         # This is a very hot loop, thus we make some ugly optimizations:
         values = [None] * len(dps)
         missing: list[int] = []
         add_missing = missing.append
-        for i, dp in enumerate(map(DpsUnpackFns.nullable_raw_dp, dps)):
+        for i, dp in enumerate(map(cls.nullable_raw_dp, dps)):
             # we use list because of its significantly lower overhead than numpy on single element access:
             values[i] = dp  # type: ignore [call-overload]
             if dp is None:
@@ -152,21 +148,25 @@ class DpsUnpackFns:
         arr = np.array(values, dtype=dtype)
         return arr, missing
 
-    @staticmethod
-    def extract_status_code(dps: DatapointsRaw) -> list[int]:
-        return list(map(DpsUnpackFns.status_code, dps))
+    # --------------- #
+    # Status code related extract functions:
+    # --------------- #
 
-    @staticmethod
-    def extract_status_code_numpy(dps: DatapointsRaw) -> npt.NDArray[np.uint32]:
-        return np.fromiter(map(DpsUnpackFns.status_code, dps), dtype=np.uint32, count=len(dps))
+    @classmethod
+    def extract_status_code(cls, dps: DatapointsRaw) -> list[int]:
+        return list(map(cls.status_code, dps))
 
-    @staticmethod
-    def extract_status_symbol(dps: DatapointsRaw) -> list[str]:
-        return list(map(DpsUnpackFns.status_symbol, dps))
+    @classmethod
+    def extract_status_code_numpy(cls, dps: DatapointsRaw) -> npt.NDArray[np.uint32]:
+        return np.fromiter(map(cls.status_code, dps), dtype=np.uint32, count=len(dps))
 
-    @staticmethod
-    def extract_status_symbol_numpy(dps: DatapointsRaw) -> npt.NDArray[np.object_]:
-        return np.fromiter(map(DpsUnpackFns.status_symbol, dps), dtype=np.object_, count=len(dps))
+    @classmethod
+    def extract_status_symbol(cls, dps: DatapointsRaw) -> list[str]:
+        return list(map(cls.status_symbol, dps))
+
+    @classmethod
+    def extract_status_symbol_numpy(cls, dps: DatapointsRaw) -> npt.NDArray[np.object_]:
+        return np.fromiter(map(cls.status_symbol, dps), dtype=np.object_, count=len(dps))
 
     @staticmethod
     def extract_aggregates(
@@ -198,19 +198,19 @@ class DpsUnpackFns:
             # An aggregate is missing, fallback to slower `getattr`:
             return np.array([tuple(getattr(dp, agg, math.nan) for agg in aggregates) for dp in dps], dtype=np.float64)
 
-    @staticmethod
+    @classmethod
     def extract_fn_min_or_max_dp(
-        aggregate: Literal["minDatapoint", "maxDatapoint"], include_status: bool
+        cls, aggregate: Literal["minDatapoint", "maxDatapoint"], include_status: bool
     ) -> Callable[[AggregateDatapoint], MaxOrMinDatapoint]:
         match aggregate, include_status:
             case "minDatapoint", False:
-                return DpsUnpackFns.min_datapoint
+                return cls.min_datapoint
             case "maxDatapoint", False:
-                return DpsUnpackFns.max_datapoint
+                return cls.max_datapoint
             case "minDatapoint", True:
-                return DpsUnpackFns.min_datapoint_with_status
+                return cls.min_datapoint_with_status
             case "maxDatapoint", True:
-                return DpsUnpackFns.max_datapoint_with_status
+                return cls.max_datapoint_with_status
             case _:
                 raise ValueError(f"Unsupported {aggregate=} and/or {include_status=}")
 
