@@ -349,9 +349,11 @@ class _DpsColumnInfo:
             self.unit_xid if include_unit else None,
         )
 
-    def as_array(self) -> NumpyObjArray | NumpyFloat64Array | NumpyInt64Array | NumpyUInt32Array:
+    def as_array(
+        self,
+    ) -> NumpyObjArray | NumpyFloat64Array | NumpyInt64Array | NumpyUInt32Array | pd.arrays.IntegerArray:
         if self.is_array:
-            return self.data  # type: ignore [return-value]
+            return self.data
 
         elif self.aggregate is None:
             return self._convert_to_array_for_raw_dps()
@@ -360,8 +362,14 @@ class _DpsColumnInfo:
 
     def _convert_to_array_for_raw_dps(
         self,
-    ) -> npt.NDArray[np.object_] | npt.NDArray[np.float64] | npt.NDArray[np.uint32]:
+    ) -> npt.NDArray[np.object_] | npt.NDArray[np.float64] | npt.NDArray[np.uint32] | pd.arrays.IntegerArray:
         import numpy as np
+
+        if self.state_type == "numeric":
+            # Numeric states are guaranteed to be valid 32-bit ints, but may contain missing values due to "bad status",
+            # so we use the pandas extension dtype which is nullable:
+            pd = local_import("pandas")
+            return pd.array(self.data, dtype="Int32")
 
         match self.is_string, self.status_info:
             case True, None:
@@ -481,7 +489,7 @@ def _extract_aggregate_column_info_from_dps(
 def _extract_column_info_from_dps_for_dataframe(
     dps: Datapoints | DatapointsArray, include_status: bool, exclude_numeric_states: bool, exclude_string_states: bool
 ) -> list[_DpsColumnInfo]:
-    from cognite.client.data_classes import DatapointsArray
+    from cognite.client.data_classes import Datapoints, DatapointsArray
 
     identifier = _resolve_ts_identifier_as_df_column_name(dps)
     is_array = isinstance(dps, DatapointsArray)
