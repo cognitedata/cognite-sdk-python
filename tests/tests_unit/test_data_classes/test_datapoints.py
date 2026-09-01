@@ -231,6 +231,31 @@ class TestStateDatapointsToPandas:
         assert set(df.columns) == {(node_id, "numeric"), (node_id, "string"), (456, "")}
         assert df[(456, "")].tolist() == [1.5, 2.5, 3.5, 4.5]
 
+    def test_datapoints_list_to_pandas(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import numpy as np
+        import pandas as pd
+
+        other_state_dps = Datapoints(
+            id=456,
+            is_string=False,
+            is_step=True,
+            type="state",
+            # Ensure some timestamps align and others don't, to test the outer join behavior:
+            timestamp=[1000, 2000, 3500, 5500],
+            numeric_states=[10, 11, 10, 11],
+            string_states=["idle", "running", "idle", "running"],
+        )
+        df = DatapointsList([state_dps, other_state_dps]).to_pandas()
+
+        assert set(df.columns) == {(node_id, "numeric"), (node_id, "string"), (456, "numeric"), (456, "string")}
+        assert df[456, "numeric"].tolist() == [10, 11, pd.NA, 10, pd.NA, 11]
+        np.testing.assert_array_equal(  # easy way to make nans compare equal
+            df[456, "string"].tolist(),
+            ["idle", "running", math.nan, "idle", math.nan, "running"],
+        )
+        assert df[node_id, "numeric"].dtype == "Int32"
+        assert df[456, "numeric"].dtype == "Int32"
+
 
 class TestStateDatapointWrite:
     @pytest.mark.parametrize(
