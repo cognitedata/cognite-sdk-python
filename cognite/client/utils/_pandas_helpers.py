@@ -525,7 +525,7 @@ def _create_multi_index_from_columns(
             )
             for col in columns
         ],
-        columns=["identifier", "status", "aggregate", "granularity", "unit"],
+        columns=["identifier", "state", "status", "aggregate", "granularity", "unit"],
     )
     # Key operation is to drop all-nan columns, which in the multi-index translates to dropping
     # the corresponding levels:
