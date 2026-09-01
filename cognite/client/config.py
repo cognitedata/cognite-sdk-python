@@ -224,7 +224,7 @@ class ClientConfig:
         self.client_name = client_name
         self.project = project
         self.credentials = credentials
-        self.api_subversion = api_subversion
+        self.api_subversion = api_subversion or __api_subversion__  # to avoid breaking changes, can be remove in v9
         self.base_url = self._validate_base_url_or_cluster(base_url, cluster)
         self._cluster = cluster
         self.headers = headers or {}
