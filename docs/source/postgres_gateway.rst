@@ -21,7 +21,7 @@ Postgres Gateway Tables API
    AsyncCogniteClient.postgres_gateway.tables
 
 Postgres Gateway classes
-^^^^^^^^^^^^^^^^^^^^^^^^^
+------------------------
 .. automodule:: cognite.client.data_classes.postgres_gateway
     :members:
     :show-inheritance:
