@@ -732,6 +732,21 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
 
         if self.query.include_status:
             status_cols.update(status_code=np.array([], dtype=np.int32), status_symbol=np.array([], dtype=np.object_))
+
+        if self.is_state_dps:
+            # Numpy has no notion of a nullable int32 array. Since bad status datapoints may be missing their numeric
+            # value, we always use float64 (NaN for missing) whenever the caller includes bad datapoints, regardless
+            # of whether any actually are missing so that the dtype stays consistent:
+            numeric_dtype = np.int32 if self.query.ignore_bad_datapoints else np.float64
+            return DatapointsArray._load_from_arrays(
+                {
+                    **self.ts_info,
+                    "timestamp": np.array([], dtype=np.int64),
+                    "numeric_states": np.array([], dtype=numeric_dtype),
+                    "string_states": np.array([], dtype=np.object_),
+                    **status_cols,
+                }
+            )
         return DatapointsArray._load_from_arrays(
             {
                 **self.ts_info,
