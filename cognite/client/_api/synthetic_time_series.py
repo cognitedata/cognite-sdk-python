@@ -274,8 +274,9 @@ class SyntheticDatapointsAPI(APIClient):
             to_substitute[str(k)] = "ts{" + sub_string + aggregate_str + target_unit_str + "}"
 
         # Substitute all variables in one go to avoid substitution of prior substitutions:
+        sorted_keys = sorted(to_substitute, key=len, reverse=True)
         pattern = re.compile(
-            r"\b" + r"\b|\b".join(map(re.escape, to_substitute)) + r"\b"
+            r"\b" + r"\b|\b".join(map(re.escape, sorted_keys)) + r"\b"
         )  # note: \b marks a word boundary
         expression_with_ts = pattern.sub(lambda match: to_substitute[match[0]], expression_str)
         return expression_with_ts, expression_str
