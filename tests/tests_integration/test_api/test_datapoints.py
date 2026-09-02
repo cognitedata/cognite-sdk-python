@@ -783,6 +783,32 @@ class TestInsertStateDatapoints:
         assert dps_with_bad.string_states == [None, *exp_string_states]
         assert dps_with_bad.numeric_states == [None, *exp_numeric_states]
 
+        # ------------------- #
+        # Now let's repeat the exact same using retrieve_arrays():
+        arr_no_bad = cognite_client.time_series.data.retrieve_arrays(
+            instance_id=node_id, ignore_bad_datapoints=True, limit=50
+        )
+        assert arr_no_bad is not None
+        assert arr_no_bad.numeric_states is not None
+        assert arr_no_bad.string_states is not None
+        assert arr_no_bad.numeric_states.dtype == np.int32
+        np.testing.assert_array_equal(arr_no_bad.numeric_states, np.array(exp_numeric_states, dtype=np.int32))
+        np.testing.assert_array_equal(arr_no_bad.string_states, np.array(exp_string_states, dtype=object))
+
+        # Here we also ensure that we get the upcast warning for numeric_states (possibly containing NaNs):
+        with pytest.warns(UserWarning, match="upcast to float64"):
+            arr_with_bad = cognite_client.time_series.data.retrieve_arrays(
+                instance_id=node_id, ignore_bad_datapoints=False, limit=50
+            )
+
+        assert arr_with_bad is not None
+        assert arr_with_bad.numeric_states is not None
+        assert arr_with_bad.string_states is not None
+        assert arr_with_bad.numeric_states.dtype == np.float64
+        np.testing.assert_array_equal(arr_with_bad.numeric_states, np.array([np.nan, *exp_numeric_states]))
+        np.testing.assert_array_equal(arr_with_bad.string_states, np.array([None, *exp_string_states], dtype=object))
+
+        # ------------------- #
         # Ensure writing state dp with 20 or "twenty" now fails:
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.time_series.data.insert_states(
