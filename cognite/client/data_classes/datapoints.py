@@ -68,6 +68,7 @@ if TYPE_CHECKING:
 
     NumpyDatetime64NSArray: TypeAlias = npt.NDArray[np.datetime64]
     NumpyUInt32Array: TypeAlias = npt.NDArray[np.uint32]
+    NumpyInt32Array: TypeAlias = npt.NDArray[np.int32]
     NumpyInt64Array: TypeAlias = npt.NDArray[np.int64]
     NumpyFloat64Array: TypeAlias = npt.NDArray[np.float64]
     NumpyObjArray: TypeAlias = npt.NDArray[np.object_]
@@ -758,6 +759,8 @@ class DatapointsArray(CogniteResource):
         granularity: str | None = None,
         timestamp: NumpyDatetime64NSArray | None = None,
         value: NumpyFloat64Array | NumpyObjArray | None = None,
+        numeric_states: NumpyInt32Array | None = None,
+        string_states: NumpyObjArray | None = None,
         average: NumpyFloat64Array | None = None,
         max: NumpyFloat64Array | None = None,
         max_datapoint: NumpyObjArray | None = None,
@@ -794,6 +797,8 @@ class DatapointsArray(CogniteResource):
             timestamp if timestamp is not None else np.array([], dtype="datetime64[ns]")
         )
         self.value = value
+        self.numeric_states = numeric_states
+        self.string_states = string_states
         self.average = average
         self.max = max
         self.max_datapoint = max_datapoint
