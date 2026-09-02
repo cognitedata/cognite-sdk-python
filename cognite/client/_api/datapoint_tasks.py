@@ -730,12 +730,6 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             else:
                 return Datapoints(**self.ts_info, timestamp=[], value=[], **status_cols)
 
-        if self.is_state_dps:
-            raise NotImplementedError(
-                "State datapoints are not yet supported when using `retrieve_arrays(...)`. "
-                "Please use `retrieve(...)` instead"
-            )
-
         if self.query.include_status:
             status_cols.update(status_code=np.array([], dtype=np.int32), status_symbol=np.array([], dtype=np.object_))
         return DatapointsArray._load_from_arrays(
@@ -828,11 +822,6 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             self._unpack_and_store_basic(idx, dps)
 
     def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:
-        if self.is_state_dps:
-            raise NotImplementedError(
-                "Retrieving raw state datapoints using `retrieve_arrays(...)` is not yet supported. "
-                "Please use `retrieve(...)` instead."
-            )
         self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
 
         assert self.raw_dtype_numpy is not None
