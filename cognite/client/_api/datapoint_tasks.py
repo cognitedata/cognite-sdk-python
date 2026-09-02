@@ -774,11 +774,33 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 )
             if not self.query.ignore_bad_datapoints:
                 status_columns["null_timestamps"] = self.null_timestamps
+
+            data_columns: dict[str, Any]
+            if not self.is_state_dps:
+                data_columns = {"value": create_array_from_dps_container(self.dps_data)}
+            else:
+                # Numeric dtype for state dps depends on `ignore_bad_datapoints` setting (nullable or not), so we always
+                # warn the user about this. TODO: Maybe revisit this decision? Most users just call to_pandas() and then
+                # they get pandas extension dtype Int32, which is nullable...
+                numeric_dtype = np.int32 if self.query.ignore_bad_datapoints else np.float64
+                if not self.query.ignore_bad_datapoints:
+                    warnings.warn(
+                        "The setting `ignore_bad_datapoints=False` means a state time series' numeric state "
+                        "values can be missing. Since numpy has no notion of a nullable int32 array, the "
+                        "'numeric_states' array is upcast to float64, which can perfectly represent any int32 "
+                        "value and uses NaN for the missing ones.",
+                        UserWarning,
+                    )
+                num_list, str_list = create_state_lists_from_dps_container(self.dps_data)
+                data_columns = {
+                    "numeric_states": np.array(num_list, dtype=numeric_dtype),
+                    "string_states": np.array(str_list, dtype=np.object_),
+                }
             return DatapointsArray._load_from_arrays(
                 {
                     **self.ts_info,
                     "timestamp": create_array_from_dps_container(self.ts_data),
-                    "value": create_array_from_dps_container(self.dps_data),
+                    **data_columns,
                     **status_columns,
                 }
             )
