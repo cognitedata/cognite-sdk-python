@@ -759,7 +759,7 @@ class DatapointsArray(CogniteResource):
         granularity: str | None = None,
         timestamp: NumpyDatetime64NSArray | None = None,
         value: NumpyFloat64Array | NumpyObjArray | None = None,
-        numeric_states: NumpyInt32Array | None = None,
+        numeric_states: NumpyInt32Array | NumpyFloat64Array | None = None,
         string_states: NumpyObjArray | None = None,
         average: NumpyFloat64Array | None = None,
         max: NumpyFloat64Array | None = None,
