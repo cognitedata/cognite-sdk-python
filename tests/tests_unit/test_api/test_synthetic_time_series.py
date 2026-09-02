@@ -102,7 +102,11 @@ class TestSyntheticQuery:
         from sympy import symbols
 
         build_fn = async_client.time_series.data.synthetic._build_expression
+        assert ("ts{externalId:'x'}", "a") == build_fn(symbols("a"), {"a": "x"})
         assert ("ts{externalId:'x'}", "a-dash") == build_fn(symbols("a-dash"), {"a-dash": "x"})
+        assert ("(ts{externalId:'y'}+(-1*ts{externalId:'x'}))", "(a+(-1*a-dash))") == build_fn(
+            symbols("a") - symbols("a-dash"), {"a": "y", "a-dash": "x"}
+        )
         assert (
             "ts{externalId:'x',aggregate:'average',granularity:'1m'}",
             "a",
