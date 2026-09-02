@@ -924,6 +924,40 @@ class TestRetrieveStateDatapoints:
             assert list(df.columns) == [(ts_id, "numeric"), (ts_id, "string")]
 
     @pytest.mark.parametrize(
+        "ignore_bad_datapoints, exp_numeric_dtype",
+        [(True, np.int32), (False, np.float64)],
+    )
+    def test_retrieve_arrays_state_datapoints_empty(
+        self,
+        cognite_client: CogniteClient,
+        empty_state_ts: NodeApplyResult,
+        ignore_bad_datapoints: bool,
+        exp_numeric_dtype: type,
+    ) -> None:
+        ts_id = empty_state_ts.as_id()
+        arr_lst = cognite_client.time_series.data.retrieve_arrays(
+            instance_id=[
+                DatapointsQuery(instance_id=ts_id, limit=0),
+                DatapointsQuery(instance_id=ts_id, limit=1),
+            ],
+            start="1h-ahead",
+            end="2h-ahead",
+            ignore_bad_datapoints=ignore_bad_datapoints,
+        )
+        for arr in arr_lst:
+            assert isinstance(arr, DatapointsArray)
+            assert arr.type == "state"
+            assert len(arr) == 0
+            assert arr.value is None
+            assert arr.numeric_states is not None
+            assert len(arr.numeric_states) == 0
+            assert arr.numeric_states.dtype == exp_numeric_dtype
+            assert arr.string_states is not None
+            assert len(arr.string_states) == 0
+
+            # TODO: awaiting implementation: `df = dps.to_pandas() & assert df.empty`
+
+    @pytest.mark.parametrize(
         "retrieve_call",
         [
             pytest.param(
