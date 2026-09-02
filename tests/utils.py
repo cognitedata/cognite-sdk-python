@@ -522,6 +522,8 @@ class FakeCogniteResourceGenerator:
                 return np.array([self._random.random() for _ in range(3)], dtype=np.float64)
             elif type_ == NDArray[np.uint32]:
                 return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.uint32)
+            elif type_ == NDArray[np.int32]:
+                return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int32)
             elif type_ == NDArray[np.int64]:
                 return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int64)
             elif type_ == NDArray[np.datetime64]:
@@ -650,6 +652,7 @@ class FakeCogniteResourceGenerator:
             "AsyncCogniteClient": AsyncCogniteClient,
             "NumpyDatetime64NSArray": npt.NDArray[np.datetime64],
             "NumpyUInt32Array": npt.NDArray[np.uint32],
+            "NumpyInt32Array": npt.NDArray[np.int32],
             "NumpyInt64Array": npt.NDArray[np.int64],
             "NumpyFloat64Array": npt.NDArray[np.float64],
             "NumpyObjArray": npt.NDArray[np.object_],
