@@ -31,6 +31,8 @@ def data_model_for_query_test(cognite_client: CogniteClient, integration_test_sp
 
 
 class TestDataModelingGraphQLAPI:
+    # TODO: refactor to fix flakiness
+    @pytest.mark.skip("Fails like clockwork with 429: 'User exceeded maximum number=40'of concurrent requests'")
     def test_apply_dml(self, cognite_client: CogniteClient, data_model: DataModel) -> None:
         dml = "type SomeType { someProp: String! } type AnotherType { anotherProp: String! }"
         res = cognite_client.data_modeling.graphql.apply_dml(data_model.as_id(), dml)

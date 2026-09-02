@@ -187,7 +187,7 @@ class BasicAsyncAPIClient:
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         self._config = config
         self._api_version = api_version
-        self._api_subversion = config.api_subversion
+        self.__api_subversion_override: str | None = None
         self._cognite_client = cognite_client
         self._init_async_http_clients()
 
@@ -207,6 +207,21 @@ class BasicAsyncAPIClient:
             refresh_auth_header=self._refresh_auth_header,
         )
 
+    @property
+    def _api_subversion(self) -> str:
+        """Get the API subversion to use for this API class.
+
+        Uses the API subversion from the ClientConfig, unless specifically overridden. To reset the override,
+        simply set `_api_subversion` to None.
+        """
+        if self.__api_subversion_override is None:
+            return self._config.api_subversion
+        return self.__api_subversion_override
+
+    @_api_subversion.setter
+    def _api_subversion(self, value: str | None) -> None:
+        self.__api_subversion_override = value
+
     def __getstate__(self) -> dict[str, Any]:
         """Prepare object for pickling by removing unpicklable async clients."""
         state = self.__dict__.copy()
@@ -223,9 +238,14 @@ class BasicAsyncAPIClient:
         return self._http_client_with_retry if is_retryable else self._http_client
 
     def _alpha_version_header(self) -> dict[str, str]:
-        subversion = self._config.api_subversion
-        version = subversion if "alpha" in subversion else subversion + "-alpha"
-        return {"cdf-version": version}
+        sub = self._api_subversion
+        if "alpha" in sub:
+            return {"cdf-version": sub}
+        elif sub.isdecimal():  # default is something like "20230101" (see __api_subversion__ in _version.py)
+            return {"cdf-version": f"{sub}-alpha"}
+        else:
+            # Maybe the user has set "beta" or something else, whatever the case, we just return "alpha":
+            return {"cdf-version": "alpha"}
 
     @property
     def _base_url_with_base_path(self) -> str:

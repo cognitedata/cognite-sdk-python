@@ -196,7 +196,7 @@ class ClientConfig:
         client_name (str): A user-defined name for the client. Used to identify number of unique applications/scripts running on top of CDF.
         project (str): CDF Project name.
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
-        api_subversion (str | None): API subversion
+        api_subversion (str): API subversion. Set to e.g. "alpha" or "beta" to access restricted preview features.
         base_url (str | None): Base url to send requests to. Typically on the form ``https://<cluster>.cognitedata.com``.
             Either base_url or cluster must be provided.
         cluster (str | None): The cluster where the CDF project is located. When passed, it is assumed that the base
@@ -213,7 +213,7 @@ class ClientConfig:
         client_name: str,
         project: str,
         credentials: CredentialProvider,
-        api_subversion: str | None = None,
+        api_subversion: str = __api_subversion__,
         base_url: str | None = None,
         cluster: str | None = None,
         headers: dict[str, str] | None = None,
@@ -224,7 +224,7 @@ class ClientConfig:
         self.client_name = client_name
         self.project = project
         self.credentials = credentials
-        self.api_subversion = api_subversion or __api_subversion__
+        self.api_subversion = api_subversion or __api_subversion__  # to avoid breaking changes, can be remove in v9
         self.base_url = self._validate_base_url_or_cluster(base_url, cluster)
         self._cluster = cluster
         self.headers = headers or {}
@@ -354,7 +354,7 @@ class ClientConfig:
             client_name=loaded["client_name"],
             project=loaded["project"],
             credentials=credentials,
-            api_subversion=loaded.get("api_subversion"),
+            api_subversion=loaded.get("api_subversion") or __api_subversion__,
             base_url=loaded.get("base_url"),
             cluster=loaded.get("cluster"),
             headers=loaded.get("headers"),
