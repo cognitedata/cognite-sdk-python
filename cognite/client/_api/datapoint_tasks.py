@@ -824,18 +824,28 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
     def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:
         self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
 
-        assert self.raw_dtype_numpy is not None
-        if self.query.ignore_bad_datapoints:
-            self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
+        if self.is_state_dps:
+            # Performance note: We don't materialize numpy arrays per-batch here like we do for "normal raw" datapoints
+            # to keep things simple (allows easy reuse of 'self.dps_data'). This gives a slightly higher-than-necessary
+            # memory footprint. Thus we do one final array conversion in `_get_result` instead.
+            dps = cast(StateDatapoints, dps)
+            if self.query.ignore_bad_datapoints:
+                self.dps_data[idx].append(DpsUnpackFns.extract_raw_num_and_str_state_dps(dps))
+            else:
+                self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_num_and_str_state_dps(dps))
         else:
-            # After this step, missing values (represented with None) will become NaNs and thus become
-            # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
-            # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
-            # use the DatapointsArray to replicate datapoints (exactly).
-            arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps, self.raw_dtype_numpy)
-            self.dps_data[idx].append(arr)
-            if missing_idxs:
-                self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
+            assert self.raw_dtype_numpy is not None
+            if self.query.ignore_bad_datapoints:
+                self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
+            else:
+                # After this step, missing values (represented with None) will become NaNs and thus become
+                # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
+                # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
+                # use the DatapointsArray to replicate datapoints (exactly).
+                arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps, self.raw_dtype_numpy)
+                self.dps_data[idx].append(arr)
+                if missing_idxs:
+                    self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
 
         if self.query.include_status:
             self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
