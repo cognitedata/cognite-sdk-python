@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
@@ -34,3 +35,7 @@ class TestIntegrationErrors:
         request = httpx_mock.get_requests()[0]
         assert "externalId=my-integration" in str(request.url)
         assert "task=poll" in str(request.url)
+
+    def test_list_task_without_external_id_raises(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(ValueError, match="'task' requires 'external_id'"):
+            cognite_client.integrations.errors.list(task="poll")

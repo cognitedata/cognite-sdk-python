@@ -108,6 +108,6 @@ class SyncResult(CogniteResource):
         return cls(
             next_cursor=resource["nextCursor"],
             more_data=resource.get("moreData", False),
-            history=TaskHistoryList._load(resource["history"]) if "history" in resource else None,
-            errors=IntegrationErrorList._load(resource["errors"]) if "errors" in resource else None,
+            history=TaskHistoryList._load(resource["history"]) if resource.get("history") is not None else None,
+            errors=IntegrationErrorList._load(resource["errors"]) if resource.get("errors") is not None else None,
         )

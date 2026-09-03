@@ -1,6 +1,6 @@
 """
 ===============================================================================
-d6864ed3490d3a8820c75aae29a7b5b3
+bde27dc1b43cfa3eeb5745a5669fe8cc
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -42,6 +42,9 @@ class SyncIntegrationErrorsAPI(SyncAPIClient):
             min_start_time (int | None): Only return errors that started at or after this time, in milliseconds since epoch.
             max_end_time (int | None): Only return errors that ended at or before this time, in milliseconds since epoch.
             limit (int | None): Maximum number of errors to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Raises:
+            ValueError: If `task` is given without `external_id`.
 
         Returns:
             IntegrationErrorList: List of errors

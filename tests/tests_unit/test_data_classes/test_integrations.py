@@ -39,6 +39,13 @@ class TestIntegration:
 
         assert loaded.dump(camel_case=True) == INTEGRATION_DUMPED
 
+    def test_load_with_explicit_null_tasks(self) -> None:
+        dumped = {**INTEGRATION_DUMPED, "tasks": None}
+        loaded = Integration._load(dumped)
+
+        assert loaded.tasks == []
+        assert loaded.dump(camel_case=True)["tasks"] == []
+
     def test_as_write(self) -> None:
         loaded = Integration._load(INTEGRATION_DUMPED)
         write = loaded.as_write()
@@ -151,6 +158,12 @@ class TestSyncResult:
         assert isinstance(loaded.errors[0], IntegrationError)
 
         assert loaded.dump(camel_case=True) == dumped
+
+    def test_load_with_explicit_null_history_and_errors(self) -> None:
+        loaded = SyncResult._load({"nextCursor": "abc123", "moreData": False, "history": None, "errors": None})
+
+        assert loaded.history is None
+        assert loaded.errors is None
 
 
 class TestConfigRevision:

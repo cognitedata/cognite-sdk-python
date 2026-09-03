@@ -35,6 +35,9 @@ class IntegrationTasksAPI(APIClient):
             last_per_task (bool): Only return the latest history entry per task.
             limit (int | None): Maximum number of history entries to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
+        Raises:
+            ValueError: If `task_name` is given without `external_id`.
+
         Returns:
             TaskHistoryList: List of task history entries
 
@@ -47,6 +50,9 @@ class IntegrationTasksAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.integrations.tasks.list_history(external_id="my-integration")
         """
+        if task_name is not None and external_id is None:
+            raise ValueError("Specifying 'task_name' requires 'external_id' to also be set.")
+
         self._warning.warn()
         return await self._list(
             method="GET",
@@ -89,6 +95,9 @@ class IntegrationTasksAPI(APIClient):
             cursor (str | None): Cursor returned from a previous call to this method, to continue syncing from where you left off.
             limit (int | None): Maximum number of items to return in this page. Defaults to 25.
 
+        Raises:
+            ValueError: If both `include_errors` and `include_task_updates` are False.
+
         Returns:
             SyncResult: A single page of results. Inspect `more_data` to see whether you should immediately call this method again with the returned `next_cursor`, or back off before doing so.
 
@@ -110,6 +119,9 @@ class IntegrationTasksAPI(APIClient):
                 ...         cursor=res.next_cursor,
                 ...     )
         """
+        if not include_errors and not include_task_updates:
+            raise ValueError("At least one of 'include_errors' or 'include_task_updates' must be True.")
+
         self._warning.warn()
         response = await self._get(
             url_path=f"{self._RESOURCE_PATH}/sync",

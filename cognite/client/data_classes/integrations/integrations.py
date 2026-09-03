@@ -201,7 +201,7 @@ class Integration(IntegrationCore):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
-        result["tasks"] = [task.dump(camel_case) for task in self.tasks]
+        result["tasks"] = [task.dump(camel_case) for task in self.tasks or []]
         return result
 
     @classmethod
@@ -219,7 +219,7 @@ class Integration(IntegrationCore):
             last_seen=resource.get("lastSeen"),
             last_config_revision=resource.get("lastConfigRevision"),
             active_config_revision=resource.get("activeConfigRevision"),
-            tasks=[Task._load(task) for task in resource.get("tasks", [])],
+            tasks=[Task._load(task) for task in resource.get("tasks") or []],
         )
 
     def as_write(self) -> IntegrationWrite:

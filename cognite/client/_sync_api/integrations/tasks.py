@@ -1,6 +1,6 @@
 """
 ===============================================================================
-231d30469457b599925a4f28e9de9a93
+c13367430cb1ccec84ff53d416749174
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -40,6 +40,9 @@ class SyncIntegrationTasksAPI(SyncAPIClient):
             task_name (str | None): Only return history for the task with this name. Requires `external_id` to also be set.
             last_per_task (bool): Only return the latest history entry per task.
             limit (int | None): Maximum number of history entries to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+
+        Raises:
+            ValueError: If `task_name` is given without `external_id`.
 
         Returns:
             TaskHistoryList: List of task history entries
@@ -84,6 +87,9 @@ class SyncIntegrationTasksAPI(SyncAPIClient):
             start_time (int | None): Only return items reported at or after this time, in milliseconds since epoch. Only used on the first call, pass the returned cursor on subsequent calls instead.
             cursor (str | None): Cursor returned from a previous call to this method, to continue syncing from where you left off.
             limit (int | None): Maximum number of items to return in this page. Defaults to 25.
+
+        Raises:
+            ValueError: If both `include_errors` and `include_task_updates` are False.
 
         Returns:
             SyncResult: A single page of results. Inspect `more_data` to see whether you should immediately call this method again with the returned `next_cursor`, or back off before doing so.

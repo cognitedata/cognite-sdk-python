@@ -37,6 +37,9 @@ class IntegrationErrorsAPI(APIClient):
             max_end_time (int | None): Only return errors that ended at or before this time, in milliseconds since epoch.
             limit (int | None): Maximum number of errors to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
+        Raises:
+            ValueError: If `task` is given without `external_id`.
+
         Returns:
             IntegrationErrorList: List of errors
 
@@ -49,6 +52,9 @@ class IntegrationErrorsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.integrations.errors.list(external_id="my-integration")
         """
+        if task is not None and external_id is None:
+            raise ValueError("Specifying 'task' requires 'external_id' to also be set.")
+
         self._warning.warn()
         return await self._list(
             method="GET",

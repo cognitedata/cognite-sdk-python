@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+import pytest
 from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
@@ -36,6 +37,10 @@ class TestIntegrationTasks:
         assert "externalId=my-integration" in str(request.url)
         assert "taskName=poll" in str(request.url)
 
+    def test_list_history_task_name_without_external_id_raises(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(ValueError, match="'task_name' requires 'external_id'"):
+            cognite_client.integrations.tasks.list_history(task_name="poll")
+
     def test_sync(self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
         url_pattern = re.compile(
             re.escape(get_url(async_client.integrations.tasks, "/integrations/sync")) + r"(?:\?.*)?$"
@@ -54,3 +59,7 @@ class TestIntegrationTasks:
         assert res.history is not None
         assert res.history[0].task_name == "poll"
         assert res.errors is None
+
+    def test_sync_requires_include_errors_or_include_task_updates(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(ValueError, match="'include_errors' or 'include_task_updates'"):
+            cognite_client.integrations.tasks.sync(external_id="my-integration")
