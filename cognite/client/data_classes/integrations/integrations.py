@@ -41,7 +41,7 @@ class Task(CogniteResource):
     """A named unit of work in an integration, reported by the extractor.
 
     Args:
-        type (Literal["continuous", "batch"]): Whether the task runs for the lifetime of the extractor (continuous) or runs to completion and exits (batch).
+        type (Literal['continuous', 'batch']): Whether the task runs for the lifetime of the extractor (continuous) or runs to completion and exits (batch).
         name (str): Name of the task, unique within the integration.
         action (bool): Whether this task can be triggered through an Action. Defaults to False.
         description (str | None): Description of the task.
@@ -163,7 +163,7 @@ class Integration(IntegrationCore):
         allowed_not_seen_minutes (int | None): Number of minutes the integration is allowed to not report in before it's flagged as inactive.
         last_seen (int | None): The time this integration was last seen (checked in), in milliseconds since epoch.
         last_config_revision (int | None): The revision number of the last config revision created for this integration.
-        active_config_revision (int | Literal["local"] | None): The config revision currently reported active by the extractor, or "local" if it's using a local config file instead of a revision managed through CDF.
+        active_config_revision (ActiveConfigRevision | None): The config revision currently reported active by the extractor, or "local" if it's using a local config file instead of a revision managed through CDF.
         tasks (list[Task] | None): The tasks the extractor has reported as part of this integration.
     """
 

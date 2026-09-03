@@ -20,7 +20,7 @@ class ActionCore(WriteableCogniteResource["ActionWrite"], ABC):
     """An action is a request for an integration to do something outside its normal task loop,
     e.g. restart, reload config, or start/stop a task.
 
-    The extractor polls for pending actions (through checkin) and reports the outcome back; no inbound
+    The extractor polls for pending actions (through check-in) and reports the outcome back; no inbound
     connectivity is required on the extractor side.
 
     Args:

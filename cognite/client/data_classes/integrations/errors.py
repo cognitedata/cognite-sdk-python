@@ -23,7 +23,7 @@ class IntegrationError(CogniteResource):
         end_time (int | None): Time the error was resolved, in milliseconds since epoch. Not set while unresolved.
         task (str | None): Name of the task the error occurred in. Not set if the error applies to the extractor generally.
         type (IntegrationErrorType | None): Category of the error.
-        active_config_revision (int | Literal["local"] | None): The config revision (or "local") active when the error occurred.
+        active_config_revision (ActiveConfigRevision | None): The config revision (or "local") active when the error occurred.
     """
 
     def __init__(

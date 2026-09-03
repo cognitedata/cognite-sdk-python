@@ -145,6 +145,8 @@ class TestSyncResult:
 
         assert loaded.next_cursor == "abc123"
         assert loaded.more_data is True
+        assert loaded.history is not None
+        assert loaded.errors is not None
         assert isinstance(loaded.history[0], TaskHistory)
         assert isinstance(loaded.errors[0], IntegrationError)
 

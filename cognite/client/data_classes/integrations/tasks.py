@@ -21,7 +21,7 @@ class TaskHistory(CogniteResource):
         error_count (int): Number of errors reported for this task run.
         warning_count (int): Number of warnings reported for this task run.
         fatal_count (int): Number of fatal errors reported for this task run.
-        active_config_revision (int | Literal["local"] | None): The config revision (or "local") active at the time of this task run.
+        active_config_revision (ActiveConfigRevision | None): The config revision (or "local") active at the time of this task run.
         sources (list[str] | None): Lineage: URIs of the systems/resources this task read from.
         targets (list[str] | None): Lineage: URIs of the CDF (or other) resources this task wrote to.
     """
