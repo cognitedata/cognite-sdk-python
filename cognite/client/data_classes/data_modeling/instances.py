@@ -30,7 +30,7 @@ from typing import (
     overload,
 )
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client._constants import OMITTED, Omitted
 from cognite.client.data_classes._base import (
@@ -132,6 +132,7 @@ class NodeOrEdgeData(CogniteResource):
             properties=resource["properties"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict:
         properties = _PropertyValueSerializer.serialize_values(self.properties, camel_case)
         output: dict[str, Any] = {"properties": properties}
@@ -195,6 +196,7 @@ class InstanceApply(WritableInstanceCore[T_CogniteResource], ABC):
     def sources(self) -> list[NodeOrEdgeData]:
         return self.__sources
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "space": self.space,
@@ -255,6 +257,7 @@ class Properties(MutableMapping[ViewIdentifier, MutableMapping[PropertyIdentifie
     load_if = _load_if  # Properties does not have a private load method, so these are the same
 
     def dump(self) -> dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]]:
+        """Dump the properties into a json serializable Python data type."""
         props: dict[Space, dict[str, dict[PropertyIdentifier, PropertyValue]]] = defaultdict(dict)
         for view_id, properties in self.data.items():
             view_id_str = f"{view_id.external_id}/{view_id.version}"
@@ -422,6 +425,7 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         except TypeError:
             self.__raise_if_non_singular_source(attr)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = {
             "space": self.space,
@@ -570,6 +574,7 @@ class InspectionResults(CogniteResource):
             involved_containers=involved_containers,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         results = {}
         if self.involved_views:
@@ -618,6 +623,7 @@ class InstanceInspectResult(CogniteResource):
             inspection_results=InspectionResults.load(resource["inspectionResults"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "space": self.space,
@@ -669,6 +675,7 @@ class NodeApply(InstanceApply["NodeApply"]):
             type=DirectRelationReference._load_if(resource.get("type")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.type:
@@ -736,12 +743,14 @@ class Node(Instance[NodeApply]):
             type=self.type,
         )
 
+    @override
     def as_write(self) -> NodeApply:
         return self.as_apply()
 
     def as_id(self) -> NodeId:
         return NodeId(space=self.space, external_id=self.external_id)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.type:
@@ -833,6 +842,7 @@ class EdgeApply(InstanceApply["EdgeApply"]):
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         # TODO: For subclasses of type "Typed-', sources' is a property, so this ends up doing repeated
@@ -924,12 +934,14 @@ class Edge(Instance[EdgeApply]):
             or None,
         )
 
+    @override
     def as_write(self) -> EdgeApply:
         return self.as_apply()
 
     def as_id(self) -> EdgeId:
         return EdgeId(space=self.space, external_id=self.external_id)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.type:
@@ -1388,6 +1400,7 @@ class TargetUnit(CogniteResource):
     property: str
     unit: UnitReference | UnitSystemReference
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"property": self.property, "unit": self.unit.dump(camel_case)}
 
@@ -1411,6 +1424,7 @@ class TypePropertyDefinition(CogniteResource):
     name: str | None = None
     description: str | None = None
 
+    @override
     def dump(self, camel_case: bool = True, return_flat_dict: bool = False) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if return_flat_dict:
@@ -1447,6 +1461,7 @@ class TypeInformation(UserDict, CogniteResource):
     def __init__(self, data: dict[str, dict[str, dict[str, TypePropertyDefinition]]] | None = None) -> None:
         super().__init__(data or {})
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         for space_name, space_data in self.items():
@@ -1738,6 +1753,7 @@ class TypedNodeApply(NodeApply, TypedInstance):
     def sources(self) -> list[NodeOrEdgeData]:
         return [NodeOrEdgeData(source=self.get_source(), properties=self._dump_properties())]
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         # We want to send type=None even though DMS currently treats it "as if omitted":

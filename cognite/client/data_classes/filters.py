@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, TypeAlias, cast, final
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
@@ -190,6 +190,7 @@ class UnknownFilter(Filter):
     def _load(cls, resource: dict[str, Any]) -> NoReturn:
         raise NotImplementedError("UnknownFilter cannot be loaded (is a fallback for unknown filter types)")
 
+    @override
     def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
         return {self.__actual_filter_name: self._filter_body(camel_case_property)}
 
@@ -218,6 +219,7 @@ class InvalidFilter(Filter):
         else:
             return body
 
+    @override
     def dump(self, camel_case_property: bool = False) -> dict[str, Any]:
         return {self._filter_name: self._filter_body(camel_case_property)}
 

@@ -4,7 +4,7 @@ from abc import ABC
 from collections.abc import Sequence
 from typing import Any
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -79,6 +79,7 @@ class LabelDefinition(LabelDefinitionCore):
             data_set_id=resource.get("dataSetId"),
         )
 
+    @override
     def as_write(self) -> LabelDefinitionWrite:
         """Returns this LabelDefinition in its write version."""
         return LabelDefinitionWrite(
@@ -123,6 +124,7 @@ class LabelDefinitionWrite(LabelDefinitionCore):
             data_set_id=resource.get("dataSetId"),
         )
 
+    @override
     def as_write(self) -> LabelDefinitionWrite:
         """Returns this LabelDefinitionWrite instance."""
         return self
@@ -240,6 +242,7 @@ class LabelFilter(CogniteFilter):
             contains_all=[item["externalId"] for item in contains_all] if contains_all else None,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {}
         if self.contains_any:

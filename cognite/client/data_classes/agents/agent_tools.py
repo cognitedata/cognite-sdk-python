@@ -5,6 +5,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, ClassVar, Literal
 
+from typing_extensions import override
+
 from cognite.client.data_classes._base import (
     CogniteResourceList,
     WriteableCogniteResource,
@@ -25,6 +27,7 @@ class AgentToolCore(WriteableCogniteResource["AgentToolUpsert"], ABC):
     name: str
     description: str
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type."""
         result = super().dump(camel_case=camel_case)
@@ -50,6 +53,7 @@ class AgentToolUpsert(AgentToolCore, ABC):
         result["type"] = getattr(self.__class__, "_type", getattr(self, "type", ""))
         return result
 
+    @override
     def as_write(self) -> AgentToolUpsert:
         return self
 
@@ -125,10 +129,12 @@ class DataModelInfo(WriteableCogniteResource):
             view_external_ids=resource.get("viewExternalIds"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         return result
 
+    @override
     def as_write(self) -> DataModelInfo:
         return self
 
@@ -152,6 +158,7 @@ class InstanceSpaces(WriteableCogniteResource):
             spaces=resource.get("spaces"),
         )
 
+    @override
     def as_write(self) -> InstanceSpaces:
         return self
 
@@ -170,6 +177,7 @@ class Subagent(WriteableCogniteResource):
     def _load(cls, resource: dict[str, Any]) -> Subagent:
         return cls(agent_external_id=resource["agentExternalId"])
 
+    @override
     def as_write(self) -> Subagent:
         return self
 
@@ -201,6 +209,7 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
             version=resource.get("version"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = {}
         key = "dataModels" if camel_case else "data_models"
@@ -212,6 +221,7 @@ class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
             result["version"] = self.version
         return result
 
+    @override
     def as_write(self) -> QueryKnowledgeGraphAgentToolConfiguration:
         return self
 
@@ -237,6 +247,7 @@ class QueryAgentToolConfiguration(WriteableCogniteResource):
             instance_spaces=InstanceSpaces._load_if(resource.get("instanceSpaces")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = {}
         key = "dataModels" if camel_case else "data_models"
@@ -251,6 +262,7 @@ class QueryAgentToolConfiguration(WriteableCogniteResource):
             result[key] = self.instance_spaces.dump(camel_case=camel_case)
         return result
 
+    @override
     def as_write(self) -> QueryAgentToolConfiguration:
         return self
 
@@ -266,6 +278,7 @@ class SummarizeDocumentAgentTool(AgentTool):
 
     _type: ClassVar[str] = "summarizeDocument"
 
+    @override
     def as_write(self) -> SummarizeDocumentAgentToolUpsert:
         return SummarizeDocumentAgentToolUpsert(
             name=self.name,
@@ -310,6 +323,7 @@ class AskDocumentAgentTool(AgentTool):
 
     _type: ClassVar[str] = "askDocument"
 
+    @override
     def as_write(self) -> AskDocumentAgentToolUpsert:
         return AskDocumentAgentToolUpsert(
             name=self.name,
@@ -364,6 +378,7 @@ class QueryKnowledgeGraphAgentTool(AgentTool):
             configuration=QueryKnowledgeGraphAgentToolConfiguration._load_if(resource.get("configuration")),
         )
 
+    @override
     def as_write(self) -> QueryKnowledgeGraphAgentToolUpsert:
         return QueryKnowledgeGraphAgentToolUpsert(
             name=self.name,
@@ -371,6 +386,7 @@ class QueryKnowledgeGraphAgentTool(AgentTool):
             configuration=self.configuration,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.configuration:
@@ -391,6 +407,7 @@ class QueryKnowledgeGraphAgentToolUpsert(AgentToolUpsert):
     _type: ClassVar[str] = "queryKnowledgeGraph"
     configuration: QueryKnowledgeGraphAgentToolConfiguration | None = None
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.configuration:
@@ -417,6 +434,7 @@ class QueryTimeSeriesDatapointsAgentTool(AgentTool):
 
     _type: ClassVar[str] = "queryTimeSeriesDatapoints"
 
+    @override
     def as_write(self) -> QueryTimeSeriesDatapointsAgentToolUpsert:
         return QueryTimeSeriesDatapointsAgentToolUpsert(
             name=self.name,
@@ -471,6 +489,7 @@ class QueryAgentTool(AgentTool):
             configuration=QueryAgentToolConfiguration._load_if(resource.get("configuration")),
         )
 
+    @override
     def as_write(self) -> QueryAgentToolUpsert:
         return QueryAgentToolUpsert(
             name=self.name,
@@ -478,6 +497,7 @@ class QueryAgentTool(AgentTool):
             configuration=self.configuration,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.configuration:
@@ -498,6 +518,7 @@ class QueryAgentToolUpsert(AgentToolUpsert):
     _type: ClassVar[str] = "query"
     configuration: QueryAgentToolConfiguration | None = None
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         if self.configuration:

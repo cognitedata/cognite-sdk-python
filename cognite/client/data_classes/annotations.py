@@ -3,6 +3,8 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any, Literal, TypeAlias, cast
 
+from typing_extensions import override
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteObjectUpdate,
@@ -71,6 +73,7 @@ class AnnotationCore(WriteableCogniteResource["AnnotationWrite"], ABC):
         self.annotated_resource_type = annotated_resource_type
         self.annotated_resource_id = annotated_resource_id
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         # Special handling of created_user, which has a valid None value
@@ -241,6 +244,7 @@ class AnnotationReverseLookupFilter(CogniteFilter):
         self.annotation_type = annotation_type
         self.data = data
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case=camel_case)
         # Special handling for creating_user, which has a valid None value

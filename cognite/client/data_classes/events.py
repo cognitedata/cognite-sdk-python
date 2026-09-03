@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from enum import auto
 from typing import Any, Literal, TypeAlias
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -179,6 +179,7 @@ class EventWrite(WriteableCogniteResource["EventWrite"]):
         self.asset_ids = asset_ids
         self.source = source
 
+    @override
     def as_write(self) -> EventWrite:
         return self
 
@@ -250,6 +251,7 @@ class EventFilter(CogniteFilter):
         self.last_updated_time = last_updated_time
         self.external_id_prefix = external_id_prefix
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if self.end_time and isinstance(self.end_time, EndTimeFilter):
@@ -368,6 +370,7 @@ class EventWriteList(CogniteResourceList[EventWrite], ExternalIDTransformerMixin
 class EventList(WriteableCogniteResourceList[EventWrite, Event], IdTransformerMixin):
     _RESOURCE = Event
 
+    @override
     def as_write(self) -> EventWriteList:
         return EventWriteList([event.as_write() for event in self.data])
 

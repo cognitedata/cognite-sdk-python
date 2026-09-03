@@ -6,7 +6,7 @@ from collections.abc import Mapping, MutableMapping, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Generic, Literal, TypeVar
 
-from typing_extensions import Never, Self, assert_never
+from typing_extensions import Never, Self, assert_never, override
 
 from cognite.client.data_classes._base import CogniteResource, UnknownCogniteResource
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId, ViewIdentifier
@@ -34,6 +34,7 @@ class SourceSelector(CogniteResource):
     properties: list[str] | None = None
     target_units: list[TargetUnit] | None = None
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"source": self.source.dump(camel_case)}
         if self.properties is not None:
@@ -85,6 +86,7 @@ class SourceSelector(CogniteResource):
 class SelectBase(CogniteResource, ABC):
     sources: list[SourceSelector] = field(default_factory=list)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.sources:
@@ -133,6 +135,7 @@ class Select(SelectBase):
     sort: list[InstanceSort] = field(default_factory=list)
     limit: int | None = None
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.sort:
@@ -179,6 +182,7 @@ class QueryBase(CogniteResource, ABC, Generic[_T_ResultSetExpression, _T_Select]
             for k, v in self.with_.items()
         }
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "with": {k: v.dump(camel_case) for k, v in self.with_.items()},
@@ -255,6 +259,7 @@ class QuerySync(QueryBase["ResultSetExpressionSync", SelectSync]):
 
     allow_expired_cursors_and_accept_missed_deletes: bool = False
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.allow_expired_cursors_and_accept_missed_deletes:
@@ -383,6 +388,7 @@ class NodeResultSetExpression(NodeOrEdgeResultSetExpression):
             limit=resource.get("limit"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         nodes: dict[str, Any] = {}
         if self.from_:
@@ -446,6 +452,7 @@ class EdgeResultSetExpression(NodeOrEdgeResultSetExpression):
             limit=resource.get("limit"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         edges: dict[str, Any] = {}
         if self.from_:
@@ -600,6 +607,7 @@ class NodeResultSetExpressionSync(ResultSetExpressionSync):
             backfill_sort=cls._load_sort(resource, "backfillSort"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         nodes: dict[str, Any] = {}
         if self.from_:
@@ -682,6 +690,7 @@ class EdgeResultSetExpressionSync(ResultSetExpressionSync):
             backfill_sort=cls._load_sort(resource, "backfillSort"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         edges: dict[str, Any] = {}
         if self.from_:
@@ -821,6 +830,7 @@ class Union(SetOperation):
             limit=resource.get("limit"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "union": [item if isinstance(item, str) else item.dump(camel_case) for item in self.union]
@@ -848,6 +858,7 @@ class UnionAll(SetOperation):
             limit=resource.get("limit"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "unionAll": [item if isinstance(item, str) else item.dump(camel_case) for item in self.union_all]
@@ -875,6 +886,7 @@ class Intersection(SetOperation):
             limit=resource.get("limit"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "intersection": [item if isinstance(item, str) else item.dump(camel_case) for item in self.intersection]

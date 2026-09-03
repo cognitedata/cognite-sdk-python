@@ -13,7 +13,7 @@ from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeAlias, TypeVar, overload
 from zoneinfo import ZoneInfo
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
 from cognite.client.data_classes._base import (
@@ -236,7 +236,9 @@ class StateDatapointsInsert:
 @dataclass(slots=True, frozen=True)
 class MaxOrMinDatapoint:
     @abstractmethod
-    def dump(self, camel_case: bool = True) -> dict[str, Any]: ...
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the datapoint to a dictionary."""
+        ...
 
     @classmethod
     @abstractmethod
@@ -265,6 +267,7 @@ class MinDatapoint(MaxOrMinDatapoint):
         assert "statusCode" not in dct
         return cls(dct["timestamp"], dct["value"])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"timestamp": self.timestamp, "value": self.value}
 
@@ -278,6 +281,7 @@ class MinDatapointWithStatus(MinDatapoint):
     def _load(cls, dct: dict[str, Any]) -> Self:
         return cls(dct["timestamp"], dct["value"], dct["statusCode"], dct["statusSymbol"])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "timestamp": self.timestamp,
@@ -309,6 +313,7 @@ class MaxDatapoint(MaxOrMinDatapoint):
         assert "statusCode" not in dct
         return cls(dct["timestamp"], dct["value"])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"timestamp": self.timestamp, "value": self.value}
 
@@ -322,6 +327,7 @@ class MaxDatapointWithStatus(MaxDatapoint):
     def _load(cls, dct: dict[str, Any]) -> Self:
         return cls(dct["timestamp"], dct["value"], dct["statusCode"], dct["statusSymbol"])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "timestamp": self.timestamp,
@@ -484,6 +490,7 @@ class DatapointsQuery:
         return json.dumps(self.dump(), indent=4)
 
     def dump(self) -> dict[str, Any]:
+        """Dump the query to a dictionary, excluding any attributes that are set to their default values."""
         # We need to dump only those fields specifically passed by the user:
         return {
             **self.identifier.as_dict(camel_case=False),
@@ -718,6 +725,7 @@ class Datapoint(CogniteResource):
             timezone=timezone,
         )
 
+    @override
     def dump(self, camel_case: bool = True, include_timezone: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         # Keep value even if None (bad status codes support missing):
@@ -960,6 +968,7 @@ class DatapointsArray(CogniteResource):
         attrs, arrays = map(list, zip(*data_field_tuples))
         return attrs, arrays
 
+    @override
     def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> dict[str, Any]:
         """Dump the DatapointsArray into a json serializable Python data type.
 
@@ -1197,6 +1206,7 @@ class Datapoints(CogniteResource):
     def __iter__(self) -> Iterator[Datapoint]:
         yield from self.__get_datapoint_objects()
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the datapoints into a json serializable Python data type.
 
@@ -1419,6 +1429,7 @@ class SyntheticDatapoints(CogniteResource):
             timezone=tz,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the synthetic datapoints into a json serializable Python data type.
 
@@ -1506,6 +1517,7 @@ class SyntheticDatapointsList(CogniteResourceList[SyntheticDatapoints]):
         # Concatenate along columns (axis=1), aligning on timestamp index
         return pd.concat(dfs, axis=1)
 
+    @override
     def dump(self, camel_case: bool = True) -> NoReturn:
         raise NotImplementedError
 
@@ -1577,6 +1589,7 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
             include_unit=include_unit,
         )
 
+    @override
     def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> list[dict[str, Any]]:
         """Dump the instance into a json serializable Python data type.
 
@@ -1735,6 +1748,7 @@ class LatestDatapoint(CogniteResource):
         """Whether a datapoint exists for this time series."""
         return bool(self)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the latest datapoint into a json serializable Python data type.
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -157,5 +157,6 @@ class TransformationScheduleList(
 ):
     _RESOURCE = TransformationSchedule
 
+    @override
     def as_write(self) -> TransformationScheduleWriteList:
         return TransformationScheduleWriteList([x.as_write() for x in self.data])

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, ClassVar, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -41,6 +41,7 @@ class Principal(CogniteResource, ABC):
             ),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the principal to a dictionary."""
         output = super().dump(camel_case=camel_case)
@@ -166,6 +167,7 @@ class ServicePrincipal(Principal):
             description=resource.get("description"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["createdBy" if camel_case else "created_by"] = self.created_by.dump(camel_case=camel_case)
@@ -200,6 +202,7 @@ class UnknownPrincipal(Principal):
             data={k: v for k, v in resource.items() if k not in {"id", "type"}},
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"id": self.id, "type": self.type, **self.__data}
 

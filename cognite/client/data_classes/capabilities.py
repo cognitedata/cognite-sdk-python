@@ -13,7 +13,7 @@ from itertools import product
 from types import MappingProxyType
 from typing import Any, ClassVar, Literal, NamedTuple, NoReturn, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._auxiliary import load_yaml_or_json, rename_and_exclude_keys
@@ -146,6 +146,7 @@ class Capability(ABC):
             )
 
         def dump(self, camel_case: bool = True) -> dict[str, Any]:
+            """Dump the scope to a dictionary."""
             if isinstance(self, UnknownScope):
                 return {self.name: self.data}
 
@@ -225,6 +226,7 @@ class Capability(ABC):
         raise ValueError(err_msg)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the capability to a dictionary."""
         if isinstance(self, UnknownAcl):
             return self.raw_data
         data = {
@@ -267,6 +269,7 @@ class ProjectScope(ABC):
         raise ValueError(f"Unknown project scope: {data}")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the project scope to a dictionary."""
         if isinstance(self, AllProjectsScope):
             return {self.name: {"allProjects": {}}}
         elif isinstance(self, ProjectsScope):
@@ -303,6 +306,7 @@ class ProjectCapability(CogniteResource):
             project_scope=ProjectScope.load(project_scope_dct),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = self.capability.dump(camel_case=camel_case)
         dumped.update(self.project_scope.dump(camel_case=camel_case))
@@ -463,6 +467,7 @@ class TableScope(Capability.Scope):
         # TableScope is frozen, so a bit awkward to set attribute:
         object.__setattr__(self, "dbs_to_tables", loaded)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         key = "dbsToTables" if camel_case else "dbs_to_tables"
         return {self._scope_name: {key: {k: {"tables": v} for k, v in self.dbs_to_tables.items()}}}

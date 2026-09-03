@@ -6,7 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal, TypeVar, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -80,6 +80,7 @@ class ContainerCore(DataModelingSchemaResource["ContainerApply"], ABC):
             **extra_kwargs,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.constraints:
@@ -189,6 +190,7 @@ class Container(ContainerCore):
             indexes={k: i.as_apply() for k, i in self.indexes.items()},
         )
 
+    @override
     def as_write(self) -> ContainerApply:
         return self.as_apply()
 
@@ -224,6 +226,7 @@ class ContainerList(WriteableCogniteResourceList[ContainerApply, Container]):
         """
         return [v.as_id() for v in self]
 
+    @override
     def as_write(self) -> ContainerApplyList:
         return self.as_apply()
 
@@ -262,6 +265,7 @@ class PropertyConstraintState(CogniteResource):
             max_text_size=resource.get("maxTextSize"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, str]:
         output = {}
         for key in ["nullability", "max_list_size", "max_text_size"]:
@@ -315,6 +319,7 @@ class ContainerPropertyCore(CogniteResource, ABC):
         """Return the write version of this property."""
         raise NotImplementedError
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.type:
@@ -361,6 +366,7 @@ class ContainerProperty(ContainerPropertyCore):
             immutable=self.immutable,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["constraintState" if camel_case else "constraint_state"] = self.constraint_state.dump(camel_case)
@@ -376,6 +382,7 @@ class ConstraintCore(CogniteResource, ABC):
         """Return the write version of this constraint."""
         raise NotImplementedError
 
+    @override
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
@@ -428,6 +435,7 @@ class RequiresConstraintApply(ConstraintApply):
         require = ContainerId.load(resource["require"])
         return cls(require=require)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"require": self.require.dump(camel_case)}
         key = "constraintType" if camel_case else "constraint_type"
@@ -450,6 +458,7 @@ class RequiresConstraint(Constraint):
     def as_apply(self) -> RequiresConstraintApply:
         return RequiresConstraintApply(require=self.require)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"require": self.require.dump(camel_case)}
         output["state"] = self.state
@@ -469,6 +478,7 @@ class UniquenessConstraintApply(ConstraintApply):
         properties = resource["properties"]
         return cls(properties=properties)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"properties": self.properties}
         key = "constraintType" if camel_case else "constraint_type"
@@ -491,6 +501,7 @@ class UniquenessConstraint(Constraint):
     def as_apply(self) -> UniquenessConstraintApply:
         return UniquenessConstraintApply(properties=self.properties)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"properties": self.properties}
         output["state"] = self.state
@@ -562,6 +573,7 @@ class BTreeIndexApply(IndexApply):
         cursorable = resource.get("cursorable", False)
         return cls(properties=properties, cursorable=cursorable)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}
         if self.cursorable is not None:
@@ -587,6 +599,7 @@ class BTreeIndex(Index):
     def as_apply(self) -> BTreeIndexApply:
         return BTreeIndexApply(properties=self.properties, cursorable=self.cursorable)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}
         if self.cursorable is not None:
@@ -608,6 +621,7 @@ class InvertedIndexApply(IndexApply):
         properties = resource["properties"]
         return cls(properties=properties)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}
         dumped["indexType" if camel_case else "index_type"] = "inverted"
@@ -629,6 +643,7 @@ class InvertedIndex(Index):
     def as_apply(self) -> InvertedIndexApply:
         return InvertedIndexApply(properties=self.properties)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped: dict[str, Any] = {"properties": self.properties}
         dumped["indexType" if camel_case else "index_type"] = "inverted"

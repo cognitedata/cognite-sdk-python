@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -72,6 +72,7 @@ class Simulator(CogniteResource):
             else None,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if isinstance(self.model_types, list) and all(
@@ -201,6 +202,7 @@ class SimulatorQuantity(CogniteResource):
         else:
             raise TypeError("Expected a dict or a list of dicts.")
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["units"] = [unit.dump(camel_case=camel_case) for unit in self.units]
@@ -226,6 +228,7 @@ class SimulatorStepField(CogniteResource):
             else None,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.options is not None:
@@ -288,6 +291,7 @@ class SimulatorModelDependency(CogniteResource):
         else:
             raise TypeError("Expected a dict or a list of dicts.")
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["fields"] = [field_.dump(camel_case=camel_case) for field_ in self.fields]
@@ -319,6 +323,7 @@ class SimulatorStep(CogniteResource):
         else:
             raise TypeError("Expected a dict or a list of dicts.")
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["fields"] = [field_.dump(camel_case=camel_case) for field_ in self.fields]
