@@ -103,10 +103,6 @@ class TestSyntheticQuery:
 
         build_fn = async_client.time_series.data.synthetic._build_expression
         assert ("ts{externalId:'x'}", "a") == build_fn(symbols("a"), {"a": "x"})
-        assert ("ts{externalId:'x'}", "a-dash") == build_fn(symbols("a-dash"), {"a-dash": "x"})
-        assert ("(ts{externalId:'y'}+(-1*ts{externalId:'x'}))", "(a+(-1*a-dash))") == build_fn(
-            symbols("a") - symbols("a-dash"), {"a": "y", "a-dash": "x"}
-        )
         assert (
             "ts{externalId:'x',aggregate:'average',granularity:'1m'}",
             "a",
@@ -154,6 +150,17 @@ class TestSyntheticQuery:
             cognite_client.time_series.data.synthetic.query(
                 [symbols("a") + cot(symbols("a"))], start=0, end="now", variables={"a": "a"}
             )
+
+    @pytest.mark.dsl
+    def test_expression_builder_variables_non_word_characters(self, async_client: AsyncCogniteClient) -> None:
+        # Until SDK version 8.15.0, variable names with non-word characters were not fully supported.
+        from sympy import symbols
+
+        build_fn = async_client.time_series.data.synthetic._build_expression
+        assert ("ts{externalId:'x'}", "a-dash") == build_fn(symbols("a-dash"), {"a-dash": "x"})
+        assert ("(ts{externalId:'y'}+(-1*ts{externalId:'x'}))", "(a+(-1*a-dash))") == build_fn(
+            symbols("a") - symbols("a-dash"), {"a": "y", "a-dash": "x"}
+        )
 
 
 @pytest.mark.dsl
