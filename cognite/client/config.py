@@ -398,6 +398,10 @@ class ClientConfig:
             UserWarning,
             stacklevel=2,
         )
+        return self._attempt_to_get_cdf_cluster()
+
+    def _attempt_to_get_cdf_cluster(self) -> str | None:
+        """A best effort attempt to extract the cluster from the base url when cluster was not explicitly provided in init."""
         if self._cluster is not None:
             return self._cluster
 
