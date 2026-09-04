@@ -6,6 +6,7 @@ import re
 import ssl
 import warnings
 from typing import Any, ClassVar, NoReturn, overload
+from typing_extensions import deprecated
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
@@ -373,11 +374,33 @@ class ClientConfig:
         )
 
     @property
+    @deprecated(
+        "cdf_cluster is a best-effort helper and will be removed in v9. "
+        "It does not affect API request routing (handled exclusively by 'base_url')."
+    )
     def cdf_cluster(self) -> str | None:
+        """The CDF cluster, if known: as passed to 'cluster', else guessed from 'base_url'.
+
+        This is a helper property previously used internally in the SDK to make warnings and error messages more specific.
+        It NEVER affects where API requests are sent, that is decided purely by 'base_url'. If the return value from this
+        property is None, it simply means the cluster could not be guessed from the base URL, and is not an error.
+
+        .. deprecated:: 8.15.0
+            This property was a best-effort helper to determine the CDF cluster to make e.g. warnings or error
+            messages more specific. It was never meant to be a reliable source of truth, which is impossible
+            due to the SDK allowing arbitrary base URLs. Will be removed in in the next major version (v9).
+        """
+        warnings.warn(
+            "'cdf_cluster' is a best-effort helper: it is read from 'cluster' if given, else guessed from "
+            "'base_url'. The SDK only uses it to make warnings and error messages more specific -- it never "
+            "affects where requests are sent, which 'base_url' alone decides. A value of None is therefore not "
+            "an error and breaks nothing. Do not use it to configure or route an integration.",
+            UserWarning,
+            stacklevel=2,
+        )
         if self._cluster is not None:
             return self._cluster
 
-        # A best effort attempt to extract the cluster from the base url
         if match := re.match(
             r"https?://([^/\.\s]*\.plink\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)", self.base_url
         ):
