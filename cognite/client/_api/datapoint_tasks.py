@@ -22,7 +22,7 @@ from typing import (
 from zoneinfo import ZoneInfo
 
 from cognite.client._constants import NUMPY_IS_AVAILABLE
-from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem
+from cognite.client._proto.data_point_list_response_pb2 import TIMESERIES_TYPE_STATE, DataPointListItem, TimeSeriesType
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
@@ -39,12 +39,14 @@ from cognite.client.utils._datapoints import (
     AggregateDatapoints,
     DatapointsRaw,
     DpsUnpackFns,
+    StateDatapoints,
     _DataContainer,
     create_aggregates_arrays_from_dps_container,
     create_aggregates_list_from_dps_container,
     create_array_from_dps_container,
     create_list_from_dps_container,
     create_object_array_from_container,
+    create_state_lists_from_dps_container,
     decide_numpy_dtype_from_is_string,
     ensure_int,
     ensure_int_numpy,
@@ -527,6 +529,7 @@ class BaseTaskOrchestrator(ABC):
         self.raw_dtype_numpy: type[np.object_] | type[np.float64] | None = None
         self._is_done = False
         self._final_result: Datapoints | DatapointsArray | None = None
+        self._is_state_dps: bool
 
         self.ts_data: _DataContainer = defaultdict(list)
         self.dps_data: _DataContainer = defaultdict(list)
@@ -580,6 +583,13 @@ class BaseTaskOrchestrator(ABC):
             return 0
         return len(self.ts_data[FIRST_IDX][0])
 
+    @property
+    def is_state_dps(self) -> bool:
+        return self._is_state_dps
+
+    def set_is_state_status(self, ts_type: TimeSeriesType) -> None:
+        self._is_state_dps = ts_type == TIMESERIES_TYPE_STATE
+
     def _extract_first_dps_batch(self, first_dps_batch: DataPointListItem, first_limit: int) -> None:
         dps = get_datapoints_from_proto(first_dps_batch)
         self._store_ts_info(first_dps_batch)
@@ -589,6 +599,7 @@ class BaseTaskOrchestrator(ABC):
         self._store_first_batch(dps, first_limit)
 
     def _store_ts_info(self, res: DataPointListItem) -> None:
+        self.set_is_state_status(res.type)
         self.ts_info.update(get_ts_info_from_proto(res))
         self.ts_info["timezone"] = self.query.original_timezone
         self.ts_info["granularity"] = self.query.original_granularity  # show '1quarter', not '3mo'
@@ -710,11 +721,20 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
         return 1  # millisecond
 
     def _create_empty_result(self) -> Datapoints | DatapointsArray:
-        status_cols: dict[str, Any] = {}
+        status_cols: dict[str, Any] = {}  # TODO: Perhaps better to make this "all info" instead of just status
         if not self.use_numpy:
             if self.query.include_status:
                 status_cols.update(status_code=[], status_symbol=[])
-            return Datapoints(**self.ts_info, timestamp=[], value=[], **status_cols)
+            if self.is_state_dps:
+                return Datapoints(**self.ts_info, timestamp=[], numeric_states=[], string_states=[], **status_cols)
+            else:
+                return Datapoints(**self.ts_info, timestamp=[], value=[], **status_cols)
+
+        if self.is_state_dps:
+            raise NotImplementedError(
+                "State datapoints are not yet supported when using `retrieve_arrays(...)`. "
+                "Please use `retrieve(...)` instead"
+            )
 
         if self.query.include_status:
             status_cols.update(status_code=np.array([], dtype=np.int32), status_symbol=np.array([], dtype=np.object_))
@@ -753,17 +773,27 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                     **status_columns,
                 }
             )
-        if self.query.include_status:
-            status_columns.update(
-                status_code=create_list_from_dps_container(self.status_code),
-                status_symbol=create_list_from_dps_container(self.status_symbol),
+        else:
+            if self.query.include_status:
+                status_columns.update(
+                    status_code=create_list_from_dps_container(self.status_code),
+                    status_symbol=create_list_from_dps_container(self.status_symbol),
+                )
+            if self.is_state_dps:
+                value_col = None
+                num_state_col, str_state_col = create_state_lists_from_dps_container(self.dps_data)
+            else:
+                value_col = create_list_from_dps_container(self.dps_data)
+                num_state_col, str_state_col = None, None
+
+            return Datapoints(
+                **self.ts_info,
+                timestamp=create_list_from_dps_container(self.ts_data),
+                value=value_col,
+                numeric_states=num_state_col,
+                string_states=str_state_col,
+                **status_columns,
             )
-        return Datapoints(
-            **self.ts_info,
-            timestamp=create_list_from_dps_container(self.ts_data),
-            value=create_list_from_dps_container(self.dps_data),
-            **status_columns,
-        )
 
     def _include_outside_points_in_result(self) -> None:
         for dp, status_code, status_symbol, idx in zip(
@@ -775,7 +805,7 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             if not dp:
                 continue
             ts: list[int] | NumpyInt64Array = [dp[0]]
-            value: list[float | str] | NumpyFloat64Array | NumpyObjArray = [dp[1]]
+            value: list[float | str | tuple[int, str | None]] | NumpyFloat64Array | NumpyObjArray = [dp[1]]
             if self.use_numpy:
                 ts = np.array(ts, dtype=np.int64)
                 value = np.array(value, dtype=self.raw_dtype_numpy)
@@ -793,32 +823,54 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:  # type: ignore [override]
         if self.use_numpy:
-            self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
-            assert self.raw_dtype_numpy is not None
-            if self.query.ignore_bad_datapoints:
-                self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
-            else:
-                # After this step, missing values (represented with None) will become NaNs and thus become
-                # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
-                # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
-                # use the DatapointsArray to replicate datapoints (exactly).
-                arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps, self.raw_dtype_numpy)
-                self.dps_data[idx].append(arr)
-                if missing_idxs:
-                    self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
-            if self.query.include_status:
-                self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
-                self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol_numpy(dps))
-
+            self._unpack_and_store_numpy(idx, dps)
         else:
-            self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
-            if self.query.ignore_bad_datapoints:
+            self._unpack_and_store_basic(idx, dps)
+
+    def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:
+        if self.is_state_dps:
+            raise NotImplementedError(
+                "Retrieving raw state datapoints using `retrieve_arrays(...)` is not yet supported. "
+                "Please use `retrieve(...)` instead."
+            )
+        self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
+
+        assert self.raw_dtype_numpy is not None
+        if self.query.ignore_bad_datapoints:
+            self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
+        else:
+            # After this step, missing values (represented with None) will become NaNs and thus become
+            # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
+            # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
+            # use the DatapointsArray to replicate datapoints (exactly).
+            arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps, self.raw_dtype_numpy)
+            self.dps_data[idx].append(arr)
+            if missing_idxs:
+                self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
+
+        if self.query.include_status:
+            self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
+            self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol_numpy(dps))
+
+    def _unpack_and_store_basic(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:
+        self.ts_data[idx].append(DpsUnpackFns.extract_timestamps(dps))
+
+        if self.query.ignore_bad_datapoints:
+            if self.is_state_dps:
+                self.dps_data[idx].append(DpsUnpackFns.extract_raw_num_and_str_state_dps(cast(StateDatapoints, dps)))
+            else:
                 self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps(dps))
+        else:
+            if self.is_state_dps:
+                self.dps_data[idx].append(
+                    DpsUnpackFns.extract_nullable_raw_num_and_str_state_dps(cast(StateDatapoints, dps))
+                )
             else:
                 self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_dps(dps))
-            if self.query.include_status:
-                self.status_code[idx].append(DpsUnpackFns.extract_status_code(dps))
-                self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol(dps))
+
+        if self.query.include_status:
+            self.status_code[idx].append(DpsUnpackFns.extract_status_code(dps))
+            self.status_symbol[idx].append(DpsUnpackFns.extract_status_symbol(dps))
 
     def _store_first_batch(self, dps: DatapointsAny, first_limit: int) -> None:
         if self.query.include_outside_points:
@@ -944,6 +996,9 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         return Datapoints(timestamp=[], **self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _get_result(self) -> Datapoints | DatapointsArray:
+        if self.is_state_dps:
+            raise NotImplementedError("Retrieving aggregate state datapoints is not yet supported.")
+
         if not self.ts_data or self.query.limit == 0:
             return self._create_empty_result()
 
@@ -978,6 +1033,9 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         return Datapoints(**self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:  # type: ignore [override]
+        if self.is_state_dps:
+            raise NotImplementedError("Retrieving aggregate state datapoints is not yet supported.")
+
         # Object aggregates are unpacked similarly for basic and numpy and only converted later (for numpy)
         if self.object_aggs:
             for agg, unpack_fn in zip(self.object_aggs, self.object_agg_unpack_fns):
