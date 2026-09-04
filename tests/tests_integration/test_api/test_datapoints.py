@@ -783,6 +783,32 @@ class TestInsertStateDatapoints:
         assert dps_with_bad.string_states == [None, *exp_string_states]
         assert dps_with_bad.numeric_states == [None, *exp_numeric_states]
 
+        # ------------------- #
+        # Now let's repeat the exact same using retrieve_arrays():
+        arr_no_bad = cognite_client.time_series.data.retrieve_arrays(
+            instance_id=node_id, ignore_bad_datapoints=True, limit=50
+        )
+        assert arr_no_bad is not None
+        assert arr_no_bad.numeric_states is not None
+        assert arr_no_bad.string_states is not None
+        assert arr_no_bad.numeric_states.dtype == np.int32
+        np.testing.assert_array_equal(arr_no_bad.numeric_states, np.array(exp_numeric_states, dtype=np.int32))
+        np.testing.assert_array_equal(arr_no_bad.string_states, np.array(exp_string_states, dtype=object))
+
+        # Here we also ensure that we get the upcast warning for numeric_states (possibly containing NaNs):
+        with pytest.warns(UserWarning, match="upcast to float64"):
+            arr_with_bad = cognite_client.time_series.data.retrieve_arrays(
+                instance_id=node_id, ignore_bad_datapoints=False, limit=50
+            )
+
+        assert arr_with_bad is not None
+        assert arr_with_bad.numeric_states is not None
+        assert arr_with_bad.string_states is not None
+        assert arr_with_bad.numeric_states.dtype == np.float64
+        np.testing.assert_array_equal(arr_with_bad.numeric_states, np.array([np.nan, *exp_numeric_states]))
+        np.testing.assert_array_equal(arr_with_bad.string_states, np.array([None, *exp_string_states], dtype=object))
+
+        # ------------------- #
         # Ensure writing state dp with 20 or "twenty" now fails:
         with pytest.raises(CogniteAPIError) as e:
             cognite_client.time_series.data.insert_states(
@@ -898,6 +924,40 @@ class TestRetrieveStateDatapoints:
             assert list(df.columns) == [(ts_id, "numeric"), (ts_id, "string")]
 
     @pytest.mark.parametrize(
+        "ignore_bad_datapoints, exp_numeric_dtype",
+        [(True, np.int32), (False, np.float64)],
+    )
+    def test_retrieve_arrays_state_datapoints_empty(
+        self,
+        cognite_client: CogniteClient,
+        empty_state_ts: NodeApplyResult,
+        ignore_bad_datapoints: bool,
+        exp_numeric_dtype: type,
+    ) -> None:
+        ts_id = empty_state_ts.as_id()
+        arr_lst = cognite_client.time_series.data.retrieve_arrays(
+            instance_id=[
+                DatapointsQuery(instance_id=ts_id, limit=0),
+                DatapointsQuery(instance_id=ts_id, limit=1),
+            ],
+            start="1h-ahead",
+            end="2h-ahead",
+            ignore_bad_datapoints=ignore_bad_datapoints,
+        )
+        for arr in arr_lst:
+            assert isinstance(arr, DatapointsArray)
+            assert arr.type == "state"
+            assert len(arr) == 0
+            assert arr.value is None
+            assert arr.numeric_states is not None
+            assert len(arr.numeric_states) == 0
+            assert arr.numeric_states.dtype == exp_numeric_dtype
+            assert arr.string_states is not None
+            assert len(arr.string_states) == 0
+
+            # TODO: awaiting implementation: `df = dps.to_pandas() & assert df.empty`
+
+    @pytest.mark.parametrize(
         "retrieve_call",
         [
             pytest.param(
@@ -911,10 +971,6 @@ class TestRetrieveStateDatapoints:
                     instance_id=ts_id, aggregates="count", granularity="1h", limit=1
                 ),
                 id="aggregate states retrieve_arrays",
-            ),
-            pytest.param(
-                lambda client, ts_id: client.time_series.data.retrieve_arrays(instance_id=ts_id, limit=1),
-                id="raw states retrieve_arrays",
             ),
             pytest.param(
                 lambda client, ts_id: client.time_series.data.retrieve_dataframe(instance_id=ts_id, limit=1),
