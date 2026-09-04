@@ -136,6 +136,8 @@ def concat_dps_dataframe_list(
     include_granularity_name: bool,
     include_status: bool,
     include_unit: bool,
+    exclude_numeric_states: bool,
+    exclude_string_states: bool,
 ) -> pd.DataFrame:
     import pandas as pd
 
@@ -153,7 +155,15 @@ def concat_dps_dataframe_list(
         )
     # Since we use a MultiIndex for the dataframe columns, these do not join nicely in pd.concat, so we need
     # to do that manually ourselves after combining.
-    columns_lst = [_extract_column_info_from_dps_for_dataframe(dps, include_status=include_status) for dps in dps_lst]
+    columns_lst = [
+        _extract_column_info_from_dps_for_dataframe(
+            dps,
+            include_status=include_status,
+            exclude_numeric_states=exclude_numeric_states,
+            exclude_string_states=exclude_string_states,
+        )
+        for dps in dps_lst
+    ]
     counter = itertools.count()  # Ensure unique column names initially
     dfs = [
         pd.DataFrame(
@@ -222,10 +232,16 @@ def convert_timestamp_columns_to_datetime(df: pd.DataFrame) -> pd.DataFrame:
 def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.DataFrame:
     import pandas as pd
 
+    # Columns already using a pandas nullable integer extension dtype (e.g. the Int32 dtype used
+    # for numeric state datapoints) survive pd.concat's outer-join just fine (missing rows are
+    # filled with pd.NA, dtype is preserved). Only plain numpy int/uint columns need help here,
+    # since those silently upcast to float64 if the join introduces missing rows for that column:
+    # TODO: status_code is still a plain numpy uint32 column, so it always lands here and gets
+    #       blanket-cast to Int64 below. We should switch it to the nullable UInt32.
     int_cols = [
         i
         for i, dtype in enumerate(itertools.chain.from_iterable(df.dtypes for df in dfs))
-        if issubclass(dtype.type, Integral)
+        if not pd.api.types.is_extension_array_dtype(dtype) and issubclass(dtype.type, Integral)
     ]
     # TODO: Performance optimization possible: The more unique each df.index is to the rest of the dfs, the
     # slower `pd.concat` scales. A manual "union(df.index for df in dfs)" + column insertion is faster for large
@@ -237,6 +253,7 @@ def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.
     if pandas_major_version() >= 2:
         df.isetitem(int_cols, df.iloc[:, int_cols].astype("Int64"))
     else:
+        # TODO: We specify pandas >= 2.1, so we can remove this branch.
         # As of pandas >=1.5.0, <2, converting float cols (that used to be int) to nullable int using iloc raises FutureWarning,
         # but the suggested code change (to use `frame.isetitem(...)`) results in the wrong dtype (object).
         # See Github Issue: https://github.com/pandas-dev/pandas/issues/49922
@@ -269,9 +286,16 @@ def convert_dps_to_dataframe(
     include_granularity_name: bool,
     include_status: bool,
     include_unit: bool,
+    exclude_numeric_states: bool,
+    exclude_string_states: bool,
 ) -> pd.DataFrame:
     pd = local_import("pandas")
-    columns = _extract_column_info_from_dps_for_dataframe(dps, include_status=include_status)
+    columns = _extract_column_info_from_dps_for_dataframe(
+        dps,
+        include_status=include_status,
+        exclude_numeric_states=exclude_numeric_states,
+        exclude_string_states=exclude_string_states,
+    )
     df = pd.DataFrame(
         # We initially use integer indexing to allow duplicate column names:
         {i: col.as_array() for i, col in enumerate(columns)},
@@ -291,33 +315,52 @@ def convert_dps_to_dataframe(
 class _DpsColumnInfo:
     """
     Used when converting Datapoints/DatapointsArray/DatapointsList/DatapointsArrayList to pandas DataFrame to help
-    avoid the madness of how many columns we should end up with based on status codes/symbols, number of aggregates etc.
+    avoid the absolute madness of how many columns we should end up:
+    - the raw datapoints (easy!)
+    - the number of classic aggregates (10+, but just 1 value per granularity interval)
+    - status codes & symbols (2 extra columns, if requested)
+    - state datapoints (2 columns, numeric and string states)
 
-    A single Datapoints/DatapointsArray can result in 10+ columns from aggregates, and 1 or 3 columns from raw datapoints,
-    with or without the 2 extra status info columns.
+    ...and not yet implemented, but I'm scared:
+    - state aggregate datapoints ("arbitrary" number of states, leading to possibly 200+ columns (1 value per state per gran. interval))
+
+    Thus, a single Datapoints/DatapointsArray can result in anything between 1 to 300 columns. Yey.
     """
 
     column_id: NodeId | str | int
-    data: list[float] | list[str] | list[int] | NumpyUInt32Array | NumpyInt64Array | NumpyFloat64Array | NumpyObjArray
+    data: (
+        list[float]
+        | list[str]
+        | list[str | None]
+        | list[int]
+        | NumpyUInt32Array
+        | NumpyInt64Array
+        | NumpyFloat64Array
+        | NumpyObjArray
+    )
     is_string: bool | None = None
     is_array: bool = False
     aggregate: str | None = None
     granularity: str | None = None
     unit_xid: str | None = None
     status_info: Literal["code", "symbol"] | None = None
+    state_type: Literal["numeric", "string"] | None = None
 
     def as_multi_index_tuple(self, include_aggregate: bool, include_granularity: bool, include_unit: bool) -> tuple:
         return (
             self.column_id,
+            self.state_type,
             self.status_info,  # since these split to separate cols, they are already filtered out if not wanted
             self.aggregate if include_aggregate else None,
             self.granularity if include_granularity else None,
             self.unit_xid if include_unit else None,
         )
 
-    def as_array(self) -> NumpyObjArray | NumpyFloat64Array | NumpyInt64Array | NumpyUInt32Array:
+    def as_array(
+        self,
+    ) -> NumpyObjArray | NumpyFloat64Array | NumpyInt64Array | NumpyUInt32Array | pd.arrays.IntegerArray:
         if self.is_array:
-            return self.data  # type: ignore [return-value]
+            return self.data
 
         elif self.aggregate is None:
             return self._convert_to_array_for_raw_dps()
@@ -326,8 +369,14 @@ class _DpsColumnInfo:
 
     def _convert_to_array_for_raw_dps(
         self,
-    ) -> npt.NDArray[np.object_] | npt.NDArray[np.float64] | npt.NDArray[np.uint32]:
+    ) -> npt.NDArray[np.object_] | npt.NDArray[np.float64] | npt.NDArray[np.uint32] | pd.arrays.IntegerArray:
         import numpy as np
+
+        if self.state_type == "numeric":
+            # Numeric states are guaranteed to be valid 32-bit ints, but may contain missing values due to "bad status",
+            # so we use the pandas extension dtype which is nullable:
+            pd = local_import("pandas")
+            return pd.array(self.data, dtype="Int32")
 
         match self.is_string, self.status_info:
             case True, None:
@@ -359,6 +408,45 @@ class _DpsColumnInfo:
             return ensure_int_numpy(np.array(self.data, dtype=np.float64))
         else:
             return np.array(self.data, dtype=np.float64)
+
+
+def _extract_raw_states_column_info(
+    dps: Datapoints,
+    identifier: NodeId | str | int,
+    include_status: bool,
+    exclude_numeric_states: bool,
+    exclude_string_states: bool,
+) -> list[_DpsColumnInfo]:
+    columns = []
+    if not exclude_numeric_states:
+        assert dps.numeric_states is not None
+        columns.append(
+            _DpsColumnInfo(
+                identifier,
+                data=dps.numeric_states,
+                is_string=False,
+                is_array=False,
+                state_type="numeric",
+            )
+        )
+    if not exclude_string_states:
+        assert dps.string_states is not None
+        columns.append(
+            _DpsColumnInfo(
+                identifier,
+                data=dps.string_states,
+                is_string=True,
+                is_array=False,
+                state_type="string",
+            )
+        )
+    if include_status:
+        if dps.status_code is not None:
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_code, is_array=False, status_info="code"))
+        if dps.status_symbol is not None:
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_symbol, is_array=False, status_info="symbol"))
+
+    return columns
 
 
 def _extract_raw_column_info(
@@ -406,15 +494,33 @@ def _extract_aggregate_column_info_from_dps(
 
 
 def _extract_column_info_from_dps_for_dataframe(
-    dps: Datapoints | DatapointsArray, include_status: bool
+    dps: Datapoints | DatapointsArray, include_status: bool, exclude_numeric_states: bool, exclude_string_states: bool
 ) -> list[_DpsColumnInfo]:
-    from cognite.client.data_classes import DatapointsArray
+    from cognite.client.data_classes import Datapoints, DatapointsArray
 
     identifier = _resolve_ts_identifier_as_df_column_name(dps)
     is_array = isinstance(dps, DatapointsArray)
-    if dps.value is not None:
+    # TODO: State raw vs aggregate dps must be routed differently (when we have support for the latter...)
+    if dps.type == "state":
+        if is_array:
+            # Unreachable state in the SDK, but users may instantiate manually, so we need to handle it:
+            raise NotImplementedError(
+                "State datapoints stored as DatapointsArray are not supported yet for conversion to pandas DataFrame"
+            )
+        assert isinstance(dps, Datapoints)  # mypy doesn't understand the is-array-raise-check above...
+        if dps.numeric_states is None or dps.string_states is None:
+            # ...also unreachable, but same gotcha as above:
+            raise NotImplementedError(
+                "State aggregate datapoints are not yet supported for conversion to pandas DataFrame"
+            )
+        else:
+            return _extract_raw_states_column_info(
+                dps, identifier, include_status, exclude_numeric_states, exclude_string_states
+            )
+    elif dps.value is not None:
         return _extract_raw_column_info(dps, identifier, is_array, include_status)
-    return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
+    else:
+        return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
 
 
 def _create_multi_index_from_columns(
@@ -434,7 +540,7 @@ def _create_multi_index_from_columns(
             )
             for col in columns
         ],
-        columns=["identifier", "status", "aggregate", "granularity", "unit"],
+        columns=["identifier", "state", "status", "aggregate", "granularity", "unit"],
     )
     # Key operation is to drop all-nan columns, which in the multi-index translates to dropping
     # the corresponding levels:

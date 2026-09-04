@@ -893,6 +893,10 @@ class TestRetrieveStateDatapoints:
             assert dps.numeric_states == []
             assert dps.string_states == []
 
+            df = dps.to_pandas()
+            assert df.empty
+            assert list(df.columns) == [(ts_id, "numeric"), (ts_id, "string")]
+
     @pytest.mark.parametrize(
         "retrieve_call",
         [
