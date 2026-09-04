@@ -197,10 +197,13 @@ class ClientConfig:
         project (str): CDF Project name.
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
         api_subversion (str): API subversion. Set to e.g. "alpha" or "beta" to access restricted preview features.
-        base_url (str | None): Base url to send requests to. Typically on the form ``https://<cluster>.cognitedata.com``.
+        base_url (str | None): Base url to send requests to. Typically on the form ``https://<cluster>.cognitedata.com``,
+            but any URL works, e.g. that of a reverse proxy. It is used verbatim for all requests, path prefix included.
             Either base_url or cluster must be provided.
         cluster (str | None): The cluster where the CDF project is located. When passed, it is assumed that the base
             URL can be constructed as: ``https://<cluster>.cognitedata.com``. Either base_url or cluster must be provided.
+            If both are given, base_url is used as-is and cluster is completely ignored (with a warning). In the next major
+            version (v9), this will raise.
         headers (dict[str, str] | None): Additional headers to add to all requests.
         timeout (int | None): Timeout on requests sent to the api. Defaults to 60 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
