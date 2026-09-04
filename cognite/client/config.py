@@ -262,7 +262,7 @@ class ClientConfig:
     def _validate_config(self) -> None:
         if not self.project:
             raise ValueError(f"Invalid value for ClientConfig.project: {self.project!r}")
-        elif self.cdf_cluster is None:
+        elif self._attempt_to_get_cdf_cluster() is None:
             warnings.warn(f"Given base URL may be invalid, please double-check: {self.base_url!r}", UserWarning)
 
     @overload

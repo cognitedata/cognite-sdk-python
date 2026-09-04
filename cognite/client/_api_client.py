@@ -1049,7 +1049,7 @@ class APIClient(BasicAsyncAPIClient):
                     successful=successful,
                     failed=failed,
                     unknown=unknown,
-                    cluster=self._config.cdf_cluster,
+                    cluster=self._config._attempt_to_get_cdf_cluster(),
                     project=self._config.project,
                 )
             # Need to retrieve the successful updated items from the first call.
