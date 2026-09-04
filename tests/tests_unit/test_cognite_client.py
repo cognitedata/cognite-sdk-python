@@ -71,7 +71,7 @@ class TestCogniteClient:
 
         # Passing both is allowed, but 'cluster' is fully ignored (with a warning): 'base_url' alone decides
         # where requests go, and is also the sole source for the guessed cluster.
-        with pytest.warns(UserWarning, match="'cluster' will be ignored"):
+        with pytest.warns(FutureWarning, match="'cluster' will be ignored"):
             config = ClientConfig(
                 client_name="",
                 project="a",

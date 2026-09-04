@@ -264,7 +264,11 @@ class ClientConfig:
         if not self.project:
             raise ValueError(f"Invalid value for ClientConfig.project: {self.project!r}")
         elif self._attempt_to_get_cdf_cluster() is None:
-            warnings.warn(f"Given base URL may be invalid, please double-check: {self.base_url!r}", UserWarning)
+            warnings.warn(
+                f"Given base URL may be invalid, please double-check: {self.base_url!r}",
+                UserWarning,
+                stacklevel=3,
+            )
 
     @overload
     def _validate_base_url_or_cluster(self, base_url: None, cluster: None) -> NoReturn: ...
@@ -277,7 +281,8 @@ class ClientConfig:
             warnings.warn(
                 "Both 'base_url' and 'cluster' are provided. 'base_url' will take precedence and 'cluster' will be ignored. "
                 "In the next major version (v9), this will raise an error instead.",
-                UserWarning,
+                FutureWarning,
+                stacklevel=3,
             )
         match base_url, cluster:
             case None, str():
