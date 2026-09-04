@@ -69,17 +69,20 @@ class TestCogniteClient:
             ClientConfig(client_name="", project="a", base_url="https://x.cognitedata.com", credentials=Token("bla"))
         )
 
-        # Passing both should ignore cluster with a warning:
-        with pytest.warns(UserWarning, match="parameter is ignored when"):
-            CogniteClient(
-                ClientConfig(
-                    client_name="",
-                    project="a",
-                    cluster="foo",
-                    base_url="https://x.cognitedata.com",
-                    credentials=Token("bla"),
-                )
+        # Passing both is allowed, but 'cluster' is fully ignored (with a warning): 'base_url' alone decides
+        # where requests go, and is also the sole source for the guessed cluster.
+        with pytest.warns(FutureWarning, match="'cluster' will be ignored"):
+            config = ClientConfig(
+                client_name="",
+                project="a",
+                cluster="foo",
+                base_url="https://real-cluster.cognitedata.com",
+                credentials=Token("bla"),
             )
+            CogniteClient(config)
+        assert config.base_url == "https://real-cluster.cognitedata.com"
+        assert config._cluster is None
+        assert config._attempt_to_get_cdf_cluster() == "real-cluster"
 
         # Passing neither should raise:
         with pytest.raises(ValueError, match=r"must be provided. Passing"):
