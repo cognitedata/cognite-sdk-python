@@ -228,8 +228,7 @@ class ClientConfig:
         self.project = project
         self.credentials = credentials
         self.api_subversion = api_subversion or __api_subversion__  # to avoid breaking changes, can be remove in v9
-        self.base_url = self._validate_base_url_or_cluster(base_url, cluster)
-        self._cluster = cluster
+        self.base_url, self._cluster = self._validate_base_url_or_cluster(base_url, cluster)
         self.headers = headers or {}
         self.timeout = timeout or 60
         self.file_transfer_timeout = file_transfer_timeout or 600
@@ -269,16 +268,23 @@ class ClientConfig:
     def _validate_base_url_or_cluster(self, base_url: None, cluster: None) -> NoReturn: ...
 
     @overload
-    def _validate_base_url_or_cluster(self, base_url: str | None, cluster: str | None) -> str: ...
+    def _validate_base_url_or_cluster(self, base_url: str | None, cluster: str | None) -> tuple[str, str | None]: ...
 
-    def _validate_base_url_or_cluster(self, base_url: str | None, cluster: str | None) -> str:
+    def _validate_base_url_or_cluster(self, base_url: str | None, cluster: str | None) -> tuple[str, str | None]:
+        if base_url is not None and cluster is not None:
+            warnings.warn(
+                "Both 'base_url' and 'cluster' are provided. 'base_url' will take precedence and 'cluster' will be ignored. "
+                "In the next major version (v9), this will raise an error instead.",
+                UserWarning,
+            )
         match base_url, cluster:
             case None, str():
-                return f"https://{cluster}.cognitedata.com"
+                return f"https://{cluster}.cognitedata.com", cluster
             case str(), _:
-                if cluster is not None:
-                    warnings.warn("'cluster' parameter is ignored when 'base_url' is provided.", UserWarning)
-                return base_url.rstrip("/")
+                # When 'base_url' is provided, we want to fully ignore 'cluster' if the user (accidentally or not) provided it
+                # (the warning above will trigger if both are provided). This is because we have a deprecated property 'cdf_cluster'
+                # that will return the 'cluster' if provided, else try to guess it from the 'base_url'. This causes confusion.
+                return base_url.rstrip("/"), None
             case _:
                 raise ValueError(
                     "Either 'base_url' or 'cluster' must be provided. Passing 'cluster' assumes the base URL "
