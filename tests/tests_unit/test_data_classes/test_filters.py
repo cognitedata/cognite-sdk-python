@@ -4,7 +4,20 @@ import re
 
 import pytest
 
-from cognite.client.data_classes.filters import And, Equals, Filter, In, Or
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
+from cognite.client.data_classes.data_modeling.records import RecordContainerId, RecordViewId
+from cognite.client.data_classes.filters import (
+    And,
+    ContainsAll,
+    ContainsAny,
+    Equals,
+    Exists,
+    Filter,
+    In,
+    Or,
+    Prefix,
+    Range,
+)
 from tests.utils import FakeCogniteResourceGenerator
 
 
@@ -64,3 +77,60 @@ def test_filter_is_hashable_and_uses_identity() -> None:
     flt2 = Equals(property=["node", "type"], value="pump")
     assert hash(flt) != hash(flt2)
     assert flt != flt2
+
+
+def test_filter_view_and_container_property_references() -> None:
+    view = ViewId("my_space", "my_view", "v1")
+    rec_view = RecordViewId("my_space", "my_view", "v1")
+    container = ContainerId("my_space", "my_container")
+    rec_container = RecordContainerId("my_space", "my_container")
+
+    # View as_property_ref
+    flt = Equals(property=view.as_property_ref("temperature"), value=25.0)
+    assert list(flt.dump()["equals"]["property"]) == ["my_space", "my_view/v1", "temperature"]
+    assert flt.dump()["equals"]["value"] == 25.0
+
+    # RecordViewId as_property_ref
+    flt = Equals(property=rec_view.as_property_ref("temperature"), value=25.0)
+    assert list(flt.dump()["equals"]["property"]) == ["my_space", "my_view/v1", "temperature"]
+    assert flt.dump()["equals"]["value"] == 25.0
+
+    # (ViewId, str) tuple
+    flt = Equals(property=(view, "temperature"), value=25.0)
+    assert flt.dump() == {"equals": {"property": ["my_space", "my_view/v1", "temperature"], "value": 25.0}}
+
+    # (RecordViewId, str) tuple
+    flt = Equals(property=(rec_view, "temperature"), value=25.0)
+    assert flt.dump() == {"equals": {"property": ["my_space", "my_view/v1", "temperature"], "value": 25.0}}
+
+    # (ContainerId, str) tuple
+    flt = Equals(property=(container, "temperature"), value=25.0)
+    assert flt.dump() == {"equals": {"property": ["my_space", "my_container", "temperature"], "value": 25.0}}
+
+    # (RecordContainerId, str) tuple
+    flt = Equals(property=(rec_container, "temperature"), value=25.0)
+    assert flt.dump() == {"equals": {"property": ["my_space", "my_container", "temperature"], "value": 25.0}}
+
+    # PropertyId with ViewId
+    flt = Equals(property=PropertyId(view, "temperature"), value=25.0)
+    assert flt.dump() == {"equals": {"property": ["my_space", "my_view/v1", "temperature"], "value": 25.0}}
+
+    # Other filters with (ViewId, str)
+    assert In(property=(view, "status"), values=["open", "closed"]).dump() == {
+        "in": {"property": ["my_space", "my_view/v1", "status"], "values": ["open", "closed"]}
+    }
+    assert Range(property=(view, "temperature"), gt=20.0).dump() == {
+        "range": {"property": ["my_space", "my_view/v1", "temperature"], "gt": 20.0}
+    }
+    assert Prefix(property=(view, "name"), value="sensor-").dump() == {
+        "prefix": {"property": ["my_space", "my_view/v1", "name"], "value": "sensor-"}
+    }
+    assert ContainsAny(property=(view, "tags"), values=["a", "b"]).dump() == {
+        "containsAny": {"property": ["my_space", "my_view/v1", "tags"], "values": ["a", "b"]}
+    }
+    assert ContainsAll(property=(view, "tags"), values=["a", "b"]).dump() == {
+        "containsAll": {"property": ["my_space", "my_view/v1", "tags"], "values": ["a", "b"]}
+    }
+    assert Exists(property=(view, "temperature")).dump() == {
+        "exists": {"property": ["my_space", "my_view/v1", "temperature"]}
+    }

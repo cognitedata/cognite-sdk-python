@@ -14,6 +14,7 @@ from cognite.client.data_classes.data_modeling.aggregates import (
     FiltersResult,
     Max,
     MetricResult,
+    Min,
     MovingFunction,
     MovingFunctionResult,
     MovingFunctions,
@@ -27,6 +28,7 @@ from cognite.client.data_classes.data_modeling.aggregates import (
     UnknownResult,
 )
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, PropertyPath, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, TypeInformation
 from cognite.client.data_classes.data_modeling.records import (
     Record,
@@ -38,6 +40,7 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordSourceSelector,
     RecordTargetUnit,
     RecordTargetUnits,
+    RecordViewId,
     RecordWrite,
     SyncRecord,
     SyncRecordList,
@@ -119,8 +122,8 @@ def write_item() -> RecordWrite:
         external_id="rec-1",
         sources=[
             RecordSource(
-                source=RecordContainerId(space="sp", external_id="container-x"),
-                properties={"temp": 22.5},
+                source=ContainerId(space="sp", external_id="container-x"),
+                properties={"temperature": 22.5, "pressure": 1.013},
             )
         ],
     )
@@ -195,7 +198,7 @@ class TestRecordsAPIIngest:
                     "sources": [
                         {
                             "source": {"type": "container", "space": "sp", "externalId": "container-x"},
-                            "properties": {"temp": 22.5},
+                            "properties": {"temperature": 22.5, "pressure": 1.013},
                         }
                     ],
                 }
@@ -241,7 +244,7 @@ class TestRecordsAPIUpsert:
                     "sources": [
                         {
                             "source": {"type": "container", "space": "sp", "externalId": "container-x"},
-                            "properties": {"temp": 22.5},
+                            "properties": {"temperature": 22.5, "pressure": 1.013},
                         }
                     ],
                 }
@@ -627,7 +630,7 @@ class TestRecordsAPIFilter:
     ) -> None:
         cognite_client.data_modeling.records.filter(
             stream_id=stream_id,
-            sources=[RecordSourceSelector(RecordContainerId(space="sp", external_id="container-x"), ["*"])],
+            sources=[RecordSourceSelector(ContainerId(space="sp", external_id="container-x"), ["*"])],
         )
         body = jsgz_load(httpx_mock.get_requests()[0].content)
         assert body["sources"] == [
@@ -986,9 +989,7 @@ class TestRecordsAPISync:
                 initialize_cursor="2m-ago",
                 filter=filters.Equals(property=["sp", "container-x", "temp"], value=22.5),
                 sources=[
-                    RecordSourceSelector(
-                        source=RecordContainerId(space="sp", external_id="container-x"), properties=["*"]
-                    )
+                    RecordSourceSelector(source=ContainerId(space="sp", external_id="container-x"), properties=["*"])
                 ],
                 chunk_size=5,
             )
@@ -1018,16 +1019,16 @@ class TestRecordDTOs:
         assert len(loaded.sources) == 1
         assert loaded.sources[0].source.space == "sp"
         assert loaded.sources[0].source.external_id == "container-x"
-        assert loaded.sources[0].properties == {"temp": 22.5}
+        assert loaded.sources[0].properties == {"temperature": 22.5, "pressure": 1.013}
 
     def test_record_source_reference_dump(self) -> None:
-        ref = RecordContainerId(space="s", external_id="c")
+        ref = ContainerId(space="s", external_id="c")
         d = ref.dump()
         assert d == {"type": "container", "space": "s", "externalId": "c"}
 
     def test_record_source_dump(self) -> None:
         src = RecordSource(
-            source=RecordContainerId(space="s", external_id="c"),
+            source=ContainerId(space="s", external_id="c"),
             properties={"x": 1},
         )
         d = src.dump()
@@ -1082,7 +1083,7 @@ class TestRecordDTOs:
         assert TimeRange().dump() == {}
 
     def test_record_source_selector_dump(self) -> None:
-        selector = RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), ["temp", "pressure"])
+        selector = RecordSourceSelector(ContainerId(space="sp", external_id="c"), ["temp", "pressure"])
         assert selector.dump() == {
             "source": {"type": "container", "space": "sp", "externalId": "c"},
             "properties": ["temp", "pressure"],
@@ -1193,9 +1194,393 @@ class TestRecordPropertyPathValidation:
 
     def test_record_source_selector_rejects_bare_string_properties(self) -> None:
         with pytest.raises(TypeError, match="'properties' must be a sequence of strings"):
-            RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), "temp")  # type: ignore[arg-type]
+            RecordSourceSelector(ContainerId(space="sp", external_id="c"), "temp")  # type: ignore[arg-type]
 
     def test_record_source_selector_rejects_no_properties(self) -> None:
         # The API requires minItems: 1 for properties.
         with pytest.raises(ValueError, match="'properties' must not be empty"):
-            RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), [])
+            RecordSourceSelector(ContainerId(space="sp", external_id="c"), [])
+
+    def test_record_target_unit_accepts_view_property_reference(self) -> None:
+        target_unit = RecordTargetUnit(
+            (ViewId("sp", "my_view", "v1"), "pressure"),
+            UnitReference("pressure:pa"),
+        )
+        assert target_unit.dump() == {
+            "property": ["sp", "my_view/v1", "pressure"],
+            "unit": {"externalId": "pressure:pa"},
+        }
+
+    def test_source_property_tuple_rejects_non_string_property(self) -> None:
+        with pytest.raises(TypeError, match="must have a string property"):
+            RecordTargetUnit((ViewId("sp", "my_view", "v1"), 42), UnitReference("pressure:pa"))  # type: ignore[arg-type]
+
+
+class TestRecordViewId:
+    def test_init_and_attributes(self) -> None:
+        view_id = RecordViewId(space="my_space", external_id="my_view", version="v1")
+        assert view_id.space == "my_space"
+        assert view_id.external_id == "my_view"
+        assert view_id.version == "v1"
+        assert view_id.as_tuple() == ("my_space", "my_view", "v1")
+        assert view_id.as_source_identifier() == "my_view/v1"
+        assert view_id.as_property_ref("temp") == ("my_space", "my_view/v1", "temp")
+
+    def test_version_is_required(self) -> None:
+        # Unlike a general ViewId, record view sources must be fully versioned.
+        with pytest.raises(TypeError):
+            RecordViewId(space="my_space", external_id="my_view")  # type: ignore[call-arg]
+
+    def test_dump(self) -> None:
+        view_id = RecordViewId(space="my_space", external_id="my_view", version="v1")
+        assert view_id.dump() == {
+            "space": "my_space",
+            "externalId": "my_view",
+            "version": "v1",
+            "type": "view",
+        }
+
+    def test_load(self) -> None:
+        raw = {"space": "my_space", "externalId": "my_view", "version": "v1", "type": "view"}
+        loaded = RecordViewId.load(raw)
+        assert isinstance(loaded, RecordViewId)
+        assert loaded.space == "my_space"
+        assert loaded.external_id == "my_view"
+        assert loaded.version == "v1"
+
+    def test_load_from_tuple(self) -> None:
+        loaded = RecordViewId.load(("my_space", "my_view", "v1"))
+        assert isinstance(loaded, RecordViewId)
+        assert loaded.as_tuple() == ("my_space", "my_view", "v1")
+
+
+class TestRecordSourceViews:
+    def test_source_with_record_view_id(self) -> None:
+        src = RecordSource(
+            source=RecordViewId("sp", "my_view", "v1"),
+            properties={"temp": 25.0},
+        )
+        assert isinstance(src.source, RecordViewId)
+        assert src.dump() == {
+            "source": {"space": "sp", "externalId": "my_view", "version": "v1", "type": "view"},
+            "properties": {"temp": 25.0},
+        }
+
+    def test_source_with_view_id(self) -> None:
+        src = RecordSource(
+            source=ViewId("sp", "my_view", "v1"),
+            properties={"temp": 25.0},
+        )
+        assert isinstance(src.source, ViewId)
+        assert src.dump() == {
+            "source": {"space": "sp", "externalId": "my_view", "version": "v1", "type": "view"},
+            "properties": {"temp": 25.0},
+        }
+
+    def test_source_with_tuple(self) -> None:
+        src = RecordSource(
+            source=("sp", "my_view", "v1"),
+            properties={"temp": 25.0},
+        )
+        assert isinstance(src.source, ViewId)
+        assert src.dump()["source"] == {"space": "sp", "externalId": "my_view", "version": "v1", "type": "view"}
+
+    def test_source_load_view(self) -> None:
+        raw = {
+            "source": {"space": "sp", "externalId": "my_view", "version": "v1", "type": "view"},
+            "properties": {"temp": 25.0},
+        }
+        loaded = RecordSource._load(raw)
+        assert isinstance(loaded.source, ViewId)
+        assert loaded.source.space == "sp"
+        assert loaded.source.external_id == "my_view"
+        assert loaded.source.version == "v1"
+        assert loaded.properties == {"temp": 25.0}
+
+    def test_source_accepts_snake_case_dict(self) -> None:
+        view_src = RecordSource(
+            source={"space": "sp", "external_id": "my_view", "version": "v1"},  # type: ignore[arg-type]
+            properties={"temp": 25.0},
+        )
+        assert view_src.source == RecordViewId("sp", "my_view", "v1")
+
+        container_src = RecordSource(
+            source={"space": "sp", "external_id": "my_container"},  # type: ignore[arg-type]
+            properties={"pressure": 1.0},
+        )
+        assert container_src.source == RecordContainerId("sp", "my_container")
+
+    def test_source_load_rejects_unknown_type(self) -> None:
+        raw = {"source": {"space": "sp", "externalId": "x", "type": "node"}, "properties": {}}
+        with pytest.raises(ValueError, match="must be 'container' or 'view', but was 'node'"):
+            RecordSource._load(raw)
+
+    def test_source_rejects_wrong_tuple_length(self) -> None:
+        with pytest.raises(ValueError, match="Invalid tuple length"):
+            RecordSource(source=("sp",), properties={})  # type: ignore[arg-type]
+
+    def test_source_rejects_view_without_version(self) -> None:
+        with pytest.raises(ValueError, match="requires an explicit version"):
+            RecordSource(source=ViewId("sp", "my_view"), properties={})
+
+
+class TestRecordSourceSelectorViews:
+    def test_selector_with_view_id(self) -> None:
+        sel = RecordSourceSelector(
+            source=ViewId("sp", "my_view", "v1"),
+            properties=["temp", "humidity"],
+        )
+        assert isinstance(sel.source, ViewId)
+        assert sel.dump() == {
+            "source": {"space": "sp", "externalId": "my_view", "version": "v1", "type": "view"},
+            "properties": ["temp", "humidity"],
+        }
+
+    def test_selector_with_tuple(self) -> None:
+        sel = RecordSourceSelector(
+            source=("sp", "my_view", "v1"),
+            properties=["*"],
+        )
+        assert isinstance(sel.source, ViewId)
+        assert sel.dump() == {
+            "source": {"space": "sp", "externalId": "my_view", "version": "v1", "type": "view"},
+            "properties": ["*"],
+        }
+
+    def test_selector_load_view(self) -> None:
+        raw = {
+            "source": {"space": "sp", "externalId": "my_view", "version": "v1", "type": "view"},
+            "properties": ["temp"],
+        }
+        loaded = RecordSourceSelector._load(raw)
+        assert isinstance(loaded.source, ViewId)
+        assert loaded.properties == ["temp"]
+
+
+class TestRecordsAPIViewsOperations:
+    def test_ingest_with_view_sources(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        mock_ingest: None,
+        stream_id: str,
+    ) -> None:
+        write_record = RecordWrite(
+            space="sp",
+            external_id="rec-1",
+            sources=[
+                RecordSource(
+                    source=ViewId(space="sp", external_id="my_view", version="v1"),
+                    properties={"temp": 22.5},
+                )
+            ],
+        )
+        cognite_client.data_modeling.records.ingest(write_record, stream_id=stream_id)
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 1
+        body = jsgz_load(requests[0].content)
+        assert body == {
+            "items": [
+                {
+                    "space": "sp",
+                    "externalId": "rec-1",
+                    "sources": [
+                        {
+                            "source": {"type": "view", "space": "sp", "externalId": "my_view", "version": "v1"},
+                            "properties": {"temp": 22.5},
+                        }
+                    ],
+                }
+            ]
+        }
+
+    def test_upsert_with_view_sources(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        mock_upsert: None,
+        stream_id: str,
+    ) -> None:
+        write_record = RecordWrite(
+            space="sp",
+            external_id="rec-1",
+            sources=[
+                RecordSource(
+                    source=("sp", "my_view", "v1"),
+                    properties={"temp": 23.0},
+                )
+            ],
+        )
+        cognite_client.data_modeling.records.upsert(write_record, stream_id=stream_id)
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 1
+        body = jsgz_load(requests[0].content)
+        assert body == {
+            "items": [
+                {
+                    "space": "sp",
+                    "externalId": "rec-1",
+                    "sources": [
+                        {
+                            "source": {"type": "view", "space": "sp", "externalId": "my_view", "version": "v1"},
+                            "properties": {"temp": 23.0},
+                        }
+                    ],
+                }
+            ]
+        }
+
+    def test_filter_with_view_sources(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        mock_filter: None,
+        stream_id: str,
+    ) -> None:
+        cognite_client.data_modeling.records.filter(
+            stream_id=stream_id,
+            sources=[RecordSourceSelector(source=ViewId("sp", "my_view", "v1"), properties=["temp"])],
+        )
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 1
+        body = jsgz_load(requests[0].content)
+        assert body["sources"] == [
+            {
+                "source": {"type": "view", "space": "sp", "externalId": "my_view", "version": "v1"},
+                "properties": ["temp"],
+            }
+        ]
+
+    def test_sync_with_view_sources(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        stream_id: str,
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            json={
+                "items": [],
+                "nextCursor": "cur-1",
+                "hasNext": False,
+            },
+        )
+        feed = cognite_client.data_modeling.records.sync(
+            stream_id=stream_id,
+            initialize_cursor="1d-ago",
+            sources=[RecordSourceSelector(source=("sp", "my_view", "v1"), properties=["*"])],
+        )
+        list(feed)
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 1
+        body = jsgz_load(requests[0].content)
+        assert body["sources"] == [
+            {
+                "source": {"type": "view", "space": "sp", "externalId": "my_view", "version": "v1"},
+                "properties": ["*"],
+            }
+        ]
+
+    def test_record_as_write_reconstructs_view_sources(self) -> None:
+        raw_record = {
+            "space": "sp",
+            "externalId": "rec-1",
+            "createdTime": 100,
+            "lastUpdatedTime": 200,
+            "properties": {
+                "sp": {
+                    "my_view/v1": {"temp": 22.5},
+                    "my_container": {"pressure": 1.0},
+                }
+            },
+        }
+        record = Record._load(raw_record)
+        write_rec = record.as_write()
+        assert isinstance(write_rec, RecordWrite)
+        assert len(write_rec.sources) == 2
+
+        view_src = next(s for s in write_rec.sources if isinstance(s.source, RecordViewId))
+        assert isinstance(view_src.source, RecordViewId)
+        assert view_src.source.space == "sp"
+        assert view_src.source.external_id == "my_view"
+        assert view_src.source.version == "v1"
+        assert view_src.properties == {"temp": 22.5}
+
+        cnt_src = next(s for s in write_rec.sources if isinstance(s.source, RecordContainerId))
+        assert isinstance(cnt_src.source, RecordContainerId)
+        assert cnt_src.source.space == "sp"
+        assert cnt_src.source.external_id == "my_container"
+        assert cnt_src.properties == {"pressure": 1.0}
+
+
+class TestRecordsAggregateWithViews:
+    def test_aggregates_with_view_property_references(self) -> None:
+        view = ViewId("my_space", "my_view", "v1")
+        rec_view = RecordViewId("my_space", "my_view", "v1")
+
+        # Every accepted way of referencing a view property should dump identically:
+        properties: list[PropertyPath] = [
+            (view, "temperature"),
+            (rec_view, "temperature"),
+            view.as_property_ref("temperature"),
+            PropertyId(view, "temperature"),
+        ]
+        for property_ in properties:
+            avg = Average(property=property_)
+            assert avg.dump() == {"avg": {"property": ["my_space", "my_view/v1", "temperature"]}}
+
+        assert Sum((view, "score")).dump() == {"sum": {"property": ["my_space", "my_view/v1", "score"]}}
+        assert Min((view, "score")).dump() == {"min": {"property": ["my_space", "my_view/v1", "score"]}}
+        assert Max((view, "score")).dump() == {"max": {"property": ["my_space", "my_view/v1", "score"]}}
+        assert Count((view, "score")).dump() == {"count": {"property": ["my_space", "my_view/v1", "score"]}}
+        assert UniqueValues((view, "player")).dump() == {
+            "uniqueValues": {"property": ["my_space", "my_view/v1", "player"]}
+        }
+        assert NumberHistogram((view, "score"), interval=10.0).dump() == {
+            "numberHistogram": {"property": ["my_space", "my_view/v1", "score"], "interval": 10.0}
+        }
+        assert TimeHistogram((view, "ts"), calendar_interval="1d").dump() == {
+            "timeHistogram": {"property": ["my_space", "my_view/v1", "ts"], "calendarInterval": "1d"}
+        }
+
+    def test_aggregate_api_call_with_view_aggregates_and_filters(
+        self,
+        cognite_client: CogniteClient,
+        httpx_mock: HTTPXMock,
+        stream_id: str,
+        records_base_url: str,
+    ) -> None:
+        view = ViewId("my_space", "my_view", "v1")
+        httpx_mock.add_response(
+            method="POST",
+            url=records_base_url + "/aggregate",
+            json={"aggregates": {"avg_temp": {"avg": 22.5}}},
+        )
+        res = cognite_client.data_modeling.records.aggregate(
+            stream_id=stream_id,
+            aggregates={"avg_temp": Average((view, "temperature"))},
+            filter=filters.Equals((view, "status"), "active"),
+        )
+        avg_res = res["avg_temp"]
+        assert isinstance(avg_res, MetricResult)
+        assert avg_res.value == 22.5
+        requests = httpx_mock.get_requests()
+        assert len(requests) == 1
+        body = jsgz_load(requests[0].content)
+        assert body == {
+            "aggregates": {
+                "avg_temp": {
+                    "avg": {
+                        "property": ["my_space", "my_view/v1", "temperature"],
+                    }
+                }
+            },
+            "filter": {
+                "equals": {
+                    "property": ["my_space", "my_view/v1", "status"],
+                    "value": "active",
+                }
+            },
+        }
