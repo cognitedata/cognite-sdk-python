@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
 
-import httpx
+import httpx2
 from typing_extensions import Self
 
 from cognite.client._http_client import AsyncHTTPClientWithRetry, AsyncHTTPClientWithRetryConfig
@@ -43,8 +43,8 @@ class FailedRequestHandler:
     missing: list[str] | None
     duplicated: list[str] | None
     x_request_id: str | None
-    headers: dict[str, str] | httpx.Headers
-    response_headers: dict[str, str] | httpx.Headers
+    headers: dict[str, str] | httpx2.Headers
+    response_headers: dict[str, str] | httpx2.Headers
     extra: dict[str, Any]
     cause: CogniteHTTPStatusError
     stream: bool
@@ -164,9 +164,9 @@ def get_user_agent() -> str:
     from cognite.client import __version__
 
     try:
-        from httpx._client import USER_AGENT
+        from httpx2._client import USER_AGENT
     except ImportError:
-        USER_AGENT = "python-httpx/<unknown>"
+        USER_AGENT = "python-httpx2/<unknown>"
 
     sdk_version = f"CognitePythonSDK/{__version__}"
     python_version = (
@@ -389,7 +389,7 @@ class BasicAsyncAPIClient:
         is_retryable, full_url = resolve_url(self, "POST", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         if content is None:
-            # We want to control json dumping, so we pass it along to httpx.Client.post as 'content'
+            # We want to control json dumping, so we pass it along to httpx2.Client.post as 'content'
             content = self._handle_json_dump(json, full_headers)
 
         http_client = self._select_async_http_client(is_retryable)
@@ -452,7 +452,7 @@ class BasicAsyncAPIClient:
     ) -> dict[str, str]:
         from cognite.client import __version__
 
-        # We use latin-1 to mimic requests' behavior and avoid UnicodeEncodeError; httpx flat out
+        # We use latin-1 to mimic requests' behavior and avoid UnicodeEncodeError; httpx2 flat out
         # refuses non-ascii (which is correct per RFC 7230). We cast because the rest of the code
         # base expects str, not bytes, but bytes is perfectly fine
         client_name = cast(str, self._config.client_name.encode("latin-1"))
@@ -510,7 +510,7 @@ class BasicAsyncAPIClient:
         return gzip.compress(content.encode())
 
     @staticmethod
-    def _sanitize_headers(headers: httpx.Headers | dict[str, str]) -> dict[str, str]:
+    def _sanitize_headers(headers: httpx2.Headers | dict[str, str]) -> dict[str, str]:
         sanitized = dict(headers)
         for k in sanitized.keys():
             if k.lower() in {"authorization", "proxy-authorization"}:
