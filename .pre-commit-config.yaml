@@ -71,3 +71,5 @@ repos:
     hooks:
     - id: codespell
       files: ^cognite/.*
+      args:
+        - --write-changes
