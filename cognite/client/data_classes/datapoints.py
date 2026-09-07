@@ -568,6 +568,9 @@ class LatestDatapointQuery:
         return self._identifier  # type: ignore [attr-defined]
 
 
+# TODO: Absolutely need a refactor/split in v9. Now represent a simple raw datapoint, state datapoint
+#       and aggregate datapoints (yes multiple)
+#       Should probably just be removed. Iterating over Datapoints should not be a thing.
 class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
