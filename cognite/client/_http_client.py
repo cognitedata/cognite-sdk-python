@@ -282,7 +282,7 @@ class AsyncHTTPClientWithRetry:
 
             except httpx.HTTPStatusError as err:
                 response = err.response
-                is_auto_retryable = response.headers.get("cdf-is-auto-retryable", False)
+                is_auto_retryable = response.headers.get("cdf-is-auto-retryable", "").lower() == "true"
                 if not retry_tracker.should_retry_status_code(err, is_auto_retryable):
                     raise CogniteHTTPStatusError(
                         response.status_code,
