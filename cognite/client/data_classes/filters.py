@@ -18,7 +18,7 @@ from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr, is_sequence_not_str
 
-PropertyReference: TypeAlias = str | SequenceNotStr[str] | EnumProperty | tuple[ContainerId | ViewId, str] | PropertyId
+PropertyReference: TypeAlias = str | Sequence[str] | EnumProperty | tuple[ContainerId | ViewId, str] | PropertyId
 
 
 @dataclass

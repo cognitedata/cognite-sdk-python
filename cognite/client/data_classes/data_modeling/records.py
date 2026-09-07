@@ -33,7 +33,7 @@ class RecordIdSequence(IdentifierSequenceCore[RecordId]):
 
 @dataclass(frozen=True)
 class RecordContainerId(ContainerId):
-    """Container reference used as a source in a record write or read.
+    """Identifier for a records container
 
     Args:
         space (str): Space that contains the container.

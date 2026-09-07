@@ -154,7 +154,7 @@ class RecordsAPI(APIClient):
                 ...     stream_id="my-stream",
                 ... )
 
-            Ingest a record through a view instead of a container:
+            Ingest a record through a view:
 
                 >>> from cognite.client.data_classes.data_modeling.records import RecordViewId
                 >>> client.data_modeling.records.ingest(
