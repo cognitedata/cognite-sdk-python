@@ -38,24 +38,27 @@ server.listen(PORT, () => {
     await pyodide.loadPackage("micropip");
     const micropip = pyodide.pyimport("micropip");
 
+    const [pyMajor, pyMinor] = pyodide.version.split(".").map(Number);
+
+    // Pyodide unvendors the stdlib "ssl" module on the 0.x line (Python 3.12/3.13),
+    // but cognite.client.config imports it unconditionally. Pyodide 314.x (Python 3.14)
+    // ships ssl in the stdlib again, and micropip can't even resolve "ssl" as an
+    // installable package there, so only load it for the 0.x line.
+    if (pyMajor === 0) {
+      await pyodide.loadPackage("ssl");
+    }
+
     // authlib 1.7+ requires cryptography>=45.0.1, which has no pure-Python wheel.
     // Older Pyodide releases (e.g. stlite's 0.26.2) only ship cryptography 43.x,
     // so micropip resolution fails. On those runtimes, preload Pyodide's bundled
     // cryptography and cap authlib below 1.7 to satisfy the transitive requirement.
     // Pyodide >= 0.29 ships cryptography>=45.0.1, so the workaround is skipped there
     // (and for the 314.x line / Python 3.14).
-    const [pyMajor, pyMinor] = pyodide.version.split(".").map(Number);
     const needsCryptographyWorkaround = pyMajor === 0 && pyMinor < 29;
     if (needsCryptographyWorkaround) {
       console.log(`Applying cryptography workaround for Pyodide ${pyodide.version}`);
-      await pyodide.loadPackage(["cryptography", "ssl"]);
+      await pyodide.loadPackage("cryptography");
       await micropip.install("authlib<1.7");
-
-      // The "ssl" package above pulls in Pyodide's bundled idna==3.7. httpx2 (the SDK's
-      // HTTP client since 8.16.0) requires idna>=3.18, which micropip won't upgrade to
-      // implicitly once a version is already loaded, so we force it here before
-      // installing the SDK wheel.
-      await micropip.install("idna>=3.18");
     }
 
     // Read packages to install from environment variable as JSON
