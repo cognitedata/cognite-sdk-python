@@ -866,7 +866,12 @@ class DatapointsArray(CogniteResource):
             for row in dps_dct["datapoints"]:
                 for attr, value in row.items():
                     datapoints_by_attr[attr].append(value)
+
+            # Pop away special attributes that need separate handling:
             status = datapoints_by_attr.pop("status", None)
+            numeric_state = datapoints_by_attr.pop("numericState", None)
+            string_state = datapoints_by_attr.pop("stringState", None)
+
             for attr, values in datapoints_by_attr.items():
                 if attr == "timestamp":
                     array_by_attr[attr] = np.array(values, dtype="datetime64[ms]").astype("datetime64[ns]")
@@ -877,9 +882,18 @@ class DatapointsArray(CogniteResource):
                         array_by_attr[attr] = np.array(values, dtype=np.float64)
                     except ValueError:
                         array_by_attr[attr] = np.array(values, dtype=np.object_)
+
             if status is not None:
                 array_by_attr["statusCode"] = np.array([s["code"] for s in status], dtype=np.uint32)
                 array_by_attr["statusSymbol"] = np.array([s["symbol"] for s in status], dtype=np.object_)
+
+            if numeric_state is not None:
+                num_arr = np.array(numeric_state, dtype=np.float64)
+                if not np.isnan(num_arr).any():
+                    array_by_attr["numericStates"] = num_arr.astype(np.int32)
+
+            if string_state is not None:
+                array_by_attr["stringStates"] = np.array(string_state, dtype=np.object_)
 
         timezone = dps_dct.get("timezone")
         if isinstance(timezone, str):
