@@ -78,3 +78,4 @@ repos:
       # in the hook's isolated environment on Python <3.11.
       args:
         - --ignore-words-list=checkin
+        - --write-changes
