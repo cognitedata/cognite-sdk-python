@@ -1025,6 +1025,25 @@ class DatapointsArray(CogniteResource):
         convert_fn = partial(numpy_dtype_fix, camel_case=camel_case)
         datapoints = [dict(zip(attrs, map(convert_fn, row))) for row in zip(*arrays)]
 
+        if self.numeric_states is not None:
+            num_key = "numericState" if camel_case else "numeric_state"
+            plural_num_key = f"{num_key}s"
+            if self.numeric_states.dtype == np.float64:
+                # As numpy int arrays can't represent NaN, float64 is used when we need to accommodate for missing
+                # values. Thus, we need to convert both back to int and convert NaN to None:
+                for dp in datapoints:
+                    val = dp.pop(plural_num_key)
+                    dp[num_key] = None if math.isnan(val) else int(val)  # type: ignore [arg-type]
+            else:
+                for dp in datapoints:
+                    dp[num_key] = dp.pop(plural_num_key)
+
+        if self.string_states is not None:
+            str_key = "stringState" if camel_case else "string_state"
+            plural_str_key = f"{str_key}s"
+            for dp in datapoints:
+                dp[str_key] = dp.pop(plural_str_key)
+
         if self.status_code is not None or self.status_symbol is not None:
             if (
                 self.status_code is None
