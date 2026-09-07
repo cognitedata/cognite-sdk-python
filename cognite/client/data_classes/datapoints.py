@@ -1059,7 +1059,7 @@ class DatapointsArray(CogniteResource):
         if self.null_timestamps:
             for dp in datapoints:
                 if dp["timestamp"] in self.null_timestamps:  # ...luckily, we know :3
-                    dp["value"] = None  # type: ignore [assignment]
+                    dp["value"] = None
         dumped["datapoints"] = datapoints
 
         if camel_case:
@@ -1241,6 +1241,9 @@ class Datapoints(CogniteResource):
         dp_args: dict[str, Any] = {"timezone": self.timezone}
         for attr, values in self._get_non_empty_data_fields():
             dp_args[attr] = values[item]
+        for key in ("numeric_states", "string_states"):
+            if key in dp_args:
+                dp_args[key[:-1]] = dp_args.pop(key)  # quick way to get non-plural version of the key
 
         if self.status_code is not None:
             dp_args.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
@@ -1397,6 +1400,9 @@ class Datapoints(CogniteResource):
             dp_args: dict[str, Any] = {"timezone": self.timezone}
             for attr, value in fields:
                 dp_args[to_camel_case(attr)] = value[i]
+            for key in ("numericStates", "stringStates"):
+                if key in dp_args:
+                    dp_args[key[:-1]] = dp_args.pop(key)  # get non-plural version of the key
             if self.status_code is not None:
                 dp_args.update(
                     statusCode=self.status_code[i],
