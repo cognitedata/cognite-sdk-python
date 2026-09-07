@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import ssl
-from collections.abc import Iterator
+from collections.abc import AsyncIterator, Iterator
 
 import httpx
 import pytest
+from pytest_httpx import HTTPXMock
 
 from cognite.client._http_client import (
+    AsyncHTTPClientWithRetry,
     AsyncHTTPClientWithRetryConfig,
     NoCookiesPlease,
     RetryTracker,
@@ -14,6 +17,7 @@ from cognite.client._http_client import (
     get_global_async_httpx_client,
 )
 from cognite.client.config import global_config
+from cognite.client.exceptions import CogniteHTTPStatusError
 from cognite.client.response import CogniteHTTPResponse
 
 
@@ -52,6 +56,19 @@ def connect_error() -> httpx.ConnectError:
 @pytest.fixture
 def status_error_429() -> httpx.HTTPStatusError:
     return make_http_status_error(429)
+
+
+@pytest.fixture
+async def retry_http_client(
+    default_config: AsyncHTTPClientWithRetryConfig,
+) -> AsyncIterator[AsyncHTTPClientWithRetry]:
+    default_config._max_retries_status = 1
+    async with httpx.AsyncClient() as httpx_client:
+        yield AsyncHTTPClientWithRetry(
+            default_config,
+            refresh_auth_header=lambda headers: None,
+            httpx_async_client=httpx_client,
+        )
 
 
 class TestRetryTracker:
@@ -112,6 +129,51 @@ class TestRetryTracker:
         # 409 is not in the list of status codes to retry, but we set is_auto_retryable=True, which should override it
         assert rt.should_retry_status_code(make_http_status_error(409), is_auto_retryable=True) is True
         assert rt.should_retry_status_code(make_http_status_error(409), is_auto_retryable=False) is False
+
+
+class TestAsyncHTTPClientWithRetry:
+    @pytest.mark.parametrize(
+        "headers",
+        [
+            {},
+            {"cdf-is-auto-retryable": "false"},
+            {"cdf-is-auto-retryable": "False"},
+        ],
+    )
+    async def test_auto_retryable_header_does_not_retry(
+        self,
+        retry_http_client: AsyncHTTPClientWithRetry,
+        httpx_mock: HTTPXMock,
+        headers: dict[str, str],
+    ) -> None:
+        httpx_mock.add_response(method="GET", url=URL, status_code=409, headers=headers)
+
+        with pytest.raises(CogniteHTTPStatusError):
+            await retry_http_client.request("GET", URL, headers={}, semaphore=asyncio.BoundedSemaphore(1))
+
+        assert len(httpx_mock.get_requests()) == 1
+
+    @pytest.mark.parametrize(
+        "headers",
+        [
+            {"cdf-is-auto-retryable": "true"},
+            {"cdf-is-auto-retryable": "True"},
+        ],
+    )
+    async def test_auto_retryable_true_header_retries(
+        self,
+        retry_http_client: AsyncHTTPClientWithRetry,
+        httpx_mock: HTTPXMock,
+        monkeypatch: pytest.MonkeyPatch,
+        headers: dict[str, str],
+    ) -> None:
+        httpx_mock.add_response(method="GET", url=URL, status_code=409, headers=headers)
+        httpx_mock.add_response(method="GET", url=URL, status_code=200)
+
+        resp = await retry_http_client.request("GET", URL, headers={}, semaphore=asyncio.BoundedSemaphore(1))
+
+        assert resp.status_code == 200
+        assert len(httpx_mock.get_requests()) == 2
 
 
 @pytest.fixture
