@@ -65,7 +65,8 @@ def assert_eventually(assertion: Callable[[], None], *, deadline: float | None =
         except AssertionError as error:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                raise AssertionError(f"Timed out waiting for {assertion.__name__}: {error}") from error
+                name = getattr(assertion, "__name__", type(assertion).__name__)
+                raise AssertionError(f"Timed out waiting for {name}: {error}") from error
             time.sleep(min(next(wait), remaining))
 
 

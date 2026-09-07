@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Iterator
+from functools import partial
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock
@@ -46,12 +47,15 @@ def test_poll_delayed_visibility(clock: list[float]) -> None:
     assert 5 <= clock[0] < 60
 
 
-def test_poll_timeout_preserves_context_and_last_failure(clock: list[float]) -> None:
+@pytest.mark.parametrize("use_partial", [False, True])
+def test_poll_timeout_preserves_context_and_last_failure(clock: list[float], use_partial: bool) -> None:
     def replacement_is_visible() -> None:
         assert False, "expected value 99, got 0"
 
-    with pytest.raises(AssertionError, match=r"replacement_is_visible.*expected value 99") as error:
-        integration.assert_eventually(replacement_is_visible)
+    assertion = partial(replacement_is_visible) if use_partial else replacement_is_visible
+    name = "partial" if use_partial else "replacement_is_visible"
+    with pytest.raises(AssertionError, match=rf"{name}.*expected value 99") as error:
+        integration.assert_eventually(assertion)
     assert clock[0] == 60
     assert isinstance(error.value.__cause__, AssertionError)
 
