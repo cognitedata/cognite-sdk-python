@@ -50,6 +50,12 @@ server.listen(PORT, () => {
       console.log(`Applying cryptography workaround for Pyodide ${pyodide.version}`);
       await pyodide.loadPackage(["cryptography", "ssl"]);
       await micropip.install("authlib<1.7");
+
+      // The "ssl" package above pulls in Pyodide's bundled idna==3.7. httpx2 (the SDK's
+      // HTTP client since 8.16.0) requires idna>=3.18, which micropip won't upgrade to
+      // implicitly once a version is already loaded, so we force it here before
+      // installing the SDK wheel.
+      await micropip.install("idna>=3.18");
     }
 
     // Read packages to install from environment variable as JSON
