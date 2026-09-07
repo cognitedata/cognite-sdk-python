@@ -6,11 +6,16 @@ from pytest_httpx import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.integrations import (
+    CheckinRequest,
+    CheckinResponse,
+    ErrorWithTask,
     Extractor,
     Integration,
     IntegrationList,
     IntegrationUpdate,
     IntegrationWrite,
+    StartupRequest,
+    TaskUpdate,
 )
 from tests.utils import get_url, jsgz_load
 
@@ -38,7 +43,7 @@ class TestIntegrations:
 
         request = httpx_mock.get_requests()[0]
         assert request.method == "GET"
-        assert request.headers["cdf-version"] == async_client.integrations._alpha_version_header()["cdf-version"]
+        assert request.headers["cdf-version"] == async_client.integrations._beta_version_header()["cdf-version"]
 
     def test_create(
         self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
@@ -86,6 +91,56 @@ class TestIntegrations:
 
         body = jsgz_load(httpx_mock.get_requests()[0].content)
         assert body == {"items": [{"externalId": "my-integration"}], "ignoreUnknownIds": False}
+
+    def test_startup(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.integrations, "/integrations/startup"),
+            json={"externalId": "my-integration", "lastConfigRevision": 3},
+        )
+        request = StartupRequest(
+            external_id="my-integration",
+            extractor=Extractor(external_id="cognite-simple-influxdb-extractor", version="1.0.0"),
+        )
+
+        res = cognite_client.integrations.startup(request)
+
+        assert isinstance(res, CheckinResponse)
+        assert res.last_config_revision == 3
+
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body == {
+            "externalId": "my-integration",
+            "extractor": {"externalId": "cognite-simple-influxdb-extractor", "version": "1.0.0"},
+        }
+
+    def test_checkin(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+    ) -> None:
+        httpx_mock.add_response(
+            method="POST",
+            url=get_url(async_client.integrations, "/integrations/checkin"),
+            json={"externalId": "my-integration", "lastConfigRevision": 4},
+        )
+        request = CheckinRequest(
+            external_id="my-integration",
+            task_events=[TaskUpdate(type="started", name="poll", timestamp=100)],
+            errors=[ErrorWithTask(level="warning", description="Slow response", start_time=100)],
+        )
+
+        res = cognite_client.integrations.checkin(request)
+
+        assert isinstance(res, CheckinResponse)
+        assert res.last_config_revision == 4
+
+        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        assert body == {
+            "externalId": "my-integration",
+            "taskEvents": [{"type": "started", "name": "poll", "timestamp": 100}],
+            "errors": [{"level": "warning", "description": "Slow response", "startTime": 100}],
+        }
 
     def test_update(
         self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock

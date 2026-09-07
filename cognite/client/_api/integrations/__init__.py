@@ -9,6 +9,7 @@ from cognite.client._api.integrations.errors import IntegrationErrorsAPI
 from cognite.client._api.integrations.tasks import IntegrationTasksAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.data_classes.integrations.checkin import CheckinRequest, CheckinResponse, StartupRequest
 from cognite.client.data_classes.integrations.integrations import (
     Integration,
     IntegrationList,
@@ -33,7 +34,7 @@ class IntegrationsAPI(APIClient):
         self.errors = IntegrationErrorsAPI(config, api_version, cognite_client)
         self.config = IntegrationConfigAPI(config, api_version, cognite_client)
         self.actions = IntegrationActionsAPI(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(api_maturity="alpha", sdk_maturity="alpha", feature_name="Integrations")
+        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Integrations")
 
     @overload
     def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Integration]: ...
@@ -62,7 +63,7 @@ class IntegrationsAPI(APIClient):
             resource_cls=Integration,
             chunk_size=chunk_size,
             limit=limit,
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
         ):
             yield item
 
@@ -95,7 +96,7 @@ class IntegrationsAPI(APIClient):
             list_cls=IntegrationList,
             resource_cls=Integration,
             limit=limit,
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
         )
 
     @overload
@@ -132,7 +133,7 @@ class IntegrationsAPI(APIClient):
             resource_cls=Integration,
             items=integration,
             input_resource_cls=IntegrationWrite,
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
         )
 
     @overload
@@ -169,7 +170,7 @@ class IntegrationsAPI(APIClient):
             resource_cls=Integration,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
         )
 
     @overload
@@ -210,7 +211,7 @@ class IntegrationsAPI(APIClient):
             resource_cls=Integration,
             update_cls=IntegrationUpdate,
             items=item,
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
         )
 
     async def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
@@ -234,5 +235,77 @@ class IntegrationsAPI(APIClient):
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
         )
+
+    async def startup(self, request: StartupRequest) -> CheckinResponse:
+        """`Report extractor startup <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/integration_startup>`_
+
+        Reports that the extractor has (re)started, along with its current task configuration.
+        This closes any currently running tasks with an error.
+
+        Note:
+            This is normally only called by extractor implementations as part of the
+            integrations startup protocol, not by typical SDK consumers.
+
+        Args:
+            request (StartupRequest): The startup event to report.
+
+        Returns:
+            CheckinResponse: The integration's latest config revision.
+
+        Examples:
+
+            Report extractor startup:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.integrations import Extractor, StartupRequest
+                >>> client = CogniteClient()
+                >>> req = StartupRequest(
+                ...     external_id="my-integration",
+                ...     extractor=Extractor(external_id="cognite-simple-influxdb-extractor"),
+                ... )
+                >>> res = client.integrations.startup(req)
+        """
+        self._warning.warn()
+        response = await self._post(
+            f"{self._RESOURCE_PATH}/startup",
+            json=request.dump(camel_case=True),
+            headers=self._beta_version_header(),
+            semaphore=self._get_semaphore("write"),
+        )
+        return CheckinResponse._load(response.json())
+
+    async def checkin(self, request: CheckinRequest) -> CheckinResponse:
+        """`Check in with the integrations service <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/integration_checkin>`_
+
+        Called periodically by extractors to signal that they are still alive, and to report task
+        start/stop events and errors that have occurred since the last check-in.
+
+        Note:
+            This is normally only called by extractor implementations as part of the
+            integrations check-in protocol, not by typical SDK consumers.
+
+        Args:
+            request (CheckinRequest): The check-in event to report.
+
+        Returns:
+            CheckinResponse: The integration's latest config revision.
+
+        Examples:
+
+            Check in with no updates:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.integrations import CheckinRequest
+                >>> client = CogniteClient()
+                >>> res = client.integrations.checkin(CheckinRequest(external_id="my-integration"))
+        """
+        self._warning.warn()
+        response = await self._post(
+            f"{self._RESOURCE_PATH}/checkin",
+            json=request.dump(camel_case=True),
+            headers=self._beta_version_header(),
+            semaphore=self._get_semaphore("write"),
+        )
+        return CheckinResponse._load(response.json())

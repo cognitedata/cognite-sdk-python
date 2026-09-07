@@ -18,7 +18,7 @@ class IntegrationErrorsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(api_maturity="alpha", sdk_maturity="alpha", feature_name="Integrations")
+        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Integrations")
 
     async def list(
         self,
@@ -70,5 +70,5 @@ class IntegrationErrorsAPI(APIClient):
                     "maxEndTime": max_end_time,
                 }
             ),
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
         )

@@ -18,7 +18,7 @@ class IntegrationTasksAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(api_maturity="alpha", sdk_maturity="alpha", feature_name="Integrations")
+        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Integrations")
 
     async def list_history(
         self,
@@ -67,7 +67,7 @@ class IntegrationTasksAPI(APIClient):
                     "lastPerTask": last_per_task,
                 }
             ),
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
         )
 
     async def sync(
@@ -136,7 +136,7 @@ class IntegrationTasksAPI(APIClient):
                     "limit": limit,
                 }
             ),
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
             semaphore=self._get_semaphore("read"),
         )
         return SyncResult._load(response.json())

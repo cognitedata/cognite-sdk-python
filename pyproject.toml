@@ -90,6 +90,12 @@ docs = [
 [project.urls]
 Documentation = "https://cognite-sdk-python.readthedocs-hosted.com"
 
+[tool.codespell]
+# "checkin"/"checkin()" match the Integrations API's actual operationId (integration_checkin) and
+# URL path (/integrations/checkin), so they can't be reworded to "check-in" without diverging from
+# the real API surface.
+ignore-words-list = "checkin"
+
 [tool.ruff]
 line-length = 120
 target-version = "py310"

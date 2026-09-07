@@ -24,7 +24,7 @@ class IntegrationActionsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(api_maturity="alpha", sdk_maturity="alpha", feature_name="Integrations")
+        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Integrations")
 
     @overload
     async def create(self, external_id: str, action: ActionWrite) -> Action: ...
@@ -62,7 +62,7 @@ class IntegrationActionsAPI(APIClient):
                 self._RESOURCE_PATH,
                 params={"externalId": external_id},
                 json={"items": [item.dump(camel_case=True) for item in chunk]},
-                headers=self._alpha_version_header(),
+                headers=self._beta_version_header(),
                 semaphore=self._get_semaphore("write"),
             )
             created.extend(response.json()["items"])
@@ -113,7 +113,7 @@ class IntegrationActionsAPI(APIClient):
                     "includeCompleted": include_completed,
                 }
             ),
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
         )
 
     @overload
@@ -150,7 +150,7 @@ class IntegrationActionsAPI(APIClient):
             resource_cls=Action,
             identifiers=identifiers,
             ignore_unknown_ids=ignore_unknown_ids,
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
         )
 
     async def cancel(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> ActionList:
@@ -185,7 +185,7 @@ class IntegrationActionsAPI(APIClient):
             response = await self._post(
                 f"{self._RESOURCE_PATH}/cancel",
                 json=body,
-                headers=self._alpha_version_header(),
+                headers=self._beta_version_header(),
                 semaphore=self._get_semaphore("write"),
             )
             cancelled.extend(response.json()["items"])

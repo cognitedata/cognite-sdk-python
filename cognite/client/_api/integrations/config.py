@@ -22,7 +22,7 @@ class IntegrationConfigAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self._warning = FeaturePreviewWarning(api_maturity="alpha", sdk_maturity="alpha", feature_name="Integrations")
+        self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Integrations")
 
     async def create(self, config: ConfigRevision | ConfigRevisionWrite) -> ConfigRevision:
         """`Create a new configuration revision <https://api-docs.cognite.com/20230101-alpha/tag/Integration-Configuration/operation/new_integration_config>`_
@@ -50,7 +50,7 @@ class IntegrationConfigAPI(APIClient):
         response = await self._post(
             self._RESOURCE_PATH,
             json=config.dump(camel_case=True),
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
             semaphore=self._get_semaphore("write"),
         )
         return ConfigRevision._load(response.json())
@@ -78,7 +78,7 @@ class IntegrationConfigAPI(APIClient):
         response = await self._get(
             self._RESOURCE_PATH,
             params=drop_none_values({"externalId": external_id, "revision": revision}),
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
             semaphore=self._get_semaphore("read"),
         )
         return ConfigRevision._load(response.json())
@@ -115,7 +115,7 @@ class IntegrationConfigAPI(APIClient):
         response = await self._get(
             f"{self._RESOURCE_PATH}/revisions",
             params=drop_none_values({"externalId": external_id, "limit": limit}),
-            headers=self._alpha_version_header(),
+            headers=self._beta_version_header(),
             semaphore=self._get_semaphore("read"),
         )
         return ConfigRevisionMetadataList._load(response.json()["items"])
