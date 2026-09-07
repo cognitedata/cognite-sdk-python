@@ -385,15 +385,15 @@ class ClientConfig:
         "warnings/error messages better, it is never used in API request routing (that is decided by 'base_url'). "
         "A return value of None from this property simply means the cluster could not be guessed from the base URL, "
         "and is not an error. It was never meant to be a reliable source of truth, which is impossible due to the SDK "
-        "allowing arbitrary base URLs. Will be removed in in the next major version (v9)."
+        "allowing arbitrary base URLs. Will be removed in the next major version (v9)."
     )
     def cdf_cluster(self) -> str | None:
         """The CDF cluster, if known: as passed to 'cluster', else guessed from 'base_url'.
 
-        .. deprecated:: 8.15.0
+        .. deprecated:: 8.16.0
             This property is a best-effort helper used internally in the SDK to determine the CDF cluster to make e.g.
             warnings/error messages better. It was never meant to be a reliable source of truth, which is impossible
-            due to the SDK allowing arbitrary base URLs. Will be removed in in the next major version (v9).
+            due to the SDK allowing arbitrary base URLs. Will be removed in the next major version (v9).
         """
         return self._attempt_to_get_cdf_cluster()
 
