@@ -1388,7 +1388,7 @@ class _AssetHierarchyCreator:
                 message=f"{err_message} {self.latest_exception.message}",
                 x_request_id=self.latest_exception.x_request_id,
                 code=self.latest_exception.code,
-                cluster=self.assets_api._config.cdf_cluster,
+                cluster=self.assets_api._config._attempt_to_get_cdf_cluster(),
                 project=self.assets_api._config.project,
                 extra=self.latest_exception.extra,
                 successful=successful,

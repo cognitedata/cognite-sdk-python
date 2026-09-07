@@ -231,6 +231,7 @@ def _create_client_config_mock() -> MagicMock:
     # Non-init attributes:
     config._cluster = "mock_cluster"
     config.cdf_cluster = "mock_cluster"
+    config._attempt_to_get_cdf_cluster.return_value = "mock_cluster"
 
     flip_spec_set_on(config)
     return config

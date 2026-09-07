@@ -113,7 +113,7 @@ class FailedRequestHandler:
         )
 
     async def raise_api_error(self, cognite_client: AsyncCogniteClient) -> NoReturn:
-        cluster = cognite_client._config.cdf_cluster
+        cluster = cognite_client._config._attempt_to_get_cdf_cluster()
         project = cognite_client._config.project
 
         match self.status_code, self.duplicated, self.missing:

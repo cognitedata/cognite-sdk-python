@@ -172,7 +172,7 @@ class TestClientConfig:
         self, client_config: ClientConfig, protocol: str, end: str, subdomain: str, cluster: str
     ) -> None:
         client_config.base_url = f"{protocol}://{subdomain}{cluster}.cognitedata.com{end}"
-        assert client_config.cdf_cluster == cluster
+        assert client_config._attempt_to_get_cdf_cluster() == cluster
 
     @pytest.mark.parametrize("protocol", ("http", "https"))
     @pytest.mark.parametrize("end", ("", "/", ":8080", "/api/v1/", ":8080/api/v1/"))
@@ -182,8 +182,20 @@ class TestClientConfig:
         self, client_config: ClientConfig, protocol: str, end: str, subdomain: str, cluster: str
     ) -> None:
         client_config.base_url = f"{protocol}://{subdomain}{cluster}cognitedata.com{end}"
-        assert client_config.cdf_cluster is None
+        assert client_config._attempt_to_get_cdf_cluster() is None
 
     def test_extract_invalid_url(self, client_config: ClientConfig) -> None:
         client_config.base_url = "invalid"
-        assert client_config.cdf_cluster is None
+        assert client_config._attempt_to_get_cdf_cluster() is None
+
+    @pytest.mark.parametrize(
+        "base_url, exp_cluster",
+        (("https://greenfield.cognitedata.com", "greenfield"), ("https://proxy.example.com/cognite", None)),
+    )
+    def test_public_cdf_cluster_warns_but_agrees(
+        self, client_config: ClientConfig, base_url: str, exp_cluster: str | None
+    ) -> None:
+        client_config.base_url = base_url
+        with pytest.warns(DeprecationWarning, match="best-effort helper"):
+            assert client_config.cdf_cluster == exp_cluster
+            assert client_config._attempt_to_get_cdf_cluster() == exp_cluster
