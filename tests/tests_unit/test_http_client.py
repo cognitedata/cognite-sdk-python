@@ -164,7 +164,6 @@ class TestAsyncHTTPClientWithRetry:
         self,
         retry_http_client: AsyncHTTPClientWithRetry,
         httpx_mock: HTTPXMock,
-        monkeypatch: pytest.MonkeyPatch,
         headers: dict[str, str],
     ) -> None:
         httpx_mock.add_response(method="GET", url=URL, status_code=409, headers=headers)
