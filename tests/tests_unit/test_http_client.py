@@ -4,9 +4,9 @@ import asyncio
 import ssl
 from collections.abc import AsyncIterator, Iterator
 
-import httpx
+import httpx2
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client._http_client import (
     AsyncHTTPClientWithRetry,
@@ -37,24 +37,24 @@ def default_config() -> AsyncHTTPClientWithRetryConfig:
 URL = "https://example.com"
 
 
-def make_http_status_error(status_code: int) -> httpx.HTTPStatusError:
-    request = httpx.Request("GET", URL)
-    response = httpx.Response(status_code=status_code, request=request)
-    return httpx.HTTPStatusError(f"Error {status_code}", request=request, response=response)
+def make_http_status_error(status_code: int) -> httpx2.HTTPStatusError:
+    request = httpx2.Request("GET", URL)
+    response = httpx2.Response(status_code=status_code, request=request)
+    return httpx2.HTTPStatusError(f"Error {status_code}", request=request, response=response)
 
 
 @pytest.fixture
-def timeout_error() -> httpx.TimeoutException:
-    return httpx.ReadTimeout("read timeout")
+def timeout_error() -> httpx2.TimeoutException:
+    return httpx2.ReadTimeout("read timeout")
 
 
 @pytest.fixture
-def connect_error() -> httpx.ConnectError:
-    return httpx.ConnectError("connection error")
+def connect_error() -> httpx2.ConnectError:
+    return httpx2.ConnectError("connection error")
 
 
 @pytest.fixture
-def status_error_429() -> httpx.HTTPStatusError:
+def status_error_429() -> httpx2.HTTPStatusError:
     return make_http_status_error(429)
 
 
@@ -63,7 +63,7 @@ async def retry_http_client(
     default_config: AsyncHTTPClientWithRetryConfig,
 ) -> AsyncIterator[AsyncHTTPClientWithRetry]:
     default_config._max_retries_status = 1
-    async with httpx.AsyncClient() as httpx_client:
+    async with httpx2.AsyncClient() as httpx_client:
         yield AsyncHTTPClientWithRetry(
             default_config,
             refresh_auth_header=lambda headers: None,
@@ -73,7 +73,7 @@ async def retry_http_client(
 
 class TestRetryTracker:
     def test_total_retries_exceeded(
-        self, default_config: AsyncHTTPClientWithRetryConfig, status_error_429: httpx.HTTPStatusError
+        self, default_config: AsyncHTTPClientWithRetryConfig, status_error_429: httpx2.HTTPStatusError
     ) -> None:
         default_config._max_retries_total = 10
         rt = RetryTracker(URL, default_config)
@@ -86,7 +86,7 @@ class TestRetryTracker:
         assert rt.should_retry_status_code(status_error_429) is False
 
     def test_status_retries_exceeded(
-        self, default_config: AsyncHTTPClientWithRetryConfig, status_error_429: httpx.HTTPStatusError
+        self, default_config: AsyncHTTPClientWithRetryConfig, status_error_429: httpx2.HTTPStatusError
     ) -> None:
         default_config._max_retries_status = 1
         rt = RetryTracker(URL, default_config)
@@ -97,7 +97,7 @@ class TestRetryTracker:
         assert "429" in rt.last_failed_reason
 
     def test_read_retries_exceeded(
-        self, default_config: AsyncHTTPClientWithRetryConfig, timeout_error: httpx.TimeoutException
+        self, default_config: AsyncHTTPClientWithRetryConfig, timeout_error: httpx2.TimeoutException
     ) -> None:
         default_config._max_retries_read = 1
         rt = RetryTracker(URL, default_config)
@@ -107,7 +107,7 @@ class TestRetryTracker:
         assert "ReadTimeout" in rt.last_failed_reason
 
     def test_connect_retries_exceeded(
-        self, default_config: AsyncHTTPClientWithRetryConfig, connect_error: httpx.ConnectError
+        self, default_config: AsyncHTTPClientWithRetryConfig, connect_error: httpx2.ConnectError
     ) -> None:
         default_config._max_retries_connect = 1
         rt = RetryTracker(URL, default_config)
@@ -143,15 +143,15 @@ class TestAsyncHTTPClientWithRetry:
     async def test_auto_retryable_header_does_not_retry(
         self,
         retry_http_client: AsyncHTTPClientWithRetry,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         headers: dict[str, str],
     ) -> None:
-        httpx_mock.add_response(method="GET", url=URL, status_code=409, headers=headers)
+        httpx2_mock.add_response(method="GET", url=URL, status_code=409, headers=headers)
 
         with pytest.raises(CogniteHTTPStatusError):
             await retry_http_client.request("GET", URL, headers={}, semaphore=asyncio.BoundedSemaphore(1))
 
-        assert len(httpx_mock.get_requests()) == 1
+        assert len(httpx2_mock.get_requests()) == 1
 
     @pytest.mark.parametrize(
         "headers",
@@ -163,16 +163,16 @@ class TestAsyncHTTPClientWithRetry:
     async def test_auto_retryable_true_header_retries(
         self,
         retry_http_client: AsyncHTTPClientWithRetry,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         headers: dict[str, str],
     ) -> None:
-        httpx_mock.add_response(method="GET", url=URL, status_code=409, headers=headers)
-        httpx_mock.add_response(method="GET", url=URL, status_code=200)
+        httpx2_mock.add_response(method="GET", url=URL, status_code=409, headers=headers)
+        httpx2_mock.add_response(method="GET", url=URL, status_code=200)
 
         resp = await retry_http_client.request("GET", URL, headers={}, semaphore=asyncio.BoundedSemaphore(1))
 
         assert resp.status_code == 200
-        assert len(httpx_mock.get_requests()) == 2
+        assert len(httpx2_mock.get_requests()) == 2
 
 
 @pytest.fixture
@@ -200,7 +200,7 @@ class TestGetGlobalAsyncHttpxClient:
 
         assert len(client._mounts) == 1
 
-        # If the below asserts fail due to httpx/httpcore private API changes, just keep the assert above.
+        # If the below asserts fail due to httpx2/httpcore2 private API changes, just keep the assert above.
         (transport,) = client._mounts.values()
         assert transport._pool._proxy_url.host == b"magicenvproxy"  # type: ignore[union-attr]
         assert transport._pool._proxy_url.port == 666  # type: ignore[union-attr]
@@ -230,8 +230,8 @@ class TestGetGlobalAsyncHttpxClient:
 
 
 def make_response(status_code: int) -> CogniteHTTPResponse:
-    request = httpx.Request("GET", URL)
-    return CogniteHTTPResponse(httpx.Response(status_code=status_code, request=request))
+    request = httpx2.Request("GET", URL)
+    return CogniteHTTPResponse(httpx2.Response(status_code=status_code, request=request))
 
 
 class TestCogniteHTTPResponseRepr:

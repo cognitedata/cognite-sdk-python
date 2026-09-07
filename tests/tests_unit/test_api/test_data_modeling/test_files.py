@@ -7,7 +7,7 @@ from typing import Any, NoReturn
 from unittest.mock import AsyncMock
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client._api.data_modeling.files import COGNITE_FILE_VIEW_ID
@@ -44,31 +44,31 @@ def single_node(
 @pytest.mark.usefixtures("disable_gzip")
 class TestDMFilesRetrieve:
     def test_default_source_sends_single_source_in_request(
-        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=re.compile(r".*/models/instances/byids$"),
             json={"items": [single_node()]},
         )
         cognite_client.data_modeling.files.retrieve(NodeId("s", "x"))
 
-        body = json.loads(httpx_mock.get_requests()[0].content)
+        body = json.loads(httpx2_mock.get_requests()[0].content)
         sources = body.get("sources", [])
         assert len(sources) == 1
         assert sources[0]["source"]["externalId"] == COGNITE_FILE_VIEW_ID.external_id
 
     def test_custom_source_sends_two_sources_and_strips_cognite_file_props(
-        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=re.compile(r".*/models/instances/byids$"),
             json={"items": [single_node(extra_sources={CUSTOM_VIEW_ID: {"custom_prop": 42}})]},
         )
         result = cognite_client.data_modeling.files.retrieve(NodeId("s", "x"), source=CUSTOM_VIEW_ID)
 
-        body = json.loads(httpx_mock.get_requests()[0].content)
+        body = json.loads(httpx2_mock.get_requests()[0].content)
         sources = body.get("sources", [])
         assert len(sources) == 2
 
@@ -77,8 +77,8 @@ class TestDMFilesRetrieve:
         assert CUSTOM_VIEW_ID in result.properties
         assert result["custom_prop"] == 42
 
-    def test_single_id_not_found_returns_none(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    def test_single_id_not_found_returns_none(self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST",
             url=re.compile(r".*/models/instances/byids$"),
             json={"items": []},
@@ -86,8 +86,8 @@ class TestDMFilesRetrieve:
         result = cognite_client.data_modeling.files.retrieve(NodeId("s", "missing"))
         assert result is None
 
-    def test_single_id_found_returns_node_not_list(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    def test_single_id_found_returns_node_not_list(self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST",
             url=re.compile(r".*/models/instances/byids$"),
             json={"items": [single_node()]},
@@ -95,8 +95,8 @@ class TestDMFilesRetrieve:
         result = cognite_client.data_modeling.files.retrieve(NodeId("s", "x"))
         assert isinstance(result, Node)
 
-    def test_list_of_ids_returns_node_list(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    def test_list_of_ids_returns_node_list(self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST",
             url=re.compile(r".*/models/instances/byids$"),
             json={"items": [single_node("s", "xx"), single_node("s", "yy")]},
@@ -266,24 +266,24 @@ class TestUploadPublicMethods:
 @pytest.mark.usefixtures("disable_gzip")
 class TestDMFilesList:
     def test_default_source_sends_single_source_in_request(
-        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=re.compile(r".*/models/instances/list$"),
             json={"items": []},
         )
         cognite_client.data_modeling.files.list(limit=1)
 
-        body = json.loads(httpx_mock.get_requests()[0].content)
+        body = json.loads(httpx2_mock.get_requests()[0].content)
         sources = body.get("sources", [])
         assert len(sources) == 1
         assert sources[0]["source"]["externalId"] == COGNITE_FILE_VIEW_ID.external_id
 
     def test_custom_source_sends_two_sources_and_strips_cognite_file_props(
-        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=re.compile(r".*/models/instances/list$"),
             json={
@@ -295,7 +295,7 @@ class TestDMFilesList:
         )
         results = cognite_client.data_modeling.files.list(source=CUSTOM_VIEW_ID, limit=5)
 
-        body = json.loads(httpx_mock.get_requests()[0].content)
+        body = json.loads(httpx2_mock.get_requests()[0].content)
         sources = body.get("sources", [])
         assert len(sources) == 2
 

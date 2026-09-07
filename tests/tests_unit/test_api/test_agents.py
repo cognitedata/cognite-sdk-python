@@ -4,7 +4,7 @@ from collections.abc import Iterator
 from unittest.mock import MagicMock
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
@@ -64,30 +64,30 @@ def agents_url(async_client: AsyncCogniteClient) -> str:
 
 @pytest.fixture
 def mock_agent_retrieve_response(
-    httpx_mock: HTTPXMock, agents_url: str, agent_response_body: dict
+    httpx2_mock: HTTPXMock, agents_url: str, agent_response_body: dict
 ) -> Iterator[HTTPXMock]:
-    httpx_mock.add_response(method="POST", url=agents_url + "/byids", status_code=200, json=agent_response_body)
-    yield httpx_mock
+    httpx2_mock.add_response(method="POST", url=agents_url + "/byids", status_code=200, json=agent_response_body)
+    yield httpx2_mock
 
 
 @pytest.fixture
-def mock_agent_list_response(httpx_mock: HTTPXMock, agents_url: str, agent_response_body: dict) -> Iterator[HTTPXMock]:
-    httpx_mock.add_response(method="GET", url=agents_url, status_code=200, json=agent_response_body)
-    yield httpx_mock
+def mock_agent_list_response(httpx2_mock: HTTPXMock, agents_url: str, agent_response_body: dict) -> Iterator[HTTPXMock]:
+    httpx2_mock.add_response(method="GET", url=agents_url, status_code=200, json=agent_response_body)
+    yield httpx2_mock
 
 
 @pytest.fixture
-def mock_agent_delete_response(httpx_mock: HTTPXMock, agents_url: str) -> Iterator[HTTPXMock]:
-    httpx_mock.add_response(method="POST", url=agents_url + "/delete", status_code=200, json={})
-    yield httpx_mock
+def mock_agent_delete_response(httpx2_mock: HTTPXMock, agents_url: str) -> Iterator[HTTPXMock]:
+    httpx2_mock.add_response(method="POST", url=agents_url + "/delete", status_code=200, json={})
+    yield httpx2_mock
 
 
 @pytest.fixture
 def mock_agent_upsert_response(
-    httpx_mock: HTTPXMock, agents_url: str, agent_response_body: dict, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, agents_url: str, agent_response_body: dict, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
-    httpx_mock.add_response(method="POST", url=agents_url, status_code=200, json=agent_response_body)
-    yield httpx_mock
+    httpx2_mock.add_response(method="POST", url=agents_url, status_code=200, json=agent_response_body)
+    yield httpx2_mock
 
 
 class TestAgentsAPI:
@@ -211,7 +211,7 @@ class TestAgentsAPI:
     def test_upsert_ensure_retry(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         agent_response_body: dict[str, object],
         agents_url: str,
     ) -> None:
@@ -224,10 +224,10 @@ class TestAgentsAPI:
             # Simulate a 503 response to ensure retry logic is triggered. Note we do not use 429 as that is always
             # retried, while 503 is only retried if the endpoint is marked as retryable.
 
-            httpx_mock.add_response(
+            httpx2_mock.add_response(
                 method="POST", url=agents_url, status_code=503, json={"message": "Connection refused"}
             )
-            httpx_mock.add_response(method="POST", url=agents_url, status_code=200, json=agent_response_body)
+            httpx2_mock.add_response(method="POST", url=agents_url, status_code=200, json=agent_response_body)
 
             created = cognite_client.agents.upsert(AgentUpsert(external_id="agent_1", name="Agent 1"))
             assert isinstance(created, Agent)

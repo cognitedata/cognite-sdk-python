@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import DataSet, DataSetList, DataSetUpdate, DataSetWrite, TimestampRange
@@ -36,7 +36,7 @@ def dataset_update() -> DataSetUpdate:
 
 @pytest.fixture
 def mock_ds_response(
-    httpx_mock: HTTPXMock,
+    httpx2_mock: HTTPXMock,
     cognite_client: CogniteClient,
     example_data_set: dict[str, Any],
     async_client: AsyncCogniteClient,
@@ -46,9 +46,9 @@ def mock_ds_response(
         re.escape(get_url(async_client.data_sets)) + r"/datasets(?:/byids|/update|/delete|/list|$|\?.+)"
     )
 
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    return httpx2_mock
 
 
 class TestDataset:
@@ -160,10 +160,10 @@ class TestDataset:
 
 
 @pytest.fixture
-def mock_ds_empty(httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> HTTPXMock:
+def mock_ds_empty(httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> HTTPXMock:
     url_pattern = re.compile(re.escape(get_url(async_client.data_sets)) + "/.+")
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
+    return httpx2_mock
 
 
 @pytest.mark.dsl

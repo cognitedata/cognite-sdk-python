@@ -16,8 +16,8 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from httpx import Response
-from pytest_httpx import HTTPXMock
+from httpx2 import Response
+from pytest_httpx2 import HTTPXMock
 
 import cognite.client._api.datapoints_io as dps_io  # for mocking
 from cognite.client import AsyncCogniteClient
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def mock_retrieve_latest(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> Iterator[HTTPXMock]:
+def mock_retrieve_latest(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> Iterator[HTTPXMock]:
     def request_callback(request: Any) -> Response:
         payload = jsgz_load(request.content)
 
@@ -62,18 +62,18 @@ def mock_retrieve_latest(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
             )
         return Response(200, headers={}, json={"items": items})
 
-    httpx_mock.add_callback(
+    httpx2_mock.add_callback(
         request_callback,
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         match_headers={"content-type": "application/json"},
     )
-    yield httpx_mock
+    yield httpx2_mock
 
 
 @pytest.fixture
-def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_retrieve_latest_empty(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=200,
@@ -84,12 +84,12 @@ def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, async_client: AsyncCognite
             ]
         },
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_retrieve_latest_with_failure(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=200,
@@ -100,13 +100,13 @@ def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, async_client: Async
             ]
         },
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=500,
         json={"error": {"code": 500, "message": "Internal Server Error"}},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class TestGetLatest:
@@ -217,26 +217,26 @@ class TestGetLatest:
 
 
 @pytest.fixture
-def mock_post_datapoints(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_post_datapoints(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data"),
         status_code=200,
         json={},
         is_reusable=True,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_post_datapoints_400(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_post_datapoints_400(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data"),
         status_code=400,
         json={"error": {"message": "Ts not found", "missing": [{"externalId": "does_not_exist"}]}},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.mark.allow_no_semaphore(
@@ -496,15 +496,15 @@ class TestFetchAllDoesNotLeakTaskExceptions:
 
 @pytest.fixture
 def mock_delete_datapoints(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data) + "/timeseries/data/delete",
         status_code=200,
         json={},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class TestDeleteDatapoints:
