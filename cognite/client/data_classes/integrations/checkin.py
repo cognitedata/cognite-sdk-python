@@ -40,7 +40,7 @@ class ErrorWithTask(CogniteResource):
     """An error reported by the extractor as part of a check-in.
 
     Args:
-        level (Literal["warning", "error", "fatal"]): Severity of the error.
+        level (Literal['warning', 'error', 'fatal']): Severity of the error.
         description (str): Short description of the error.
         start_time (int): Time the error started, in milliseconds since epoch.
         details (str | None): Full details of the error, e.g. a stack trace.
