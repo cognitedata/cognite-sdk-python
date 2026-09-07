@@ -2,12 +2,17 @@ from __future__ import annotations
 
 from cognite.client.data_classes.integrations import (
     Action,
+    CheckinRequest,
+    CheckinResponse,
     ConfigRevision,
+    ErrorWithTask,
     Extractor,
     Integration,
     IntegrationError,
     IntegrationUpdate,
+    StartupRequest,
     Task,
+    TaskUpdate,
 )
 from cognite.client.data_classes.integrations.tasks import SyncResult, TaskHistory
 
@@ -204,3 +209,55 @@ def test_task_load_dump() -> None:
         "targets": ["cdf://cluster/project/timeseries/my-ts"],
     }
     assert Task._load(dumped).dump(camel_case=True) == dumped
+
+
+def test_task_update_load_dump() -> None:
+    dumped = {"type": "started", "name": "poll", "timestamp": 100, "message": "Task started"}
+    assert TaskUpdate._load(dumped).dump(camel_case=True) == dumped
+
+
+def test_error_with_task_load_dump() -> None:
+    dumped = {
+        "level": "fatal",
+        "description": "Something went very wrong",
+        "startTime": 100,
+        "details": "Traceback ...",
+        "task": "poll",
+        "endTime": 200,
+        "activeConfigRevision": 2,
+    }
+    assert ErrorWithTask._load(dumped).dump(camel_case=True) == dumped
+
+
+def test_startup_request_load_dump() -> None:
+    dumped = {
+        "externalId": "my-integration",
+        "extractor": {"externalId": "cognite-simple-influxdb-extractor", "version": "1.0.0"},
+        "tasks": [{"type": "continuous", "name": "poll", "action": False}],
+        "activeConfigRevision": "local",
+        "timestamp": 100,
+    }
+    loaded = StartupRequest._load(dumped)
+
+    assert loaded.tasks is not None
+    assert loaded.tasks[0].name == "poll"
+    assert loaded.dump(camel_case=True) == dumped
+
+
+def test_checkin_request_load_dump() -> None:
+    dumped = {
+        "externalId": "my-integration",
+        "taskEvents": [{"type": "ended", "name": "poll", "timestamp": 200}],
+        "errors": [{"level": "error", "description": "Oops", "startTime": 100}],
+    }
+    loaded = CheckinRequest._load(dumped)
+
+    assert loaded.task_events is not None
+    assert loaded.errors is not None
+    assert loaded.task_events[0].type == "ended"
+    assert loaded.dump(camel_case=True) == dumped
+
+
+def test_checkin_response_load_dump() -> None:
+    dumped = {"externalId": "my-integration", "lastConfigRevision": 5}
+    assert CheckinResponse._load(dumped).dump(camel_case=True) == dumped

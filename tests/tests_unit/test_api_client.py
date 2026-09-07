@@ -1790,6 +1790,8 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/integrations/actions", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/integrations/actions/byids", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/integrations/actions/cancel", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/integrations/startup", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/integrations/checkin", False),
                 # Transformations
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/filter", True),
