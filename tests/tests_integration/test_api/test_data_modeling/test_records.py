@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections.abc import Callable, Iterator
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -20,6 +21,7 @@ from cognite.client.data_classes.data_modeling import (
 from cognite.client.data_classes.data_modeling.aggregates import Average, Count, MetricResult
 from cognite.client.data_classes.data_modeling.records import (
     RecordContainerId,
+    RecordId,
     RecordSource,
     RecordSourceSelector,
     RecordWrite,
@@ -31,6 +33,7 @@ from cognite.client.data_classes.data_modeling.streams import (
     StreamWrite,
     StreamWriteSettings,
 )
+from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._retry import Backoff
 
 # Deleted streams are soft deleted, and their external IDs stay reserved for a couple of weeks
@@ -38,6 +41,7 @@ from cognite.client.utils._retry import Backoff
 # tests use one fixed stream (created only if missing) rather than one per run.
 STREAM_EXTERNAL_ID = "sdk_test_mutable_stream"
 CONTAINER_EXTERNAL_ID = "PythonSdkIntegrationTestRecords"
+CONSISTENCY_TIMEOUT = 60.0
 
 
 def an_hour_ago() -> str:
@@ -49,16 +53,27 @@ def an_hour_ago() -> str:
     return (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def assert_eventually(assertion: Callable[[], None], retries: int = 5) -> None:
-    """Retry an assertion about eventually-consistent backend state instead of a fixed sleep."""
+def assert_eventually(assertion: Callable[[], None], *, deadline: float | None = None) -> None:
+    """Poll only assertion failures, retaining the final failure as the timeout's cause."""
+    if deadline is None:
+        deadline = time.monotonic() + CONSISTENCY_TIMEOUT
     wait = Backoff(max_wait=4, min_wait=0.25)
-    for _ in range(retries):
+    while True:
         try:
             assertion()
             return
-        except AssertionError:
-            time.sleep(next(wait))
-    assertion()
+        except AssertionError as error:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise AssertionError(f"Timed out waiting for {assertion.__name__}: {error}") from error
+            time.sleep(min(next(wait), remaining))
+
+
+@dataclass
+class RecordBatch:
+    records: list[RecordWrite]
+    filter: filters.Equals
+    cursor: str
 
 
 @pytest.fixture(scope="session")
@@ -81,15 +96,29 @@ def record_container(cognite_client: CogniteClient, integration_test_space: Spac
 
 @pytest.fixture(scope="session")
 def mutable_stream(cognite_client: CogniteClient) -> Stream:
+    deadline = time.monotonic() + CONSISTENCY_TIMEOUT
     stream = cognite_client.data_modeling.streams.retrieve(STREAM_EXTERNAL_ID)
-    if stream is not None:
-        return stream
-    return cognite_client.data_modeling.streams.create(
-        StreamWrite(
-            external_id=STREAM_EXTERNAL_ID,
-            settings=StreamWriteSettings(template=StreamTemplate(name="BasicLiveData")),
-        )
-    )
+    if stream is None:
+        try:
+            stream = cognite_client.data_modeling.streams.create(
+                StreamWrite(
+                    external_id=STREAM_EXTERNAL_ID,
+                    settings=StreamWriteSettings(template=StreamTemplate(name="BasicLiveData")),
+                )
+            )
+        except CogniteAPIError as error:
+            if error.code != 409:
+                raise
+
+            def concurrently_created_stream_is_visible() -> None:
+                nonlocal stream
+                stream = cognite_client.data_modeling.streams.retrieve(STREAM_EXTERNAL_ID)
+                assert stream is not None, f"Conflicting stream {STREAM_EXTERNAL_ID!r} is not retrievable"
+
+            assert_eventually(concurrently_created_stream_is_visible, deadline=deadline)
+    assert stream is not None
+    assert stream.type == "Mutable", f"Shared stream {STREAM_EXTERNAL_ID!r} must be mutable"
+    return stream
 
 
 @pytest.fixture(scope="session")
@@ -107,7 +136,7 @@ def ingested_records(
     cognite_client: CogniteClient,
     mutable_stream: Stream,
     container_ref: RecordContainerId,
-) -> Iterator[list[RecordWrite]]:
+) -> Iterator[RecordBatch]:
     tag = uuid.uuid4().hex
     records = [
         RecordWrite(
@@ -122,23 +151,37 @@ def ingested_records(
         )
         for i in range(3)
     ]
-    cognite_client.data_modeling.records.ingest(records, stream_id=mutable_stream.external_id)
+    tagged = filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag)
+    # Capture a stable starting position before writing. Reinitializing a relative window on
+    # each retry can move past our records when CI is slow. The UUID has never been used before.
+    cursor = next(
+        cognite_client.data_modeling.records.sync(
+            stream_id=mutable_stream.external_id,
+            initialize_cursor="1m-ago",
+            filter=tagged,
+        )
+    ).cursor
+    assert cursor is not None
+    batch = RecordBatch(records, tagged, cursor)
 
     def all_records_are_queryable() -> None:
         result = cognite_client.data_modeling.records.filter(
             stream_id=mutable_stream.external_id,
             last_updated_time=TimeRange(gt=an_hour_ago()),
-            filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag),
+            filter=batch.filter,
             limit=len(records) + 1,
         )
+        assert {record.as_id() for record in result} == {record.as_id() for record in records}
         assert len(result) == len(records)
 
-    # Records are not queryable the instant ingest returns.
-    assert_eventually(all_records_are_queryable)
-    yield records
-    cognite_client.data_modeling.records.delete(
-        [record.as_id() for record in records], stream_id=mutable_stream.external_id
-    )
+    try:
+        cognite_client.data_modeling.records.ingest(records, stream_id=mutable_stream.external_id)
+        assert_eventually(all_records_are_queryable)
+        yield batch
+    finally:
+        cognite_client.data_modeling.records.delete(
+            [record.as_id() for record in records], stream_id=mutable_stream.external_id
+        )
 
 
 class TestRecordsIntegration:
@@ -148,127 +191,86 @@ class TestRecordsIntegration:
         mutable_stream: Stream,
         container_ref: RecordContainerId,
         sources: list[RecordSourceSelector],
-        ingested_records: list[RecordWrite],
+        ingested_records: RecordBatch,
     ) -> None:
-        tag = ingested_records[0].sources[0].properties["name"]
-        result = cognite_client.data_modeling.records.filter(
-            stream_id=mutable_stream.external_id,
-            last_updated_time=TimeRange(gt=an_hour_ago()),
-            sources=sources,
-            filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag),
-            limit=10,
-        )
-        assert len(result) == len(ingested_records)
-        assert {record.external_id for record in result} == {r.external_id for r in ingested_records}
+        def filtered_records_are_visible() -> None:
+            result = cognite_client.data_modeling.records.filter(
+                stream_id=mutable_stream.external_id,
+                last_updated_time=TimeRange(gt=an_hour_ago()),
+                sources=sources,
+                filter=ingested_records.filter,
+                limit=10,
+            )
+            assert len(result) == len(ingested_records.records)
+            assert {record.external_id for record in result} == {r.external_id for r in ingested_records.records}
+
+        assert_eventually(filtered_records_are_visible)
 
     def test_aggregate_over_ingested_records(
         self,
         cognite_client: CogniteClient,
         mutable_stream: Stream,
         container_ref: RecordContainerId,
-        ingested_records: list[RecordWrite],
+        ingested_records: RecordBatch,
     ) -> None:
-        tag = ingested_records[0].sources[0].properties["name"]
         value = [container_ref.space, container_ref.external_id, "value"]
-        result = cognite_client.data_modeling.records.aggregate(
-            {"total": Count(), "avg_value": Average(value)},
-            stream_id=mutable_stream.external_id,
-            last_updated_time=TimeRange(gt=an_hour_ago()),
-            filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag),
-        )
-        total, avg_value = result["total"], result["avg_value"]
-        assert isinstance(total, MetricResult) and isinstance(avg_value, MetricResult)
-        assert total.value == len(ingested_records)
-        assert avg_value.value == pytest.approx(1.0)  # mean of 0.0, 1.0, 2.0
 
-    def test_sync_returns_partial_page_without_hanging(
-        self,
-        cognite_client: CogniteClient,
-        mutable_stream: Stream,
-        container_ref: RecordContainerId,
-        sources: list[RecordSourceSelector],
-        ingested_records: list[RecordWrite],
-    ) -> None:
-        """Regression test: sync must yield a chunk, even when it holds fewer than 'chunk_size' records.
-
-        The service might spread the change feed over several pages, so the records are
-        accumulated across pages instead of expecting them all in the first one.
-        """
-        tag = ingested_records[0].sources[0].properties["name"]
-        tagged = filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag)
-
-        def sync_yields_every_record() -> None:
-            seen: list[str] = []
-            pages = 0
-            for page in cognite_client.data_modeling.records.sync(
+        def aggregates_are_visible() -> None:
+            result = cognite_client.data_modeling.records.aggregate(
+                {"total": Count(), "avg_value": Average(value)},
                 stream_id=mutable_stream.external_id,
-                initialize_cursor="1m-ago",
-                sources=sources,
-                filter=tagged,
-            ):
-                assert page.cursor is not None
-                seen.extend(record.external_id for record in page)
-                pages += 1
-                assert pages < 20, "sync did not exhaust the feed"
-                if page.has_next is False:
-                    break
+                last_updated_time=TimeRange(gt=an_hour_ago()),
+                filter=ingested_records.filter,
+            )
+            total, avg_value = result["total"], result["avg_value"]
+            assert isinstance(total, MetricResult) and isinstance(avg_value, MetricResult)
+            assert total.value == len(ingested_records.records)
+            assert avg_value.value == pytest.approx(1.0)  # mean of 0.0, 1.0, 2.0
 
-            assert set(seen) == {record.external_id for record in ingested_records}
+        assert_eventually(aggregates_are_visible)
 
-        # The change feed lags behind filter queries, so the records may not all be in it yet.
-        assert_eventually(sync_yields_every_record)
-
+    @pytest.mark.parametrize("chunk_size", [1000, 2])
     def test_sync_iterates_until_feed_exhausted(
         self,
         cognite_client: CogniteClient,
         mutable_stream: Stream,
-        container_ref: RecordContainerId,
         sources: list[RecordSourceSelector],
-        ingested_records: list[RecordWrite],
+        ingested_records: RecordBatch,
+        chunk_size: int,
     ) -> None:
-        """Walk the change feed one small chunk at a time until it is empty.
+        """Accept arbitrary page boundaries and stop only when has_next is false."""
+        deadline = time.monotonic() + CONSISTENCY_TIMEOUT
 
-        Each yielded chunk carries the cursor to persist once processing succeeded. The final
-        chunk is always partial.
-        """
-        tag = ingested_records[0].sources[0].properties["name"]
-        tagged = filters.Equals(property=[container_ref.space, container_ref.external_id, "name"], value=tag)
-
-        def feed_yields_every_record_in_chunks() -> None:
-            seen: list[str] = []
-            pages = 0
+        def feed_yields_every_record() -> None:
+            seen: set[RecordId] = set()
+            exhausted = False
             for page in cognite_client.data_modeling.records.sync(
                 stream_id=mutable_stream.external_id,
-                initialize_cursor="1m-ago",
+                cursor=ingested_records.cursor,
                 sources=sources,
-                filter=tagged,
-                chunk_size=2,
+                filter=ingested_records.filter,
+                chunk_size=chunk_size,
             ):
+                assert time.monotonic() < deadline, "sync did not exhaust the feed before the deadline"
+                assert not exhausted, "sync yielded another page after has_next=False"
                 assert page.cursor is not None
-                seen.extend(record.external_id for record in page)
-                pages += 1
-                assert pages < 20, "sync did not exhaust the feed"
+                assert len(page) <= chunk_size
+                seen.update(record.as_id() for record in page)
+                exhausted = page.has_next is False
+            assert exhausted, "sync ended without has_next=False"
+            assert seen == {record.as_id() for record in ingested_records.records}
 
-            # Asserted before the page count: a short feed is why the chunking assert would trip.
-            assert set(seen) == {record.external_id for record in ingested_records}
-            assert pages > 1, "expected the 3 ingested records to span more than one chunk of size 2"
+        assert_eventually(feed_yields_every_record, deadline=deadline)
 
-        # The change feed lags behind filter queries, so the records may not all be in it yet.
-        assert_eventually(feed_yields_every_record_in_chunks)
-
-    @pytest.mark.skipif(
-        datetime.now(timezone.utc) < datetime(2026, 9, 4, tzinfo=timezone.utc),
-        reason="Temporarily skipped for two weeks",
-    )
     def test_upsert_replaces_record(
         self,
         cognite_client: CogniteClient,
         mutable_stream: Stream,
         container_ref: RecordContainerId,
         sources: list[RecordSourceSelector],
-        ingested_records: list[RecordWrite],
+        ingested_records: RecordBatch,
     ) -> None:
-        target = ingested_records[0]
+        target = ingested_records.records[0]
         properties = {**target.sources[0].properties, "value": 99.0}
         cognite_client.data_modeling.records.upsert(
             RecordWrite(
@@ -284,23 +286,31 @@ class TestRecordsIntegration:
                 stream_id=mutable_stream.external_id,
                 last_updated_time=TimeRange(gt=an_hour_ago()),
                 sources=sources,
-                filter=filters.Equals(property=[container_ref.space, container_ref.external_id, "value"], value=99.0),
+                filter=filters.And(
+                    ingested_records.filter,
+                    filters.Equals(property=[container_ref.space, container_ref.external_id, "value"], value=99.0),
+                ),
                 limit=10,
             )
-            assert [record.external_id for record in result] == [target.external_id]
+            assert [record.as_id() for record in result] == [target.as_id()]
+            assert result[0].properties is not None
+            assert result[0].properties[container_ref.space][container_ref.external_id] == properties
 
         assert_eventually(replacement_is_queryable)
 
 
 class TestStreamsIntegration:
     def test_retrieve_and_list_stream(self, cognite_client: CogniteClient, mutable_stream: Stream) -> None:
-        retrieved = cognite_client.data_modeling.streams.retrieve(mutable_stream.external_id)
-        assert retrieved is not None
-        assert retrieved.external_id == mutable_stream.external_id
-        assert retrieved.type == "Mutable"
+        def stream_is_visible() -> None:
+            retrieved = cognite_client.data_modeling.streams.retrieve(mutable_stream.external_id)
+            assert retrieved is not None
+            assert retrieved.external_id == mutable_stream.external_id
+            assert retrieved.type == "Mutable"
 
-        listed = cognite_client.data_modeling.streams.list()
-        assert mutable_stream.external_id in {stream.external_id for stream in listed}
+            listed = cognite_client.data_modeling.streams.list()
+            assert mutable_stream.external_id in {stream.external_id for stream in listed}
+
+        assert_eventually(stream_is_visible)
 
     def test_retrieve_unknown_stream_returns_none(self, cognite_client: CogniteClient) -> None:
         assert cognite_client.data_modeling.streams.retrieve("this-stream-does-not-exist-12345") is None
