@@ -143,6 +143,67 @@ class TestDatapointsArray:
 
 
 @pytest.mark.dsl
+class TestStateDatapointsArray:
+    @pytest.fixture
+    def bad_state_arr(self) -> DatapointsArray:
+        import numpy as np
+
+        return DatapointsArray(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            timestamp=np.array([1000, 2000, 3000], dtype="datetime64[ns]"),
+            # When 'ignore_bad_datapoints=False' upcasts to float64, using NaN for missing:
+            numeric_states=np.array([10, np.nan, 0], dtype=np.float64),
+            string_states=np.array(["on", None, None], dtype=object),
+        )
+
+    def test_getitem(self, bad_state_arr: DatapointsArray) -> None:
+        dp = bad_state_arr[0]
+        assert isinstance(dp, Datapoint)
+
+        # The numeric values (float64) should be converted to int:
+        assert isinstance(dp.numeric_state, int)
+        assert dp.numeric_state == 10
+        assert dp.string_state == "on"
+
+        dp_missing = bad_state_arr[1]
+        # NaN should be converted to None:
+        assert dp_missing.numeric_state is None
+        assert dp_missing.string_state is None
+
+    def test_slice(self, bad_state_arr: DatapointsArray) -> None:
+        import numpy as np
+
+        sliced = bad_state_arr[1:3]
+        assert isinstance(sliced, DatapointsArray)
+
+        assert sliced.numeric_states is not None
+        assert math.isnan(sliced.numeric_states[0])
+        assert sliced.numeric_states[1] == 0
+        np.testing.assert_array_equal(sliced.string_states, np.array([None, None], dtype=object))
+
+    @pytest.mark.parametrize(
+        "keys, use_camel_case",
+        [
+            (("numericState", "stringState"), True),
+            (("numeric_state", "string_state"), False),
+        ],
+    )
+    def test_dump(
+        self,
+        bad_state_arr: DatapointsArray,
+        keys: tuple[str, str],
+        use_camel_case: bool,
+    ) -> None:
+        num_key, str_key = keys
+        dumped = bad_state_arr.dump(camel_case=use_camel_case)["datapoints"]
+        assert [dp[num_key] for dp in dumped] == [10.0, None, 0.0]
+        assert [dp[str_key] for dp in dumped] == ["on", None, None]
+
+
+@pytest.mark.dsl
 class TestToPandas:
     @pytest.mark.parametrize("dps_lst_cls", [DatapointsList, DatapointsArrayList])
     def test_identifier_priority(self, dps_lst_cls: type[CogniteResourceList]) -> None:
