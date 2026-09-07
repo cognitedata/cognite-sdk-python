@@ -63,6 +63,64 @@ class TestDatapoint:
         assert pd.Timestamp(expected) == df1.index[0] == df2.index[0]
 
 
+class TestStateDatapoint:
+    @pytest.fixture
+    def state_dps(self) -> Datapoints:
+        return Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            timestamp=[1000, 2000, 3000],
+            # For bad datapoints, even numeric can be missing (None); 0 is a valid state, not missing:
+            numeric_states=[10, None, 0],  # type: ignore [list-item]
+            string_states=["on", None, None],
+        )
+
+    def test_getitem(self, state_dps: Datapoints) -> None:
+        dp = state_dps[0]
+        assert isinstance(dp, Datapoint)
+        assert dp.numeric_state == 10
+        assert dp.string_state == "on"
+
+        dp_missing = state_dps[1]
+        assert isinstance(dp_missing, Datapoint)
+        assert dp_missing.numeric_state is None
+        assert dp_missing.string_state is None
+
+    def test_getitem_slice(self, state_dps: Datapoints) -> None:
+        sliced = state_dps[1:3]
+        assert isinstance(sliced, Datapoints)
+        assert sliced.numeric_states == [None, 0]
+        assert sliced.string_states == [None, None]
+
+    def test_iteration_yields_correct_state_values(self, state_dps: Datapoints) -> None:
+        for dp in state_dps:
+            assert isinstance(dp, Datapoint)
+        assert [dp.numeric_state for dp in state_dps] == [10, None, 0]
+        assert [dp.string_state for dp in state_dps] == ["on", None, None]
+
+    def test_iteration_yields_correct_state_values_no_states(self) -> None:
+        non_state_dps = Datapoints(
+            id=1,
+            is_string=False,
+            is_step=True,
+            type="numeric",
+            timestamp=[1000, 2000, 3000],
+            value=[1.0, 2.0, 3.0],
+        )
+        # Note that a single Datapoint object (what we get while iterating) can't distinguish between
+        # None being a missing, but real value and no value, e.g. for something that is not a state dp:
+        assert [dp.numeric_state for dp in non_state_dps] == [None, None, None]
+        assert [dp.string_state for dp in non_state_dps] == [None, None, None]
+
+    def test_dump_uses_singular_state_keys(self, state_dps: Datapoints) -> None:
+        # singular meaning 'numericState' not 'numericStates' etc.
+        dumped = state_dps.dump()["datapoints"]
+        assert [dp.get("numericState") for dp in dumped] == [10, None, 0]
+        assert [dp.get("stringState") for dp in dumped] == ["on", None, None]
+
+
 @pytest.mark.dsl
 class TestDatapointsArray:
     def test_dump_converts_missing_values_to_none(self) -> None:
