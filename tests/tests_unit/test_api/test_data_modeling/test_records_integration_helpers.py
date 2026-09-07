@@ -13,7 +13,7 @@ from cognite.client.data_classes import filters
 from cognite.client.data_classes.data_modeling.aggregates import MetricResult
 from cognite.client.data_classes.data_modeling.records import Record, RecordContainerId, RecordSource, RecordWrite
 from cognite.client.exceptions import CogniteAPIError
-from tests.tests_integration.test_api.test_data_modeling import test_records as integration
+from tests import records_helpers as helpers
 
 
 @pytest.fixture
@@ -31,7 +31,7 @@ def client() -> MagicMock:
 
 @pytest.fixture
 def stream() -> MagicMock:
-    return MagicMock(external_id=integration.STREAM_EXTERNAL_ID, type="Mutable")
+    return MagicMock(external_id=helpers.STREAM_EXTERNAL_ID, type="Mutable")
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ def test_poll_delayed_visibility(clock: list[float]) -> None:
     def visible() -> None:
         assert clock[0] >= 5, "not visible yet"
 
-    integration.assert_eventually(visible)
+    helpers.assert_eventually(visible)
     assert 5 <= clock[0] < 60
 
 
@@ -55,7 +55,7 @@ def test_poll_timeout_preserves_context_and_last_failure(clock: list[float], use
     assertion = partial(replacement_is_visible) if use_partial else replacement_is_visible
     name = "partial" if use_partial else "replacement_is_visible"
     with pytest.raises(AssertionError, match=rf"{name}.*expected value 99") as error:
-        integration.assert_eventually(assertion)
+        helpers.assert_eventually(assertion)
     assert clock[0] == 60
     assert isinstance(error.value.__cause__, AssertionError)
 
@@ -65,14 +65,14 @@ def test_poll_does_not_retry_api_errors(clock: list[float]) -> None:
         raise CogniteAPIError("Forbidden", 403)
 
     with pytest.raises(CogniteAPIError):
-        integration.assert_eventually(forbidden)
+        helpers.assert_eventually(forbidden)
     assert clock[0] == 0
 
 
 def test_stream_creation_race(clock: list[float], client: MagicMock, stream: MagicMock) -> None:
     client.data_modeling.streams.retrieve.side_effect = [None, None, stream]
     client.data_modeling.streams.create.side_effect = CogniteAPIError("Already exists", 409)
-    assert getattr(integration.mutable_stream, "__wrapped__")(client) is stream
+    assert helpers.get_or_create_mutable_stream(client) is stream
     assert client.data_modeling.streams.create.call_count == 1
 
 
@@ -80,7 +80,7 @@ def test_stream_conflict_without_visible_stream_times_out(clock: list[float], cl
     client.data_modeling.streams.retrieve.return_value = None
     client.data_modeling.streams.create.side_effect = CogniteAPIError("Already exists", 409)
     with pytest.raises(AssertionError, match="concurrently_created_stream_is_visible"):
-        getattr(integration.mutable_stream, "__wrapped__")(client)
+        helpers.get_or_create_mutable_stream(client)
     assert clock[0] == 60
 
 
@@ -89,7 +89,7 @@ def test_stream_creation_propagates_other_errors(clock: list[float], client: Mag
     client.data_modeling.streams.retrieve.return_value = None
     client.data_modeling.streams.create.side_effect = CogniteAPIError("failure", code)
     with pytest.raises(CogniteAPIError) as error:
-        getattr(integration.mutable_stream, "__wrapped__")(client)
+        helpers.get_or_create_mutable_stream(client)
     assert error.value.code == code
     assert clock[0] == 0
 
@@ -98,7 +98,7 @@ def test_shared_stream_must_be_mutable(client: MagicMock, stream: MagicMock) -> 
     stream.type = "Immutable"
     client.data_modeling.streams.retrieve.return_value = stream
     with pytest.raises(AssertionError, match="must be mutable"):
-        getattr(integration.mutable_stream, "__wrapped__")(client)
+        helpers.get_or_create_mutable_stream(client)
 
 
 @pytest.mark.parametrize("failure", ["ingest", "readiness", "test", None])
@@ -120,18 +120,18 @@ def test_batch_cleanup_on_failure_and_success(
 
     api.sync.side_effect = seed
     api.ingest.side_effect = ingest
-    fixture = getattr(integration.ingested_records, "__wrapped__")(client, stream, container)
     if failure in ("ingest", "readiness"):
         with pytest.raises((CogniteAPIError, AssertionError)):
-            next(fixture)
+            with helpers.record_batch(client, stream, container):
+                pytest.fail("Setup should fail before yielding the batch")
+    elif failure == "test":
+        with pytest.raises(RuntimeError, match="test failed"):
+            with helpers.record_batch(client, stream, container) as batch:
+                assert batch.cursor == "before-ingestion"
+                raise RuntimeError("test failed")
     else:
-        batch = next(fixture)
-        assert batch.cursor == "before-ingestion"
-        if failure == "test":
-            with pytest.raises(RuntimeError, match="test failed"):
-                fixture.throw(RuntimeError("test failed"))
-        else:
-            fixture.close()
+        with helpers.record_batch(client, stream, container) as batch:
+            assert batch.cursor == "before-ingestion"
     assert events == ["cursor", "ingest"]
     written = api.ingest.call_args.args[0]
     api.delete.assert_called_once_with([record.as_id() for record in written], stream_id=stream.external_id)
@@ -144,7 +144,7 @@ def test_upsert_ignores_other_batches_with_same_value(
         container.space, "own-0", [RecordSource(container, {"name": "own", "value": 0.0, "processed": True})]
     )
     tagged = filters.Equals([container.space, container.external_id, "name"], "own")
-    batch = integration.RecordBatch([target], tagged, "cursor")
+    batch = helpers.RecordBatch([target], tagged, "cursor")
     # Evaluate the actual filter against both batches: the old value-only query returns both.
     rows = [
         Record(
@@ -180,7 +180,7 @@ def test_upsert_ignores_other_batches_with_same_value(
         ]
 
     client.data_modeling.records.filter.side_effect = query
-    integration.TestRecordsIntegration().test_upsert_replaces_record(client, stream, container, [], batch)
+    helpers.upsert_and_assert_record(client, stream, container, [], batch)
     client.data_modeling.records.upsert.assert_called_once()
 
 
@@ -189,7 +189,7 @@ def test_sync_retries_from_fixed_cursor_with_arbitrary_pages(
     clock: list[float], client: MagicMock, stream: MagicMock, container: RecordContainerId, sizes: tuple[int, ...]
 ) -> None:
     records = [RecordWrite(container.space, f"own-{i}", []) for i in range(3)]
-    batch = integration.RecordBatch(
+    batch = helpers.RecordBatch(
         records, filters.Equals([container.space, container.external_id, "name"], "own"), "fixed"
     )
     calls: list[dict[str, Any]] = []
@@ -211,7 +211,7 @@ def test_sync_retries_from_fixed_cursor_with_arbitrary_pages(
             yield page
 
     client.data_modeling.records.sync.side_effect = sync
-    integration.TestRecordsIntegration().test_sync_iterates_until_feed_exhausted(client, stream, [], batch, 2)
+    helpers.assert_sync_records(client, stream, [], batch, 2)
     assert len(calls) == 2
     assert all(call["cursor"] == "fixed" and "initialize_cursor" not in call for call in calls)
 
@@ -219,9 +219,7 @@ def test_sync_retries_from_fixed_cursor_with_arbitrary_pages(
 def test_sync_never_exhausting_feed_times_out(
     clock: list[float], client: MagicMock, stream: MagicMock, container: RecordContainerId
 ) -> None:
-    batch = integration.RecordBatch(
-        [], filters.Equals([container.space, container.external_id, "name"], "own"), "fixed"
-    )
+    batch = helpers.RecordBatch([], filters.Equals([container.space, container.external_id, "name"], "own"), "fixed")
 
     class Page(list[RecordWrite]):
         cursor = "next"
@@ -234,7 +232,7 @@ def test_sync_never_exhausting_feed_times_out(
 
     client.data_modeling.records.sync.side_effect = sync
     with pytest.raises(AssertionError, match="sync did not exhaust the feed"):
-        integration.TestRecordsIntegration().test_sync_iterates_until_feed_exhausted(client, stream, [], batch, 2)
+        helpers.assert_sync_records(client, stream, [], batch, 2)
     assert clock[0] == 60
 
 
@@ -247,18 +245,17 @@ def test_each_read_endpoint_waits_for_its_own_visibility(
     endpoint: str,
 ) -> None:
     records = [RecordWrite(container.space, f"own-{i}", []) for i in range(3)]
-    batch = integration.RecordBatch(
+    batch = helpers.RecordBatch(
         records, filters.Equals([container.space, container.external_id, "name"], "own"), "fixed"
     )
-    tests = integration.TestRecordsIntegration()
     if endpoint == "filter":
         client.data_modeling.records.filter.side_effect = [[], records]
-        tests.test_filter_returns_ingested_records(client, stream, container, [], batch)
+        helpers.assert_filtered_records(client, stream, container, [], batch)
         assert client.data_modeling.records.filter.call_count == 2
     else:
         client.data_modeling.records.aggregate.side_effect = [
             {"total": MetricResult("count", 0), "avg_value": MetricResult("avg", None)},
             {"total": MetricResult("count", 3), "avg_value": MetricResult("avg", 1.0)},
         ]
-        tests.test_aggregate_over_ingested_records(client, stream, container, batch)
+        helpers.assert_record_aggregates(client, stream, container, batch)
         assert client.data_modeling.records.aggregate.call_count == 2
