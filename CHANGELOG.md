@@ -13,6 +13,20 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [8.16.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.15.0...v8.16.0) (2026-09-08)
+
+
+### Features
+
+* **state time series:** add retrieve support for raw state datapoints ([#2807](https://github.com/cognitedata/cognite-sdk-python/issues/2807)) ([26efd9e](https://github.com/cognitedata/cognite-sdk-python/commit/26efd9e561b8e186d8c27f95a0a7c33aa909bb82))
+
+
+### Bug Fixes
+
+* **ClientConfig:** Make API subversion mutable at runtime + easy to override per API class ([#2803](https://github.com/cognitedata/cognite-sdk-python/issues/2803)) ([ce1a1a6](https://github.com/cognitedata/cognite-sdk-python/commit/ce1a1a6f82b70ff287c1122d275f363f0aa30715))
+* **config:** Deprecate `cdf_cluster` property; warn on overspecified `base_url`/`cluster` combo (DM-4104) ([#2814](https://github.com/cognitedata/cognite-sdk-python/issues/2814)) ([e5be404](https://github.com/cognitedata/cognite-sdk-python/commit/e5be4046cfcebc98830d4796a26d0fb4aee7ef70))
+* Correctly parse `cdf-is-auto-retryable` header when false ([#2817](https://github.com/cognitedata/cognite-sdk-python/issues/2817)) ([6077788](https://github.com/cognitedata/cognite-sdk-python/commit/607778845caad89742d5dbb063163c7263d5c7fc))
+
 ## [8.15.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.14.0...v8.15.0) (2026-08-31)
 
 
