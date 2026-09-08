@@ -135,8 +135,8 @@ def concat_dps_dataframe_list(
     include_granularity_name: bool,
     include_status: bool,
     include_unit: bool,
-    exclude_numeric_states: bool,
-    exclude_string_states: bool,
+    include_numeric_states: bool,
+    include_string_states: bool,
 ) -> pd.DataFrame:
     import pandas as pd
 
@@ -158,8 +158,8 @@ def concat_dps_dataframe_list(
         _extract_column_info_from_dps_for_dataframe(
             dps,
             include_status=include_status,
-            exclude_numeric_states=exclude_numeric_states,
-            exclude_string_states=exclude_string_states,
+            include_numeric_states=include_numeric_states,
+            include_string_states=include_string_states,
         )
         for dps in dps_lst
     ]
@@ -270,15 +270,15 @@ def convert_dps_to_dataframe(
     include_granularity_name: bool,
     include_status: bool,
     include_unit: bool,
-    exclude_numeric_states: bool,
-    exclude_string_states: bool,
+    include_numeric_states: bool,
+    include_string_states: bool,
 ) -> pd.DataFrame:
     pd = local_import("pandas")
     columns = _extract_column_info_from_dps_for_dataframe(
         dps,
         include_status=include_status,
-        exclude_numeric_states=exclude_numeric_states,
-        exclude_string_states=exclude_string_states,
+        include_numeric_states=include_numeric_states,
+        include_string_states=include_string_states,
     )
     df = pd.DataFrame(
         # We initially use integer indexing to allow duplicate column names:
@@ -398,11 +398,11 @@ def _extract_raw_states_column_info(
     dps: Datapoints,
     identifier: NodeId | str | int,
     include_status: bool,
-    exclude_numeric_states: bool,
-    exclude_string_states: bool,
+    include_numeric_states: bool,
+    include_string_states: bool,
 ) -> list[_DpsColumnInfo]:
     columns = []
-    if not exclude_numeric_states:
+    if include_numeric_states:
         assert dps.numeric_states is not None
         columns.append(
             _DpsColumnInfo(
@@ -413,7 +413,7 @@ def _extract_raw_states_column_info(
                 state_type="numeric",
             )
         )
-    if not exclude_string_states:
+    if include_string_states:
         assert dps.string_states is not None
         columns.append(
             _DpsColumnInfo(
@@ -478,7 +478,7 @@ def _extract_aggregate_column_info_from_dps(
 
 
 def _extract_column_info_from_dps_for_dataframe(
-    dps: Datapoints | DatapointsArray, include_status: bool, exclude_numeric_states: bool, exclude_string_states: bool
+    dps: Datapoints | DatapointsArray, include_status: bool, include_numeric_states: bool, include_string_states: bool
 ) -> list[_DpsColumnInfo]:
     from cognite.client.data_classes import Datapoints, DatapointsArray
 
@@ -499,7 +499,7 @@ def _extract_column_info_from_dps_for_dataframe(
             )
         else:
             return _extract_raw_states_column_info(
-                dps, identifier, include_status, exclude_numeric_states, exclude_string_states
+                dps, identifier, include_status, include_numeric_states, include_string_states
             )
     elif dps.value is not None:
         return _extract_raw_column_info(dps, identifier, is_array, include_status)

@@ -1056,8 +1056,8 @@ class DatapointsArray(CogniteResource):
             include_granularity_name=include_granularity_name,
             include_status=include_status,
             include_unit=include_unit,
-            exclude_numeric_states=True,  # not implemented
-            exclude_string_states=True,  # not implemented
+            include_numeric_states=False,  # not implemented
+            include_string_states=False,  # not implemented
         )
 
 
@@ -1257,8 +1257,8 @@ class Datapoints(CogniteResource):
         include_granularity_name: bool = False,
         include_unit: bool = True,
         include_status: bool = True,
-        exclude_numeric_states: bool = False,
-        exclude_string_states: bool = False,
+        include_numeric_states: bool = True,
+        include_string_states: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
@@ -1268,8 +1268,8 @@ class Datapoints(CogniteResource):
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
                 as a separate level in the columns (MultiIndex).
-            exclude_numeric_states (bool): For state time series, exclude the numeric states from the dataframe columns. Defaults to False.
-            exclude_string_states (bool): For state time series, exclude the string states from the dataframe columns. Defaults to False.
+            include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
+            include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -1282,8 +1282,8 @@ class Datapoints(CogniteResource):
             include_granularity_name=include_granularity_name,
             include_status=include_status,
             include_unit=include_unit,
-            exclude_numeric_states=exclude_numeric_states,
-            exclude_string_states=exclude_string_states,
+            include_numeric_states=include_numeric_states,
+            include_string_states=include_string_states,
         )
 
     @classmethod
@@ -1597,8 +1597,8 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
             include_granularity_name=include_granularity_name,
             include_status=include_status,
             include_unit=include_unit,
-            exclude_numeric_states=True,  # not implemented yet
-            exclude_string_states=True,  # not implemented yet
+            include_numeric_states=False,  # not implemented yet
+            include_string_states=False,  # not implemented yet
         )
 
     def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> list[dict[str, Any]]:
@@ -1664,8 +1664,8 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
         include_granularity_name: bool = False,
         include_unit: bool = True,
         include_status: bool = True,
-        exclude_numeric_states: bool = False,
-        exclude_string_states: bool = False,
+        include_numeric_states: bool = True,
+        include_string_states: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints list into a pandas DataFrame.
 
@@ -1675,8 +1675,8 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
                 as a separate level in the columns (MultiIndex).
-            exclude_numeric_states (bool): For state time series, exclude the numeric states from the dataframe columns. Defaults to False.
-            exclude_string_states (bool): For state time series, exclude the string states from the dataframe columns. Defaults to False.
+            include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
+            include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
 
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
@@ -1687,8 +1687,8 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
             include_granularity_name=include_granularity_name,
             include_status=include_status,
             include_unit=include_unit,
-            exclude_numeric_states=exclude_numeric_states,
-            exclude_string_states=exclude_string_states,
+            include_numeric_states=include_numeric_states,
+            include_string_states=include_string_states,
         )
 
 
