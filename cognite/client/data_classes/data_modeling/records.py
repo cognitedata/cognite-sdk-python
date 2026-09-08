@@ -22,6 +22,8 @@ from cognite.client.utils._identifier import IdentifierSequenceCore
 from cognite.client.utils._identifier import RecordId as RecordId  # explicit re-export
 from cognite.client.utils.useful_types import SequenceNotStr
 
+RecordSourceIdentifier: TypeAlias = ContainerId | ViewId | tuple[str, str] | tuple[str, str, str]
+
 
 class RecordIdSequence(IdentifierSequenceCore[RecordId]):
     @classmethod
@@ -57,8 +59,6 @@ class RecordViewId(ViewId):
         if self.version is None:
             raise TypeError("RecordViewId requires an explicit 'version'.")
 
-
-RecordSourceIdentifier: TypeAlias = ContainerId | ViewId | tuple[str, str] | tuple[str, str, str]
 
 
 def _load_record_source_id(data: RecordSourceIdentifier | dict[str, Any]) -> RecordContainerId | RecordViewId:
