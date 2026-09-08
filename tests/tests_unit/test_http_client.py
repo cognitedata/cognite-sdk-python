@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import ssl
+import warnings
 from collections.abc import AsyncIterator, Iterator
 
 import httpx2
@@ -227,6 +228,13 @@ class TestGetGlobalAsyncHttpxClient:
         assert pool._keepalive_expiry == 5
         assert pool._ssl_context.verify_mode == ssl.CERT_NONE  # disable_ssl should cause this
         assert pool._ssl_context.check_hostname is False
+
+    async def test_pyodide_client_no_warning_at_default_settings(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("cognite.client._http_client._RUNNING_IN_PYODIDE", True)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # fail the test if anything warns
+            get_global_async_httpx_client()
 
 
 def make_response(status_code: int) -> CogniteHTTPResponse:
