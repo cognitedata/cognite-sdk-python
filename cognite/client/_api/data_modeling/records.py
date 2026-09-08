@@ -157,21 +157,11 @@ class RecordsAPI(APIClient):
             Ingest a record through a view:
 
                 >>> from cognite.client.data_classes.data_modeling.records import RecordViewId
-                >>> client.data_modeling.records.ingest(
-                ...     RecordWrite(
-                ...         space="my-space",
-                ...         external_id="rec-2",
-                ...         sources=[
-                ...             RecordSource(
-                ...                 source=RecordViewId(
-                ...                     space="my-space", external_id="my-view", version="v1"
-                ...                 ),
-                ...                 properties={"temperature": 22.5},
-                ...             )
-                ...         ],
-                ...     ),
-                ...     stream_id="my-stream",
+                >>> source = RecordSource(
+                ...     RecordViewId("my-space", "my-view", "v1"), {"temperature": 22.5}
                 ... )
+                >>> record = RecordWrite("my-space", "rec-2", sources=[source])
+                >>> client.data_modeling.records.ingest(record, stream_id="my-stream")
         """
         self._warning.warn()
         item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
@@ -193,7 +183,7 @@ class RecordsAPI(APIClient):
         Creates or fully updates records. Only valid for mutable streams (returns 422 on
         immutable). When a record with the same ``space + externalId`` already exists it is
         fully replaced (this endpoint does not do partial property updates); otherwise it is
-        created. As for ingest, a record source may reference a container or a view.
+        created.
 
         Args:
             items (RecordWrite | Sequence[RecordWrite]): One or more records to upsert.
@@ -247,11 +237,8 @@ class RecordsAPI(APIClient):
     ) -> RecordsAggregation:
         """`Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_.
 
-        Aggregate ``property`` references can address container properties directly or through
-        a view. Note that when a view is involved, all aggregate property references in the
-        request combined can address at most one property source: either a single view and
-        nothing else, or any number of containers. This restriction does not apply to ``filter``
-        or ``target_units``.
+        Aggregate properties may reference multiple containers or a single view, but cannot
+        mix views and containers. This restriction does not apply to filters or target units.
 
         Args:
             aggregates (Mapping[str, Aggregate | dict[str, Any]]): Aggregate request tree keyed

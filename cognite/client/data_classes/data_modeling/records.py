@@ -60,7 +60,6 @@ class RecordViewId(ViewId):
             raise TypeError("RecordViewId requires an explicit 'version'.")
 
 
-
 def _load_record_source_id(data: RecordSourceIdentifier | dict[str, Any]) -> RecordContainerId | RecordViewId:
     match data:
         case RecordViewId() | RecordContainerId():
@@ -101,7 +100,7 @@ class RecordSource(CogniteResource):
     """Container or view source with property values for a record write.
 
     Args:
-        source (RecordSourceIdentifier): Reference to the container or view.
+        source (RecordSourceIdentifier): Container or view ID or a (space, external_id[, version]) tuple.
         properties (dict[str, Any]): The data to write to the source container or view.
     """
 
