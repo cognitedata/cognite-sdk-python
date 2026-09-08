@@ -66,26 +66,21 @@ def _load_filter_value(value: Any) -> FilterValue | FilterValueList:
 
 
 def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] | tuple[str, ...]:
-    if isinstance(property_, EnumProperty):
-        return property_.as_reference()
-    elif isinstance(property_, PropertyId):
-        return list(property_.as_property_ref())
-    elif (
-        isinstance(property_, tuple)
-        and len(property_) == 2
-        and isinstance(property_[0], (ContainerId, ViewId))
-        and isinstance(property_[1], str)
-    ):
-        return list(property_[0].as_property_ref(property_[1]))
-    elif isinstance(property_, str):
-        return [to_camel_case(property_) if camel_case else property_]
-    elif isinstance(property_, (list, tuple)):
-        if len(property_) == 1:
-            return [to_camel_case(property_[0])] if camel_case else property_
-        else:
+    match property_:
+        case EnumProperty():
+            return property_.as_reference()
+        case PropertyId():
+            return list(property_.as_property_ref())
+        case tuple([ContainerId() | ViewId() as source, str() as prop_name]):
+            return list(source.as_property_ref(prop_name))
+        case str():
+            return [to_camel_case(property_) if camel_case else property_]
+        case list() | tuple():
+            if len(property_) == 1 and camel_case:
+                return [to_camel_case(property_[0])]
             return property_
-    else:
-        raise ValueError(f"Invalid property format {property_}")
+        case _:
+            raise ValueError(f"Invalid property format {property_}")
 
 
 class Filter(ABC):
@@ -1038,7 +1033,7 @@ class IsNull(Not):
                 "The IsNull filter is a Data Modeling filter and expected a sequence of str to describe the property, "
                 f"like ['node', 'space'] or ['my-space', 'my-view/version', 'my-property'], got: {property}"
             )
-        super().__init__(Exists(property))
+        super().__init__(Exists(cast(Sequence[str], property)))
         self._filter_name = Not._filter_name
 
     @classmethod
