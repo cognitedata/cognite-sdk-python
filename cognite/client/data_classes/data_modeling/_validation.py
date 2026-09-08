@@ -64,38 +64,35 @@ def validate_data_modeling_identifier(space: str | None, external_id: str | None
 def validate_property_path(prop: PropertyPath, argument: str = "property", hint: str = PROPERTY_PATH_HINT) -> list[str]:
     """Validate a property path and return it as a list of segments.
 
-    A bare string is a sequence of characters, so passing one where a sequence of strings is
-    expected silently produces one segment per character instead of failing; reject it here.
-    Paths are short, at most three segments, so every segment is type checked.
-
     Args:
         prop (PropertyPath): The user-provided property path, (source, property) tuple, or PropertyId.
         argument (str): Name of the argument, used in the error message.
-        hint (str): Actionable follow-up appended to the error message. Defaults to describing a
-            fully qualified property path, which is what most arguments taking one expect.
+        hint (str): Guidance appended to validation errors.
 
     Returns:
         list[str]: The validated path as a list.
     """
-    if isinstance(prop, PropertyId):
-        return list(prop.as_property_ref())
-    if isinstance(prop, tuple) and len(prop) == 2 and isinstance(prop[0], (ContainerId, ViewId)):
-        if not isinstance(prop[1], str):
+    match prop:
+        case PropertyId():
+            return list(prop.as_property_ref())
+        case tuple([ContainerId() | ViewId() as source, str(prop_name)]):
+            return list(source.as_property_ref(prop_name))
+        case tuple([ContainerId() | ViewId(), invalid_prop]):
             raise TypeError(
                 f"{argument!r} given as a (source, property) tuple must have a string property, "
-                f"but {prop[1]!r} is of type {type(prop[1]).__name__}. {hint}"
+                f"but {invalid_prop!r} is of type {type(invalid_prop).__name__}. {hint}"
             )
-        return list(prop[0].as_property_ref(prop[1]))
-    if not is_sequence_not_str(prop):
-        got = f"the string {prop!r}" if isinstance(prop, str) else type(prop).__name__
-        raise TypeError(f"{argument!r} must be a sequence of strings, not {got}. {hint}")
-    path = list(prop)
-    if not path:
-        raise ValueError(f"{argument!r} must not be empty. {hint}")
-    for segment in path:
-        if not isinstance(segment, str):
-            raise TypeError(
-                f"{argument!r} must be a sequence of strings, but {segment!r} is of type "
-                f"{type(segment).__name__}. {hint}"
-            )
-    return path
+        case _ if not is_sequence_not_str(prop):
+            got = f"the string {prop!r}" if isinstance(prop, str) else type(prop).__name__
+            raise TypeError(f"{argument!r} must be a sequence of strings, not {got}. {hint}")
+        case _:
+            path = list(prop)
+            if not path:
+                raise ValueError(f"{argument!r} must not be empty. {hint}")
+            for segment in path:
+                if not isinstance(segment, str):
+                    raise TypeError(
+                        f"{argument!r} must be a sequence of strings, but {segment!r} is of type "
+                        f"{type(segment).__name__}. {hint}"
+                    )
+            return path
