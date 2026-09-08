@@ -12,6 +12,7 @@ As of 2025-08-29, changes are grouped as follows
 - ✨ Features: New features or additions to existing features.
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
+- 📦 Dependencies: Dependency updates and changes.
 
 ## [8.16.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.15.0...v8.16.0) (2026-09-08)
 
@@ -19,6 +20,11 @@ As of 2025-08-29, changes are grouped as follows
 ### Features
 
 * **state time series:** add retrieve support for raw state datapoints ([#2807](https://github.com/cognitedata/cognite-sdk-python/issues/2807)) ([26efd9e](https://github.com/cognitedata/cognite-sdk-python/commit/26efd9e561b8e186d8c27f95a0a7c33aa909bb82))
+
+
+### Dependencies
+
+* **dependencies:** replace `httpx` with `httpx2` for the SDK HTTP client, including Pyodide support (DM-4106) ([#2818](https://github.com/cognitedata/cognite-sdk-python/issues/2818)) ([deecd07](https://github.com/cognitedata/cognite-sdk-python/commit/deecd076683df296160e64d5b3240b914c4d298a))
 
 
 ### Bug Fixes
