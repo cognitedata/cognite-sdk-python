@@ -229,6 +229,23 @@ class TestGetGlobalAsyncHttpxClient:
         assert pool._ssl_context.verify_mode == ssl.CERT_NONE  # disable_ssl should cause this
         assert pool._ssl_context.check_hostname is False
 
+    async def test_pyodide_client_never_passes_ignored_options(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # when using pyodide, we should not pass any of the unsupported options to httpx2.AsyncClient
+        monkeypatch.setattr("cognite.client._http_client._RUNNING_IN_PYODIDE", True)
+        monkeypatch.setattr(global_config, "max_connection_pool_size", 69)
+        monkeypatch.setattr(global_config, "disable_ssl", True)
+        monkeypatch.setattr(global_config, "proxy", "http://explicit:1234")
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # actual warnings are tested separately
+            client = get_global_async_httpx_client()
+
+        assert not client._mounts  # proxy was not forwarded
+
+        pool = client._transport._pool  # type: ignore[attr-defined]
+        assert pool._max_connections != 69  # limits was not forwarded
+        assert pool._ssl_context.verify_mode == ssl.CERT_REQUIRED  # verify was not forwarded
+
     async def test_pyodide_client_warns_about_settings_with_no_effect(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr("cognite.client._http_client._RUNNING_IN_PYODIDE", True)
         monkeypatch.setattr(global_config, "disable_ssl", True)
