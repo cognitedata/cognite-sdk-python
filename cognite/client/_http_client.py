@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import logging
+import warnings
 from collections.abc import (
     AsyncIterable,
     AsyncIterator,
@@ -18,7 +19,8 @@ from typing import Any, Literal, TypeAlias
 
 import httpx2
 
-from cognite.client.config import global_config
+from cognite.client._constants import _RUNNING_IN_PYODIDE
+from cognite.client.config import _DEFAULT_MAX_CONNECTION_POOL_SIZE, global_config
 from cognite.client.exceptions import (
     CogniteConnectionError,
     CogniteConnectionRefused,
@@ -54,7 +56,17 @@ def get_global_async_httpx_client() -> httpx2.AsyncClient:
     except KeyError:
         pass
 
-    client = _global_async_httpx_clients[loop] = httpx2.AsyncClient(
+    if _RUNNING_IN_PYODIDE:
+        client = _build_pyodide_httpx_client()
+    else:
+        client = _build_httpx_client()
+
+    _global_async_httpx_clients[loop] = client
+    return client
+
+
+def _build_httpx_client() -> httpx2.AsyncClient:
+    return httpx2.AsyncClient(
         proxy=global_config.proxy,
         verify=False if global_config.disable_ssl else (global_config.ssl_context or True),
         limits=httpx2.Limits(
@@ -65,7 +77,29 @@ def get_global_async_httpx_client() -> httpx2.AsyncClient:
         follow_redirects=global_config.follow_redirects,
         cookies=NoCookiesPlease(),
     )
-    return client
+
+
+def _build_pyodide_httpx_client() -> httpx2.AsyncClient:
+    # In Pyodide/Emscripten, networking is handled by browser's JS runtime, so we can't control any of
+    # 'verify', 'proxy' or 'limits' parameters ourselves. We warn the user if they have customized any
+    # of these settings.
+    # We also don't pass any of them to httpx2.AsyncClient() as httpx2-jsfetch will throw warnings using
+    # differently named settings, e.g. 'verify' instead of 'disable_ssl' or 'ssl_context' (which is confusing).
+    settings = (
+        ("disable_ssl", global_config.disable_ssl),
+        ("ssl_context", global_config.ssl_context is not None),
+        ("proxy", global_config.proxy is not None),
+        ("max_connection_pool_size", global_config.max_connection_pool_size != _DEFAULT_MAX_CONNECTION_POOL_SIZE),
+    )
+    if ignored := [name for name, is_customized in settings if is_customized]:
+        settings_str = ", ".join(f"global_config.{name}" for name in ignored)
+        warnings.warn(
+            f"{settings_str} {'has' if len(ignored) == 1 else 'have'} no effect when running in a browser "
+            "(Pyodide/JupyterLite/Streamlit): networking there is handled by the browser itself, not by the SDK.",
+            RuntimeWarning,
+            stacklevel=2,
+        )
+    return httpx2.AsyncClient(follow_redirects=global_config.follow_redirects, cookies=NoCookiesPlease())
 
 
 class AsyncHTTPClientWithRetryConfig:
