@@ -911,14 +911,14 @@ class TestRecordsAPISync:
     def test_sync_empty_intermediate_and_full_final_pages(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         sync_url_pattern: re.Pattern,
         record_response: dict,
         stream_id: str,
         sizes: tuple[int, ...],
     ) -> None:
         for index, size in enumerate(sizes):
-            httpx_mock.add_response(
+            httpx2_mock.add_response(
                 method="POST",
                 url=sync_url_pattern,
                 json={
@@ -932,7 +932,7 @@ class TestRecordsAPISync:
         chunks = list(cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="start", chunk_size=2))
         assert [len(chunk) for chunk in chunks] == list(sizes)
         assert chunks[-1].has_next is False
-        bodies = [jsgz_load(request.content) for request in httpx_mock.get_requests()]
+        bodies = [jsgz_load(request.content) for request in httpx2_mock.get_requests()]
         assert bodies == [{"cursor": "start" if i == 0 else f"c{i - 1}", "limit": 2} for i in range(len(sizes))]
 
     def test_sync_with_cursor_iterates_all_chunks(
