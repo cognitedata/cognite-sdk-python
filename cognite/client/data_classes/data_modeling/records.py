@@ -62,30 +62,31 @@ class RecordViewId(ViewId):
 
 
 def _load_record_source_id(data: RecordSourceIdentifier | dict[str, Any]) -> RecordContainerId | RecordViewId:
-    if isinstance(data, RecordViewId):
-        return data
-    if isinstance(data, RecordContainerId):
-        return data
-    if isinstance(data, ViewId):
-        if data.version is None:
-            raise ValueError("A view used as a record source requires an explicit version.")
-        return RecordViewId(space=data.space, external_id=data.external_id, version=data.version)
-    if isinstance(data, ContainerId):
-        return RecordContainerId(space=data.space, external_id=data.external_id)
-    if isinstance(data, tuple):
-        if len(data) == 3:
-            return RecordViewId(space=data[0], external_id=data[1], version=data[2])
-        if len(data) == 2:
-            return RecordContainerId(space=data[0], external_id=data[1])
-        raise ValueError(f"Invalid tuple length for record source identifier: {len(data)}, expected 2 or 3.")
-    if isinstance(data, dict):
-        source_type = data.get("type")
-        if source_type == "view" or (source_type is None and "version" in data):
+    match data:
+        case RecordViewId() | RecordContainerId():
+            return data
+        case ViewId():
+            if data.version is None:
+                raise ValueError("A view requires an explicit version.")
+            return RecordViewId(space=data.space, external_id=data.external_id, version=data.version)
+        case ContainerId():
+            return RecordContainerId(space=data.space, external_id=data.external_id)
+        case tuple([space, external_id, version]):
+            return RecordViewId(space=space, external_id=external_id, version=version)
+        case tuple([space, external_id]):
+            return RecordContainerId(space=space, external_id=external_id)
+        case tuple():
+            raise ValueError(f"Invalid tuple length for record source identifier: {len(data)}, expected 2 or 3.")
+        case dict({"type": "view"}):
             return RecordViewId.load(data)
-        if source_type in ("container", None):
+        case dict({"type": "container"}):
             return RecordContainerId.load(data)
-        raise ValueError(f"Record source 'type' must be 'container' or 'view', but was {source_type!r}")
-    raise TypeError(f"Cannot load record source from {type(data).__name__}")
+        case dict() if data.get("type") is None:
+            return RecordViewId.load(data) if "version" in data else RecordContainerId.load(data)
+        case dict():
+            raise ValueError(f"Record source 'type' must be 'container' or 'view', but was {data.get('type')!r}")
+        case _:
+            raise TypeError(f"Cannot load record source from {type(data).__name__}")
 
 
 class RecordSource(CogniteResource):
