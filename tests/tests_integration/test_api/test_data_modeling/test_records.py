@@ -60,8 +60,7 @@ def assert_eventually(assertion: Callable[[], None]) -> None:
         except AssertionError as error:
             remaining = deadline - time.monotonic()
             if remaining <= 0:
-                name = getattr(assertion, "__name__", type(assertion).__name__)
-                raise AssertionError(f"Timed out waiting for {name}: {error}") from error
+                pytest.fail(f"Timed out after {CONSISTENCY_TIMEOUT}s: {error}")
             time.sleep(min(next(wait), remaining))
 
 
