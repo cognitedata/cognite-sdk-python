@@ -156,7 +156,7 @@ class TestStateDatapointsToPandas:
         assert df[node_id, "string"].dtype == "object"
 
     def test_exclude_numeric_states(self, state_dps: Datapoints, node_id: NodeId) -> None:
-        df = state_dps.to_pandas(exclude_numeric_states=True)
+        df = state_dps.to_pandas(include_numeric_states=False)
 
         assert list(df.columns) == [(node_id, "string")]
         assert df[node_id, "string"].tolist() == ["off", "on", None, None]
@@ -164,7 +164,7 @@ class TestStateDatapointsToPandas:
     def test_exclude_string_states(self, state_dps: Datapoints, node_id: NodeId) -> None:
         import pandas as pd
 
-        df = state_dps.to_pandas(exclude_string_states=True)
+        df = state_dps.to_pandas(include_string_states=False)
 
         assert list(df.columns) == [(node_id, "numeric")]
         numeric_values = df[node_id, "numeric"].tolist()
@@ -174,7 +174,7 @@ class TestStateDatapointsToPandas:
     def test_exclude_both_states_without_status_gives_empty_dataframe(
         self, state_dps: Datapoints, node_id: NodeId
     ) -> None:
-        df = state_dps.to_pandas(exclude_numeric_states=True, exclude_string_states=True, include_status=False)
+        df = state_dps.to_pandas(include_numeric_states=False, include_string_states=False, include_status=False)
 
         assert df.shape == (4, 0)
 
