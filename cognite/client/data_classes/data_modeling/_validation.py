@@ -78,7 +78,7 @@ def validate_property_path(prop: PropertyPath, argument: str = "property", hint:
         list[str]: The validated path as a list.
     """
     if isinstance(prop, PropertyId):
-        return list(prop.source.as_property_ref(prop.property))
+        return list(prop.as_property_ref())
     if isinstance(prop, tuple) and len(prop) == 2 and isinstance(prop[0], (ContainerId, ViewId)):
         if not isinstance(prop[1], str):
             raise TypeError(

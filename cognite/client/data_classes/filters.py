@@ -69,7 +69,7 @@ def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] 
     if isinstance(property_, EnumProperty):
         return property_.as_reference()
     elif isinstance(property_, PropertyId):
-        return list(property_.source.as_property_ref(property_.property))
+        return list(property_.as_property_ref())
     elif (
         isinstance(property_, tuple)
         and len(property_) == 2
