@@ -57,8 +57,9 @@ class GlobalConfig:
             features. Defaults to False.
 
     Note:
-        ``disable_ssl``, ``ssl_context``, and ``proxy`` are ignored when running in a browser (Pyodide/JupyterLite/Streamlit):
-        networking there is handled by the browser's JS runtime, which controls certificate validation and proxying itself.
+        When running in a browser environment (e.g. Pyodide/JupyterLite/Streamlit) the settings ``disable_ssl``, ``ssl_context``,
+        ``proxy``, and ``max_connection_pool_size`` are all ignored. Networking is handled by the browser's JS runtime, which
+        controls certificate validation, proxying, and connection pooling itself.
     """
 
     _instance: ClassVar[GlobalConfig]
