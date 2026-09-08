@@ -89,6 +89,14 @@ def _load_record_source_id(data: RecordSourceIdentifier | dict[str, Any]) -> Rec
             raise TypeError(f"Cannot load record source from {type(data).__name__}")
 
 
+def _parse_records_source(space: str, identifier: str) -> RecordContainerId | RecordViewId:
+    match identifier.split("/", 1):
+        case [view_xid, version]:
+            return RecordViewId(space=space, external_id=view_xid, version=version)
+        case _:
+            return RecordContainerId(space=space, external_id=identifier)
+
+
 class RecordSource(CogniteResource):
     """Container or view source with property values for a record write.
 
@@ -252,16 +260,11 @@ class Record(WriteableCogniteResource["RecordWrite"]):
 
     def as_write(self) -> RecordWrite:
         """Reconstruct the :class:`RecordWrite` by grouping read properties back into sources."""
-        sources: list[RecordSource] = []
-        for space, containers in (self.properties or {}).items():
-            for container_or_view, props in containers.items():
-                source: RecordContainerId | RecordViewId
-                if "/" in container_or_view:
-                    view_xid, version = container_or_view.split("/", 1)
-                    source = RecordViewId(space=space, external_id=view_xid, version=version)
-                else:
-                    source = RecordContainerId(space=space, external_id=container_or_view)
-                sources.append(RecordSource(source=source, properties=dict(props)))
+        sources = [
+            RecordSource(source=_parse_records_source(space, identifier), properties=dict(props))
+            for space, sources in (self.properties or {}).items()
+            for identifier, props in sources.items()
+        ]
         return RecordWrite(space=self.space, external_id=self.external_id, sources=sources)
 
 
