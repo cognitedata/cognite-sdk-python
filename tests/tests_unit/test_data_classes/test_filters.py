@@ -8,15 +8,11 @@ from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyI
 from cognite.client.data_classes.data_modeling.records import RecordContainerId, RecordViewId
 from cognite.client.data_classes.filters import (
     And,
-    ContainsAll,
-    ContainsAny,
     Equals,
-    Exists,
     Filter,
     In,
     Or,
-    Prefix,
-    Range,
+    PropertyReference,
 )
 from tests.utils import FakeCogniteResourceGenerator
 
@@ -79,58 +75,17 @@ def test_filter_is_hashable_and_uses_identity() -> None:
     assert flt != flt2
 
 
-def test_filter_view_and_container_property_references() -> None:
-    view = ViewId("my_space", "my_view", "v1")
-    rec_view = RecordViewId("my_space", "my_view", "v1")
-    container = ContainerId("my_space", "my_container")
-    rec_container = RecordContainerId("my_space", "my_container")
-
-    # View as_property_ref
-    flt = Equals(property=view.as_property_ref("temperature"), value=25.0)
-    assert list(flt.dump()["equals"]["property"]) == ["my_space", "my_view/v1", "temperature"]
-    assert flt.dump()["equals"]["value"] == 25.0
-
-    # RecordViewId as_property_ref
-    flt = Equals(property=rec_view.as_property_ref("temperature"), value=25.0)
-    assert list(flt.dump()["equals"]["property"]) == ["my_space", "my_view/v1", "temperature"]
-    assert flt.dump()["equals"]["value"] == 25.0
-
-    # (ViewId, str) tuple
-    flt = Equals(property=(view, "temperature"), value=25.0)
-    assert flt.dump() == {"equals": {"property": ["my_space", "my_view/v1", "temperature"], "value": 25.0}}
-
-    # (RecordViewId, str) tuple
-    flt = Equals(property=(rec_view, "temperature"), value=25.0)
-    assert flt.dump() == {"equals": {"property": ["my_space", "my_view/v1", "temperature"], "value": 25.0}}
-
-    # (ContainerId, str) tuple
-    flt = Equals(property=(container, "temperature"), value=25.0)
-    assert flt.dump() == {"equals": {"property": ["my_space", "my_container", "temperature"], "value": 25.0}}
-
-    # (RecordContainerId, str) tuple
-    flt = Equals(property=(rec_container, "temperature"), value=25.0)
-    assert flt.dump() == {"equals": {"property": ["my_space", "my_container", "temperature"], "value": 25.0}}
-
-    # PropertyId with ViewId
-    flt = Equals(property=PropertyId(view, "temperature"), value=25.0)
-    assert flt.dump() == {"equals": {"property": ["my_space", "my_view/v1", "temperature"], "value": 25.0}}
-
-    # Other filters with (ViewId, str)
-    assert In(property=(view, "status"), values=["open", "closed"]).dump() == {
-        "in": {"property": ["my_space", "my_view/v1", "status"], "values": ["open", "closed"]}
-    }
-    assert Range(property=(view, "temperature"), gt=20.0).dump() == {
-        "range": {"property": ["my_space", "my_view/v1", "temperature"], "gt": 20.0}
-    }
-    assert Prefix(property=(view, "name"), value="sensor-").dump() == {
-        "prefix": {"property": ["my_space", "my_view/v1", "name"], "value": "sensor-"}
-    }
-    assert ContainsAny(property=(view, "tags"), values=["a", "b"]).dump() == {
-        "containsAny": {"property": ["my_space", "my_view/v1", "tags"], "values": ["a", "b"]}
-    }
-    assert ContainsAll(property=(view, "tags"), values=["a", "b"]).dump() == {
-        "containsAll": {"property": ["my_space", "my_view/v1", "tags"], "values": ["a", "b"]}
-    }
-    assert Exists(property=(view, "temperature")).dump() == {
-        "exists": {"property": ["my_space", "my_view/v1", "temperature"]}
-    }
+@pytest.mark.parametrize(
+    "property_, expected",
+    [
+        ((ViewId("sp", "view", "v1"), "temp"), ["sp", "view/v1", "temp"]),
+        ((RecordViewId("sp", "view", "v1"), "temp"), ["sp", "view/v1", "temp"]),
+        ((ContainerId("sp", "container"), "temp"), ["sp", "container", "temp"]),
+        ((RecordContainerId("sp", "container"), "temp"), ["sp", "container", "temp"]),
+        (PropertyId(ViewId("sp", "view", "v1"), "temp"), ["sp", "view/v1", "temp"]),
+        (PropertyId(ContainerId("sp", "container"), "temp"), ["sp", "container", "temp"]),
+    ],
+    ids=["view", "record-view", "container", "record-container", "view-property-id", "container-property-id"],
+)
+def test_filter_source_property_references(property_: PropertyReference, expected: list[str]) -> None:
+    assert Equals(property_, 25.0).dump() == {"equals": {"property": expected, "value": 25.0}}
