@@ -13,14 +13,14 @@ from cognite.client.data_classes import (
 from tests.utils import get_url
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
 def mock_config_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> dict[str, Any]:
     response_body = {
         "revision": 5,
@@ -31,14 +31,14 @@ def mock_config_response(
     }
     url_pattern = re.compile(re.escape(get_url(async_client.extraction_pipelines)) + r"/extpipes/config")
 
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     return response_body
 
 
 @pytest.fixture
 def mock_config_response_with_revision(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> dict[str, Any]:
     response_body = {
         "revision": 4,
@@ -51,13 +51,13 @@ def mock_config_response_with_revision(
         re.escape(get_url(async_client.extraction_pipelines)) + r"/extpipes/config\?externalId=int-123&revision=4$"
     )
 
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     return response_body
 
 
 @pytest.fixture
 def mock_config_list_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> dict[str, Any]:
     response_body = {
         "items": [
@@ -68,13 +68,13 @@ def mock_config_list_response(
     }
     url_pattern = re.compile(re.escape(get_url(async_client.extraction_pipelines)) + r"/extpipes/config/revisions")
 
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     return response_body
 
 
 @pytest.fixture
 def mock_revert_config_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> dict[str, Any]:
     response_body = {
         "revision": 6,
@@ -84,7 +84,7 @@ def mock_revert_config_response(
         "config": "config abc 123",
     }
     url_pattern = re.compile(re.escape(get_url(async_client.extraction_pipelines)) + r"/extpipes/config/revert")
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     return response_body
 
 

@@ -15,8 +15,8 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
-from httpx import Response
-from pytest_httpx import HTTPXMock
+from httpx2 import Response
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.utils._async_helpers import run_sync
@@ -111,7 +111,7 @@ class TestSyncClientMultiThreadedEnv:
                     f.result()
 
     def test_semaphore_limits_concurrent_operations_via_background_loop(
-        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
         """Backpressure (semaphores) works end-to-end: 10 concurrent sync API calls from a thread pool
         produce at most N (e.g., 3 in this test) in-flight HTTP requests at any time."""
@@ -126,7 +126,7 @@ class TestSyncClientMultiThreadedEnv:
             active -= 1
             return Response(200, json={"items": []})
 
-        httpx_mock.add_callback(slow_response, method="POST", url=re.compile(r".*"), is_reusable=True)
+        httpx2_mock.add_callback(slow_response, method="POST", url=re.compile(r".*"), is_reusable=True)
 
         with fresh_concurrency_state() as cs:
             cs.general.read = max_concurrent_requests

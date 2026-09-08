@@ -1,5 +1,5 @@
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.simulators import (
@@ -76,13 +76,13 @@ class TestRoutineRevisions:
         self,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         list_params: dict,
         mock_response_fields: dict,
         expected_revision: SimulatorRoutineRevision,
         expected_request_body: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.simulators.routines.revisions, "/simulators/routines/revisions/list"),
             json={"items": [TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS | mock_response_fields]},
@@ -92,7 +92,7 @@ class TestRoutineRevisions:
 
         assert len(listed_revisions) == 1
         assert listed_revisions[0].dump() == expected_revision.dump()
-        assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert expected_request_body == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     @pytest.mark.parametrize(
         "retrieve_params,mock_response_fields,expected_revision,expected_request_body",
@@ -141,13 +141,13 @@ class TestRoutineRevisions:
         self,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         retrieve_params: dict,
         mock_response_fields: dict,
         expected_revision: SimulatorRoutineRevision,
         expected_request_body: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.simulators.routines.revisions, "/simulators/routines/revisions/byids"),
             json={"items": [TEST_ROUTINE_REV_ITEM_RESPONSE_FIELDS | mock_response_fields]},
@@ -157,7 +157,7 @@ class TestRoutineRevisions:
 
         assert len(retrieved_revisions) == 1
         assert retrieved_revisions[0].dump() == expected_revision.dump()
-        assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert expected_request_body == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     @pytest.mark.parametrize(
         "write_input,mock_response_fields,expected_revision,expected_request_body",
@@ -221,13 +221,13 @@ class TestRoutineRevisions:
         self,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         write_input: SimulatorRoutineRevisionWrite,
         mock_response_fields: dict,
         expected_revision: SimulatorRoutineRevision,
         expected_request_body: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.simulators.routines.revisions, "/simulators/routines/revisions"),
             json={"items": [mock_response_fields | write_input.dump()]},
@@ -236,4 +236,4 @@ class TestRoutineRevisions:
         created_revision = cognite_client.simulators.routines.revisions.create(write_input)
 
         assert created_revision.dump() == expected_revision.dump()
-        assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert expected_request_body == jsgz_load(httpx2_mock.get_requests()[0].content)

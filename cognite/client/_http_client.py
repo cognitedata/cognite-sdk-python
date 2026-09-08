@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager, nullcontext
 from http.cookiejar import Cookie, CookieJar
 from typing import Any, Literal, TypeAlias
 
-import httpx
+import httpx2
 
 from cognite.client.config import global_config
 from cognite.client.exceptions import (
@@ -32,7 +32,7 @@ from cognite.client.utils._retry import Backoff
 logger = logging.getLogger(__name__)
 
 
-HTTPResponseCoro: TypeAlias = Coroutine[Any, Any, httpx.Response]
+HTTPResponseCoro: TypeAlias = Coroutine[Any, Any, httpx2.Response]
 
 
 class NoCookiesPlease(CookieJar):
@@ -40,24 +40,24 @@ class NoCookiesPlease(CookieJar):
         pass
 
 
-# One httpx.AsyncClient per event loop to avoid sharing connections (and their
+# One httpx2.AsyncClient per event loop to avoid sharing connections (and their
 # loop-bound asyncio primitives) across different loops. This matters when a sync
 # CogniteClient (background loop) and an AsyncCogniteClient (e.g. Jupyter's loop)
 # coexist in the same process:
-_global_async_httpx_clients: dict[asyncio.AbstractEventLoop, httpx.AsyncClient] = {}
+_global_async_httpx_clients: dict[asyncio.AbstractEventLoop, httpx2.AsyncClient] = {}
 
 
-def get_global_async_httpx_client() -> httpx.AsyncClient:
+def get_global_async_httpx_client() -> httpx2.AsyncClient:
     loop = asyncio.get_running_loop()
     try:
         return _global_async_httpx_clients[loop]
     except KeyError:
         pass
 
-    client = _global_async_httpx_clients[loop] = httpx.AsyncClient(
+    client = _global_async_httpx_clients[loop] = httpx2.AsyncClient(
         proxy=global_config.proxy,
         verify=False if global_config.disable_ssl else (global_config.ssl_context or True),
-        limits=httpx.Limits(
+        limits=httpx2.Limits(
             max_connections=global_config.max_connection_pool_size,
             max_keepalive_connections=None,
             keepalive_expiry=5,
@@ -158,7 +158,7 @@ class RetryTracker:
         # one of [status, read, connect] += 1. Said differently, do last retry when 'total = max':
         return self.total <= self.config.max_retries_total
 
-    def should_retry_status_code(self, err: httpx.HTTPStatusError, is_auto_retryable: bool = False) -> bool:
+    def should_retry_status_code(self, err: httpx2.HTTPStatusError, is_auto_retryable: bool = False) -> bool:
         self.status += 1
         status_code = err.response.status_code
         error_type = CogniteHTTPStatusError.get_error_type(status_code)
@@ -169,12 +169,12 @@ class RetryTracker:
             and (is_auto_retryable or status_code in self.config.status_codes_to_retry)
         )
 
-    def should_retry_connect_error(self, error: httpx.TransportError | httpx.DecodingError) -> bool:
+    def should_retry_connect_error(self, error: httpx2.TransportError | httpx2.DecodingError) -> bool:
         self.connect += 1
         self.last_failed_reason = f"{type(error).__name__}({error!s})"
         return self.should_retry_total and self.connect <= self.config.max_retries_connect
 
-    def should_retry_timeout(self, error: httpx.TimeoutException) -> bool:
+    def should_retry_timeout(self, error: httpx2.TimeoutException) -> bool:
         self.read += 1
         self.last_failed_reason = f"{type(error).__name__}({error!s})"
         return self.should_retry_total and self.read <= self.config.max_retries_read
@@ -185,14 +185,14 @@ class AsyncHTTPClientWithRetry:
         self,
         config: AsyncHTTPClientWithRetryConfig,
         refresh_auth_header: Callable[[MutableMapping[str, str]], None],
-        httpx_async_client: httpx.AsyncClient | None = None,
+        httpx_async_client: httpx2.AsyncClient | None = None,
     ) -> None:
         self.config = config
         self.refresh_auth_header = refresh_auth_header
         self._httpx_async_client = httpx_async_client
 
     @property
-    def httpx_async_client(self) -> httpx.AsyncClient:
+    def httpx_async_client(self) -> httpx2.AsyncClient:
         return self._httpx_async_client or get_global_async_httpx_client()
 
     async def request(
@@ -237,7 +237,7 @@ class AsyncHTTPClientWithRetry:
         timeout: float | None = None,
         semaphore: asyncio.BoundedSemaphore | None,
     ) -> AsyncIterator[CogniteHTTPResponse]:
-        # This method is basically a clone of httpx.AsyncClient.stream() so that we may add our own retry logic.
+        # This method is basically a clone of httpx2.AsyncClient.stream() so that we may add our own retry logic.
         def coro_factory() -> HTTPResponseCoro:
             request = self.httpx_async_client.build_request(
                 method=method, url=url, json=json, headers=headers, timeout=timeout
@@ -280,7 +280,7 @@ class AsyncHTTPClientWithRetry:
                     response.json = functools.cache(response.json)  # type: ignore [method-assign]
                 return CogniteHTTPResponse(response.raise_for_status())
 
-            except httpx.HTTPStatusError as err:
+            except httpx2.HTTPStatusError as err:
                 response = err.response
                 is_auto_retryable = response.headers.get("cdf-is-auto-retryable", "").lower() == "true"
                 if not retry_tracker.should_retry_status_code(err, is_auto_retryable):
@@ -290,20 +290,20 @@ class AsyncHTTPClientWithRetry:
                         response=CogniteHTTPResponse(response),
                     ) from None
 
-            except httpx.ConnectError as err:
+            except httpx2.ConnectError as err:
                 if not retry_tracker.should_retry_connect_error(err):
                     raise CogniteConnectionRefused from err
 
-            except (httpx.NetworkError, httpx.ConnectTimeout, httpx.DecodingError) as err:
+            except (httpx2.NetworkError, httpx2.ConnectTimeout, httpx2.DecodingError) as err:
                 if not retry_tracker.should_retry_connect_error(err):
                     raise CogniteConnectionError from err
 
-            except httpx.TimeoutException as err:
+            except httpx2.TimeoutException as err:
                 if not retry_tracker.should_retry_timeout(err):
                     raise CogniteReadTimeout from err
 
-            except httpx.RequestError as err:
-                # We want to avoid raising a non-Cognite error (from the underlying library). httpx.RequestError is the
+            except httpx2.RequestError as err:
+                # We want to avoid raising a non-Cognite error (from the underlying library). httpx2.RequestError is the
                 # base class for all exceptions that can be raised during a request, so we use it here as a fallback.
                 raise CogniteRequestError from err
 

@@ -8,7 +8,7 @@ import sys
 from typing import Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, ClientConfig, CogniteClient, global_config
 from cognite.client._http_client import _global_async_httpx_clients, get_global_async_httpx_client
@@ -47,8 +47,8 @@ def client_config_w_client_credentials() -> ClientConfig:
 
 
 @pytest.fixture
-def mock_token_inspect(httpx_mock: HTTPXMock) -> None:
-    httpx_mock.add_response(
+def mock_token_inspect(httpx2_mock: HTTPXMock) -> None:
+    httpx2_mock.add_response(
         method="GET",
         url=BASE_URL + "/api/v1/token/inspect",
         status_code=200,
@@ -110,14 +110,14 @@ class TestCogniteClient:
         log.propagate = False
 
     async def test_api_version_present_in_header(
-        self, httpx_mock: HTTPXMock, client_config_w_token_factory: ClientConfig, mock_token_inspect: Any
+        self, httpx2_mock: HTTPXMock, client_config_w_token_factory: ClientConfig, mock_token_inspect: Any
     ) -> None:
         async_client = AsyncCogniteClient(client_config_w_token_factory)
         await async_client.iam.token.inspect()
-        assert httpx_mock.get_requests()[0].headers["cdf-version"] == async_client.config.api_subversion
+        assert httpx2_mock.get_requests()[0].headers["cdf-version"] == async_client.config.api_subversion
 
     async def test_verify_ssl_enabled_by_default(self, async_client: AsyncCogniteClient) -> None:
-        # Clear the per-loop httpx client cache so we observe a freshly-built client reflecting
+        # Clear the per-loop httpx2 client cache so we observe a freshly-built client reflecting
         # the current global_config (disable_ssl=False); without this, a leftover client cached
         # by an earlier test on the same loop could carry stale TLS settings (seen flaking once).
         _global_async_httpx_clients.clear()

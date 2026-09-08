@@ -4,7 +4,7 @@ import re
 from typing import TYPE_CHECKING
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.ai import AnswerContent, AnswerLocation, AnswerReference, Summary
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture
 def mock_summarize_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     response_body = {
         "items": [
@@ -30,13 +30,13 @@ def mock_summarize_response(
     url_pattern = re.compile(re.escape(get_url(async_client.ai.tools.documents)) + "/.+")
     # ....assert_all_requests_are_fired = False  # TODO
 
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_ask_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     response_body = {
         "content": [
@@ -95,8 +95,8 @@ def mock_ask_response(
     url_pattern = re.compile(re.escape(get_url(async_client.ai.tools.documents)) + "/.+")
     # ....assert_all_requests_are_fired = False  # TODO
 
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    return httpx2_mock
 
 
 class TestAIAPI:
