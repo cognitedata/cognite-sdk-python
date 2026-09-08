@@ -229,6 +229,17 @@ class TestGetGlobalAsyncHttpxClient:
         assert pool._ssl_context.verify_mode == ssl.CERT_NONE  # disable_ssl should cause this
         assert pool._ssl_context.check_hostname is False
 
+    async def test_pyodide_client_warns_about_settings_with_no_effect(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("cognite.client._http_client._RUNNING_IN_PYODIDE", True)
+        monkeypatch.setattr(global_config, "disable_ssl", True)
+        monkeypatch.setattr(global_config, "proxy", "http://explicit:1234")
+
+        with pytest.warns(
+            RuntimeWarning,
+            match="global_config.disable_ssl.*global_config.proxy.*no effect when running in a browser",
+        ):
+            get_global_async_httpx_client()
+
     async def test_pyodide_client_no_warning_at_default_settings(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.setattr("cognite.client._http_client._RUNNING_IN_PYODIDE", True)
 
