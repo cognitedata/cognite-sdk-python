@@ -65,7 +65,7 @@ def assert_eventually(assertion: Callable[[], None]) -> None:
 
 
 @dataclass
-class RecordBatch:
+class RecordTestBatch:
     records: list[RecordWrite]
     filter: filters.Equals  # Scopes every query to this batch, so parallel runs don't see each other
     cursor: str  # Sync position captured before ingestion
@@ -130,7 +130,7 @@ def ingested_records(
     cognite_client: CogniteClient,
     mutable_stream: Stream,
     container_ref: RecordContainerId,
-) -> Iterator[RecordBatch]:
+) -> Iterator[RecordTestBatch]:
     tag = uuid.uuid4().hex
     records = [
         RecordWrite(
@@ -168,7 +168,7 @@ def ingested_records(
         cognite_client.data_modeling.records.ingest(records, stream_id=mutable_stream.external_id)
         # Records are not immediatly queryable after ingestion
         assert_eventually(all_records_are_queryable)
-        yield RecordBatch(records, tagged, cursor)
+        yield RecordTestBatch(records, tagged, cursor)
     finally:
         cognite_client.data_modeling.records.delete(
             [record.as_id() for record in records], stream_id=mutable_stream.external_id
@@ -181,7 +181,7 @@ class TestRecordsIntegration:
         cognite_client: CogniteClient,
         mutable_stream: Stream,
         sources: list[RecordSourceSelector],
-        ingested_records: RecordBatch,
+        ingested_records: RecordTestBatch,
     ) -> None:
         result = cognite_client.data_modeling.records.filter(
             stream_id=mutable_stream.external_id,
@@ -198,7 +198,7 @@ class TestRecordsIntegration:
         cognite_client: CogniteClient,
         mutable_stream: Stream,
         container_ref: RecordContainerId,
-        ingested_records: RecordBatch,
+        ingested_records: RecordTestBatch,
     ) -> None:
         value = [container_ref.space, container_ref.external_id, "value"]
 
@@ -223,7 +223,7 @@ class TestRecordsIntegration:
         cognite_client: CogniteClient,
         mutable_stream: Stream,
         sources: list[RecordSourceSelector],
-        ingested_records: RecordBatch,
+        ingested_records: RecordTestBatch,
         chunk_size: int,
     ) -> None:
         """Walk the sync feed from the pre-ingestion cursor until 'has_next' is False.
@@ -259,7 +259,7 @@ class TestRecordsIntegration:
         mutable_stream: Stream,
         container_ref: RecordContainerId,
         sources: list[RecordSourceSelector],
-        ingested_records: RecordBatch,
+        ingested_records: RecordTestBatch,
     ) -> None:
         target = ingested_records.records[0]
         properties = {**target.sources[0].properties, "value": 99.0}
