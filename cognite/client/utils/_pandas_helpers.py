@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import datetime
 import itertools
-import re
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -234,21 +233,7 @@ def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.
     if not int_cols:
         return df
 
-    if pandas_major_version() >= 2:
-        df.isetitem(int_cols, df.iloc[:, int_cols].astype("Int64"))
-    else:
-        # As of pandas >=1.5.0, <2, converting float cols (that used to be int) to nullable int using iloc raises FutureWarning,
-        # but the suggested code change (to use `frame.isetitem(...)`) results in the wrong dtype (object).
-        # See Github Issue: https://github.com/pandas-dev/pandas/issues/49922
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                action="ignore",
-                message=re.escape(
-                    "In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace"
-                ),
-                category=FutureWarning,
-            )
-            df.iloc[:, int_cols] = df.iloc[:, int_cols].astype("Int64")
+    df.isetitem(int_cols, df.iloc[:, int_cols].astype("Int64"))
     return df
 
 
