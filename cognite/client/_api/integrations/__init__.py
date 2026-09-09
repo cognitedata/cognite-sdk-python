@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, overload
 
 from cognite.client._api.integrations.errors import IntegrationErrorsAPI
+from cognite.client._api.integrations.tasks import IntegrationTasksAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.integrations.integrations import (
@@ -26,6 +27,7 @@ class IntegrationsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self.tasks = IntegrationTasksAPI(config, api_version, cognite_client)
         self.errors = IntegrationErrorsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Integrations")
 
