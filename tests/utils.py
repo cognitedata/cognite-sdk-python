@@ -13,12 +13,12 @@ import random
 import string
 import typing
 from collections.abc import Mapping
-from contextlib import ExitStack, contextmanager
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import UnionType
 from typing import Any, Literal, TypeVar, get_args, get_origin, get_type_hints
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from zoneinfo import ZoneInfo
 
 import cognite.client.utils._auxiliary
@@ -273,21 +273,23 @@ def fresh_concurrency_state() -> typing.Iterator[Any]:
                     assert isinstance(v, dict), f"expected a cache dict for {sub.api_name}.{k}"
                     v.clear()
 
-    # Why is this so complicated?? Well... we use patch.object on each attribute's current value to both unfreeze it
-    # for the duration of the block and ensure it's reverted after the ctx mngr exits, no matter how it got mutated.
-    # Any *_cache attrs are skipped here and instead cleared via clear_caches(). This is because patch.object would
-    # just restore the same dict object by ref, (ie the mutated one), so nothing would actually revert:
-    with ExitStack() as stack:
-        stack.enter_context(patch.object(cs, "_ConcurrencySettings__frozen", False))
-        for sub in subs:
-            for key, value in vars(sub).items():
-                if not key.endswith("_cache"):
-                    stack.enter_context(patch.object(sub, key, value))
+    # Snapshot every non-cache attribute (read/write/delete/etc.) so they can be restored regardless of how they got
+    # changed inside the with block. '*_cache' attrs are excluded here and cleared instead via clear_caches():
+    # restoring a shallow-copied dict would just alias the same mutated dict, so nothing would actually revert.
+    orig_frozen = cs.is_frozen
+    orig_states = [{k: v for k, v in vars(sub).items() if not k.endswith("_cache")} for sub in subs]
+
+    cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
+    clear_caches()
+    try:
+        yield cs
+    finally:
+        cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
+        for sub, state in zip(subs, orig_states):
+            for k, v in state.items():
+                setattr(sub, k, v)
         clear_caches()
-        try:
-            yield cs
-        finally:
-            clear_caches()
+        cs._ConcurrencySettings__frozen = orig_frozen  # type: ignore[attr-defined]
 
 
 @contextmanager
