@@ -14,6 +14,13 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.16.1](https://github.com/cognitedata/cognite-sdk-python/compare/v8.16.0...v8.16.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* Avoid throwing noisy warning in pyodide ([#2825](https://github.com/cognitedata/cognite-sdk-python/issues/2825)) ([3d091a6](https://github.com/cognitedata/cognite-sdk-python/commit/3d091a6af636d474f699e64695ba71f2c5281d27))
+
 ## [8.16.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.15.0...v8.16.0) (2026-09-08)
 
 
