@@ -1,0 +1,105 @@
+from __future__ import annotations
+
+from cognite.client.data_classes.integrations import (
+    Extractor,
+    Integration,
+    IntegrationUpdate,
+    Task,
+)
+
+INTEGRATION_DUMPED = {
+    "externalId": "my-integration",
+    "extractor": {"externalId": "cognite-simple-influxdb-extractor", "version": "1.0.0"},
+    "name": "My integration",
+    "description": "A test integration",
+    "metadata": {"key": "value"},
+    "allowedNotSeenMinutes": 60,
+    "lastSeen": 123,
+    "lastConfigRevision": 2,
+    "activeConfigRevision": "local",
+    "tasks": [{"type": "continuous", "name": "poll", "action": True, "description": "Polls for data"}],
+    "createdTime": 1,
+    "lastUpdatedTime": 2,
+}
+
+
+class TestIntegration:
+    def test_load_dump_round_trip(self) -> None:
+        loaded = Integration._load(INTEGRATION_DUMPED)
+
+        assert loaded.external_id == "my-integration"
+        assert loaded.extractor.external_id == "cognite-simple-influxdb-extractor"
+        assert loaded.tasks[0].name == "poll"
+        assert loaded.tasks[0].action is True
+        assert loaded.active_config_revision == "local"
+
+        assert loaded.dump(camel_case=True) == INTEGRATION_DUMPED
+
+    def test_load_with_explicit_null_tasks(self) -> None:
+        dumped = {**INTEGRATION_DUMPED, "tasks": None}
+        loaded = Integration._load(dumped)
+
+        assert loaded.tasks == []
+        assert loaded.dump(camel_case=True)["tasks"] == []
+
+    def test_as_write(self) -> None:
+        loaded = Integration._load(INTEGRATION_DUMPED)
+        write = loaded.as_write()
+
+        assert write.external_id == loaded.external_id
+        assert write.extractor.external_id == loaded.extractor.external_id
+        assert write.dump(camel_case=True) == {
+            "externalId": "my-integration",
+            "extractor": {"externalId": "cognite-simple-influxdb-extractor", "version": "1.0.0"},
+            "name": "My integration",
+            "description": "A test integration",
+            "metadata": {"key": "value"},
+            "allowedNotSeenMinutes": 60,
+        }
+
+
+class TestIntegrationUpdate:
+    def test_set_and_set_null(self) -> None:
+        update = IntegrationUpdate(external_id="my-integration")
+        update.name.set("New name")
+        update.description.set(None)
+
+        assert update.dump() == {
+            "externalId": "my-integration",
+            "update": {"name": {"set": "New name"}, "description": {"setNull": True}},
+        }
+
+    def test_metadata_add_remove(self) -> None:
+        update = IntegrationUpdate(external_id="my-integration")
+        update.metadata.add({"key": "value"})
+
+        assert update.dump() == {
+            "externalId": "my-integration",
+            "update": {"metadata": {"add": {"key": "value"}}},
+        }
+
+    def test_metadata_set(self) -> None:
+        update = IntegrationUpdate(external_id="my-integration")
+        update.metadata.set({"key": "value"})
+
+        assert update.dump() == {
+            "externalId": "my-integration",
+            "update": {"metadata": {"set": {"key": "value"}}},
+        }
+
+
+def test_extractor_load_dump() -> None:
+    dumped = {"externalId": "cognite-simple-influxdb-extractor", "version": "1.0.0"}
+    assert Extractor._load(dumped).dump(camel_case=True) == dumped
+
+
+def test_task_load_dump() -> None:
+    dumped = {
+        "type": "batch",
+        "name": "sync",
+        "action": True,
+        "description": "Syncs data",
+        "sources": ["cdf://cluster/project/service/resource"],
+        "targets": ["cdf://cluster/project/timeseries/my-ts"],
+    }
+    assert Task._load(dumped).dump(camel_case=True) == dumped
