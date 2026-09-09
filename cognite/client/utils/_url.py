@@ -28,6 +28,7 @@ NON_RETRYABLE_CREATE_DELETE_RESOURCE_PATHS: tuple[str, ...] = (
     "geospatial/featuretypes/[^/]+/features",
     "hostedextractors",
     "integrations",
+    "integrations/config",
     "labels",
     "postgresgateway",
     "profiles",
