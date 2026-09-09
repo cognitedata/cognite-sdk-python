@@ -253,8 +253,10 @@ def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
 
 @contextmanager
 def fresh_concurrency_state() -> typing.Iterator[Any]:
-    """Clears all per-loop/-project semaphore caches and unfreezes ``global_config.concurrency_settings``
-    for the duration of the block, then restores the original frozen state.
+    """Clears all per-loop/-project semaphore (and, for 'files', open-file-handle) caches and
+    unfreezes 'global_config.concurrency_settings' for the duration of the block, then restores
+    the original frozen state and the original read/write/delete/etc. values of every sub-config
+    (e.g. 'cs.general.read')
 
     Use this when a test needs to mutate concurrency settings or observe semaphore creation
     on a clean slate. Yields the (singleton) ``ConcurrencySettings`` for convenience.
@@ -262,16 +264,31 @@ def fresh_concurrency_state() -> typing.Iterator[Any]:
     from cognite.client import global_config
 
     cs = global_config.concurrency_settings
+    subs = cs._all_concurrency_configs
+
+    def clear_caches() -> None:
+        for sub in subs:
+            for k, v in vars(sub).items():
+                if k.endswith("_cache"):
+                    assert isinstance(v, dict), f"expected a cache dict for {sub.api_name}.{k}"
+                    v.clear()
+
+    # Snapshot every non-cache attribute (read/write/delete/etc.) so they can be restored regardless of how they got
+    # changed inside the with block. '*_cache' attrs are excluded here and cleared instead via clear_caches():
+    # restoring a shallow-copied dict would just alias the same mutated dict, so nothing would actually revert.
     orig_frozen = cs.is_frozen
+    orig_states = [{k: v for k, v in vars(sub).items() if not k.endswith("_cache")} for sub in subs]
+
     cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
-    for sub in cs._all_concurrency_configs:
-        sub._semaphore_cache.clear()
+    clear_caches()
     try:
         yield cs
     finally:
         cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
-        for sub in cs._all_concurrency_configs:
-            sub._semaphore_cache.clear()
+        for sub, state in zip(subs, orig_states):
+            for k, v in state.items():
+                setattr(sub, k, v)
+        clear_caches()
         cs._ConcurrencySettings__frozen = orig_frozen  # type: ignore[attr-defined]
 
 
