@@ -15,6 +15,9 @@ from cognite.client.utils._auxiliary import is_non_negative_int, is_positive_int
 from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._importing import local_import
 
+# For "pyodide reasons", we need to know if the user has changed this to a non-default value:
+_DEFAULT_MAX_CONNECTION_POOL_SIZE = 20
+
 
 class GlobalConfig:
     """Global configuration object
@@ -52,6 +55,11 @@ class GlobalConfig:
             translates to 65536 (64KiB chunks).
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
+
+    Note:
+        When running in a browser environment (e.g. Pyodide/JupyterLite/Streamlit) the settings ``disable_ssl``, ``ssl_context``,
+        ``proxy``, and ``max_connection_pool_size`` are all ignored. Networking is handled by the browser's JS runtime, which
+        controls certificate validation, proxying, and connection pooling itself.
     """
 
     _instance: ClassVar[GlobalConfig]
@@ -74,7 +82,7 @@ class GlobalConfig:
         self.max_retries: int = 10
         self.max_retries_connect: int = 3
         self.max_retry_backoff: int = 60
-        self.max_connection_pool_size: int = 20
+        self.max_connection_pool_size: int = _DEFAULT_MAX_CONNECTION_POOL_SIZE
         self.disable_ssl: bool = False
         self.ssl_context: ssl.SSLContext | None = None
         self.proxy: str | None = None
