@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, overload
 
+from cognite.client._api.integrations.config import IntegrationConfigAPI
 from cognite.client._api.integrations.errors import IntegrationErrorsAPI
 from cognite.client._api.integrations.history import IntegrationHistoryAPI
 from cognite.client._api_client import APIClient
@@ -31,6 +32,7 @@ class IntegrationsAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self.history = IntegrationHistoryAPI(config, api_version, cognite_client)
         self.errors = IntegrationErrorsAPI(config, api_version, cognite_client)
+        self.config = IntegrationConfigAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Integrations")
         self._CREATE_LIMIT = 20
         self._UPDATE_LIMIT = 20
