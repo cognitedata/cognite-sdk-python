@@ -74,6 +74,10 @@ def is_pandas_v2_or_lower() -> bool:
     return pandas_major_version() < 3
 
 
+def pandas_string_array_dtype() -> Literal["object", "str"]:
+    return "object" if is_pandas_v2_or_lower() else "str"
+
+
 @cache
 def timestamp_dtype_unit() -> Literal["ns", "ms"]:
     """The datetime64 resolution to use for all timestamp columns/indices produced by the SDK, see

@@ -11,7 +11,7 @@ from cognite.client.data_classes import Datapoint, DatapointsArray, StateDatapoi
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import Datapoints, DatapointsArrayList, DatapointsList
-from tests.utils import PANDAS_TS_UNIT
+from tests.utils import PANDAS_STR_DTYPE, PANDAS_TS_UNIT
 
 
 class TestDatapoint:
