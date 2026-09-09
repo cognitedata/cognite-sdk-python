@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from cognite.client.data_classes.integrations import (
+    Action,
     ConfigRevision,
     Extractor,
     Integration,
@@ -90,6 +91,38 @@ class TestIntegrationUpdate:
             "externalId": "my-integration",
             "update": {"metadata": {"set": {"key": "value"}}},
         }
+
+
+class TestAction:
+    def test_load_dump_round_trip(self) -> None:
+        dumped = {
+            "externalId": "my-action",
+            "actionName": "restart",
+            "status": "succeeded",
+            "callMetadata": {"reason": "manual"},
+            "resultMessage": "Done",
+            "resultMetadata": {"durationMs": "42"},
+            "createdTime": 1,
+            "lastUpdatedTime": 2,
+        }
+        loaded = Action._load(dumped)
+
+        assert loaded.status == "succeeded"
+        assert loaded.dump(camel_case=True) == dumped
+
+    def test_as_write(self) -> None:
+        loaded = Action._load(
+            {
+                "externalId": "my-action",
+                "actionName": "restart",
+                "status": "pending",
+                "createdTime": 1,
+                "lastUpdatedTime": 2,
+            }
+        )
+        write = loaded.as_write()
+
+        assert write.dump(camel_case=True) == {"externalId": "my-action", "actionName": "restart"}
 
 
 class TestSyncResult:

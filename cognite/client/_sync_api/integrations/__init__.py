@@ -1,6 +1,6 @@
 """
 ===============================================================================
-9569512225f377205f445a5dd30eb0f4
+e76b177ed7a693a6551979741ff94979
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._sync_api.integrations.actions import SyncIntegrationActionsAPI
 from cognite.client._sync_api.integrations.config import SyncIntegrationConfigAPI
 from cognite.client._sync_api.integrations.errors import SyncIntegrationErrorsAPI
 from cognite.client._sync_api.integrations.tasks import SyncIntegrationTasksAPI
@@ -37,6 +38,7 @@ class SyncIntegrationsAPI(SyncAPIClient):
         self.tasks = SyncIntegrationTasksAPI(async_client)
         self.errors = SyncIntegrationErrorsAPI(async_client)
         self.config = SyncIntegrationConfigAPI(async_client)
+        self.actions = SyncIntegrationActionsAPI(async_client)
 
     @overload
     def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Integration]: ...
