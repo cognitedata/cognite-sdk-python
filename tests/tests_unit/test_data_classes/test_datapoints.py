@@ -152,14 +152,23 @@ class TestStateDatapointsToPandas:
         assert numeric_values[:-1] == [0, 1, 0]
         assert numeric_values[3] is pd.NA
         assert df[node_id, "numeric"].dtype == "Int32"
-        assert df[node_id, "string"].tolist() == ["off", "on", None, None]
-        assert df[node_id, "string"].dtype == "object"
+
+        # Missing string states are represented as None on pandas v2 (object dtype) and as
+        # NaN on pandas v3 (its new native 'str' dtype), see PANDAS_STR_DTYPE:
+        string_values = df[node_id, "string"].tolist()
+        assert string_values[:2] == ["off", "on"]
+        assert all(pd.isna(v) for v in string_values[2:])
+        assert df[node_id, "string"].dtype == PANDAS_STR_DTYPE
 
     def test_exclude_numeric_states(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import pandas as pd
+
         df = state_dps.to_pandas(include_numeric_states=False)
 
         assert list(df.columns) == [(node_id, "string")]
-        assert df[node_id, "string"].tolist() == ["off", "on", None, None]
+        string_values = df[node_id, "string"].tolist()
+        assert string_values[:2] == ["off", "on"]
+        assert all(pd.isna(v) for v in string_values[2:])
 
     def test_exclude_string_states(self, state_dps: Datapoints, node_id: NodeId) -> None:
         import pandas as pd
