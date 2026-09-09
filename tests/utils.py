@@ -13,12 +13,12 @@ import random
 import string
 import typing
 from collections.abc import Mapping
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import UnionType
 from typing import Any, Literal, TypeVar, get_args, get_origin, get_type_hints
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from zoneinfo import ZoneInfo
 
 import cognite.client.utils._auxiliary
@@ -253,8 +253,10 @@ def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
 
 @contextmanager
 def fresh_concurrency_state() -> typing.Iterator[Any]:
-    """Clears all per-loop/-project semaphore caches and unfreezes ``global_config.concurrency_settings``
-    for the duration of the block, then restores the original frozen state.
+    """Clears all per-loop/-project semaphore (and, for 'files', open-file-handle) caches and
+    unfreezes 'global_config.concurrency_settings' for the duration of the block, then restores
+    the original frozen state and the original read/write/delete/etc. values of every sub-config
+    (e.g. 'cs.general.read')
 
     Use this when a test needs to mutate concurrency settings or observe semaphore creation
     on a clean slate. Yields the (singleton) ``ConcurrencySettings`` for convenience.
@@ -262,17 +264,30 @@ def fresh_concurrency_state() -> typing.Iterator[Any]:
     from cognite.client import global_config
 
     cs = global_config.concurrency_settings
-    orig_frozen = cs.is_frozen
-    cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
-    for sub in cs._all_concurrency_configs:
-        sub._semaphore_cache.clear()
-    try:
-        yield cs
-    finally:
-        cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
-        for sub in cs._all_concurrency_configs:
-            sub._semaphore_cache.clear()
-        cs._ConcurrencySettings__frozen = orig_frozen  # type: ignore[attr-defined]
+    subs = cs._all_concurrency_configs
+
+    def clear_caches() -> None:
+        for sub in subs:
+            for k, v in vars(sub).items():
+                if k.endswith("_cache"):
+                    assert isinstance(v, dict), f"expected a cache dict for {sub.api_name}.{k}"
+                    v.clear()
+
+    # Why is this so complicated?? Well... we use patch.object on each attribute's current value to both unfreeze it
+    # for the duration of the block and ensure it's reverted after the ctx mngr exits, no matter how it got mutated.
+    # Any *_cache attrs are skipped here and instead cleared via clear_caches(). This is because patch.object would
+    # just restore the same dict object by ref, (ie the mutated one), so nothing would actually revert:
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(cs, "_ConcurrencySettings__frozen", False))
+        for sub in subs:
+            for key, value in vars(sub).items():
+                if not key.endswith("_cache"):
+                    stack.enter_context(patch.object(sub, key, value))
+        clear_caches()
+        try:
+            yield cs
+        finally:
+            clear_caches()
 
 
 @contextmanager
