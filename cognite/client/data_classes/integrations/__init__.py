@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+from cognite.client.data_classes.integrations.actions import (
+    Action,
+    ActionList,
+    ActionWrite,
+    ActionWriteList,
+)
 from cognite.client.data_classes.integrations.config import (
     ConfigRevision,
     ConfigRevisionMetadata,
@@ -26,6 +32,10 @@ from cognite.client.data_classes.integrations.tasks import (
 )
 
 __all__ = [
+    "Action",
+    "ActionList",
+    "ActionWrite",
+    "ActionWriteList",
     "ConfigRevision",
     "ConfigRevisionMetadata",
     "ConfigRevisionMetadataList",

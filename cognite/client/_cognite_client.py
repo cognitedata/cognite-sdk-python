@@ -87,6 +87,7 @@ if _should_build_docs := os.getenv("BUILD_COGNITE_SDK_DOCS") == "true":
         SessionsAPI,
         TokenAPI,
     )
+    from cognite.client._api.integrations.actions import IntegrationActionsAPI
     from cognite.client._api.integrations.config import IntegrationConfigAPI
     from cognite.client._api.integrations.errors import IntegrationErrorsAPI
     from cognite.client._api.integrations.history import IntegrationHistoryAPI
@@ -491,6 +492,7 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.integrations.history = IntegrationHistoryAPI  # type: ignore
     AsyncCogniteClient.integrations.errors = IntegrationErrorsAPI  # type: ignore
     AsyncCogniteClient.integrations.config = IntegrationConfigAPI  # type: ignore
+    AsyncCogniteClient.integrations.actions = IntegrationActionsAPI  # type: ignore
 
 
 if _should_build_docs:
