@@ -962,9 +962,9 @@ class TestRetrieveStateDatapoints:
         [
             pytest.param(
                 lambda client, ts_id: client.time_series.data.retrieve(
-                    instance_id=ts_id, aggregates="count", granularity="1h", limit=1
+                    instance_id=ts_id, aggregates="interpolation", granularity="1h", limit=1
                 ),
-                id="aggregate states retrieve",
+                id="interpolation aggregate states retrieve",
             ),
             pytest.param(
                 lambda client, ts_id: client.time_series.data.retrieve_arrays(
