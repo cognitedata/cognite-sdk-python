@@ -957,7 +957,9 @@ class TestRetrieveStateDatapoints:
             assert arr.string_states is not None
             assert len(arr.string_states) == 0
 
-            # TODO: awaiting implementation: `df = dps.to_pandas() & assert df.empty`
+            df = arr.to_pandas()
+            assert df.empty
+            assert list(df.columns) == [(ts_id, "numeric"), (ts_id, "string")]
 
     @pytest.mark.parametrize(
         "retrieve_call",
