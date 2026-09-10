@@ -730,14 +730,23 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             else:
                 return Datapoints(**self.ts_info, timestamp=[], value=[], **status_cols)
 
-        if self.is_state_dps:
-            raise NotImplementedError(
-                "State datapoints are not yet supported when using `retrieve_arrays(...)`. "
-                "Please use `retrieve(...)` instead"
-            )
-
         if self.query.include_status:
             status_cols.update(status_code=np.array([], dtype=np.int32), status_symbol=np.array([], dtype=np.object_))
+
+        if self.is_state_dps:
+            # Numpy has no notion of a nullable int32 array. Since bad status datapoints may be missing their numeric
+            # value, we always use float64 (NaN for missing) whenever the caller includes bad datapoints, regardless
+            # of whether any actually are missing so that the dtype stays consistent:
+            numeric_dtype = np.int32 if self.query.ignore_bad_datapoints else np.float64
+            return DatapointsArray._load_from_arrays(
+                {
+                    **self.ts_info,
+                    "timestamp": np.array([], dtype=np.int64),
+                    "numeric_states": np.array([], dtype=numeric_dtype),
+                    "string_states": np.array([], dtype=np.object_),
+                    **status_cols,
+                }
+            )
         return DatapointsArray._load_from_arrays(
             {
                 **self.ts_info,
@@ -765,11 +774,33 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 )
             if not self.query.ignore_bad_datapoints:
                 status_columns["null_timestamps"] = self.null_timestamps
+
+            data_columns: dict[str, Any]
+            if not self.is_state_dps:
+                data_columns = {"value": create_array_from_dps_container(self.dps_data)}
+            else:
+                # Numeric dtype for state dps depends on `ignore_bad_datapoints` setting (nullable or not), so we always
+                # warn the user about this. TODO: Maybe revisit this decision? Most users just call to_pandas() and then
+                # they get pandas extension dtype Int32, which is nullable...
+                numeric_dtype = np.int32 if self.query.ignore_bad_datapoints else np.float64
+                if not self.query.ignore_bad_datapoints:
+                    warnings.warn(
+                        "The setting `ignore_bad_datapoints=False` means a state time series' numeric state "
+                        "values can be missing. Since numpy has no notion of a nullable int32 array, the "
+                        "'numeric_states' array is upcast to float64, which can perfectly represent any int32 "
+                        "value and uses NaN for the missing ones.",
+                        UserWarning,
+                    )
+                num_list, str_list = create_state_lists_from_dps_container(self.dps_data)
+                data_columns = {
+                    "numeric_states": np.array(num_list, dtype=numeric_dtype),
+                    "string_states": np.array(str_list, dtype=np.object_),
+                }
             return DatapointsArray._load_from_arrays(
                 {
                     **self.ts_info,
                     "timestamp": create_array_from_dps_container(self.ts_data),
-                    "value": create_array_from_dps_container(self.dps_data),
+                    **data_columns,
                     **status_columns,
                 }
             )
@@ -828,25 +859,30 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             self._unpack_and_store_basic(idx, dps)
 
     def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:
-        if self.is_state_dps:
-            raise NotImplementedError(
-                "Retrieving raw state datapoints using `retrieve_arrays(...)` is not yet supported. "
-                "Please use `retrieve(...)` instead."
-            )
         self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
 
-        assert self.raw_dtype_numpy is not None
-        if self.query.ignore_bad_datapoints:
-            self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
+        if self.is_state_dps:
+            # Performance note: We don't materialize numpy arrays per-batch here like we do for "normal raw" datapoints
+            # to keep things simple (allows easy reuse of 'self.dps_data'). This gives a slightly higher-than-necessary
+            # memory footprint. Thus we do one final array conversion in `_get_result` instead.
+            dps = cast(StateDatapoints, dps)
+            if self.query.ignore_bad_datapoints:
+                self.dps_data[idx].append(DpsUnpackFns.extract_raw_num_and_str_state_dps(dps))
+            else:
+                self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_num_and_str_state_dps(dps))
         else:
-            # After this step, missing values (represented with None) will become NaNs and thus become
-            # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
-            # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
-            # use the DatapointsArray to replicate datapoints (exactly).
-            arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps, self.raw_dtype_numpy)
-            self.dps_data[idx].append(arr)
-            if missing_idxs:
-                self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
+            assert self.raw_dtype_numpy is not None
+            if self.query.ignore_bad_datapoints:
+                self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
+            else:
+                # After this step, missing values (represented with None) will become NaNs and thus become
+                # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
+                # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
+                # use the DatapointsArray to replicate datapoints (exactly).
+                arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps, self.raw_dtype_numpy)
+                self.dps_data[idx].append(arr)
+                if missing_idxs:
+                    self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
 
         if self.query.include_status:
             self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
