@@ -26,7 +26,9 @@ from cognite.client._proto.data_point_list_response_pb2 import TIMESERIES_TYPE_S
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
+    _NOT_YET_IMPLEMENTED_STATE_AGGS_CAMEL,
     _OBJECT_AGGREGATES_CAMEL,
+    _UNSUPPORTED_STATE_AGGS_CAMEL,
     Aggregate,
 )
 from cognite.client.data_classes.datapoints import (
@@ -987,6 +989,32 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         self._set_aggregate_vars(query.aggs_camel_case, use_numpy, query.include_status)
         super().__init__(query=query, use_numpy=use_numpy, **kwargs)
 
+    def _store_ts_info(self, res: DataPointListItem) -> None:
+        super()._store_ts_info(res)
+
+        # We raise as soon as we learn the time series is state-based (only known once the API has responded),
+        # rather than waiting until we're deep into unpacking/result-building:
+        if not self.is_state_dps:
+            return
+
+        if self.use_numpy:
+            raise NotImplementedError(
+                "Retrieving aggregate state datapoints is not yet supported when using numpy arrays "
+                "(i.e. retrieve_arrays). Please use 'retrieve' instead for now."
+            )
+        if unsupported_aggs := _UNSUPPORTED_STATE_AGGS_CAMEL.intersection(self.all_aggregates):
+            raise NotImplementedError(
+                f"Retrieving the aggregate(s) {sorted(unsupported_aggs)} for state datapoints is not yet supported. "
+                "It may not be supported until the next major version due to technicalities in what constitutes a breaking "
+                "change in our data classes. If you have an immediate need for this, please reach out on Github: "
+                "https://github.com/cognitedata/cognite-sdk-python/issues"
+            )
+        if not_yet_aggs := _NOT_YET_IMPLEMENTED_STATE_AGGS_CAMEL.intersection(self.all_aggregates):
+            raise NotImplementedError(
+                f"Retrieving the aggregate(s) {sorted(not_yet_aggs)} for state datapoints is not implemented yet, "
+                "but it's coming soon!"
+            )
+
     @cached_property
     def offset_next(self) -> int:
         return granularity_to_ms(cast(str, self.query.granularity))
@@ -1032,9 +1060,6 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         return Datapoints(timestamp=[], **self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _get_result(self) -> Datapoints | DatapointsArray:
-        if self.is_state_dps:
-            raise NotImplementedError("Retrieving aggregate state datapoints is not yet supported.")
-
         if not self.ts_data or self.query.limit == 0:
             return self._create_empty_result()
 
@@ -1069,9 +1094,6 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         return Datapoints(**self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:  # type: ignore [override]
-        if self.is_state_dps:
-            raise NotImplementedError("Retrieving aggregate state datapoints is not yet supported.")
-
         # Object aggregates are unpacked similarly for basic and numpy and only converted later (for numpy)
         if self.object_aggs:
             for agg, unpack_fn in zip(self.object_aggs, self.object_agg_unpack_fns):
