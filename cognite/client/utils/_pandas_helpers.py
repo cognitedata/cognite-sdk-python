@@ -350,6 +350,11 @@ class _DpsColumnInfo:
         self,
     ) -> NumpyObjArray | NumpyFloat64Array | NumpyInt64Array | NumpyUInt32Array | pd.arrays.IntegerArray:
         if self.is_array:
+            if self.state_type == "numeric":
+                # Numeric states are guaranteed to be valid 32-bit ints, but may contain missing values due to "bad status",
+                # so we always use the pandas extension dtype which is nullable (for consistency):
+                pd = local_import("pandas")
+                return pd.array(self.data, dtype="Int32")
             return self.data
 
         elif self.aggregate is None:
@@ -363,8 +368,6 @@ class _DpsColumnInfo:
         import numpy as np
 
         if self.state_type == "numeric":
-            # Numeric states are guaranteed to be valid 32-bit ints, but may contain missing values due to "bad status",
-            # so we use the pandas extension dtype which is nullable:
             pd = local_import("pandas")
             return pd.array(self.data, dtype="Int32")
 
