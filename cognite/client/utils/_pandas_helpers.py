@@ -462,6 +462,16 @@ def _extract_raw_column_info(
     return columns
 
 
+def get_unit_for_aggregate(dps: Datapoints | DatapointsArray, aggregate: str) -> str | None:
+    # We show physical unit if the aggregate somewhat makes sense (e.g. average, but also (..)_variance).
+    # State time series have no notion of a physical unit for any of their aggregates (e.g. 'interpolation'
+    # is not well-defined for a discrete state), so we never show unit for these, regardless of the aggregate:
+    if dps.type == "state" or aggregate not in _AGGREGATES_WITH_UNIT:
+        return None
+    # Note the '... or None' is there because the API returns empty string when missing for some reason:
+    return dps.unit_external_id or None
+
+
 def _extract_aggregate_column_info_from_dps(
     dps: Datapoints | DatapointsArray, identifier: NodeId | str | int, is_array: bool
 ) -> list[_DpsColumnInfo]:
@@ -473,9 +483,7 @@ def _extract_aggregate_column_info_from_dps(
             is_array=is_array,
             aggregate=agg,
             granularity=dps.granularity,
-            # We show physical unit if the aggregate somewhat makes sense (e.g. average, but also (..)_variance).
-            # Note the '... or None' is there because the API returns empty string when missing for some reason:
-            unit_xid=dps.unit_external_id or None if agg in _AGGREGATES_WITH_UNIT else None,
+            unit_xid=get_unit_for_aggregate(dps, agg),
         )
         for agg in aggregates
     ]
@@ -488,7 +496,6 @@ def _extract_column_info_from_dps_for_dataframe(
 
     identifier = _resolve_ts_identifier_as_df_column_name(dps)
     is_array = isinstance(dps, DatapointsArray)
-    # TODO: State raw vs aggregate dps must be routed differently (when we have support for the latter...)
     if dps.type == "state":
         if is_array:
             # Unreachable state in the SDK, but users may instantiate manually, so we need to handle it:
@@ -497,10 +504,7 @@ def _extract_column_info_from_dps_for_dataframe(
             )
         assert isinstance(dps, Datapoints)  # mypy doesn't understand the is-array-raise-check above...
         if dps.numeric_states is None or dps.string_states is None:
-            # ...also unreachable, but same gotcha as above:
-            raise NotImplementedError(
-                "State aggregate datapoints are not yet supported for conversion to pandas DataFrame"
-            )
+            return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
         else:
             return _extract_raw_states_column_info(
                 dps, identifier, include_status, include_numeric_states, include_string_states
