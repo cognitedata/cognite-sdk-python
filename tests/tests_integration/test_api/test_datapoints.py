@@ -961,6 +961,109 @@ class TestRetrieveStateDatapoints:
             assert df.empty
             assert list(df.columns) == [(ts_id, "numeric"), (ts_id, "string")]
 
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    def test_retrieve_arrays_state_datapoints_and_pandas_conversion(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        space_for_time_series: Space,
+        state_set: NodeApplyResult,
+        request: pytest.FixtureRequest,
+    ) -> None:
+        xid = f"dms-state-to-pandas-{random_string(10)}"
+        node_id = NodeId(space_for_time_series.space, xid)
+        request.addfinalizer(lambda: cognite_client.data_modeling.instances.delete(node_id))
+        _create_state_time_series(
+            external_id=xid,
+            cognite_client=cognite_client,
+            async_client=async_client,
+            space_for_time_series=space_for_time_series,
+            state_set=state_set,
+        )
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=node_id,
+                datapoints=[
+                    StateDatapointWrite(1_700_000_000, numeric_value=0),
+                    StateDatapointWrite(1_700_001_000, numeric_value=1),
+                    StateDatapointWrite(1_700_002_000, status_symbol="Bad"),
+                ],
+            )
+        )
+        arr_bad, arr_good = arr_lst = cognite_client.time_series.data.retrieve_arrays(
+            instance_id=[
+                DatapointsQuery(instance_id=node_id, ignore_bad_datapoints=False),
+                DatapointsQuery(instance_id=node_id, ignore_bad_datapoints=True),
+            ],
+            limit=10,
+        )
+        assert isinstance(arr_lst, DatapointsArrayList)
+        assert isinstance(arr_bad, DatapointsArray) and isinstance(arr_good, DatapointsArray)
+        assert arr_bad.type == arr_good.type == "state"
+
+        assert arr_good.numeric_states is not None and arr_good.string_states is not None
+        assert arr_good.numeric_states.dtype == np.int32
+        np.testing.assert_array_equal(arr_good.numeric_states, [0, 1])
+        assert arr_good.string_states.dtype == np.object_
+        np.testing.assert_array_equal(arr_good.string_states, np.array(["idle", "on"], dtype=np.object_))
+
+        assert arr_bad.numeric_states is not None and arr_bad.string_states is not None
+        assert arr_bad.numeric_states.dtype == np.float64  # upcast from int32 to hold the missing (bad) dp as NaN
+        np.testing.assert_array_equal(arr_bad.numeric_states, [0.0, 1.0, np.nan])
+        assert arr_bad.string_states.dtype == np.object_
+        np.testing.assert_array_equal(arr_bad.string_states, np.array(["idle", "on", None], dtype=np.object_))
+
+        df_bad = arr_bad.to_pandas()
+        assert len(df_bad) == 3
+        assert list(df_bad.columns) == [(node_id, "numeric"), (node_id, "string")]
+        np.testing.assert_array_equal(
+            df_bad[(node_id, "numeric")].to_numpy(dtype=np.float64, na_value=np.nan), [0.0, 1.0, np.nan]
+        )
+        assert df_bad[(node_id, "string")].tolist() == ["idle", "on", None]
+
+        df_good = arr_good.to_pandas()
+        assert len(df_good) == 2
+        np.testing.assert_array_equal(df_good[(node_id, "numeric")].to_numpy(dtype=np.float64), [0, 1])
+        assert df_good[(node_id, "string")].tolist() == ["idle", "on"]
+
+        # DatapointsArrayList.to_pandas() concatenates both to a shared index, thus necessarily adding a missing
+        # row for the "good" array:
+        df_from_arr_lst = arr_lst.to_pandas()
+        idx_expected = pd.to_datetime([1_700_000_000, 1_700_001_000, 1_700_002_000], unit="ms")
+        idx_expected.freq = pd.infer_freq(idx_expected)
+        df_expected = pd.DataFrame(
+            {
+                0: pd.array([0, 1, None], dtype="Int32"),
+                1: ["idle", "on", None],
+                2: pd.array([0, 1, None], dtype="Int32"),
+                3: ["idle", "on", None],
+            },
+            index=idx_expected,
+        )
+        df_expected.columns = pd.MultiIndex.from_tuples(
+            [(node_id, "numeric"), (node_id, "string"), (node_id, "numeric"), (node_id, "string")],
+            names=["identifier", "state"],
+        )
+        pd.testing.assert_frame_equal(df_from_arr_lst, df_expected)
+
+        # Last check, ensure we produce -identical- DataFrames when compared to the non-array version:
+        dps_bad, dps_good = dps_lst = cognite_client.time_series.data.retrieve(
+            instance_id=[
+                DatapointsQuery(instance_id=node_id, ignore_bad_datapoints=False),
+                DatapointsQuery(instance_id=node_id, ignore_bad_datapoints=True),
+            ],
+            limit=10,
+        )
+        assert isinstance(dps_lst, DatapointsList)
+        assert isinstance(dps_bad, Datapoints) and isinstance(dps_good, Datapoints)
+
+        pd.testing.assert_frame_equal(dps_bad.to_pandas(), df_bad)
+        pd.testing.assert_frame_equal(dps_good.to_pandas(), df_good)
+        pd.testing.assert_frame_equal(dps_lst.to_pandas(), df_from_arr_lst)
+
     @pytest.mark.parametrize(
         "retrieve_call",
         [
