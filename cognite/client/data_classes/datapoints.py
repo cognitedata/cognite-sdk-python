@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import datetime
 import json
+import math
 from abc import abstractmethod
 from collections import ChainMap, defaultdict
 from collections.abc import Iterator, MutableSequence, Sequence
@@ -78,8 +79,8 @@ _T_DPS = TypeVar("_T_DPS", "Datapoints", "DatapointsArray")
 
 
 def numpy_dtype_fix(
-    element: np.float64 | str | MaxOrMinDatapoint, camel_case: bool = False
-) -> float | str | dict[str, int | float | str]:
+    element: np.float64 | str | MaxOrMinDatapoint | None, camel_case: bool = False
+) -> float | str | dict[str, int | float | str] | None:
     try:
         # Using .item() on numpy scalars gives us vanilla python types:
         return element.item()  # type: ignore [union-attr]
@@ -89,6 +90,10 @@ def numpy_dtype_fix(
             return element
         elif isinstance(element, MaxOrMinDatapoint):
             return element.dump(camel_case=camel_case)
+        elif element is None:
+            # State dps (string version) holds None whenever the state no longer exists in the StateSet
+            # mapping (ie. this is expected also outside of the "missing-due-to-bad-status" scenario):
+            return None
         raise
 
 
@@ -563,6 +568,9 @@ class LatestDatapointQuery:
         return self._identifier  # type: ignore [attr-defined]
 
 
+# TODO: Absolutely need a refactor/split in v9. Now represent a simple raw datapoint, state datapoint
+#       and aggregate datapoints (yes multiple)
+#       Should probably just be removed. Iterating over Datapoints should not be a thing.
 class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
@@ -858,7 +866,12 @@ class DatapointsArray(CogniteResource):
             for row in dps_dct["datapoints"]:
                 for attr, value in row.items():
                     datapoints_by_attr[attr].append(value)
+
+            # Pop away special attributes that need separate handling:
             status = datapoints_by_attr.pop("status", None)
+            numeric_state = datapoints_by_attr.pop("numericState", None)
+            string_state = datapoints_by_attr.pop("stringState", None)
+
             for attr, values in datapoints_by_attr.items():
                 if attr == "timestamp":
                     array_by_attr[attr] = np.array(values, dtype="datetime64[ms]").astype("datetime64[ns]")
@@ -869,9 +882,18 @@ class DatapointsArray(CogniteResource):
                         array_by_attr[attr] = np.array(values, dtype=np.float64)
                     except ValueError:
                         array_by_attr[attr] = np.array(values, dtype=np.object_)
+
             if status is not None:
                 array_by_attr["statusCode"] = np.array([s["code"] for s in status], dtype=np.uint32)
                 array_by_attr["statusSymbol"] = np.array([s["symbol"] for s in status], dtype=np.object_)
+
+            if numeric_state is not None:
+                num_arr = np.array(numeric_state, dtype=np.float64)
+                if not np.isnan(num_arr).any():
+                    array_by_attr["numericStates"] = num_arr.astype(np.int32)
+
+            if string_state is not None:
+                array_by_attr["stringStates"] = np.array(string_state, dtype=np.object_)
 
         timezone = dps_dct.get("timezone")
         if isinstance(timezone, str):
@@ -889,6 +911,8 @@ class DatapointsArray(CogniteResource):
             unit_external_id=dps_dct.get("unitExternalId"),
             timestamp=array_by_attr.get("timestamp"),
             value=array_by_attr.get("value"),
+            numeric_states=array_by_attr.get("numericStates"),
+            string_states=array_by_attr.get("stringStates"),
             average=array_by_attr.get("average"),
             max=array_by_attr.get("max"),
             min=array_by_attr.get("min"),
@@ -931,6 +955,7 @@ class DatapointsArray(CogniteResource):
     def __getitem__(self, item: int | slice) -> Datapoint | DatapointsArray:
         if isinstance(item, slice):
             return self._slice(item)
+
         attrs, arrays = self._data_fields()
         timestamp = arrays[0][item].item() // 1_000_000
         data: dict[str, float | str | dict | None] = {
@@ -939,8 +964,16 @@ class DatapointsArray(CogniteResource):
         for key in ("min_datapoint", "max_datapoint"):
             if key in data:
                 data[key] = getattr(self, key)[item]
+        for key in ("numeric_states", "string_states"):
+            if key in data:
+                data[key[:-1]] = data.pop(key)  # quick way to get non-plural version of the key
+        if isinstance(val := data.get("numeric_state"), float):
+            # Map floats back to int, but convert NaN to None:
+            data["numeric_state"] = None if math.isnan(val) else int(val)
+
         if self.status_code is not None:
             data.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
+
         if self.null_timestamps and timestamp in self.null_timestamps:
             data["value"] = None
         return Datapoint(timestamp=timestamp, **data, timezone=self.timezone)  # type: ignore [arg-type]
@@ -964,12 +997,9 @@ class DatapointsArray(CogniteResource):
         )
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
-        # Note: Does not return status-related fields
-        data_field_tuples = [
-            (attr, arr)
-            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first
-            if (arr := getattr(self, attr)) is not None
-        ]
+        # Note: Does not return status-related fields. ts must be first:
+        fields = ("timestamp", "value", "numeric_states", "string_states", *ALL_SORTED_DP_AGGS)
+        data_field_tuples = [(attr, arr) for attr in fields if (arr := getattr(self, attr)) is not None]
         attrs, arrays = map(list, zip(*data_field_tuples))
         return attrs, arrays
 
@@ -1012,6 +1042,25 @@ class DatapointsArray(CogniteResource):
         convert_fn = partial(numpy_dtype_fix, camel_case=camel_case)
         datapoints = [dict(zip(attrs, map(convert_fn, row))) for row in zip(*arrays)]
 
+        if self.numeric_states is not None:
+            num_key = "numericState" if camel_case else "numeric_state"
+            plural_num_key = f"{num_key}s"
+            if self.numeric_states.dtype == np.float64:
+                # As numpy int arrays can't represent NaN, float64 is used when we need to accommodate for missing
+                # values. Thus, we need to convert both back to int and convert NaN to None:
+                for dp in datapoints:
+                    val = dp.pop(plural_num_key)
+                    dp[num_key] = None if math.isnan(val) else int(val)  # type: ignore [arg-type]
+            else:
+                for dp in datapoints:
+                    dp[num_key] = dp.pop(plural_num_key)
+
+        if self.string_states is not None:
+            str_key = "stringState" if camel_case else "string_state"
+            plural_str_key = f"{str_key}s"
+            for dp in datapoints:
+                dp[str_key] = dp.pop(plural_str_key)
+
         if self.status_code is not None or self.status_symbol is not None:
             if (
                 self.status_code is None
@@ -1027,7 +1076,7 @@ class DatapointsArray(CogniteResource):
         if self.null_timestamps:
             for dp in datapoints:
                 if dp["timestamp"] in self.null_timestamps:  # ...luckily, we know :3
-                    dp["value"] = None  # type: ignore [assignment]
+                    dp["value"] = None
         dumped["datapoints"] = datapoints
 
         if camel_case:
@@ -1209,6 +1258,9 @@ class Datapoints(CogniteResource):
         dp_args: dict[str, Any] = {"timezone": self.timezone}
         for attr, values in self._get_non_empty_data_fields():
             dp_args[attr] = values[item]
+        for key in ("numeric_states", "string_states"):
+            if key in dp_args:
+                dp_args[key[:-1]] = dp_args.pop(key)  # quick way to get non-plural version of the key
 
         if self.status_code is not None:
             dp_args.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
@@ -1365,6 +1417,9 @@ class Datapoints(CogniteResource):
             dp_args: dict[str, Any] = {"timezone": self.timezone}
             for attr, value in fields:
                 dp_args[to_camel_case(attr)] = value[i]
+            for key in ("numericStates", "stringStates"):
+                if key in dp_args:
+                    dp_args[key[:-1]] = dp_args.pop(key)  # get non-plural version of the key
             if self.status_code is not None:
                 dp_args.update(
                     statusCode=self.status_code[i],
