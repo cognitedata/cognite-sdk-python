@@ -94,6 +94,8 @@ from tests.utils import (
 DATAPOINTS_API = "cognite.client._api.datapoints.{}"
 WEEK_MS = UNIT_IN_MS["w"]
 DAY_MS = UNIT_IN_MS["d"]
+HOUR_MS = UNIT_IN_MS["h"]
+MINUTE_MS = UNIT_IN_MS["m"]
 YEAR_MS = {
     1950: -631152000000,
     1965: -157766400000,
@@ -993,6 +995,89 @@ class TestRetrieveStateDatapoints:
         ts_id = empty_state_ts.as_id()
         with pytest.raises(NotImplementedError, match=r"[sS]tate datapoints"):
             retrieve_call(cognite_client, ts_id)
+
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    def test_retrieve_state_aggregate_datapoints(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        space_for_time_series: Space,
+        state_set: NodeApplyResult,
+        request: pytest.FixtureRequest,
+    ) -> None:
+        # These are (currently) the only aggregates the API supports for state time series:
+        aggs = [
+            "count",
+            "count_good",
+            "count_uncertain",
+            "count_bad",
+            "duration_good",
+            "duration_uncertain",
+            "duration_bad",
+        ]
+        xid = f"dms-state-aggregates-{random_string(10)}"
+        node_id = NodeId(space_for_time_series.space, xid)
+        request.addfinalizer(lambda: cognite_client.data_modeling.instances.delete(node_id))
+        _create_state_time_series(
+            external_id=xid,
+            cognite_client=cognite_client,
+            async_client=async_client,
+            space_for_time_series=space_for_time_series,
+            state_set=state_set,
+        )
+
+        base = 1_700_000_000_000
+        base -= base % HOUR_MS  # align to an hour boundary so our buckets are exact
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=node_id,
+                datapoints=[
+                    # Bucket 0, [base, base+1h): three good datapoints
+                    StateDatapointWrite(base, numeric_value=0),
+                    StateDatapointWrite(base + 10 * MINUTE_MS, numeric_value=1),
+                    StateDatapointWrite(base + 20 * MINUTE_MS, numeric_value=0),
+                    # Bucket 1, [base+1h, base+2h): one good, then one bad
+                    StateDatapointWrite(base + HOUR_MS, numeric_value=1),
+                    StateDatapointWrite(base + HOUR_MS + 10 * MINUTE_MS, status_symbol="Bad"),
+                    # Bucket 2, [base+2h, base+3h): an uncertain datapoint, closed off by a later good one. A status
+                    # with no datapoint after it *anywhere* in the retrieved data gets duration 0, since the API has
+                    # no way of knowing how long it persisted.
+                    StateDatapointWrite(base + 2 * HOUR_MS, numeric_value=0, status_symbol="Uncertain"),
+                    StateDatapointWrite(base + 2 * HOUR_MS + 40 * MINUTE_MS, numeric_value=1),
+                ],
+            )
+        )
+        dps = cognite_client.time_series.data.retrieve(
+            instance_id=node_id,
+            start=base,
+            end=base + 3 * HOUR_MS,
+            aggregates=aggs,
+            granularity="1h",
+        )
+        assert dps is not None
+        assert dps.type == "state"
+        assert len(dps) == 3
+        assert dps.count == [3, 1, 1]
+        assert dps.count_good == [3, 1, 1]
+        assert dps.count_uncertain == [0, 0, 1]
+        assert dps.count_bad == [0, 1, 0]
+
+        assert dps.duration_good is not None
+        assert dps.duration_uncertain is not None
+        assert dps.duration_bad is not None
+        assert all(d >= 0 for d in [*dps.duration_good, *dps.duration_uncertain, *dps.duration_bad])
+        assert dps.duration_good[0] == HOUR_MS  # good for the entire first bucket
+        assert dps.duration_good[1] == 10 * MINUTE_MS  # good until the bad datapoint arrives
+        assert dps.duration_bad[1] == 50 * MINUTE_MS  # bad until the next (good) datapoint, an hour later
+        assert dps.duration_uncertain[2] == 40 * MINUTE_MS  # uncertain until the closing good datapoint
+
+        df = dps.to_pandas(include_aggregate_name=True)
+        assert len(df) == 3
+        assert sorted(df.columns.get_level_values("aggregate")) == sorted(aggs)
+        assert set(df.columns.get_level_values("identifier")) == {node_id}
 
     @pytest.mark.parametrize("aggregate", ["interpolation", "step_interpolation"])
     def test_retrieve_state_aggregate_datapoints_interpolation_raises(
