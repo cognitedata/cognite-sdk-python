@@ -994,6 +994,28 @@ class TestRetrieveStateDatapoints:
         with pytest.raises(NotImplementedError, match=r"[sS]tate datapoints"):
             retrieve_call(cognite_client, ts_id)
 
+    @pytest.mark.parametrize("aggregate", ["interpolation", "step_interpolation"])
+    def test_retrieve_state_aggregate_datapoints_interpolation_raises(
+        self,
+        cognite_client: CogniteClient,
+        empty_state_ts: NodeApplyResult,
+        aggregate: str,
+    ) -> None:
+        ts_id = empty_state_ts.as_id()
+        with pytest.raises(NotImplementedError, match="not yet supported"):
+            cognite_client.time_series.data.retrieve(instance_id=ts_id, aggregates=aggregate, granularity="1h")
+
+    @pytest.mark.parametrize("aggregate", ["state_count", "state_transitions", "state_duration"])
+    def test_retrieve_state_aggregate_datapoints_not_yet_implemented_raises(
+        self,
+        cognite_client: CogniteClient,
+        empty_state_ts: NodeApplyResult,
+        aggregate: str,
+    ) -> None:
+        ts_id = empty_state_ts.as_id()
+        with pytest.raises(NotImplementedError, match="coming soon"):
+            cognite_client.time_series.data.retrieve(instance_id=ts_id, aggregates=aggregate, granularity="1h")
+
 
 @pytest.fixture
 def queries_for_iteration(all_test_time_series: TimeSeriesList) -> list[DatapointsQuery]:
