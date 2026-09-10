@@ -14,6 +14,18 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.17.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.16.1...v8.17.0) (2026-09-10)
+
+
+### Features
+
+* **state time series:** add retrieve_arrays support for raw state datapoints ([#2812](https://github.com/cognitedata/cognite-sdk-python/issues/2812)) ([6bc589c](https://github.com/cognitedata/cognite-sdk-python/commit/6bc589cc949201fb9beed565e0e2bed0cb3d9264))
+
+
+### Bug Fixes
+
+* **SyntheticTimeSeries:** Make synthetic time series more robust with special characters ([#2766](https://github.com/cognitedata/cognite-sdk-python/issues/2766)) ([21250c9](https://github.com/cognitedata/cognite-sdk-python/commit/21250c9bcad594d5c2d176a8f4f8727aa869ebdf))
+
 ## [8.16.1](https://github.com/cognitedata/cognite-sdk-python/compare/v8.16.0...v8.16.1) (2026-09-09)
 
 
