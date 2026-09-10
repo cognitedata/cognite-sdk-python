@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from cognite.client.data_classes.datapoints import (
         NumpyDatetime64NSArray,
         NumpyFloat64Array,
+        NumpyInt32Array,
         NumpyInt64Array,
         NumpyObjArray,
         NumpyUInt32Array,
@@ -322,6 +323,7 @@ class _DpsColumnInfo:
         | list[str | None]
         | list[int]
         | NumpyUInt32Array
+        | NumpyInt32Array
         | NumpyInt64Array
         | NumpyFloat64Array
         | NumpyObjArray
@@ -399,8 +401,9 @@ class _DpsColumnInfo:
 
 
 def _extract_raw_states_column_info(
-    dps: Datapoints,
+    dps: Datapoints | DatapointsArray,
     identifier: NodeId | str | int,
+    is_array: bool,
     include_status: bool,
     include_numeric_states: bool,
     include_string_states: bool,
@@ -413,7 +416,7 @@ def _extract_raw_states_column_info(
                 identifier,
                 data=dps.numeric_states,
                 is_string=False,
-                is_array=False,
+                is_array=is_array,
                 state_type="numeric",
             )
         )
@@ -424,15 +427,15 @@ def _extract_raw_states_column_info(
                 identifier,
                 data=dps.string_states,
                 is_string=True,
-                is_array=False,
+                is_array=is_array,
                 state_type="string",
             )
         )
     if include_status:
         if dps.status_code is not None:
-            columns.append(_DpsColumnInfo(identifier, data=dps.status_code, is_array=False, status_info="code"))
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_code, is_array=is_array, status_info="code"))
         if dps.status_symbol is not None:
-            columns.append(_DpsColumnInfo(identifier, data=dps.status_symbol, is_array=False, status_info="symbol"))
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_symbol, is_array=is_array, status_info="symbol"))
 
     return columns
 
@@ -497,17 +500,18 @@ def _extract_column_info_from_dps_for_dataframe(
     identifier = _resolve_ts_identifier_as_df_column_name(dps)
     is_array = isinstance(dps, DatapointsArray)
     if dps.type == "state":
-        if is_array:
-            # Unreachable state in the SDK, but users may instantiate manually, so we need to handle it:
-            raise NotImplementedError(
-                "State datapoints stored as DatapointsArray are not supported yet for conversion to pandas DataFrame"
-            )
-        assert isinstance(dps, Datapoints)  # mypy doesn't understand the is-array-raise-check above...
         if dps.numeric_states is None or dps.string_states is None:
+            if is_array:
+                # Unreachable state in the SDK, but users may instantiate manually, so we need to handle it:
+                raise NotImplementedError(
+                    "State aggregate datapoints stored as DatapointsArray are not supported yet for conversion to "
+                    "pandas DataFrame"
+                )
+            assert isinstance(dps, Datapoints)  # mypy doesn't understand the is-array-check above...
             return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
         else:
             return _extract_raw_states_column_info(
-                dps, identifier, include_status, include_numeric_states, include_string_states
+                dps, identifier, is_array, include_status, include_numeric_states, include_string_states
             )
     elif dps.value is not None:
         return _extract_raw_column_info(dps, identifier, is_array, include_status)
