@@ -3,8 +3,11 @@ from __future__ import annotations
 from cognite.client.data_classes.integrations import (
     Extractor,
     Integration,
+    IntegrationError,
     IntegrationUpdate,
+    SyncResult,
     Task,
+    TaskHistory,
 )
 
 INTEGRATION_DUMPED = {
@@ -84,6 +87,48 @@ class TestIntegrationUpdate:
             "externalId": "my-integration",
             "update": {"metadata": {"set": {"key": "value"}}},
         }
+
+
+class TestSyncResult:
+    def test_load_dump_round_trip(self) -> None:
+        dumped = {
+            "nextCursor": "abc123",
+            "moreData": True,
+            "history": [
+                {
+                    "externalId": "my-integration",
+                    "taskName": "poll",
+                    "startTime": 100,
+                    "errorCount": 0,
+                    "warningCount": 0,
+                    "fatalCount": 0,
+                }
+            ],
+            "errors": [
+                {
+                    "externalId": "my-integration",
+                    "level": "warning",
+                    "description": "Slow response",
+                    "startTime": 100,
+                }
+            ],
+        }
+        loaded = SyncResult._load(dumped)
+
+        assert loaded.next_cursor == "abc123"
+        assert loaded.more_data is True
+        assert loaded.history is not None
+        assert loaded.errors is not None
+        assert isinstance(loaded.history[0], TaskHistory)
+        assert isinstance(loaded.errors[0], IntegrationError)
+
+        assert loaded.dump(camel_case=True) == dumped
+
+    def test_load_with_explicit_null_history_and_errors(self) -> None:
+        loaded = SyncResult._load({"nextCursor": "abc123", "moreData": False, "history": None, "errors": None})
+
+        assert loaded.history is None
+        assert loaded.errors is None
 
 
 def test_extractor_load_dump() -> None:
