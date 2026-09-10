@@ -26,7 +26,9 @@ from cognite.client._proto.data_point_list_response_pb2 import TIMESERIES_TYPE_S
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
+    _NOT_YET_IMPLEMENTED_STATE_AGGS_CAMEL,
     _OBJECT_AGGREGATES_CAMEL,
+    _UNSUPPORTED_STATE_AGGS_CAMEL,
     Aggregate,
 )
 from cognite.client.data_classes.datapoints import (
