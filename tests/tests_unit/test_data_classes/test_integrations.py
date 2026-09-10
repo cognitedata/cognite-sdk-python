@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from cognite.client.data_classes.integrations import (
+    ConfigRevision,
     Extractor,
     Integration,
     IntegrationError,
@@ -129,6 +130,29 @@ class TestSyncResult:
 
         assert loaded.history is None
         assert loaded.errors is None
+
+
+class TestConfigRevision:
+    def test_load_dump_round_trip(self) -> None:
+        dumped = {
+            "externalId": "my-integration",
+            "revision": 3,
+            "description": "A config revision",
+            "config": "key: value",
+            "createdTime": 1,
+            "lastUpdatedTime": 2,
+        }
+        loaded = ConfigRevision._load(dumped)
+
+        assert loaded.revision == 3
+        assert loaded.dump(camel_case=True) == dumped
+
+        write = loaded.as_write()
+        assert write.dump(camel_case=True) == {
+            "externalId": "my-integration",
+            "config": "key: value",
+            "description": "A config revision",
+        }
 
 
 def test_extractor_load_dump() -> None:

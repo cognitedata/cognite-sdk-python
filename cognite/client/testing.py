@@ -52,6 +52,7 @@ from cognite.client._api.iam.security_categories import SecurityCategoriesAPI
 from cognite.client._api.iam.sessions import SessionsAPI
 from cognite.client._api.iam.token import TokenAPI
 from cognite.client._api.integrations import IntegrationsAPI
+from cognite.client._api.integrations.config import IntegrationConfigAPI
 from cognite.client._api.integrations.errors import IntegrationErrorsAPI
 from cognite.client._api.integrations.tasks import IntegrationTasksAPI
 from cognite.client._api.labels import LabelsAPI
@@ -144,6 +145,7 @@ from cognite.client._sync_api.iam.security_categories import SyncSecurityCategor
 from cognite.client._sync_api.iam.sessions import SyncSessionsAPI
 from cognite.client._sync_api.iam.token import SyncTokenAPI
 from cognite.client._sync_api.integrations import SyncIntegrationsAPI
+from cognite.client._sync_api.integrations.config import SyncIntegrationConfigAPI
 from cognite.client._sync_api.integrations.errors import SyncIntegrationErrorsAPI
 from cognite.client._sync_api.integrations.tasks import SyncIntegrationTasksAPI
 from cognite.client._sync_api.labels import SyncLabelsAPI
@@ -344,8 +346,13 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
         integrations_tasks = create_autospec(IntegrationTasksAPI, instance=True, spec_set=True)
         integrations_errors = create_autospec(IntegrationErrorsAPI, instance=True, spec_set=True)
+        integrations_config = create_autospec(IntegrationConfigAPI, instance=True, spec_set=True)
         self.integrations = create_autospec(
-            IntegrationsAPI, instance=True, tasks=integrations_tasks, errors=integrations_errors
+            IntegrationsAPI,
+            instance=True,
+            tasks=integrations_tasks,
+            errors=integrations_errors,
+            config=integrations_config,
         )
         flip_spec_set_on(self.integrations)
 
@@ -562,8 +569,13 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
         integrations_tasks = create_autospec(SyncIntegrationTasksAPI, instance=True, spec_set=True)
         integrations_errors = create_autospec(SyncIntegrationErrorsAPI, instance=True, spec_set=True)
+        integrations_config = create_autospec(SyncIntegrationConfigAPI, instance=True, spec_set=True)
         self.integrations = create_autospec(
-            SyncIntegrationsAPI, instance=True, tasks=integrations_tasks, errors=integrations_errors
+            SyncIntegrationsAPI,
+            instance=True,
+            tasks=integrations_tasks,
+            errors=integrations_errors,
+            config=integrations_config,
         )
         flip_spec_set_on(self.integrations)
 
