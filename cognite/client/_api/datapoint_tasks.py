@@ -1034,9 +1034,6 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         return Datapoints(timestamp=[], **self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _get_result(self) -> Datapoints | DatapointsArray:
-        if self.is_state_dps:
-            raise NotImplementedError("Retrieving aggregate state datapoints is not yet supported.")
-
         if not self.ts_data or self.query.limit == 0:
             return self._create_empty_result()
 
@@ -1071,9 +1068,6 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         return Datapoints(**self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:  # type: ignore [override]
-        if self.is_state_dps:
-            raise NotImplementedError("Retrieving aggregate state datapoints is not yet supported.")
-
         # Object aggregates are unpacked similarly for basic and numpy and only converted later (for numpy)
         if self.object_aggs:
             for agg, unpack_fn in zip(self.object_aggs, self.object_agg_unpack_fns):
