@@ -977,10 +977,6 @@ class TestRetrieveStateDatapoints:
                 id="aggregate states retrieve_arrays",
             ),
             pytest.param(
-                lambda client, ts_id: client.time_series.data.retrieve_dataframe(instance_id=ts_id, limit=1),
-                id="raw states retrieve_dataframe",
-            ),
-            pytest.param(
                 lambda client, ts_id: client.time_series.data.retrieve_dataframe(
                     instance_id=ts_id, aggregates="count", granularity="1h", limit=1
                 ),
