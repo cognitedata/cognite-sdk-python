@@ -348,14 +348,29 @@ class _DpsColumnInfo:
 
     def as_array(
         self,
-    ) -> NumpyObjArray | NumpyFloat64Array | NumpyInt64Array | NumpyUInt32Array | pd.arrays.IntegerArray:
+    ) -> (
+        NumpyObjArray
+        | NumpyFloat64Array
+        | NumpyInt64Array
+        | NumpyUInt32Array
+        | pd.arrays.IntegerArray
+        | pd.arrays.Categorical
+    ):
         if self.is_array:
             if self.state_type == "numeric":
                 # Numeric states are guaranteed to be valid 32-bit ints, but may contain missing values due to "bad status",
                 # so we always use the pandas extension dtype which is nullable (for consistency):
                 pd = local_import("pandas")
                 return pd.array(self.data, dtype="Int32")
-            return self.data
+
+            elif self.state_type == "string":
+                # String states come from a small, fixed set of possible values (the state set), so we use the categorical
+                # dtype here which is dirt cheap to store and operate (no repeated string objects).
+                # It also fixes the annoying pandas v2/v3 difference between missing (None vs NaN) for 'object' and 'str'.
+                pd = local_import("pandas")
+                return pd.Categorical(self.data, unordered=True)
+            else:
+                return self.data
 
         elif self.aggregate is None:
             return self._convert_to_array_for_raw_dps()
