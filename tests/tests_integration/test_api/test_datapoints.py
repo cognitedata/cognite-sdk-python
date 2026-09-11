@@ -1022,8 +1022,8 @@ class TestRetrieveStateDatapoints:
         np.testing.assert_array_equal(
             df_bad[(node_id, "numeric")].to_numpy(dtype=np.float64, na_value=np.nan), [0.0, 1.0, np.nan]
         )
-        # Missing string states are represented as None on pandas v2 (object dtype) and as
-        # NaN on pandas v3 (its new native 'str' dtype), see PANDAS_STR_DTYPE:
+        # String states use the pandas 'category' dtype which represents missing as NaN regardless of pandas v2/v3:
+        assert df_bad[(node_id, "string")].dtype == "category"
         string_values = df_bad[(node_id, "string")].tolist()
         assert string_values[:2] == ["idle", "on"]
         assert pd.isna(string_values[2])
@@ -1041,9 +1041,9 @@ class TestRetrieveStateDatapoints:
         df_expected = pd.DataFrame(
             {
                 0: pd.array([0, 1, None], dtype="Int32"),
-                1: ["idle", "on", None],
+                1: pd.Categorical(["idle", "on", None]),
                 2: pd.array([0, 1, None], dtype="Int32"),
-                3: ["idle", "on", None],
+                3: pd.Categorical(["idle", "on", None]),
             },
             index=idx_expected,
         )
