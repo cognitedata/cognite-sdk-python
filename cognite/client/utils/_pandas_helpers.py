@@ -379,12 +379,22 @@ class _DpsColumnInfo:
 
     def _convert_to_array_for_raw_dps(
         self,
-    ) -> npt.NDArray[np.object_] | npt.NDArray[np.float64] | npt.NDArray[np.uint32] | pd.arrays.IntegerArray:
+    ) -> (
+        npt.NDArray[np.object_]
+        | npt.NDArray[np.float64]
+        | npt.NDArray[np.uint32]
+        | pd.arrays.IntegerArray
+        | pd.arrays.Categorical
+    ):
         import numpy as np
 
         if self.state_type == "numeric":
             pd = local_import("pandas")
             return pd.array(self.data, dtype="Int32")
+
+        if self.state_type == "string":
+            pd = local_import("pandas")
+            return pd.Categorical(self.data, unordered=True)
 
         match self.is_string, self.status_info:
             case True, None:
