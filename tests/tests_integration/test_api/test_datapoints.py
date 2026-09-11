@@ -1022,7 +1022,11 @@ class TestRetrieveStateDatapoints:
         np.testing.assert_array_equal(
             df_bad[(node_id, "numeric")].to_numpy(dtype=np.float64, na_value=np.nan), [0.0, 1.0, np.nan]
         )
-        assert df_bad[(node_id, "string")].tolist() == ["idle", "on", None]
+        # Missing string states are represented as None on pandas v2 (object dtype) and as
+        # NaN on pandas v3 (its new native 'str' dtype), see PANDAS_STR_DTYPE:
+        string_values = df_bad[(node_id, "string")].tolist()
+        assert string_values[:2] == ["idle", "on"]
+        assert pd.isna(string_values[2])
 
         df_good = arr_good.to_pandas()
         assert len(df_good) == 2
