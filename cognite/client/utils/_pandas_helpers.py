@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from cognite.client.data_classes.datapoints import (
         NumpyDatetime64NSArray,
         NumpyFloat64Array,
+        NumpyInt32Array,
         NumpyInt64Array,
         NumpyObjArray,
         NumpyUInt32Array,
@@ -322,6 +323,7 @@ class _DpsColumnInfo:
         | list[str | None]
         | list[int]
         | NumpyUInt32Array
+        | NumpyInt32Array
         | NumpyInt64Array
         | NumpyFloat64Array
         | NumpyObjArray
@@ -346,9 +348,29 @@ class _DpsColumnInfo:
 
     def as_array(
         self,
-    ) -> NumpyObjArray | NumpyFloat64Array | NumpyInt64Array | NumpyUInt32Array | pd.arrays.IntegerArray:
+    ) -> (
+        NumpyObjArray
+        | NumpyFloat64Array
+        | NumpyInt64Array
+        | NumpyUInt32Array
+        | pd.arrays.IntegerArray
+        | pd.arrays.Categorical
+    ):
         if self.is_array:
-            return self.data
+            if self.state_type == "numeric":
+                # Numeric states are guaranteed to be valid 32-bit ints, but may contain missing values due to "bad status",
+                # so we always use the pandas extension dtype which is nullable (for consistency):
+                pd = local_import("pandas")
+                return pd.array(self.data, dtype="Int32")
+
+            elif self.state_type == "string":
+                # String states come from a small, fixed set of possible values (the state set), so we use the categorical
+                # dtype here which is dirt cheap to store and operate (no repeated string objects).
+                # It also fixes the annoying pandas v2/v3 difference between missing (None vs NaN) for 'object' and 'str'.
+                pd = local_import("pandas")
+                return pd.Categorical(self.data, ordered=False)
+            else:
+                return self.data
 
         elif self.aggregate is None:
             return self._convert_to_array_for_raw_dps()
@@ -357,14 +379,22 @@ class _DpsColumnInfo:
 
     def _convert_to_array_for_raw_dps(
         self,
-    ) -> npt.NDArray[np.object_] | npt.NDArray[np.float64] | npt.NDArray[np.uint32] | pd.arrays.IntegerArray:
+    ) -> (
+        npt.NDArray[np.object_]
+        | npt.NDArray[np.float64]
+        | npt.NDArray[np.uint32]
+        | pd.arrays.IntegerArray
+        | pd.arrays.Categorical
+    ):
         import numpy as np
 
         if self.state_type == "numeric":
-            # Numeric states are guaranteed to be valid 32-bit ints, but may contain missing values due to "bad status",
-            # so we use the pandas extension dtype which is nullable:
             pd = local_import("pandas")
             return pd.array(self.data, dtype="Int32")
+
+        if self.state_type == "string":
+            pd = local_import("pandas")
+            return pd.Categorical(self.data, ordered=False)
 
         match self.is_string, self.status_info:
             case True, None:
@@ -399,8 +429,9 @@ class _DpsColumnInfo:
 
 
 def _extract_raw_states_column_info(
-    dps: Datapoints,
+    dps: Datapoints | DatapointsArray,
     identifier: NodeId | str | int,
+    is_array: bool,
     include_status: bool,
     include_numeric_states: bool,
     include_string_states: bool,
@@ -413,7 +444,7 @@ def _extract_raw_states_column_info(
                 identifier,
                 data=dps.numeric_states,
                 is_string=False,
-                is_array=False,
+                is_array=is_array,
                 state_type="numeric",
             )
         )
@@ -424,15 +455,15 @@ def _extract_raw_states_column_info(
                 identifier,
                 data=dps.string_states,
                 is_string=True,
-                is_array=False,
+                is_array=is_array,
                 state_type="string",
             )
         )
     if include_status:
         if dps.status_code is not None:
-            columns.append(_DpsColumnInfo(identifier, data=dps.status_code, is_array=False, status_info="code"))
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_code, is_array=is_array, status_info="code"))
         if dps.status_symbol is not None:
-            columns.append(_DpsColumnInfo(identifier, data=dps.status_symbol, is_array=False, status_info="symbol"))
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_symbol, is_array=is_array, status_info="symbol"))
 
     return columns
 
@@ -497,17 +528,18 @@ def _extract_column_info_from_dps_for_dataframe(
     identifier = _resolve_ts_identifier_as_df_column_name(dps)
     is_array = isinstance(dps, DatapointsArray)
     if dps.type == "state":
-        if is_array:
-            # Unreachable state in the SDK, but users may instantiate manually, so we need to handle it:
-            raise NotImplementedError(
-                "State datapoints stored as DatapointsArray are not supported yet for conversion to pandas DataFrame"
-            )
-        assert isinstance(dps, Datapoints)  # mypy doesn't understand the is-array-raise-check above...
         if dps.numeric_states is None or dps.string_states is None:
+            if is_array:
+                # Unreachable state in the SDK, but users may instantiate manually, so we need to handle it:
+                raise NotImplementedError(
+                    "State aggregate datapoints stored as DatapointsArray are not supported yet for conversion to "
+                    "pandas DataFrame"
+                )
+            assert isinstance(dps, Datapoints)  # mypy doesn't understand the is-array-check above...
             return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
         else:
             return _extract_raw_states_column_info(
-                dps, identifier, include_status, include_numeric_states, include_string_states
+                dps, identifier, is_array, include_status, include_numeric_states, include_string_states
             )
     elif dps.value is not None:
         return _extract_raw_column_info(dps, identifier, is_array, include_status)
