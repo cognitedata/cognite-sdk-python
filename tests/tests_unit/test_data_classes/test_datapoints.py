@@ -11,7 +11,7 @@ from cognite.client.data_classes import Datapoint, DatapointsArray, StateDatapoi
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import Datapoints, DatapointsArrayList, DatapointsList
-from tests.utils import PANDAS_STR_DTYPE, PANDAS_TS_UNIT
+from tests.utils import PANDAS_TS_UNIT
 
 
 class TestDatapoint:
@@ -272,12 +272,10 @@ class TestStateDatapointsToPandas:
         assert numeric_values[3] is pd.NA
         assert df[node_id, "numeric"].dtype == "Int32"
 
-        # Missing string states are represented as None on pandas v2 (object dtype) and as
-        # NaN on pandas v3 (its new native 'str' dtype), see PANDAS_STR_DTYPE:
         string_values = df[node_id, "string"].tolist()
         assert string_values[:2] == ["off", "on"]
         assert all(pd.isna(v) for v in string_values[2:])
-        assert df[node_id, "string"].dtype == PANDAS_STR_DTYPE
+        assert df[node_id, "string"].dtype == "category"
 
     def test_exclude_numeric_states(self, state_dps: Datapoints, node_id: NodeId) -> None:
         import pandas as pd
