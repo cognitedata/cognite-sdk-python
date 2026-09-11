@@ -368,7 +368,7 @@ class _DpsColumnInfo:
                 # dtype here which is dirt cheap to store and operate (no repeated string objects).
                 # It also fixes the annoying pandas v2/v3 difference between missing (None vs NaN) for 'object' and 'str'.
                 pd = local_import("pandas")
-                return pd.Categorical(self.data, unordered=True)
+                return pd.Categorical(self.data, ordered=False)
             else:
                 return self.data
 
@@ -394,7 +394,7 @@ class _DpsColumnInfo:
 
         if self.state_type == "string":
             pd = local_import("pandas")
-            return pd.Categorical(self.data, unordered=True)
+            return pd.Categorical(self.data, ordered=False)
 
         match self.is_string, self.status_info:
             case True, None:
