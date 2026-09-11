@@ -523,19 +523,12 @@ def _extract_aggregate_column_info_from_dps(
 def _extract_column_info_from_dps_for_dataframe(
     dps: Datapoints | DatapointsArray, include_status: bool, include_numeric_states: bool, include_string_states: bool
 ) -> list[_DpsColumnInfo]:
-    from cognite.client.data_classes import Datapoints, DatapointsArray
+    from cognite.client.data_classes import DatapointsArray
 
     identifier = _resolve_ts_identifier_as_df_column_name(dps)
     is_array = isinstance(dps, DatapointsArray)
     if dps.type == "state":
         if dps.numeric_states is None or dps.string_states is None:
-            if is_array:
-                # Unreachable state in the SDK, but users may instantiate manually, so we need to handle it:
-                raise NotImplementedError(
-                    "State aggregate datapoints stored as DatapointsArray are not supported yet for conversion to "
-                    "pandas DataFrame"
-                )
-            assert isinstance(dps, Datapoints)  # mypy doesn't understand the is-array-check above...
             return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
         else:
             return _extract_raw_states_column_info(
