@@ -21,7 +21,7 @@ Unit Systems
    AsyncCogniteClient.units.systems
 
 Unit data classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------
 .. automodule:: cognite.client.data_classes.units
     :members:
     :show-inheritance:

@@ -54,7 +54,7 @@ Workflow Triggers
 
 
 Data Workflows data classes
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 .. automodule:: cognite.client.data_classes.workflows
     :members:
     :show-inheritance:
