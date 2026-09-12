@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from typing_extensions import override
+
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, basic_instance_dump
 
 
@@ -50,6 +52,7 @@ class MeteringData(CogniteResource):
             datapoints=[MeteringDataPoint._load(dp) for dp in datapoints],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = basic_instance_dump(self, camel_case=camel_case)
         result["datapoints"] = [dp.dump(camel_case) for dp in self.datapoints]

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import auto
 from typing import Any, Literal, TypeAlias
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -100,6 +100,7 @@ class DocumentsGeoJsonGeometry(CogniteResource):
             instance.geometries = [Geometry.load(geometry) for geometry in instance.geometries]
         return instance
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.geometries:
@@ -173,6 +174,7 @@ class SourceFile(CogniteResource):
             metadata=resource.get("metadata"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.labels:
@@ -280,6 +282,7 @@ class Document(CogniteResource):
             geo_location=DocumentsGeoJsonGeometry._load_if(resource.get("geoLocation")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.source_file:
@@ -312,6 +315,7 @@ class Highlight(CogniteResource):
     name: list[str]
     content: list[str]
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "name": self.name,
@@ -345,6 +349,7 @@ class DocumentHighlight(CogniteResource):
             document=Document._load(resource["document"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {}
         if self.highlight:
@@ -451,6 +456,7 @@ class TemporaryLink:
         )
 
     def dump(self) -> dict[str, Any]:
+        """Dump the temporary link to a dictionary."""
         return {
             "temporaryLink": self.url,
             "expirationTime": self.expires_at,

@@ -4,7 +4,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -121,6 +121,7 @@ class ExtractionPipelineCore(WriteableCogniteResource["ExtractionPipelineWrite"]
         self.notification_config = notification_config
         self.created_by = created_by
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.contacts:
@@ -425,6 +426,7 @@ class ExtractionPipelineList(
 ):
     _RESOURCE = ExtractionPipeline
 
+    @override
     def as_write(self) -> ExtractionPipelineWriteList:
         return ExtractionPipelineWriteList([x.as_write() for x in self.data])
 
@@ -500,6 +502,7 @@ class ExtractionPipelineRun(ExtractionPipelineRunCore):
             created_time=resource.get("createdTime"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dct = super().dump(camel_case=camel_case)
         # Note: No way to make this id/xid API mixup completely correct. Either:
@@ -549,6 +552,7 @@ class ExtractionPipelineRunWrite(ExtractionPipelineRunCore):
             created_time=resource.get("createdTime"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dct = super().dump(camel_case=camel_case)
         # Note: No way to make this id/xid API mixup completely correct. Either:
@@ -577,6 +581,7 @@ class ExtractionPipelineRunList(
 ):
     _RESOURCE = ExtractionPipelineRun
 
+    @override
     def as_write(self) -> ExtractionPipelineRunWriteList:
         return ExtractionPipelineRunWriteList([x.as_write() for x in self.data])
 
@@ -758,5 +763,6 @@ class ExtractionPipelineConfigList(
 ):
     _RESOURCE = ExtractionPipelineConfig
 
+    @override
     def as_write(self) -> ExtractionPipelineConfigWriteList:
         return ExtractionPipelineConfigWriteList([x.as_write() for x in self.data])

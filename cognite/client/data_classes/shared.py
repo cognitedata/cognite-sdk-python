@@ -4,7 +4,7 @@ from collections.abc import Collection, Sequence
 from datetime import datetime
 from typing import Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import CogniteFilter, CogniteResource, UnknownCogniteResource
 from cognite.client.utils._time import timestamp_to_ms
@@ -132,6 +132,7 @@ class Geometry(CogniteResource):
             geometries=raw_geometry.get("geometries"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if self.geometries:
@@ -243,6 +244,7 @@ class GeoLocation(CogniteResource):
         # Years ago, the API didn't enforce the current restriction on the type field:
         return UnknownCogniteResource(resource)  # type: ignore[return-value]
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.geometry:
@@ -266,6 +268,7 @@ class GeoLocationFilter(CogniteResource):
     def _load(cls, resource: dict[str, Any]) -> GeoLocationFilter:
         return cls(relation=resource["relation"], shape=resource["shape"])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         if isinstance(self.shape, GeometryFilter):

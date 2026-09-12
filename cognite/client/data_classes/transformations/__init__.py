@@ -5,6 +5,8 @@ from abc import abstractmethod
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Literal, cast
 
+from typing_extensions import override
+
 from cognite.client.data_classes._base import (
     CogniteFilter,
     CogniteListUpdate,
@@ -72,6 +74,7 @@ class SessionDetails:
 
     @classmethod
     def load(cls, resource: dict[str, Any]) -> SessionDetails:
+        """Load a SessionDetails instance from a dictionary."""
         return cls(
             session_id=resource.get("sessionId"),
             client_id=resource.get("clientId"),
@@ -341,6 +344,7 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
             tags=self.tags,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
@@ -507,6 +511,7 @@ class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _Tran
             self.tags,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
 
@@ -602,6 +607,7 @@ class TransformationUpdate(CogniteUpdate):
     def tags(self) -> _ListTransformationUpdate:
         return TransformationUpdate._ListTransformationUpdate(self, "tags")
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump()
 
@@ -637,13 +643,16 @@ class TransformationWriteList(CogniteResourceList[TransformationWrite], External
 class TransformationList(WriteableCogniteResourceList[TransformationWrite, Transformation], IdTransformerMixin):
     _RESOURCE = Transformation
 
+    @override
     def as_write(self) -> TransformationWriteList:
         return TransformationWriteList([transformation.as_write() for transformation in self.data])
 
 
 class TagsFilter:
     @abstractmethod
-    def dump(self) -> dict[str, Any]: ...
+    def dump(self) -> dict[str, Any]:
+        """Dump the instance into a json serializable Python data type."""
+        ...
 
 
 class ContainsAny(TagsFilter):
@@ -663,6 +672,7 @@ class ContainsAny(TagsFilter):
     def __init__(self, tags: list[str] | None = None) -> None:
         self.tags = tags
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         contains_any_key = "containsAny" if camel_case else "contains_any"
         return {contains_any_key: self.tags}
@@ -711,6 +721,7 @@ class TransformationFilter(CogniteFilter):
         self.data_set_ids = data_set_ids
         self.tags = tags
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         if (value := obj.pop("includePublic" if camel_case else "include_public", None)) is not None:

@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Any, ClassVar, Literal, TypeAlias, cast, final
 from zoneinfo import ZoneInfo
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -263,6 +263,7 @@ class FunctionTaskParameters(WorkflowTaskParameters):
             is_async_complete=resource.get("isAsyncComplete", resource.get("asyncComplete")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         function: dict[str, Any] = {
             ("externalId" if camel_case else "external_id"): self.external_id,
@@ -294,6 +295,7 @@ class UnknownWorkflowTaskParameters(WorkflowTaskParameters):
     def _load(cls, task_type: str, parameters: dict[str, Any]) -> Self:  # type: ignore [override]
         return cls(task_type, parameters)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if not camel_case:
             # We can not automatically convert to snake case, as we don't know if there is user data
@@ -349,6 +351,7 @@ class SimulationTaskParameters(WorkflowTaskParameters):
             else None,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         simulation: dict[str, Any] = {
             "routineExternalId" if camel_case else "routine_external_id": self.routine_external_id,
@@ -392,6 +395,7 @@ class TransformationTaskParameters(WorkflowTaskParameters):
             data.get("useTransformationCredentials", False),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         transformation = {
             "externalId" if camel_case else "external_id": self.external_id,
@@ -459,6 +463,7 @@ class CDFTaskParameters(WorkflowTaskParameters):
             cdf_request.get("requestTimeoutInMillis", 10000),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         return {
@@ -491,6 +496,7 @@ class SubworkflowTaskParameters(WorkflowTaskParameters):
             [WorkflowTask._load(task) for task in subworkflow["tasks"]],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {self.task_type: {"tasks": [task.dump(camel_case) for task in self.tasks]}}
 
@@ -518,6 +524,7 @@ class SubworkflowReferenceParameters(WorkflowTaskParameters):
 
         return cls(workflow_external_id=subworkflow["workflowExternalId"], version=subworkflow["version"])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             self.task_type: {
@@ -566,6 +573,7 @@ class DynamicTaskParameters(WorkflowTaskParameters):
         # or can be resolved to a list of Tasks (i.e., during or after execution)
         return cls([WorkflowTask._load(task) for task in dynamic["tasks"]])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             self.task_type: {
@@ -631,6 +639,7 @@ class WorkflowTask(CogniteResource):
             depends_on=[dep["externalId"] for dep in resource.get("dependsOn", [])] or None,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "externalId" if camel_case else "external_id": self.external_id,
@@ -683,6 +692,7 @@ class WorkflowTaskOutput(CogniteResource, ABC):
             case task_type:
                 raise ValueError(f"Invalid taskType: {task_type!r}, must be str")
 
+    @override
     @abstractmethod
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
@@ -711,6 +721,7 @@ class FunctionTaskOutput(WorkflowTaskOutput):
         output = data["output"]
         return cls(output.get("callId"), output.get("functionId"), output.get("response"))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "callId" if camel_case else "call_id": self.call_id,
@@ -737,6 +748,7 @@ class UnknownWorkflowTaskOutput(WorkflowTaskOutput):
     def _load(cls, data: dict[str, Any]) -> Self:
         return cls(data["taskType"], data.get("output") or {})
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if not camel_case:
             # We can not automatically convert to snake case, as we don't know if there is user data
@@ -784,6 +796,7 @@ class SimulationTaskOutput(WorkflowTaskOutput):
             status_message=output.get("statusMessage"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "runId" if camel_case else "run_id": self.run_id,
@@ -810,6 +823,7 @@ class TransformationTaskOutput(WorkflowTaskOutput):
         output = data["output"]
         return cls(output.get("jobId"))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"jobId" if camel_case else "job_id": self.job_id}
 
@@ -834,6 +848,7 @@ class CDFTaskOutput(WorkflowTaskOutput):
         output = data["output"]
         return cls(output.get("response"), output.get("statusCode"))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "response": self.response,
@@ -854,6 +869,7 @@ class DynamicTaskOutput(WorkflowTaskOutput):
     def _load(cls, data: dict[str, Any]) -> DynamicTaskOutput:
         return cls()
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {}
 
@@ -871,6 +887,7 @@ class SubworkflowTaskOutput(WorkflowTaskOutput):
     def _load(cls, data: dict[str, Any]) -> SubworkflowTaskOutput:
         return cls()
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {}
 
@@ -931,6 +948,7 @@ class WorkflowTaskExecution(CogniteResource):
             reason_for_incompletion=resource.get("reasonForIncompletion"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = super().dump(camel_case)
         output["input"] = self.input.dump(camel_case)
@@ -974,6 +992,7 @@ class WorkflowDefinitionCore(WriteableCogniteResource["WorkflowDefinitionUpsert"
             description=resource.get("description"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"tasks": [task.dump(camel_case) for task in self.tasks]}
         if self.description:
@@ -1005,6 +1024,7 @@ class WorkflowDefinitionUpsert(WorkflowDefinitionCore):
             description=resource.get("description"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"tasks": [task.dump(camel_case) for task in self.tasks]}
         if self.description:
@@ -1045,6 +1065,7 @@ class WorkflowDefinition(WorkflowDefinitionCore):
             description=resource.get("description"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["hash"] = self.hash_
@@ -1108,6 +1129,7 @@ class WorkflowVersionUpsert(WorkflowVersionCore):
             workflow_definition=WorkflowDefinitionUpsert._load(resource["workflowDefinition"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             ("workflowExternalId" if camel_case else "workflow_external_id"): self.workflow_external_id,
@@ -1155,6 +1177,7 @@ class WorkflowVersion(WorkflowVersionCore):
             last_updated_time=resource["lastUpdatedTime"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "workflowExternalId" if camel_case else "workflow_external_id": self.workflow_external_id,
@@ -1325,6 +1348,7 @@ class WorkflowExecutionDetailed(WorkflowExecution):
             metadata=resource.get("metadata"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         output["workflowDefinition" if camel_case else "workflow_definition"] = self.workflow_definition.dump(
@@ -1381,6 +1405,7 @@ class WorkflowVersionId:
         return cls(workflow_external_id=workflow_external_id, version=resource.get("version"))
 
     def dump(self, camel_case: bool = True, as_external_id_key: bool = False) -> dict[str, Any]:
+        """Dump the WorkflowVersionId to a dictionary."""
         if as_external_id_key:
             output: dict[str, Any] = {"externalId" if camel_case else "external_id": self.workflow_external_id}
         else:
@@ -1431,6 +1456,7 @@ class WorkflowIds(UserList):
         return cls(workflow_ids)
 
     def dump(self, camel_case: bool = True, as_external_id: bool = False) -> list[dict[str, Any]]:
+        """Dumps the list of WorkflowVersionId objects to a list of dictionaries."""
         return [workflow_id.dump(camel_case, as_external_id_key=as_external_id) for workflow_id in self.data]
 
 
@@ -1444,6 +1470,7 @@ class WorkflowTriggerRule(CogniteResource, ABC):
     def trigger_type(self) -> str:
         return self._trigger_type
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case)
         dumped["triggerType" if camel_case else "trigger_type"] = self.trigger_type
@@ -1505,6 +1532,7 @@ class WorkflowScheduledTriggerRule(WorkflowTriggerRule):
         self.cron_expression = cron_expression
         self.timezone = timezone
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         # Override dump to handle timezone field specially:
         # 1. Only include timezone key when it has a value (avoid "timezone": null)
@@ -1551,6 +1579,7 @@ class WorkflowDataModelingTriggerRule(WorkflowTriggerRule):
             batch_timeout=data.get("batchTimeout"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item: dict[str, Any] = {
             "trigger_type": self.trigger_type,
@@ -1579,6 +1608,7 @@ class WorkflowRecordStreamSourceSelector(CogniteResource):
     def _load(cls, resource: dict[str, Any]) -> WorkflowRecordStreamSourceSelector:
         return cls(source=RecordContainerId.load(resource["source"]), properties=resource["properties"])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"source": self.source.dump(camel_case=camel_case), "properties": self.properties}
 
@@ -1627,6 +1657,7 @@ class WorkflowRecordStreamTriggerRule(WorkflowTriggerRule):
             initialize_cursor=data.get("initializeCursor"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item: dict[str, Any] = {
             "trigger_type": self.trigger_type,
@@ -1702,6 +1733,7 @@ class WorkflowTriggerUpsert(WorkflowTriggerCore):
         self.input = input
         self.metadata = metadata
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item: dict[str, Any] = {
             "external_id": self.external_id,
@@ -1774,6 +1806,7 @@ class WorkflowTrigger(WorkflowTriggerCore):
         self.last_updated_time = last_updated_time
         self.is_paused = is_paused
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item: dict[str, Any] = {
             "external_id": self.external_id,
@@ -1859,6 +1892,7 @@ class WorkflowTriggerRun(CogniteResource):
         self.status = status
         self.reason_for_failure = reason_for_failure
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item = {
             "external_id": self.external_id,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -68,6 +68,7 @@ class StreamLimitSettings(CogniteResource):
             max_filtering_interval=resource.get("maxFilteringInterval"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         out: dict[str, Any] = {
             "max_records_total": self.max_records_total.dump(camel_case=camel_case),
@@ -92,6 +93,7 @@ class StreamSettings(CogniteResource):
             limits=StreamLimitSettings._load(resource["limits"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "lifecycle": self.lifecycle.dump(camel_case=camel_case),
@@ -129,6 +131,7 @@ class Stream(WriteableCogniteResource["StreamWrite"]):
             settings=StreamSettings._load(resource["settings"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         out = {
             "external_id": self.external_id,
@@ -139,6 +142,7 @@ class Stream(WriteableCogniteResource["StreamWrite"]):
         }
         return convert_all_keys_to_camel_case(out) if camel_case else out
 
+    @override
     def as_write(self) -> StreamWrite:
         return StreamWrite(
             external_id=self.external_id,
@@ -179,6 +183,7 @@ class StreamWriteSettings(CogniteResource):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(template=StreamTemplate._load(resource["template"]))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"template": self.template.dump(camel_case=camel_case)}
 
@@ -208,9 +213,11 @@ class StreamWrite(WriteableCogniteResource["StreamWrite"]):
             settings=StreamWriteSettings._load(resource["settings"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         out = {"external_id": self.external_id, "settings": self.settings.dump(camel_case=camel_case)}
         return convert_all_keys_to_camel_case(out) if camel_case else out
 
+    @override
     def as_write(self) -> StreamWrite:
         return self

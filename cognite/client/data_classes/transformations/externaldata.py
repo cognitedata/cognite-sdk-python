@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, NoReturn
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -110,6 +110,7 @@ class OneLakeSettings(CogniteResource):
             location_description=OneLakeLocationDescription._load(resource["locationDescription"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["credentials"] = self.credentials.dump(camel_case=camel_case)
@@ -137,6 +138,7 @@ class OneLakeSettingsWrite(CogniteResource):
             location_description=OneLakeLocationDescription._load(resource["locationDescription"]),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["credentials"] = self.credentials.dump(camel_case=camel_case)
@@ -184,6 +186,7 @@ class ExternalDataSourceWrite(CogniteResource, ABC):
             )
         return source_cls._load_data_source(resource)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["format"] = self._format
@@ -253,6 +256,7 @@ class OneLakeExternalDataSourceWrite(ExternalDataSourceWrite):
             data_set_id=resource.get("dataSetId"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["settings"] = self.settings.dump(camel_case=camel_case)
@@ -309,11 +313,13 @@ class ExternalDataSource(WriteableCogniteResource[ExternalDataSourceWrite], ABC)
             return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return source_class._load_data_source(resource)
 
+    @override
     def as_write(self) -> NoReturn:
         raise TypeError(
             f"{type(self).__name__} cannot be converted to write as the API does not return the client secret"
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["format"] = self._format
@@ -370,6 +376,7 @@ class OneLakeExternalDataSource(ExternalDataSource):
             data_set_id=resource.get("dataSetId"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["settings"] = self.settings.dump(camel_case=camel_case)
@@ -389,6 +396,7 @@ class ExternalDataSourceList(
 
     _RESOURCE = ExternalDataSource
 
+    @override
     def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write")
 
@@ -417,6 +425,7 @@ class ExternalDataSourceUsability(CogniteResource):
             usable_version=resource.get("usableVersion"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         key = "externalId" if camel_case else "external_id"

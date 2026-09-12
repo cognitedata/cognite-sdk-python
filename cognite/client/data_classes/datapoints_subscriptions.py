@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import auto
 from typing import TYPE_CHECKING, Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteListUpdate,
@@ -49,6 +49,7 @@ class DatapointSubscriptionCore(WriteableCogniteResource["DataPointSubscriptionW
         self.description = description
         self.data_set_id = data_set_id
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         data = super().dump(camel_case)
         if "filter" in data:
@@ -163,6 +164,7 @@ class DataPointSubscriptionWrite(DatapointSubscriptionCore):
             data_set_id=resource.get("dataSetId"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         data = super().dump(camel_case)
         if self.instance_ids is not None:
@@ -293,6 +295,7 @@ class TimeSeriesID(CogniteResource):
             instance_id=NodeId._load_if(resource.get("instanceId")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         resource: dict[str, Any] = {}
         if self.id is not None:
@@ -314,6 +317,7 @@ class DataDeletion:
         return cls(inclusive_begin=data["inclusiveBegin"], exclusive_end=data.get("exclusiveEnd"))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dumps the data deletion object to a dictionary."""
         resource: dict[str, Any] = {("inclusiveBegin" if camel_case else "inclusive_begin"): self.inclusive_begin}
         if self.exclusive_end is not None:
             resource["exclusiveEnd" if camel_case else "exclusive_end"] = self.exclusive_end
@@ -341,6 +345,7 @@ class DatapointsUpdate:
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dumps the datapoints update object to a dictionary."""
         resource: dict[str, Any] = {("timeSeries" if camel_case else "time_series"): self.time_series.dump(camel_case)}
         if self.upserts is not None:
             resource["upserts"] = self.upserts.dump(camel_case)
@@ -428,6 +433,7 @@ class SubscriptionDatapoints(CogniteResource):
     def __len__(self) -> int:
         return len(self.timestamp)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -475,6 +481,7 @@ class SubscriptionTimeSeriesUpdate:
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, list[dict[str, Any]]]:
+        """Dump the subscription time series update to a dictionary."""
         return {
             "added": [ts_id.dump() for ts_id in self.added],
             "removed": [ts_id.dump() for ts_id in self.removed],
@@ -491,6 +498,7 @@ class DatapointSubscriptionPartition:
         return cls(index=data["index"], cursor=data.get("nextCursor") or data.get("cursor"))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump datapoint subscription partition to a dictionary."""
         output: dict[str, Any] = {"index": self.index}
         if self.cursor is not None:
             output["cursor"] = self.cursor
@@ -536,6 +544,7 @@ class _DatapointSubscriptionBatchWithPartitions:
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dumps the subscription batch to a dictionary."""
         resource: dict[str, Any] = {
             "updates": [u.dump(camel_case) for u in self.updates],
             "partitions": [p.dump(camel_case) for p in self.partitions],

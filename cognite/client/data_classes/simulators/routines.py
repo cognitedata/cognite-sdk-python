@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from typing import Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
@@ -173,5 +173,6 @@ class SimulatorRoutineWriteList(CogniteResourceList[SimulatorRoutineWrite], Exte
 class SimulatorRoutineList(WriteableCogniteResourceList[SimulatorRoutineWrite, SimulatorRoutine], IdTransformerMixin):
     _RESOURCE = SimulatorRoutine
 
+    @override
     def as_write(self) -> SimulatorRoutineWriteList:
         return SimulatorRoutineWriteList([a.as_write() for a in self.data])

@@ -8,7 +8,7 @@ from collections.abc import MutableMapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -93,6 +93,7 @@ class SimulatorRoutineInput(CogniteResource, ABC):
             return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, input_class._load_input(resource))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.unit is not None:
@@ -214,6 +215,7 @@ class SimulatorRoutineOutput(CogniteResource):
             save_timeseries_external_id=resource.get("saveTimeseriesExternalId"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.unit is not None:
@@ -399,6 +401,7 @@ class SimulatorRoutineConfiguration(CogniteResource):
             outputs=outputs,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["inputs"] = [input_.dump(camel_case=camel_case) for input_ in self.inputs] if self.inputs else None
@@ -443,6 +446,7 @@ class SimulatorRoutineStepArguments(CogniteResource, dict, MutableMapping[str, s
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(resource)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {key: value for key, value in self.items()}
 
@@ -476,6 +480,7 @@ class SimulatorRoutineStep(CogniteResource):
             description=resource.get("description"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["arguments"] = self.arguments.dump(camel_case=camel_case)
@@ -508,6 +513,7 @@ class SimulatorRoutineStage(CogniteResource):
             description=resource.get("description"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["steps"] = [step_.dump(camel_case=camel_case) for step_ in self.steps]
@@ -532,6 +538,7 @@ class SimulatorRoutineRevisionCore(WriteableCogniteResource["SimulatorRoutineRev
         else:
             self.script = script
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["configuration"] = self.configuration.dump(camel_case=camel_case) if self.configuration else None
@@ -680,6 +687,7 @@ class SimulatorRoutineRevisionList(
 ):
     _RESOURCE = SimulatorRoutineRevision
 
+    @override
     def as_write(self) -> SimulatorRoutineRevisionWriteList:
         return SimulatorRoutineRevisionWriteList([a.as_write() for a in self.data])
 

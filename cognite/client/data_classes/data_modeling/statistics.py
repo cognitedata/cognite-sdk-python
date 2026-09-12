@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -159,6 +159,7 @@ class ProjectStatistics(CogniteResource):
         instance.project = project
         return instance
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = {
             "spaces": self.spaces.dump(camel_case),

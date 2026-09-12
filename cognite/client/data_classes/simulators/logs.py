@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -83,6 +83,7 @@ class SimulatorLog(CogniteResource):
             severity=resource.get("severity"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if isinstance(self.data, list) and all(isinstance(item, SimulatorLogData) for item in self.data):

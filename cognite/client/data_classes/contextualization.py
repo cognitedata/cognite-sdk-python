@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Generic, ParamSpec, TypeVar, cast, final
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes import Annotation, AnnotationWrite
 from cognite.client.data_classes._base import (
@@ -560,6 +560,7 @@ class DiagramConvertResults(ContextualizationJob):
     def update_status(self) -> str:
         return run_sync(self.update_status_async())
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         data = super().dump(camel_case=camel_case)
         data["items"] = [item.dump(camel_case=camel_case) for item in self.items]
@@ -688,6 +689,7 @@ class DiagramDetectResults(ContextualizationJob):
     def update_status(self) -> str:
         return run_sync(self.update_status_async())
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         data = super().dump(camel_case=camel_case)
         data["items"] = [item.dump(camel_case=camel_case) for item in self.items]
@@ -1093,6 +1095,7 @@ class VisionExtractItem(CogniteResource):
             error_message=resource.get("errorMessage"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item_dump = super().dump(camel_case=camel_case)
         item_dump["predictions"] = self.predictions.dump(camel_case=camel_case)
@@ -1158,6 +1161,7 @@ class VisionExtractJob(ContextualizationJob, Generic[P]):
     def update_status(self) -> str:
         return run_sync(self.update_status_async())
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         job_dump = super().dump(camel_case=camel_case)
         job_dump["items"] = [item.dump(camel_case=camel_case) for item in self.items]
@@ -1424,6 +1428,7 @@ class ConnectionFlags:
         }
 
     def dump(self, camel_case: bool = False) -> list[str]:
+        """Returns a list of flags that are set to True."""
         return [k for k, v in self._flags.items() if v]
 
     @classmethod
@@ -1516,6 +1521,7 @@ class DiagramDetectConfig(CogniteResource):
                 raise ValueError(f"Provided parameter name `{param_name}` collides with a known parameter `{known}`.")
             self._extra_params[param_name] = value
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
 

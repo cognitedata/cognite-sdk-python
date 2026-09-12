@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_recursive
@@ -38,6 +38,7 @@ class TransformationSchemaStructType(TransformationSchemaType):
         super().__init__(type=type)
         self.fields = fields
 
+    @override
     def dump(self, camel_case: bool = True) -> dict:
         dumped = super().dump(camel_case=camel_case)
         return convert_all_keys_recursive(dumped, camel_case=camel_case)  # <-- 'fields' is a nested object
@@ -76,6 +77,7 @@ class TransformationSchemaUnknownType(TransformationSchemaType):
         super().__init__(type=raw_schema.pop("type"))  # type is required
         self.__raw_schema = raw_schema
 
+    @override
     def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:  # type: ignore [override]
         return {"type": self.type, **self.__raw_schema}
 
@@ -106,6 +108,7 @@ class TransformationSchemaColumn(CogniteResource):
         self.type = type
         self.nullable = nullable
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if isinstance(self.type, TransformationSchemaType):

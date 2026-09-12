@@ -5,7 +5,7 @@ import typing
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -81,6 +81,7 @@ class RelationshipCore(WriteableCogniteResource["RelationshipWrite"], ABC):
         self.data_set_id = data_set_id
         self.labels = labels
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = super().dump(camel_case)
         if self.labels is not None:
@@ -210,6 +211,7 @@ class Relationship(RelationshipCore):
             labels=Label._load_list(labels) if labels else None,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = super().dump(camel_case)
         if self.source is not None and not isinstance(self.source, dict):
@@ -346,6 +348,7 @@ class RelationshipFilter(CogniteFilter):
         self.active_at_time = active_at_time
         self.labels = labels
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):

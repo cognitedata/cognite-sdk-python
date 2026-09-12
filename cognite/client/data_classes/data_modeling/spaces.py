@@ -5,7 +5,7 @@ from collections.abc import Iterable, Sequence
 from functools import cached_property
 from typing import Any, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResourceList,
@@ -92,6 +92,7 @@ class Space(SpaceCore):
             name=self.name,
         )
 
+    @override
     def as_write(self) -> SpaceApply:
         return self.as_apply()
 
@@ -164,5 +165,6 @@ class SpaceList(WriteableCogniteResourceList[SpaceApply, Space]):
         """
         return SpaceApplyList([item.as_apply() for item in self])
 
+    @override
     def as_write(self) -> SpaceApplyList:
         return self.as_apply()

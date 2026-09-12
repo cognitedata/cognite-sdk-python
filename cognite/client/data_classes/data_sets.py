@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -99,6 +99,7 @@ class DataSet(DataSetCore):
             metadata=resource.get("metadata"),
         )
 
+    @override
     def as_write(self) -> DataSetWrite:
         return DataSetWrite(
             external_id=self.external_id,
@@ -177,6 +178,7 @@ class DataSetFilter(CogniteFilter):
         self.external_id_prefix = external_id_prefix
         self.write_protected = write_protected
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         if self.created_time and isinstance(self.created_time, TimestampRange):
@@ -264,5 +266,6 @@ class DataSetWriteList(CogniteResourceList[DataSetWrite], ExternalIDTransformerM
 class DataSetList(WriteableCogniteResourceList[DataSetWrite, DataSet], IdTransformerMixin):
     _RESOURCE = DataSet
 
+    @override
     def as_write(self) -> DataSetWriteList:
         return DataSetWriteList([ds.as_write() for ds in self.data])

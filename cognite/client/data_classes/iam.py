@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -45,6 +45,7 @@ class GroupAttributes(CogniteResource):
     token: GroupAttributesToken | None = None
     _unknown_properties: dict[str, Any] = field(default_factory=dict, init=False, repr=False)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dumps the attributes to a dictionary"""
         dumped = super().dump(camel_case=camel_case)
@@ -104,6 +105,7 @@ class GroupCore(WriteableCogniteResource["GroupWrite"], ABC):
             members=resource.get("members"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         dumped = super().dump(camel_case=camel_case)
         if self.capabilities is not None:
@@ -155,6 +157,7 @@ class Group(GroupCore):
         self.is_deleted = is_deleted
         self.deleted_time = deleted_time
 
+    @override
     def as_write(self) -> GroupWrite:
         """Returns a write version of this group."""
         return GroupWrite(
@@ -255,6 +258,7 @@ class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformer
     ) -> Self:
         return cls([cls._RESOURCE._load(res, allow_unknown) for res in resource_list])
 
+    @override
     def as_write(self) -> GroupWriteList:
         """Returns a write version of this group list."""
         return GroupWriteList([s.as_write() for s in self])
@@ -305,6 +309,7 @@ class SecurityCategory(SecurityCategoryCore):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(id=resource["id"], name=resource["name"])
 
+    @override
     def as_write(self) -> SecurityCategoryWrite:
         """Returns a write version of this security category."""
         return SecurityCategoryWrite(name=self.name)
@@ -326,6 +331,7 @@ class SecurityCategoryWrite(SecurityCategoryCore):
     def _load(cls, resource: dict) -> Self:
         return cls(name=resource["name"])
 
+    @override
     def as_write(self) -> SecurityCategoryWrite:
         """Returns this SecurityCategoryWrite instance."""
         return self
@@ -342,6 +348,7 @@ class SecurityCategoryList(
 ):
     _RESOURCE = SecurityCategory
 
+    @override
     def as_write(self) -> SecurityCategoryWriteList:
         """Returns a write version of this security category list."""
         return SecurityCategoryWriteList([s.as_write() for s in self])
@@ -367,6 +374,7 @@ class ProjectSpec(CogniteResource):
     def _load(cls, api_response: dict[str, Any]) -> ProjectSpec:
         return cls(url_name=api_response["projectUrlName"], groups=api_response["groups"])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, str | list[int]]:
         return {
             "projectUrlName" if camel_case else "project_url_name": self.url_name,
@@ -415,6 +423,7 @@ class TokenInspection(CogniteResource):
             ),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "subject": self.subject,

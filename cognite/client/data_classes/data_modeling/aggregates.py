@@ -25,7 +25,7 @@ from collections.abc import Mapping, Sequence
 from enum import Enum
 from typing import Any, ClassVar
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.data_modeling._validation import validate_property_path
@@ -59,6 +59,7 @@ class Aggregate(CogniteResource):
     def _dump_body(self) -> dict[str, Any]:
         raise NotImplementedError
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {self._aggregate_name: _dump_aggregate_value(self._dump_body())}
 
@@ -336,6 +337,7 @@ class UnknownAggregate(Aggregate):
     def _dump_body(self) -> dict[str, Any]:  # never called: dump is overridden
         raise NotImplementedError
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return dict(self._raw)
 
@@ -374,6 +376,7 @@ class Result(CogniteResource):
             return result_cls._load(resource)
         return UnknownResult._load(resource)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         raise NotImplementedError
 
@@ -390,6 +393,7 @@ class MetricResult(Result):
         key = next(iter(resource))
         return cls(aggregate=key, value=resource[key])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {self.aggregate: self.value}
 
@@ -404,6 +408,7 @@ class MovingFunctionResult(Result):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(fn_value=resource["fnValue"])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"fnValue" if camel_case else "fn_value": self.fn_value}
 
@@ -421,6 +426,7 @@ class UnknownResult(Result):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(resource)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if camel_case:
             return dict(self._raw_result)
@@ -459,6 +465,7 @@ class Bucket(CogniteResource):
             aggregates=_load_results(resource.get("aggregates")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"count": self.count}
         if self.value is not None:
@@ -490,6 +497,7 @@ class BucketResult(Result):
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(buckets=[Bucket._load(bucket) for bucket in resource.get(cls._buckets_key, [])])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         key = self._buckets_key if camel_case else to_snake_case(self._buckets_key)
         return {key: [bucket.dump(camel_case=camel_case) for bucket in self._buckets]}

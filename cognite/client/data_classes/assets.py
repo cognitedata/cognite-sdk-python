@@ -20,7 +20,7 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -299,6 +299,7 @@ class Asset(WriteableCogniteResourceWithClientRef["AssetWrite"]):
             raise ValueError(f"Unable to fetch related {resource}, asset is missing id")
         return remove_duplicates_keep_order([self.id, *user_kwargs.pop("asset_ids", [])])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.labels is not None:
@@ -405,12 +406,14 @@ class AssetWrite(WriteableCogniteResource["AssetWrite"]):
             geo_location=GeoLocation._load_if(resource.get("geoLocation")),
         )
 
+    @override
     def as_write(self) -> AssetWrite:
         return self
 
     def __hash__(self) -> int:
         return hash(self.external_id)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.labels is not None:
@@ -526,6 +529,7 @@ class AssetWriteList(CogniteResourceList[AssetWrite], ExternalIDTransformerMixin
 class AssetList(WriteableCogniteResourceListWithClientRef[AssetWrite, Asset], IdTransformerMixin):
     _RESOURCE = Asset
 
+    @override
     def as_write(self) -> AssetWriteList:
         return AssetWriteList([a.as_write() for a in self.data])
 
@@ -672,6 +676,7 @@ class AssetFilter(CogniteFilter):
         if labels is not None and not isinstance(labels, LabelFilter):
             raise TypeError("AssetFilter.labels must be of type LabelFilter")
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):

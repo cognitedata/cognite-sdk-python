@@ -7,7 +7,7 @@ from contextlib import AbstractAsyncContextManager, AbstractContextManager
 from types import TracebackType
 from typing import TYPE_CHECKING, Any, BinaryIO, Literal, TypeVar
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -91,6 +91,7 @@ class FileMetadataCore(WriteableCogniteResource["FileMetadataWrite"], ABC):
         self.source_modified_time = source_modified_time
         self.security_categories = security_categories
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.labels is not None:
@@ -173,6 +174,7 @@ class FileMetadata(FileMetadataCore):
         self.uploaded = uploaded
         self.uploaded_time = uploaded_time
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if self.instance_id is not None:
@@ -308,6 +310,7 @@ class FileMetadataWrite(FileMetadataCore):
             security_categories=resource.get("securityCategories"),
         )
 
+    @override
     def as_write(self) -> FileMetadataWrite:
         return self
 
@@ -381,6 +384,7 @@ class FileMetadataFilter(CogniteFilter):
         if geo_location is not None and not isinstance(geo_location, GeoLocationFilter):
             raise TypeError("FileMetadata.geo_location should be of type GeoLocationFilter")
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = super().dump(camel_case)
         if isinstance(self.labels, LabelFilter):
@@ -418,6 +422,7 @@ class FileMetadataUpdate(CogniteUpdate):
         if instance_id is not None:
             self.warn_on_instance_id_update()
 
+    @override
     def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.instance_id is not None:

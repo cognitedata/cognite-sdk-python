@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from operator import attrgetter
 from typing import Any, Generic, Literal, TypeVar, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -87,6 +87,7 @@ class DataModelApply(DataModelCore):
             views=[cls._load_view(v) for v in resource["views"]] if "views" in resource else None,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
 
@@ -184,6 +185,7 @@ class DataModel(DataModelCore, Generic[T_View]):
             views=views,
         )
 
+    @override
     def as_write(self) -> DataModelApply:
         return self.as_apply()
 
@@ -240,6 +242,7 @@ class DataModelList(WriteableCogniteResourceList[DataModelApply, DataModel[T_Vie
         """
         return [d.as_id() for d in self]
 
+    @override
     def as_write(self) -> DataModelApplyList:
         return self.as_apply()
 

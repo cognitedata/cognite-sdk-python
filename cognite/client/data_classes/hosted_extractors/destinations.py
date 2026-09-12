@@ -4,7 +4,7 @@ from abc import ABC
 from dataclasses import dataclass
 from typing import Any, NoReturn
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CognitePrimitiveUpdate,
@@ -62,6 +62,7 @@ class DestinationWrite(_DestinationCore):
             target_data_set_id=resource.get("targetDataSetId"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if isinstance(self.credentials, SessionWrite):
@@ -69,6 +70,7 @@ class DestinationWrite(_DestinationCore):
 
         return output
 
+    @override
     def as_write(self) -> DestinationWrite:
         return self
 
@@ -115,6 +117,7 @@ class Destination(_DestinationCore):
             target_data_set_id=resource.get("targetDataSetId"),
         )
 
+    @override
     def as_write(self) -> NoReturn:
         raise TypeError(f"{self.__class__.__name__} cannot be converted to a write object")
 
@@ -154,5 +157,6 @@ class DestinationWriteList(CogniteResourceList[DestinationWrite], ExternalIDTran
 class DestinationList(WriteableCogniteResourceList[DestinationWrite, Destination], ExternalIDTransformerMixin):
     _RESOURCE = Destination
 
+    @override
     def as_write(self) -> NoReturn:
         raise TypeError(f"{self.__class__.__name__} cannot be converted to a write object")

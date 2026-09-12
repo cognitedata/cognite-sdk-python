@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar, Literal
 
+from typing_extensions import override
+
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_camel_case
 
@@ -29,6 +31,7 @@ class MessageContent(CogniteResource, ABC):
         # Delegate to the concrete class' loader
         return content_class._load_content(data)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["type"] = self._type
@@ -146,6 +149,7 @@ class UnknownContent(MessageContent):
     type: str
     data: dict[str, Any] = field(default_factory=dict)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = self.data.copy()
         result["type"] = self.type
@@ -202,6 +206,7 @@ class ClientToolAction(Action):
         str, object
     ]  # TODO: We do not want the user to have to handle this, instead e.g. set json schema from Pydantic classes, or function signatures, like ClientToolAction.from_function(func: Callable)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "type": self._type,
@@ -234,6 +239,7 @@ class UnknownAction(Action):
     type: str
     data: dict[str, object] = field(default_factory=dict)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = self.data.copy()
         result["type"] = self.type
@@ -289,6 +295,7 @@ class ClientToolCall(ActionCall):
     name: str
     arguments: dict[str, object]  # Always a json string, in line with OpenAI's API pattern
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "type": self._type,
@@ -338,6 +345,7 @@ class ToolConfirmationCall(ActionCall):
     tool_type: str
     details: dict[str, object] | None = None
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = {
             "type": self._type,
@@ -383,6 +391,7 @@ class UnknownActionCall(ActionCall):
     type: str
     data: dict[str, object] = field(default_factory=dict)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = self.data.copy()
         result["type"] = self.type
@@ -437,6 +446,7 @@ class Message(CogniteResource):
             self.content = parts
         self.role = role
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "content": MessageContent._dump_content_value(self.content, camel_case=camel_case),
@@ -485,6 +495,7 @@ class ClientToolResult(ActionResult):
         object.__setattr__(self, "content", TextContent(text=content) if isinstance(content, str) else content)
         object.__setattr__(self, "data", data)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "role": self._role,
@@ -521,6 +532,7 @@ class ToolConfirmationResult(ActionResult):
     _type: ClassVar[str] = "toolConfirmation"
     status: Literal["ALLOW", "DENY"]
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "role": self._role,
@@ -550,6 +562,7 @@ class AgentDataItem(CogniteResource):
     type: str
     data: dict[str, Any]
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = {"type": self.type}
         if self.data:
@@ -598,6 +611,7 @@ class ReasoningDataItem(CogniteResource, ABC):
 
     _type: ClassVar[str]
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["type"] = self._type
@@ -625,6 +639,7 @@ class ToolCallReasoningDataItem(ReasoningDataItem):
     _type: ClassVar[str] = "toolCall"
     tool_call: ToolCallDetail | None = None
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         key = "toolCall" if camel_case else "tool_call"
         result: dict[str, Any] = {"type": self._type}
@@ -649,6 +664,7 @@ class UnknownReasoningDataItem(ReasoningDataItem):
     type: str
     data: dict[str, Any] = field(default_factory=dict)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = self.data.copy()
         result["type"] = self.type
@@ -678,6 +694,7 @@ class AgentReasoningItem(CogniteResource):
     content: list[MessageContent]
     data: list[ReasoningDataItem] | None = None
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = {"content": [item.dump(camel_case=camel_case) for item in self.content]}
         if self.data is not None:
@@ -709,6 +726,7 @@ class AgentMessage(CogniteResource):
     actions: list[ActionCall] | None = None
     role: Literal["agent"] = "agent"
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result: dict[str, Any] = {"role": self.role}
         if self.content is not None:
@@ -763,6 +781,7 @@ class AgentChatResponse(CogniteResource):
         self.messages = messages
         self.type = type
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         result = {
             "agentExternalId" if camel_case else "agent_external_id": self.agent_external_id,

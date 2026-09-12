@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes._base import CogniteResource, UnknownCogniteResource
@@ -27,6 +27,7 @@ class TransformationDestination(CogniteResource):
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, type(self)) and hash(other) == hash(self)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         ret = basic_obj_dump(self, camel_case)
 
@@ -235,6 +236,7 @@ class EdgeType(CogniteResource):
             external_id=resource["externalId"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return basic_obj_dump(self, camel_case)
 
@@ -473,6 +475,7 @@ class TransformationBlockedInfo:
 
     @classmethod
     def load(cls, resource: dict[str, Any]) -> TransformationBlockedInfo:
+        """Load data into the instance."""
         return cls(reason=resource["reason"], created_time=resource["createdTime"])
 
     @classmethod
@@ -482,4 +485,5 @@ class TransformationBlockedInfo:
     load_if = _load_if  # TransformationBlockedInfo has no private load method, so these are the same
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the instance into a json serializable Python data type."""
         return basic_obj_dump(self, camel_case)

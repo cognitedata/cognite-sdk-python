@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from functools import cache
 from typing import Any, ClassVar, Literal, NoReturn, cast, get_args, get_type_hints
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import ContainerId
@@ -39,6 +39,7 @@ class DebugInfo(CogniteResource):
             plan=ExecutionPlan._load_if(data.get("plan")),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj: dict[str, Any] = {}
         if self.notices is not None:
@@ -68,6 +69,7 @@ class TranslatedQuery(CogniteResource):
     def _load(cls, data: dict[str, Any]) -> TranslatedQuery:
         return cls(query=data["query"], parameters=data["parameters"])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"query": self.query, "parameters": self.parameters}
 
@@ -95,6 +97,7 @@ class ExecutionPlan(CogniteResource):
             by_identifier=data["byIdentifier"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "fullPlan" if camel_case else "full_plan": self.full_plan,
@@ -128,6 +131,7 @@ class DebugParameters(CogniteResource):
     def requires_alpha_header(self) -> bool:
         return self.include_translated_query or self.include_plan or self.include_llm_prompt
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         res: dict[str, bool | int] = {
             "emitResults" if camel_case else "emit_results": self.emit_results,
@@ -174,6 +178,7 @@ class DebugNotice(CogniteResource, ABC):
         except KeyError:
             return cast(DebugNotice, UnknownDebugNotice._load(data))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "category": self.category,
@@ -205,6 +210,7 @@ class ExcessiveTimeoutNotice(InvalidDebugOptionsNotice):
             timeout=data["timeout"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         obj["timeout"] = self.timeout
@@ -251,6 +257,7 @@ class IntractableDirectRelationsCursorNotice(CursoringNotice):
             result_expression=data["resultExpression"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         obj["grade"] = self.grade
@@ -284,6 +291,7 @@ class UnindexedThroughNotice(IndexingNotice):
             property=data["property"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         obj.update(
@@ -317,6 +325,7 @@ class ContainersWithoutIndexesInvolvedNotice(IndexingNotice):
             containers=[ContainerId.load(c) for c in data["containers"]],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         obj.update(
@@ -355,6 +364,7 @@ class SelectiveExternalIDFilterNotice(FilteringNotice):
             via_from=data.get("viaFrom"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         obj.update(
@@ -388,6 +398,7 @@ class SignificantHasDataFiltersNotice(FilteringNotice):
             containers=[ContainerId.load(c) for c in data["containers"]],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         obj.update(
@@ -423,6 +434,7 @@ class SignificantPostFilteringNotice(FilteringNotice):
             max_involved_rows=data["maxInvolvedRows"],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         obj.update(
@@ -462,6 +474,7 @@ class SortNotBackedByIndexNotice(SortingNotice):
             sort=[InstanceSort.load(s) for s in data["sort"]],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         obj.update(
@@ -495,6 +508,7 @@ class FilterMatchesCursorableSortNotice(SortingNotice):
             sort=[InstanceSort.load(s) for s in data["sort"]],
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
         obj.update(
@@ -521,6 +535,7 @@ class UnknownDebugNotice(DebugNotice):
         level = data.pop("level", cls._MISSING)
         return cls(category=category, code=code, hint=hint, level=level, data=data)
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         if camel_case is False:
             import warnings

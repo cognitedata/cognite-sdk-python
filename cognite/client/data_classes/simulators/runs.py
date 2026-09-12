@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -74,6 +74,7 @@ class SimulationInputOverride(CogniteResource):
     def __post_init__(self) -> None:
         _WARNING.warn()
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.unit is not None:
@@ -157,6 +158,7 @@ class SimulationRunWrite(WriteableCogniteResource["SimulationRunWrite"]):
             model_revision_external_id=model_revision_external_id,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.inputs is not None:
@@ -173,6 +175,7 @@ class SimulationRunWrite(WriteableCogniteResource["SimulationRunWrite"]):
 
         return output
 
+    @override
     def as_write(self) -> SimulationRunWrite:
         return self
 
@@ -250,6 +253,7 @@ class SimulationRun(WriteableCogniteResourceWithClientRef["SimulationRunWrite"])
         self.user_id = user_id
         self.log_id = log_id
 
+    @override
     def as_write(self) -> SimulationRunWrite:
         return SimulationRunWrite(
             routine_external_id=self.routine_external_id,
@@ -377,6 +381,7 @@ class SimulationValueBase(CogniteResource):
             timeseries_external_id=resource.get("timeseriesExternalId"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.unit is not None:
@@ -426,6 +431,7 @@ class SimulationInput(SimulationValueBase):
             overridden=resource.get("overridden"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.unit is not None:
@@ -470,6 +476,7 @@ class SimulationRunDataItem(CogniteResource):
             outputs=outputs,
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         output["inputs"] = [input_.dump(camel_case=camel_case) for input_ in self.inputs]
@@ -534,5 +541,6 @@ class SimulationRunWriteList(CogniteResourceList[SimulationRunWrite], ExternalID
 class SimulationRunList(WriteableCogniteResourceList[SimulationRunWrite, SimulationRun], IdTransformerMixin):
     _RESOURCE = SimulationRun
 
+    @override
     def as_write(self) -> SimulationRunWriteList:
         return SimulationRunWriteList([a.as_write() for a in self.data])

@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from typing import Any, ClassVar, TypeAlias, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import CogniteResource, UnknownCogniteResource
 from cognite.client.data_classes.data_modeling.ids import ContainerId, NodeId
@@ -24,6 +24,7 @@ class DirectRelationReference:
     external_id: str
 
     def dump(self, camel_case: bool = True) -> dict[str, str | dict]:
+        """Dump the DirectRelationReference to a dictionary."""
         return {
             "space": self.space,
             "externalId" if camel_case else "external_id": self.external_id,
@@ -93,6 +94,7 @@ class StateSetEntry:
         return cls(num_val, str_val, data.get("description"))
 
     def dump(self, camel_case: bool = True) -> dict[str, int | str]:
+        """Dump the StateSetEntry to a dictionary"""
         output: dict[str, int | str] = {
             "numericValue" if camel_case else "numeric_value": self.numeric_value,
             "stringValue" if camel_case else "string_value": self.string_value,
@@ -106,6 +108,7 @@ class StateSetEntry:
 class PropertyType(CogniteResource, ABC):
     _type: ClassVar[str]
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = asdict(self)
         output["type"] = self._type
@@ -226,6 +229,7 @@ class UnitReference:
     source_unit: str | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the UnitReference to a dictionary."""
         output = {"externalId" if camel_case else "external_id": self.external_id}
         if self.source_unit:
             output["sourceUnit" if camel_case else "source_unit"] = self.source_unit
@@ -244,6 +248,7 @@ class UnitSystemReference:
     unit_system_name: str
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the UnitSystemReference to a dictionary."""
         return {"unitSystemName" if camel_case else "unit_system_name": self.unit_system_name}
 
     @classmethod
@@ -255,6 +260,7 @@ class UnitSystemReference:
 class PropertyTypeWithUnit(ListablePropertyType, ABC):
     unit: UnitReference | None = None
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
         if self.unit:
@@ -306,6 +312,7 @@ class DirectRelation(ListablePropertyType):
     _type = "direct"
     container: ContainerId | None = None
 
+    @override
     def dump(self, camel_case: bool = True) -> dict:
         output = super().dump(camel_case)
         if "container" in output:
@@ -336,6 +343,7 @@ class Enum(PropertyType):
     unknown_value: str | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the Enum to a dictionary."""
         output = {
             "type": self._type,
             "values": {k: v.dump(camel_case) for k, v in self.values.items()},

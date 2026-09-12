@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
+from typing_extensions import override
+
 from cognite.client._constants import OMITTED, Omitted
 from cognite.client.data_classes.data_modeling import DirectRelationReference
 from cognite.client.data_classes.data_modeling.ids import ViewId
@@ -78,6 +80,7 @@ class CogniteExtractorData(_CogniteExtractorDataProperties, TypedNode):
         TypedNode.__init__(self, space, external_id, version, last_updated_time, created_time, deleted_time, type)
         self.extracted_data = extracted_data
 
+    @override
     def as_write(self) -> CogniteExtractorDataApply:
         return CogniteExtractorDataApply(
             self.space,

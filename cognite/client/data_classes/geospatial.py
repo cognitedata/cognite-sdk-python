@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteResource,
@@ -88,6 +88,7 @@ class FeatureType(FeatureTypeCore):
             search_spec=resource.get("searchSpec"),
         )
 
+    @override
     def as_write(self) -> FeatureTypeWrite:
         """Returns a write version of this feature type."""
         return FeatureTypeWrite(
@@ -132,6 +133,7 @@ class FeatureTypeWrite(FeatureTypeCore):
             search_spec=resource.get("searchSpec"),
         )
 
+    @override
     def as_write(self) -> FeatureTypeWrite:
         """Returns this FeatureTypeWrite instance."""
         return self
@@ -144,6 +146,7 @@ class FeatureTypeWriteList(CogniteResourceList[FeatureTypeWrite], ExternalIDTran
 class FeatureTypeList(WriteableCogniteResourceList[FeatureTypeWrite, FeatureType], ExternalIDTransformerMixin):
     _RESOURCE = FeatureType
 
+    @override
     def as_write(self) -> FeatureTypeWriteList:
         return FeatureTypeWriteList([feature_type.as_write() for feature_type in self])
 
@@ -182,6 +185,7 @@ class FeatureTypePatch(CogniteResource):
     property_patches: Patches | None = None
     search_spec_patches: Patches | None = None
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         item = {
             "external_id": self.external_id,
@@ -218,6 +222,7 @@ class FeatureCore(WriteableCogniteResource["FeatureWrite"], ABC):
         for key in properties:
             setattr(self, key, properties[key])
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         def handle_case(key: str) -> str:
             # Keep properties defined in Feature Type as is
@@ -271,6 +276,7 @@ class Feature(FeatureCore):
             **{_to_feature_property_name(key): value for key, value in resource.items() if key not in non_feature_keys},
         )
 
+    @override
     def as_write(self) -> FeatureWrite:
         """Returns a write version of this feature."""
         if self.external_id is None:
@@ -305,6 +311,7 @@ class FeatureWrite(FeatureCore):
             **{_to_feature_property_name(key): value for key, value in resource.items() if key != "externalId"},
         )
 
+    @override
     def as_write(self) -> FeatureWrite:
         """Returns this FeatureWrite instance."""
         return self
@@ -463,6 +470,7 @@ class FeatureListCore(WriteableCogniteResourceList[FeatureWrite, T_Feature], Ext
 class FeatureWriteList(FeatureListCore[FeatureWrite]):
     _RESOURCE = FeatureWrite
 
+    @override
     def as_write(self) -> FeatureWriteList:
         return self
 
@@ -470,6 +478,7 @@ class FeatureWriteList(FeatureListCore[FeatureWrite]):
 class FeatureList(FeatureListCore[Feature]):
     _RESOURCE = Feature
 
+    @override
     def as_write(self) -> FeatureWriteList:
         return FeatureWriteList([feature.as_write() for feature in self])
 
@@ -531,6 +540,7 @@ class CoordinateReferenceSystem(CoordinateReferenceSystemCore):
             proj_string=resource["projString"],
         )
 
+    @override
     def as_write(self) -> CoordinateReferenceSystemWrite:
         """Returns a write version of this coordinate reference system."""
         return CoordinateReferenceSystemWrite(srid=self.srid, wkt=self.wkt, proj_string=self.proj_string)
@@ -549,6 +559,7 @@ class CoordinateReferenceSystemWrite(CoordinateReferenceSystemCore):
     def _load(cls, resource: dict[str, Any]) -> CoordinateReferenceSystemWrite:
         return cls(srid=resource["srid"], wkt=resource["wkt"], proj_string=resource["projString"])
 
+    @override
     def as_write(self) -> CoordinateReferenceSystemWrite:
         """Returns this CoordinateReferenceSystemWrite instance."""
         return self
@@ -563,6 +574,7 @@ class CoordinateReferenceSystemList(
 ):
     _RESOURCE = CoordinateReferenceSystem
 
+    @override
     def as_write(self) -> CoordinateReferenceSystemWriteList:
         return CoordinateReferenceSystemWriteList(
             [coordinate_reference_system.as_write() for coordinate_reference_system in self]
@@ -667,5 +679,6 @@ class GeospatialComputedResponse(CogniteResource):
     def _load(cls, resource: dict[str, Any]) -> GeospatialComputedResponse:
         return cls(GeospatialComputedItemList._load(resource.get("items", [])))
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"items": self.items.dump(camel_case=camel_case)}

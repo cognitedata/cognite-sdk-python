@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import auto
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
 
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from cognite.client.data_classes._base import (
     CogniteFilter,
@@ -116,6 +116,7 @@ class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
             data_set_id=resource.get("dataSetId"),
         )
 
+    @override
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.instance_id is not None:
@@ -366,6 +367,7 @@ class TimeSeriesUpdate(CogniteUpdate):
         if instance_id is not None:
             self.warn_on_instance_id_update()
 
+    @override
     def dump(self, camel_case: Literal[True] = True) -> dict[str, Any]:
         output = super().dump(camel_case=camel_case)
         if self.instance_id is not None:
