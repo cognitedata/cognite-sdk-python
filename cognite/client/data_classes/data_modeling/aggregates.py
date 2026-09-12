@@ -33,6 +33,61 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
+_AGGREGATES_HINT = (
+    "Aggregates are keyed by the IDs you pick for them, e.g. "
+    '{"avg_temperature": Average(["my_space", "my_container", "temperature"])}.'
+)
+
+
+def _validate_aggregates(
+    aggregates: Mapping[str, Aggregate | dict[str, Any]] | None, argument: str = "aggregates"
+) -> Mapping[str, Aggregate | dict[str, Any]] | None:
+    """Validate a mapping of client-defined aggregate IDs to aggregate specs.
+
+    A raw dict value is the dumped form of a bucket aggregate, e.g. ``{"uniqueValues": {"property":
+    [...], "aggregates": {...}}}``, so its own nested ``aggregates`` (if any) is validated too.
+    """
+    if aggregates is None:
+        return None
+    if not isinstance(aggregates, Mapping):
+        raise TypeError(f"{argument!r} must be a mapping, not {type(aggregates).__name__}. {_AGGREGATES_HINT}")
+    for aggregate_id, aggregate in aggregates.items():
+        if not isinstance(aggregate_id, str):
+            raise TypeError(f"{argument!r} keys must be strings, not {type(aggregate_id).__name__}. {_AGGREGATES_HINT}")
+        if not isinstance(aggregate, (Aggregate, Mapping)):
+            raise TypeError(
+                f"{argument!r}[{aggregate_id!r}] must be an Aggregate or dict, "
+                f"not {type(aggregate).__name__}. {_AGGREGATES_HINT}"
+            )
+        if isinstance(aggregate, Mapping):
+            for body in aggregate.values():
+                if isinstance(body, Mapping) and "aggregates" in body:
+                    _validate_aggregates(body["aggregates"], f"{argument}[{aggregate_id!r}]['aggregates']")
+    return aggregates
+
+
+def _validate_filters(
+    filters: Filter | Mapping[str, Any] | Sequence[Filter | Mapping[str, Any]], argument: str = "filters"
+) -> Sequence[Filter | Mapping[str, Any]]:
+    """Validate the filters a Filters aggregate buckets matched items by, one bucket per filter.
+
+    As with most sequence arguments in the SDK, a single filter is accepted and wrapped into a
+    one-item list rather than rejected, so ``Filters(filters=filters.MatchAll())`` works too.
+    """
+    if isinstance(filters, (Filter, Mapping)):
+        filters = [filters]
+    hint = "Each filter creates one bucket."
+    if isinstance(filters, str) or not isinstance(filters, Sequence):
+        raise TypeError(
+            f"{argument!r} must be a Filter, dict, or sequence of those, not {type(filters).__name__}. {hint}"
+        )
+    if invalid := [filter for filter in filters if not isinstance(filter, (Filter, Mapping))]:
+        raise TypeError(
+            f"{argument!r} must be a sequence of Filter or dict, but got an entry "
+            f"of type {type(invalid[0]).__name__}. {hint}"
+        )
+    return filters
+
 
 def _dump_aggregate_value(value: Any) -> Any:
     match value:
@@ -178,7 +233,7 @@ class UniqueValues(Aggregate):
         size: int | None = None,
     ):
         self.property = validate_property_path(property)
-        self.aggregates = aggregates
+        self.aggregates = _validate_aggregates(aggregates)
         self.size = size
 
     def _dump_body(self) -> dict[str, Any]:
@@ -204,7 +259,7 @@ class NumberHistogram(Aggregate):
     ) -> None:
         self.property = validate_property_path(property)
         self.interval = interval
-        self.aggregates = aggregates
+        self.aggregates = _validate_aggregates(aggregates)
         self.hard_bounds = hard_bounds
 
     def _dump_body(self) -> dict[str, Any]:
@@ -235,7 +290,7 @@ class TimeHistogram(Aggregate):
         self.property = validate_property_path(property)
         self.calendar_interval = calendar_interval
         self.fixed_interval = fixed_interval
-        self.aggregates = aggregates
+        self.aggregates = _validate_aggregates(aggregates)
         self.hard_bounds = hard_bounds
 
     def _dump_body(self) -> dict[str, Any]:
@@ -258,11 +313,11 @@ class Filters(Aggregate):
 
     def __init__(
         self,
-        filters: Sequence[Filter | dict[str, Any]],
+        filters: Filter | Mapping[str, Any] | Sequence[Filter | Mapping[str, Any]],
         aggregates: Mapping[str, Aggregate | dict[str, Any]] | None = None,
     ) -> None:
-        self.filters = filters
-        self.aggregates = aggregates
+        self.filters = _validate_filters(filters)
+        self.aggregates = _validate_aggregates(aggregates)
 
     def _dump_body(self) -> dict[str, Any]:
         body: dict[str, Any] = {

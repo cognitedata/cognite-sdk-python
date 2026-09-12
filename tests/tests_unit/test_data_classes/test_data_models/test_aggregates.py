@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import cast
+from typing import Any, cast
 
 import pytest
 
@@ -19,7 +19,10 @@ from cognite.client.data_classes.data_modeling.aggregates import (
     TimeHistogram,
     UniqueValues,
     UnknownAggregate,
+    _validate_aggregates,
+    _validate_filters,
 )
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -282,6 +285,135 @@ class TestCoexistenceWithTheAggregationsModule:
         assert not issubclass(aggregations.Aggregation, Aggregate)
         assert type(aggregations.Aggregation.load({"avg": {"property": "height"}})) is aggregations.Average
         assert type(Aggregate.load({"avg": {"property": ["sp", "c", "temp"]}})) is Average
+
+
+class TestAggregateContainerValidation:
+    """`aggregates` is a mapping of client-defined ID to aggregate, and `filters` a list.
+
+    Passing an aggregate (or a list of them) instead builds a request the API cannot make sense of,
+    with no hint that the shape was the problem.
+    """
+
+    @pytest.mark.parametrize("bad_aggregates", [Count(), [Count()], {"nested": "count"}])
+    def test_nested_aggregates_must_be_a_mapping_of_aggregates(self, bad_aggregates: object) -> None:
+        with pytest.raises(TypeError, match="'aggregates'"):
+            UniqueValues(["sp", "c", "player"], aggregates=bad_aggregates)  # type: ignore[arg-type]
+
+    def test_nested_aggregates_validated_for_all_bucket_aggregates(self) -> None:
+        for build in (
+            lambda aggs: NumberHistogram(["sp", "c", "score"], interval=1.0, aggregates=aggs),
+            lambda aggs: TimeHistogram(["sp", "c", "t"], calendar_interval="1d", aggregates=aggs),
+            lambda aggs: Filters(filters=[filters.MatchAll()], aggregates=aggs),
+        ):
+            with pytest.raises(TypeError, match="'aggregates'"):
+                build([Count()])
+
+    def test_filters_aggregate_wraps_a_single_filter_in_a_list(self) -> None:
+        single_filter = filters.MatchAll()
+        assert Filters(filters=single_filter).filters == [single_filter]
+
+    def test_nested_aggregates_validated_recursively_inside_raw_dicts(self) -> None:
+        # A raw dict aggregate value is the dumped form of a bucket aggregate, so its own nested
+        # `aggregates` (here holding a plain string instead of an Aggregate or dict) must be
+        # validated too, not just shipped off verbatim.
+        bad_nested = {"uniqueValues": {"property": ["sp", "c", "player"], "aggregates": {"x": "not-an-aggregate"}}}
+        with pytest.raises(TypeError, match="must be an Aggregate or dict") as exc_info:
+            UniqueValues(["sp", "c", "score"], aggregates={"outer": bad_nested})
+        assert "outer" in str(exc_info.value)
+
+
+class TestValidateAggregatesFunction:
+    """Direct tests for `_validate_aggregates`, the mapping-shape guard shared by the top-level
+    `aggregates` argument and every bucket aggregate's nested `aggregates`.
+    """
+
+    def test_none_passes_through(self) -> None:
+        assert _validate_aggregates(None) is None
+
+    def test_mapping_of_aggregate_instances_passes_through_unchanged(self) -> None:
+        aggs = {"avg_temp": Average(["sp", "c", "temp"]), "n": Count()}
+        assert _validate_aggregates(aggs) is aggs
+
+    def test_mapping_of_raw_dicts_passes_through_unchanged(self) -> None:
+        aggs = {"avg_temp": {"avg": {"property": ["sp", "c", "temp"]}}}
+        assert _validate_aggregates(aggs) is aggs
+
+    def test_valid_nested_aggregates_inside_a_raw_dict_passes(self) -> None:
+        aggs = {
+            "buckets": {
+                "uniqueValues": {"property": ["sp", "c", "player"], "aggregates": {"n": Count()}},
+            }
+        }
+        assert _validate_aggregates(aggs) is aggs
+
+    def test_recurses_two_levels_deep_to_find_an_invalid_shape(self) -> None:
+        aggs = {
+            "outer": {
+                "uniqueValues": {
+                    "property": ["sp", "c", "player"],
+                    "aggregates": {
+                        "inner": {
+                            "numberHistogram": {
+                                "property": ["sp", "c", "score"],
+                                "interval": 1.0,
+                                "aggregates": [Count()],  # invalid: a list, not a mapping
+                            }
+                        }
+                    },
+                }
+            }
+        }
+        with pytest.raises(TypeError, match="must be a mapping") as exc_info:
+            _validate_aggregates(aggs)
+        assert "aggregates['outer']['aggregates']['inner']['aggregates']" in str(exc_info.value)
+
+    @pytest.mark.parametrize("bad_top_level", [Count(), [Count()], ("id", Count()), "aggregates", 42])
+    def test_rejects_non_mapping_top_level(self, bad_top_level: object) -> None:
+        with pytest.raises(TypeError, match="'aggregates' must be a mapping"):
+            _validate_aggregates(bad_top_level)  # type: ignore[arg-type]
+
+    def test_rejects_non_string_keys(self) -> None:
+        with pytest.raises(TypeError, match="'aggregates' keys must be strings"):
+            _validate_aggregates({1: Count()})  # type: ignore[dict-item]
+
+    @pytest.mark.parametrize("bad_value", [1, "count", [Count()], None])
+    def test_rejects_values_that_are_not_aggregate_or_mapping(self, bad_value: object) -> None:
+        with pytest.raises(TypeError, match=r"'aggregates'\['n'\] must be an Aggregate or dict"):
+            _validate_aggregates({"n": bad_value})  # type: ignore[dict-item]
+
+
+class TestValidateFiltersFunction:
+    """Direct tests for `_validate_filters`, the Filter-or-sequence-of-Filter guard for `Filters`."""
+
+    def test_single_filter_is_wrapped_in_a_list(self) -> None:
+        single_filter = filters.MatchAll()
+        assert _validate_filters(single_filter) == [single_filter]
+
+    def test_single_raw_dict_is_wrapped_in_a_list(self) -> None:
+        raw: dict[str, Any] = {"matchAll": {}}
+        assert _validate_filters(raw) == [raw]
+
+    def test_sequence_of_filters_and_dicts_passes_through_unchanged(self) -> None:
+        seq: list[Filter | dict[str, Any]] = [filters.MatchAll(), {"matchAll": {}}]
+        assert _validate_filters(seq) is seq
+
+    def test_empty_sequence_is_allowed(self) -> None:
+        assert _validate_filters([]) == []
+
+    def test_rejects_a_bare_string(self) -> None:
+        # A string is a Sequence of characters, so without this check it would silently produce
+        # one (invalid) bucket per character instead of failing.
+        with pytest.raises(TypeError, match="must be a Filter, dict, or sequence"):
+            _validate_filters("not-a-filter")  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize("bad_value", [123, object(), Count()])
+    def test_rejects_non_sequence_non_filter_values(self, bad_value: object) -> None:
+        with pytest.raises(TypeError, match="must be a Filter, dict, or sequence"):
+            _validate_filters(bad_value)  # type: ignore[arg-type]
+
+    def test_rejects_a_sequence_containing_an_invalid_entry(self) -> None:
+        with pytest.raises(TypeError, match="must be a sequence of Filter or dict"):
+            _validate_filters([filters.MatchAll(), Count()])  # type: ignore[list-item]
 
 
 class TestAggregatePropertyPathValidation:
