@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 from typing_extensions import Self
 
@@ -16,11 +16,13 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.data_modeling import aggregates as aggs
 from cognite.client.data_classes.data_modeling._validation import validate_property_path
 from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
-from cognite.client.data_classes.data_modeling.ids import ContainerId
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyPath, ViewId
 from cognite.client.data_classes.data_modeling.instances import TypeInformation
 from cognite.client.utils._identifier import IdentifierSequenceCore
 from cognite.client.utils._identifier import RecordId as RecordId  # explicit re-export
 from cognite.client.utils.useful_types import SequenceNotStr
+
+RecordSourceIdentifier: TypeAlias = ContainerId | ViewId | tuple[str, str] | tuple[str, str, str]
 
 
 class RecordIdSequence(IdentifierSequenceCore[RecordId]):
@@ -33,7 +35,7 @@ class RecordIdSequence(IdentifierSequenceCore[RecordId]):
 
 @dataclass(frozen=True)
 class RecordContainerId(ContainerId):
-    """Container reference used as a source in a record write.
+    """Identifier for a records container
 
     Args:
         space (str): Space that contains the container.
@@ -41,22 +43,79 @@ class RecordContainerId(ContainerId):
     """
 
 
-class RecordSource(CogniteResource):
-    """Container source with property values for a record write.
+@dataclass(frozen=True)
+class RecordViewId(ViewId):
+    """View reference used as a source in a record write or read.
 
     Args:
-        source (RecordContainerId): Reference to the container.
-        properties (dict[str, Any]): The data to write to the source container.
+        space (str): Space that contains the view.
+        external_id (str): External ID of the view.
+        version (str): Version of the view.
     """
 
-    def __init__(self, source: RecordContainerId, properties: dict[str, Any]) -> None:
-        self.source = source
+    version: str
+
+    def __post_init__(self) -> None:
+        if self.version is None:
+            raise TypeError("RecordViewId requires an explicit 'version'.")
+
+
+def _load_record_source_id(data: RecordSourceIdentifier | dict[str, Any]) -> RecordContainerId | RecordViewId:
+    match data:
+        case RecordViewId() | RecordContainerId():
+            return data
+        case ViewId():
+            if data.version is None:
+                raise ValueError("A view requires an explicit version.")
+            return RecordViewId(space=data.space, external_id=data.external_id, version=data.version)
+        case ContainerId():
+            return RecordContainerId(space=data.space, external_id=data.external_id)
+        case tuple([space, external_id, version]):
+            return RecordViewId(space=space, external_id=external_id, version=version)
+        case tuple([space, external_id]):
+            return RecordContainerId(space=space, external_id=external_id)
+        case tuple():
+            raise ValueError(f"Invalid tuple length for record source identifier: {len(data)}, expected 2 or 3.")
+        case dict({"type": "view"}):
+            return RecordViewId.load(data)
+        case dict({"type": "container"}):
+            return RecordContainerId.load(data)
+        case dict() if data.get("type") is None:
+            return RecordViewId.load(data) if "version" in data else RecordContainerId.load(data)
+        case dict():
+            raise ValueError(f"Record source 'type' must be 'container' or 'view', but was {data.get('type')!r}")
+        case _:
+            raise TypeError(f"Cannot load record source from {type(data).__name__}")
+
+
+def _parse_records_source(space: str, identifier: str) -> RecordContainerId | RecordViewId:
+    match identifier.split("/", 1):
+        case [view_xid, version]:
+            return RecordViewId(space=space, external_id=view_xid, version=version)
+        case _:
+            return RecordContainerId(space=space, external_id=identifier)
+
+
+class RecordSource(CogniteResource):
+    """Container or view source with property values for a record write.
+
+    Args:
+        source (RecordSourceIdentifier): Container or view ID or a (space, external_id[, version]) tuple.
+        properties (dict[str, Any]): The data to write to the source container or view.
+    """
+
+    def __init__(
+        self,
+        source: RecordSourceIdentifier,
+        properties: dict[str, Any],
+    ) -> None:
+        self.source = _load_record_source_id(source)
         self.properties = properties
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
-            source=RecordContainerId.load(resource["source"]),
+            source=_load_record_source_id(resource["source"]),
             properties=resource["properties"],
         )
 
@@ -75,7 +134,7 @@ class RecordWrite(WriteableCogniteResource["RecordWrite"]):
     Args:
         space (str): Space the record belongs to.
         external_id (str): External ID of the record (1-256 chars, no null bytes).
-        sources (list[RecordSource]): Container property values to write (1-100 sources).
+        sources (list[RecordSource]): Container or view property values to write (1-100 sources).
     """
 
     def __init__(self, space: str, external_id: str, sources: list[RecordSource]) -> None:
@@ -155,7 +214,9 @@ class Record(WriteableCogniteResource["RecordWrite"]):
         created_time (int): Creation time in milliseconds since epoch.
         last_updated_time (int): Last updated time in milliseconds since epoch.
         properties (dict[str, dict[str, dict[str, Any]]] | None): Property values keyed by
-            ``{space: {container_external_id: {property_id: value}}}``.
+            ``{space: {source_identifier: {property_id: value}}}``, where the source identifier
+            is ``container_external_id`` for a container and ``view_external_id/version`` for
+            a view.
     """
 
     def __init__(
@@ -199,12 +260,9 @@ class Record(WriteableCogniteResource["RecordWrite"]):
     def as_write(self) -> RecordWrite:
         """Reconstruct the :class:`RecordWrite` by grouping read properties back into sources."""
         sources = [
-            RecordSource(
-                source=RecordContainerId(space=space, external_id=container),
-                properties=dict(props),
-            )
-            for space, containers in (self.properties or {}).items()
-            for container, props in containers.items()
+            RecordSource(source=_parse_records_source(space, identifier), properties=dict(props))
+            for space, sources in (self.properties or {}).items()
+            for identifier, props in sources.items()
         ]
         return RecordWrite(space=self.space, external_id=self.external_id, sources=sources)
 
@@ -276,39 +334,44 @@ class TimeRange(CogniteResource):
 
 
 class RecordSourceSelector(CogniteResource):
-    """Selects which container properties to return for a record.
+    """Selects which container or view properties to return for a record.
 
     Args:
-        source (RecordContainerId): The container to select properties from.
+        source (RecordSourceIdentifier): The container or view to select properties from.
         properties (SequenceNotStr[str]): Property identifiers to return; use ``["*"]`` to return all.
     """
 
-    def __init__(self, source: RecordContainerId, properties: SequenceNotStr[str]) -> None:
-        self.source = source
+    def __init__(
+        self,
+        source: RecordSourceIdentifier,
+        properties: SequenceNotStr[str],
+    ) -> None:
+        self.source = _load_record_source_id(source)
         self.properties = validate_property_path(
             properties,
             "properties",
-            'Properties are the container property identifiers to return, e.g. ["temperature"], or ["*"] for all.',
+            'Properties are the container or view property identifiers to return, e.g. ["temperature"], or ["*"] for all.',
         )
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(source=RecordContainerId.load(resource["source"]), properties=resource["properties"])
+        return cls(source=_load_record_source_id(resource["source"]), properties=resource["properties"])
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {"source": self.source.dump(camel_case=camel_case), "properties": self.properties}
 
 
 class RecordTargetUnit(CogniteResource):
-    """A target unit conversion for one Records container property.
+    """A target unit conversion for one Records container or view property.
 
     Args:
-        property (SequenceNotStr[str]): Fully qualified container property path:
-            ``[space, container_external_id, property_id]``.
+        property (PropertyPath): Fully qualified container or view property path:
+            ``[space, container_external_id, property_id]`` or
+            ``[space, "view_external_id/version", property_id]``.
         unit (UnitReference | UnitSystemReference): Target unit or target unit system.
     """
 
-    def __init__(self, property: SequenceNotStr[str], unit: UnitReference | UnitSystemReference) -> None:
+    def __init__(self, property: PropertyPath, unit: UnitReference | UnitSystemReference) -> None:
         self.property = validate_property_path(property)
         self.unit = unit
 
