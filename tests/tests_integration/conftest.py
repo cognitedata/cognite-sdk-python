@@ -89,6 +89,7 @@ def make_cognite_client() -> CogniteClient:
             project=os.environ["COGNITE_PROJECT"],
             base_url=os.environ["COGNITE_BASE_URL"],
             credentials=credentials,
+            timeout=59.9,  # Test that a non-int timeout works
         )
     )
 
