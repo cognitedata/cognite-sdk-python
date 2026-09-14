@@ -90,6 +90,9 @@ class FailedRequestHandler:
         )
 
     def log_failed_request(self, payload: dict | None = None) -> None:
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
+
         response, request = self.cause.response, self.cause.request
         extra: dict[str, Any] = {
             "payload": payload,
@@ -484,6 +487,9 @@ class BasicAsyncAPIClient:
     def _log_successful_request(
         self, res: CogniteHTTPResponse, payload: dict[str, Any] | None = None, stream: bool = False
     ) -> None:
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
+
         extra: dict[str, Any] = {
             "headers": self._sanitize_headers(res.request.headers),
             "payload": payload,
