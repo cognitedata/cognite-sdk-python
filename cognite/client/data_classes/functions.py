@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal, NoReturn, Protocol, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, Protocol, TypeAlias
 
 from typing_extensions import Self
 
@@ -103,6 +103,9 @@ class FunctionCore(WriteableCogniteResourceWithClientRef["FunctionWrite"], ABC):
         runtime (RunTime | None): Runtime of the function. Allowed values are ["py310", "py311", "py312", "py313", "py314"]. The runtime "py314" resolves to the latest version of the Python 3.14 series.
         metadata (dict[str, str] | None): Metadata associated with a function as a set of key:value pairs.
     """
+
+    # Secrets are plaintext in create/update requests and masked in responses (keeping secret names) e.g.: {"my-secret": "***"}:
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"secrets"})
 
     def __init__(
         self,
@@ -586,6 +589,8 @@ class FunctionScheduleWrite(FunctionScheduleCore):
                 function and used to instantiate the client of the handle() function. You can create a session
                 via the Sessions API.
     """
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"nonce"})
 
     def __init__(
         self,
