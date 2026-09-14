@@ -91,8 +91,7 @@ class TestRedact:
                 id="listed field next to a similar-looking one",
             ),
             pytest.param(
-                # Regression guard for the substring matching this replaced: plenty of field names
-                # contain "token" without holding a credential.
+                # Regression guard: plenty of field names contain "token" without being sensitive
                 {
                     "items": [{"tokenExchange": True}],
                     "authentication": {"type": "clientCredentials", "tokenUrl": "https://login.example.com/token"},
@@ -131,7 +130,10 @@ class TestRedact:
     def test_does_not_touch_the_payload_it_was_given(self, payload: dict[str, Any]) -> None:
         # Ensure we never mutate the original payload, as that would be pretty catastrophic...
         still_payload = deepcopy(payload)
-        redact(payload)
+        assert SECRET in str(payload)
+
+        redacted = redact(payload)
+        assert SECRET not in str(redacted)  # also ensure we actually did something to it
 
         assert payload == still_payload
 
