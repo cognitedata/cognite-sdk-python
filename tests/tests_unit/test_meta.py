@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import re
 from pathlib import Path
 
 import pytest
@@ -243,3 +244,39 @@ def test_constants_are_importable() -> None:
     from cognite.client._constants import OMITTED, Omitted
 
     assert isinstance(OMITTED, Omitted)
+
+
+SECRET_ISH_ATTRIBUTE_PATTERN = re.compile(r"secret|password|passphrase|nonce", re.IGNORECASE)
+
+
+@pytest.fixture
+def attributes_exempt_from_sensitive_marking() -> set[tuple[str, str]]:
+    # (class name, attr) pairs whose name matches SECRET_ISH_ATTRIBUTE_PATTERN but that do not
+    # themselves hold "credential material", so they should stay visible in debug logs and str() etc.
+    #
+    # NOTE: Adding an entry here requires justification on why the value is safe to log:
+    return {
+        # These four hold a NonceCredentials object, and it lists its own 'nonce' field, so the
+        # secret is taken care of one level down:
+        ("Transformation", "source_nonce"),
+        ("Transformation", "destination_nonce"),
+        ("TransformationWrite", "source_nonce"),
+        ("TransformationWrite", "destination_nonce"),
+    }
+
+
+@pytest.mark.parametrize("cls", sorted(all_non_test_subclasses(CogniteResource), key=str))
+def test_credential_attributes_are_marked_sensitive(
+    cls: type[CogniteResource], attributes_exempt_from_sensitive_marking: set[tuple[str, str]]
+) -> None:
+    # Attempt to catch the next credential field that gets added without being listed in _SENSITIVE_FIELDS
+    marked = cls._SENSITIVE_FIELDS
+    for name in inspect.signature(cls.__init__).parameters:
+        if name in {"self", "args", "kwargs"} or not SECRET_ISH_ATTRIBUTE_PATTERN.search(name):
+            continue
+        assert name in marked or (cls.__name__, name) in attributes_exempt_from_sensitive_marking, (
+            f"{cls.__name__}.{name} looks like it holds a credential but is missing from "
+            f"{cls.__name__}._SENSITIVE_FIELDS — add it there so it gets redacted logs. "
+            f"If not a credential, add ({cls.__name__!r}, {name!r}) to the attributes_exempt_from_sensitive_marking"
+            "allowlist with a comment explaining why the value is safe to log."
+        )
