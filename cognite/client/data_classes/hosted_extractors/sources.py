@@ -896,7 +896,6 @@ class RESTQueryAuthenticationWrite(AuthenticationWrite):
     _type = "query"
 
     _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"value"})
-    # 'value' only means a credential in an object that reports this type:
     _SENSITIVE_TYPES: ClassVar[frozenset[str]] = frozenset({"query"})
 
     key: str
