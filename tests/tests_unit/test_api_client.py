@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import math
 import random
 import re
@@ -9,9 +10,10 @@ import unittest
 from collections import namedtuple
 from collections.abc import Callable, Iterator
 from typing import Any, ClassVar, Literal
+from unittest import mock
 
 import pytest
-from httpx2 import Headers, Request, Response
+from httpx2 import Request, Response
 from pytest_httpx2 import HTTPXMock
 from typing_extensions import Self
 
@@ -34,12 +36,14 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.hosted_extractors import MQTT5SourceUpdate, MQTT5SourceWrite
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._redaction import redact
 from cognite.client.utils._url import validate_url_and_return_retryability
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_or_raise, get_wrapped_async_client, jsgz_load
 
 BASE_URL = "http://localtest.com/api/v1/projects/test-project"
 URL_PATH = "/someurl"
+API_CLIENT_LOGGER_NAME = "cognite.client._basic_api_client"
 
 RESPONSE = {"any": "ok"}
 
@@ -223,6 +227,33 @@ class TestBasicRequests:
 
         assert "api-key" not in headers
         assert api_client_with_token._config.credentials.authorization_header()[1] == headers["Authorization"]
+
+    @pytest.mark.parametrize("debug_enabled", [False, True])
+    async def test_request_payload_only_redacted_when_debug_logging_enabled(
+        self,
+        mock_all_requests_ok: HTTPXMock,
+        api_client_with_token: APIClient,
+        caplog: pytest.LogCaptureFixture,
+        debug_enabled: bool,
+    ) -> None:
+        # Redacting is quite heavy as we recurse into the full payload, creating a full copy with redacted fields
+        # in order to log it. Since _log_successful_request runs on every single (successful) request, we have
+        # this test to ensure it -only- runs when needed.
+        payload = {"items": [{"clientSecret": "super-secret"}]}
+        log_level = logging.DEBUG if debug_enabled else logging.INFO
+
+        with mock.patch("cognite.client._basic_api_client.redact", side_effect=redact) as redactor:
+            with caplog.at_level(log_level, logger=API_CLIENT_LOGGER_NAME):
+                await api_client_with_token._post(URL_PATH, json=payload, semaphore=None)
+
+        assert redactor.called is debug_enabled
+
+        payload_records = [rec for rec in caplog.records if hasattr(rec, "payload")]
+        if debug_enabled:
+            assert len(payload_records) == 1
+            assert payload_records[0].payload == {"items": [{"clientSecret": "***"}]}
+        else:
+            assert not payload_records
 
     @pytest.mark.parametrize("payload", [math.nan, math.inf, -math.inf, {"foo": {"bar": {"baz": [[[math.nan]]]}}}])
     async def test__request_raises_more_verbose_exception(self, api_client_with_token: APIClient, payload: Any) -> None:
@@ -1920,14 +1951,6 @@ class TestRetryableEndpoints:
 
 
 class TestHelpers:
-    @pytest.mark.parametrize("header_type", [Headers, dict])
-    async def test_sanitize_headers(self, header_type: Any) -> None:
-        before = header_type({"Authorization": "bla", "key": "bla"})
-        after = header_type({"Authorization": "***", "key": "bla"})
-
-        assert before != after
-        assert after == APIClient._sanitize_headers(before)
-
     @pytest.mark.parametrize(
         "resource, update_obj, mode, expected_update_object",
         [

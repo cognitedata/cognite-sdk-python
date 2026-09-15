@@ -24,7 +24,7 @@ from cognite.client.exceptions import (
 )
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import append_url_path, drop_none_values
-from cognite.client.utils._text import shorten
+from cognite.client.utils._redaction import redact, redact_headers, redact_response_body
 from cognite.client.utils._url import resolve_url
 
 if TYPE_CHECKING:
@@ -50,8 +50,8 @@ class FailedRequestHandler:
     stream: bool
 
     def __post_init__(self) -> None:
-        self.headers = BasicAsyncAPIClient._sanitize_headers(self.headers)
-        self.response_headers = BasicAsyncAPIClient._sanitize_headers(self.response_headers)
+        self.headers = redact_headers(self.headers)
+        self.response_headers = redact_headers(self.response_headers)
 
     @classmethod
     async def from_status_error(cls, err: CogniteHTTPStatusError, stream: bool) -> Self:
@@ -90,22 +90,25 @@ class FailedRequestHandler:
         )
 
     def log_failed_request(self, payload: dict | None = None) -> None:
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
+
         response, request = self.cause.response, self.cause.request
         extra: dict[str, Any] = {
-            "payload": payload,
+            "payload": redact(payload),
             "missing": self.missing,
             "duplicated": self.duplicated,
             "headers": self.headers,
             "response-headers": self.response_headers,
         }
         if not self.stream:
-            extra["response-payload"] = shorten(response.text, 1_000)
+            extra["response-payload"] = redact_response_body(response.text, 1_000)
 
         if response.history:
             for res_hist in response.history:
                 logger.debug(
                     f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} "
-                    f"{res_hist.request.url}: {res_hist.text}"
+                    f"{res_hist.request.url}: {redact_response_body(res_hist.text)}"
                 )
         logger.debug(
             f"HTTP Error {self.status_code} {request.method} {request.url}: {self.message}",
@@ -484,13 +487,16 @@ class BasicAsyncAPIClient:
     def _log_successful_request(
         self, res: CogniteHTTPResponse, payload: dict[str, Any] | None = None, stream: bool = False
     ) -> None:
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
+
         extra: dict[str, Any] = {
-            "headers": self._sanitize_headers(res.request.headers),
-            "payload": payload,
+            "headers": redact_headers(res.request.headers),
+            "payload": redact(payload),
             "response-headers": dict(res.headers),
         }
         if not stream and self._config.debug:
-            extra["response-payload"] = shorten(res.text, 1_000)
+            extra["response-payload"] = redact_response_body(res.text, 1_000)
 
         logger.debug(
             f"{res.http_version} {res.request.method} {res.url} {res.status_code}",
@@ -508,11 +514,3 @@ class BasicAsyncAPIClient:
 
         full_headers["Content-Encoding"] = "gzip"
         return gzip.compress(content.encode())
-
-    @staticmethod
-    def _sanitize_headers(headers: httpx2.Headers | dict[str, str]) -> dict[str, str]:
-        sanitized = dict(headers)
-        for k in sanitized.keys():
-            if k.lower() in {"authorization", "proxy-authorization"}:
-                sanitized[k] = "***"
-        return sanitized
