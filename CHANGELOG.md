@@ -14,6 +14,20 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.17.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.16.1...v8.17.0) (2026-09-15)
+
+
+### Features
+
+* **state time series:** add retrieve support for simple state aggregate datapoints (DM-4096) ([#2839](https://github.com/cognitedata/cognite-sdk-python/issues/2839)) ([d75ac85](https://github.com/cognitedata/cognite-sdk-python/commit/d75ac8542d52068fed15aa995f4c7263315eb069))
+* **state time series:** add retrieve_arrays support for raw state datapoints ([#2812](https://github.com/cognitedata/cognite-sdk-python/issues/2812)) ([6bc589c](https://github.com/cognitedata/cognite-sdk-python/commit/6bc589cc949201fb9beed565e0e2bed0cb3d9264))
+
+
+### Bug Fixes
+
+* **logging:** Stop exposing credentials in debug logs and `str()` of data classes (DM-4118, VULN-112) ([#2842](https://github.com/cognitedata/cognite-sdk-python/issues/2842)) ([e93af64](https://github.com/cognitedata/cognite-sdk-python/commit/e93af64c407a3e9695fe60e2274d6709f8de75b0))
+* **SyntheticTimeSeries:** Make synthetic time series more robust with special characters ([#2766](https://github.com/cognitedata/cognite-sdk-python/issues/2766)) ([21250c9](https://github.com/cognitedata/cognite-sdk-python/commit/21250c9bcad594d5c2d176a8f4f8727aa869ebdf))
+
 ## [8.16.1](https://github.com/cognitedata/cognite-sdk-python/compare/v8.16.0...v8.16.1) (2026-09-09)
 
 
