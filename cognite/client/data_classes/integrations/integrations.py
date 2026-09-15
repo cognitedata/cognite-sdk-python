@@ -233,9 +233,6 @@ class Integration(IntegrationCore):
             allowed_not_seen_minutes=self.allowed_not_seen_minutes,
         )
 
-    def __hash__(self) -> int:
-        return hash(self.external_id)
-
 
 class IntegrationWriteList(CogniteResourceList[IntegrationWrite], ExternalIDTransformerMixin):
     _RESOURCE = IntegrationWrite
