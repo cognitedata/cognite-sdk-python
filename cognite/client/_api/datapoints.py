@@ -1418,31 +1418,44 @@ class DatapointsAPI(APIClient):
                 >>> res = client.time_series.data.retrieve_latest(
                 ...     instance_id=NodeId("my-space", "my-ts-xid")
                 ... )
-                >>> if res:  # Check if datapoint exists
+                >>> if res:  # Check if the datapoint exists
                 ...     print(res.timestamp, res.value)
 
-            You can also use id or external_id; single identifier or list of identifiers:
+            The timestamp is a timezone-aware ``datetime`` object (UTZ). If you instead prefer the timestamp in
+            milliseconds since the epoch, you can use the ``timestamp_ms`` property:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, external_id=["foo", "bar"])
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo")
+                >>> if res.has_datapoint:
+                ...     print(res.timestamp_ms, res.value)
+
+            You can also use id, external_id or instance_id; single identifier or list of identifiers:
+
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     id=1, external_id=["foo", "bar"], instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
 
             You can also get the latest datapoint before a specific time:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo", before="2d-ago")
 
             You can also get the latest datapoint before a specific time in the future e.g. forecast data:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ahead")
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo", before="2d-ahead")
 
             You can also retrieve the datapoint in a different unit or unit system:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     external_id="foo", target_unit="temperature:deg_f"
+                ... )
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     external_id="foo", target_unit_system="Imperial"
+                ... )
 
             You may also pass an instance of LatestDatapointQuery:
 
                 >>> from cognite.client.data_classes import LatestDatapointQuery
                 >>> res = client.time_series.data.retrieve_latest(
-                ...     id=LatestDatapointQuery(id=1, before=60_000)
+                ...     id=LatestDatapointQuery(external_id="foo", before=60_000)
                 ... )
 
             If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are
