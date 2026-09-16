@@ -1332,13 +1332,23 @@ class FilesAPI(APIClient):
     ) -> tuple[list[int], list[Path], list[Path]]:
         ids: list[int] = []
         filepaths, file_directories = [], []
+        resolved_root = directory.resolve()
         for identifier, metadata in id_to_metadata.items():
             if not isinstance(identifier, int):
                 continue
             file_directory = directory
             if metadata.directory and keep_directory_structure:
-                # CDF enforces absolute, unix-style paths (i.e. always stating with '/'). We strip to make it relative:
-                file_directory /= metadata.directory[1:]
+                # CDF enforces absolute, unix-style paths (i.e. always starting with '/'). We strip all
+                # leading slashes to make it relative: an absolute right-hand side would make pathlib
+                # discard the download root entirely. The metadata is server-returned and thus untrusted,
+                # so we additionally verify that the result stays inside the download directory - this
+                # must happen before download() creates the directories.
+                file_directory = directory / metadata.directory.lstrip("/")
+                if not file_directory.resolve().is_relative_to(resolved_root):
+                    raise RuntimeError(
+                        f"File with id {identifier} has a directory ('{metadata.directory}') that resolves "
+                        f"outside of the download directory '{directory}'"
+                    )
 
             ids.append(identifier)
             file_directories.append(file_directory)
