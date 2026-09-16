@@ -14,8 +14,10 @@ def default_token_cache_dir() -> Path:
         home = Path.home()
     except RuntimeError:
         # No home directory could be resolved (e.g. minimal/serverless containers without $HOME).
-        # write_securely()/read_securely() harden the cache regardless of directory, so this is safe.
-        return Path(tempfile.gettempdir()) / _CACHE_DIR_NAME
+        # Suffix with the UID so different users sharing the system temp dir don't collide on a
+        # directory one of them created with owner-only (0700) permissions.
+        suffix = f"-{os.getuid()}" if hasattr(os, "getuid") else ""
+        return Path(tempfile.gettempdir()) / f"{_CACHE_DIR_NAME}{suffix}"
 
     if sys.platform == "win32":
         base = Path(os.environ.get("LOCALAPPDATA") or (home / "AppData" / "Local"))
@@ -34,11 +36,15 @@ def write_securely(path: Path, content: str) -> None:
     fd, tmp_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
     try:
         # mkstemp() already creates the file at 0600; fchmod() just makes that guarantee explicit
-        # rather than relying on stdlib internals. Not available on Windows, which can't express
-        # POSIX-style owner/group/other permissions anyway.
+        # rather than relying on stdlib internals. Best-effort: not available on Windows (which
+        # can't express POSIX-style owner/group/other permissions anyway), and may fail on some
+        # exotic mounted filesystems.
         if hasattr(os, "fchmod"):
-            os.fchmod(fd, 0o600)
-        with os.fdopen(fd, "w") as fh:
+            try:
+                os.fchmod(fd, 0o600)
+            except OSError:
+                pass
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
             fh.write(content)
         os.replace(tmp_name, path)
     except BaseException:
@@ -48,7 +54,7 @@ def write_securely(path: Path, content: str) -> None:
 
 def read_securely(path: Path) -> str | None:
     """Read `path`, refusing to follow a symlink (treated as a cache miss, not an error)."""
-    if not path.exists():
+    if not path.is_file():
         return None
     if path.is_symlink():
         warnings.warn(
@@ -57,4 +63,4 @@ def read_securely(path: Path) -> str | None:
             stacklevel=2,
         )
         return None
-    return path.read_text()
+    return path.read_text(encoding="utf-8")

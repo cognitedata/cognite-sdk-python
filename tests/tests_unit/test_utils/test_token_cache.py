@@ -34,7 +34,8 @@ class TestDefaultTokenCacheDir:
             raise RuntimeError("no home directory")
 
         monkeypatch.setattr(Path, "home", staticmethod(raise_runtime_error))
-        assert default_token_cache_dir() == Path(tempfile.gettempdir()) / "cognite-sdk-python"
+        suffix = f"-{os.getuid()}" if hasattr(os, "getuid") else ""
+        assert default_token_cache_dir() == Path(tempfile.gettempdir()) / f"cognite-sdk-python{suffix}"
 
 
 class TestWriteSecurely:
