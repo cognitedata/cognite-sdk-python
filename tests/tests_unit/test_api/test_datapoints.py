@@ -128,6 +128,7 @@ class TestGetLatest:
         res = cognite_client.time_series.data.retrieve_latest(id=1, before=10)
         assert isinstance(res, LatestDatapoint)
         assert 9 == datetime_to_ms(get_or_raise(res.timestamp))
+        assert 9 == res.timestamp_ms
         assert isinstance(res.value, float)
 
     def test_retrieve_latest_multiple_ts_with_before(
@@ -143,6 +144,8 @@ class TestGetLatest:
         res = cognite_client.time_series.data.retrieve_latest(id=1)
         assert isinstance(res, LatestDatapoint)
         assert not res.has_datapoint
+        with pytest.raises(ValueError, match="No datapoint exists"):
+            res.timestamp_ms
 
     def test_retrieve_latest_multiple_ts_empty(
         self, cognite_client: CogniteClient, mock_retrieve_latest_empty: HTTPXMock

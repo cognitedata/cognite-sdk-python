@@ -1825,6 +1825,17 @@ class LatestDatapoint(CogniteResource):
         """Whether a datapoint exists for this time series."""
         return bool(self)
 
+    @property
+    def timestamp_ms(self) -> int:
+        """The data timestamp in milliseconds since the epoch (Jan 1, 1970).
+
+        Raises:
+            ValueError: If no datapoint exists, i.e. ``dp.has_datapoint`` is False.
+        """
+        if self.timestamp is None:
+            raise ValueError("No datapoint exists, so timestamp_ms is not available")
+        return datetime_to_ms(self.timestamp)
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the latest datapoint into a json serializable Python data type.
 
