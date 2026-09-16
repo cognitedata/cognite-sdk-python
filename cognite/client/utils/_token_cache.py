@@ -44,7 +44,12 @@ def write_securely(path: Path, content: str) -> None:
                 os.fchmod(fd, 0o600)
             except OSError:
                 pass
-        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+        try:
+            fh = os.fdopen(fd, "w", encoding="utf-8")
+        except BaseException:
+            os.close(fd)
+            raise
+        with fh:
             fh.write(content)
         os.replace(tmp_name, path)
     except BaseException:

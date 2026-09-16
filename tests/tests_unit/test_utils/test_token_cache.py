@@ -10,7 +10,9 @@ import pytest
 
 from cognite.client.utils._token_cache import default_token_cache_dir, read_securely, write_securely
 
-pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="POSIX permission/symlink semantics not applicable")
+skip_on_windows = pytest.mark.skipif(
+    sys.platform == "win32", reason="POSIX permission/symlink semantics not applicable"
+)
 
 
 class TestDefaultTokenCacheDir:
@@ -39,11 +41,13 @@ class TestDefaultTokenCacheDir:
 
 
 class TestWriteSecurely:
+    @skip_on_windows
     def test_creates_parent_dir_with_owner_only_mode(self, tmp_path: Path) -> None:
         target = tmp_path / "sub" / "cache.bin"
         write_securely(target, "content")
         assert stat.S_IMODE(target.parent.stat().st_mode) == 0o700
 
+    @skip_on_windows
     def test_written_file_has_owner_only_mode(self, tmp_path: Path) -> None:
         target = tmp_path / "cache.bin"
         write_securely(target, "content")
@@ -67,6 +71,7 @@ class TestWriteSecurely:
             write_securely(tmp_path / "cache.bin", "content")
         assert list(tmp_path.iterdir()) == []
 
+    @skip_on_windows
     def test_replaces_preexisting_symlink_without_following_it(self, tmp_path: Path) -> None:
         victim = tmp_path / "victim.txt"
         victim.write_text("original content")
@@ -79,6 +84,7 @@ class TestWriteSecurely:
         assert not target.is_symlink()
         assert target.read_text() == "REFRESH-TOKEN-PLANTED-FOR-THIS-TEST"
 
+    @skip_on_windows
     def test_existing_dir_mode_left_untouched(self, tmp_path: Path) -> None:
         sub = tmp_path / "sub"
         sub.mkdir(mode=0o755)
@@ -95,6 +101,7 @@ class TestReadSecurely:
         target.write_text("hello")
         assert read_securely(target) == "hello"
 
+    @skip_on_windows
     def test_refuses_symlink_and_warns(self, tmp_path: Path) -> None:
         victim = tmp_path / "victim.txt"
         victim.write_text("arbitrary file content, not a token cache")
