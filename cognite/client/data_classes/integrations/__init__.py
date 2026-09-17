@@ -1,5 +1,11 @@
 from __future__ import annotations
 
+from cognite.client.data_classes.integrations.config import (
+    ConfigRevision,
+    ConfigRevisionMetadata,
+    ConfigRevisionMetadataList,
+    ConfigRevisionWrite,
+)
 from cognite.client.data_classes.integrations.errors import (
     IntegrationError,
     IntegrationErrorList,
@@ -20,6 +26,10 @@ from cognite.client.data_classes.integrations.tasks import (
 )
 
 __all__ = [
+    "ConfigRevision",
+    "ConfigRevisionMetadata",
+    "ConfigRevisionMetadataList",
+    "ConfigRevisionWrite",
     "Extractor",
     "Integration",
     "IntegrationError",
