@@ -19,7 +19,7 @@ REDACTED = "***"
 # to redact too much than too little:
 SENSITIVE_HEADER_REGEX = re.compile(
     r"auth|token|secret|password|passphrase|cookie|credential|signature|jwt|"
-    r"(?:api|access|private|signing|session)[-_ ]?key",
+    r"(?:api|access|private|signing|session|encryption|master|client|app|application|customer)[-_ ]?key",
     re.IGNORECASE,
 )
 # This approach thus needs an allowlist for known false positives:

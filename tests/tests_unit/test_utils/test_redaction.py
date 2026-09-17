@@ -181,6 +181,12 @@ class TestRedactHeaders:
             "x-session-key",
             "X-Hub-Signature-256",
             "x-jwt",
+            "x-encryption-key",
+            "x-master-key",
+            "Client-Key",
+            "App-Key",
+            "Application-Key",
+            "x-amz-server-side-encryption-customer-key",
         ],
     )
     def test_credential_header_names_are_redacted(self, name: str) -> None:
@@ -199,6 +205,9 @@ class TestRedactHeaders:
             "x-request-id",
             "key",
             "x-public-key",
+            "client-id",
+            "x-amz-server-side-encryption",
+            "x-amz-server-side-encryption-aws-kms-key-id",
         ],
     )
     def test_harmless_headers_stay_visible(self, name: str) -> None:
