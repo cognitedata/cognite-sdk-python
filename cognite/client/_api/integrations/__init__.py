@@ -9,6 +9,7 @@ from cognite.client._api.integrations.errors import IntegrationErrorsAPI
 from cognite.client._api.integrations.tasks import IntegrationTasksAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client.data_classes.integrations.checkin import CheckinRequest, CheckinResponse, StartupRequest
 from cognite.client.data_classes.integrations.integrations import (
     Integration,
     IntegrationList,
@@ -236,3 +237,75 @@ class IntegrationsAPI(APIClient):
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
             headers=self._beta_version_header(),
         )
+
+    async def startup(self, request: StartupRequest) -> CheckinResponse:
+        """`Report extractor startup <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/integration_startup>`_
+
+        Reports that the extractor has (re)started, along with its current task configuration.
+        This closes any currently running tasks with an error.
+
+        Note:
+            This is normally only called by extractor implementations as part of the
+            integrations startup protocol, not by typical SDK consumers.
+
+        Args:
+            request (StartupRequest): The startup event to report.
+
+        Returns:
+            CheckinResponse: The integration's latest config revision.
+
+        Examples:
+
+            Report extractor startup:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.integrations import Extractor, StartupRequest
+                >>> client = CogniteClient()
+                >>> req = StartupRequest(
+                ...     external_id="my-integration",
+                ...     extractor=Extractor(external_id="cognite-simple-influxdb-extractor"),
+                ... )
+                >>> res = client.integrations.startup(req)
+        """
+        self._warning.warn()
+        response = await self._post(
+            f"{self._RESOURCE_PATH}/startup",
+            json=request.dump(camel_case=True),
+            headers=self._beta_version_header(),
+            semaphore=self._get_semaphore("write"),
+        )
+        return CheckinResponse._load(response.json())
+
+    async def checkin(self, request: CheckinRequest) -> CheckinResponse:
+        """`Check in with the integrations service <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/integration_checkin>`_
+
+        Called periodically by extractors to signal that they are still alive, and to report task
+        start/stop events and errors that have occurred since the last check-in.
+
+        Note:
+            This is normally only called by extractor implementations as part of the
+            integrations check-in protocol, not by typical SDK consumers.
+
+        Args:
+            request (CheckinRequest): The check-in event to report.
+
+        Returns:
+            CheckinResponse: The integration's latest config revision.
+
+        Examples:
+
+            Check in with no updates:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.integrations import CheckinRequest
+                >>> client = CogniteClient()
+                >>> res = client.integrations.checkin(CheckinRequest(external_id="my-integration"))
+        """
+        self._warning.warn()
+        response = await self._post(
+            f"{self._RESOURCE_PATH}/checkin",
+            json=request.dump(camel_case=True),
+            headers=self._beta_version_header(),
+            semaphore=self._get_semaphore("write"),
+        )
+        return CheckinResponse._load(response.json())
