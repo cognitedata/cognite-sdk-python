@@ -162,6 +162,7 @@ class TestClientConfig:
             assert "Authorization", "Bearer abc" == client_config.credentials.authorization_header()
             assert client_config.client_name == "test-client"
 
+    @pytest.mark.dsl
     def test_str_and_repr_html_redact_credential_headers(self, client_config: ClientConfig) -> None:
         secret = "PLANTED-SECRET-VALUE"
         client_config.headers = {"api-key": secret, "x-my-app": "harmless"}
