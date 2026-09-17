@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.integrations import (
@@ -25,9 +25,11 @@ INTEGRATION_RESPONSE = {
 
 
 class TestIntegrations:
-    def test_list(self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
+    def test_list(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
         url_pattern = re.compile(re.escape(get_url(async_client.integrations, "/integrations")) + r"(?:\?.*)?$")
-        httpx_mock.add_response(method="GET", url=url_pattern, json={"items": [INTEGRATION_RESPONSE]})
+        httpx2_mock.add_response(method="GET", url=url_pattern, json={"items": [INTEGRATION_RESPONSE]})
 
         res = cognite_client.integrations.list(limit=10)
 
@@ -36,14 +38,14 @@ class TestIntegrations:
         assert res[0].external_id == "my-integration"
         assert res[0].tasks[0].name == "poll"
 
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         assert request.method == "GET"
         assert request.headers["cdf-version"] == async_client.integrations._beta_version_header()["cdf-version"]
 
     def test_create(
-        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.integrations, "/integrations"),
             json={"items": [INTEGRATION_RESPONSE]},
@@ -59,7 +61,7 @@ class TestIntegrations:
         assert isinstance(res, Integration)
         assert res.external_id == "my-integration"
 
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body == {
             "items": [
                 {
@@ -71,9 +73,9 @@ class TestIntegrations:
         }
 
     def test_retrieve(
-        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.integrations, "/integrations/byids"),
             json={"items": [INTEGRATION_RESPONSE]},
@@ -84,13 +86,13 @@ class TestIntegrations:
         assert isinstance(res, Integration)
         assert res.external_id == "my-integration"
 
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body == {"items": [{"externalId": "my-integration"}], "ignoreUnknownIds": False}
 
     def test_update(
-        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.integrations, "/integrations/update"),
             json={"items": [INTEGRATION_RESPONSE]},
@@ -102,17 +104,17 @@ class TestIntegrations:
 
         assert isinstance(res, Integration)
 
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body == {
             "items": [{"externalId": "my-integration", "update": {"description": {"set": "My new description"}}}]
         }
 
     def test_delete(
-        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(method="POST", url=get_url(async_client.integrations, "/integrations/delete"), json={})
+        httpx2_mock.add_response(method="POST", url=get_url(async_client.integrations, "/integrations/delete"), json={})
 
         cognite_client.integrations.delete("my-integration")
 
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body == {"items": [{"externalId": "my-integration"}], "ignoreUnknownIds": False}
