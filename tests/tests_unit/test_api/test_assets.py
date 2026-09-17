@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import AggregateResultItem, Label, LabelFilter, TimestampRange
@@ -53,28 +53,28 @@ def expected_asset() -> dict[str, Any]:
 
 @pytest.fixture
 def mock_assets_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
     response_body = {"items": [EXAMPLE_ASSET]}
     url_pattern = re.compile(re.escape(get_url(async_client.assets)) + "/.+")
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    yield httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    yield httpx2_mock
 
 
 @pytest.fixture
 def mock_get_subtree_base(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
     required = {"rootId": 2, "createdTime": 123, "lastUpdatedTime": 123, "name": "foo"}
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.assets) + "/assets/byids",
         status_code=200,
         json={"items": [{"id": 1, **required}]},
         is_optional=True,
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.assets) + "/assets/list",
         status_code=200,
@@ -87,7 +87,7 @@ def mock_get_subtree_base(
         },
         is_optional=True,
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.assets) + "/assets/list",
         status_code=200,
@@ -99,7 +99,7 @@ def mock_get_subtree_base(
         },
         is_optional=True,
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.assets) + "/assets/list",
         status_code=200,
@@ -111,7 +111,7 @@ def mock_get_subtree_base(
         },
         is_optional=True,
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.assets) + "/assets/list",
         status_code=200,
@@ -123,7 +123,7 @@ def mock_get_subtree_base(
         },
         is_optional=True,
     )
-    yield httpx_mock
+    yield httpx2_mock
 
 
 @pytest.fixture
@@ -443,11 +443,11 @@ class TestAssets:
 
 @pytest.fixture
 def mock_assets_empty(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
     url_pattern = re.compile(re.escape(get_url(async_client.assets)) + "/.+")
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
-    yield httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
+    yield httpx2_mock
 
 
 @pytest.mark.dsl

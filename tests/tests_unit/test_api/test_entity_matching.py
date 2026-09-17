@@ -11,69 +11,71 @@ from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_url, jsgz_load
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
-def mock_fit(httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> HTTPXMock:
+def mock_fit(httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> HTTPXMock:
     response_body = {"id": 123, "status": "Queued", "createdTime": 42}
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.entity_matching) + async_client.entity_matching._RESOURCE_PATH + "/",
         status_code=200,
         json=response_body,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_status_ok(httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> HTTPXMock:
+def mock_status_ok(
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+) -> HTTPXMock:
     response_body = {"id": 123, "status": "Completed", "createdTime": 42, "statusTime": 456, "startTime": 789}
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="GET",
         url=re.compile(f"{get_url(async_client.entity_matching)}{async_client.entity_matching._RESOURCE_PATH}/\\d+"),
         status_code=200,
         json=response_body,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_retrieve(httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> HTTPXMock:
+def mock_retrieve(httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> HTTPXMock:
     response_body = {
         "items": [{"id": 123, "status": "Completed", "createdTime": 42, "statusTime": 456, "startTime": 789}]
     }
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=re.compile(f"{get_url(async_client.entity_matching)}{async_client.entity_matching._RESOURCE_PATH}/byids"),
         status_code=200,
         json=response_body,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_status_failed(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     response_body = {"id": 123, "status": "Failed", "errorMessage": "error message"}
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="GET",
         url=re.compile(f"{get_url(async_client.entity_matching)}{async_client.entity_matching._RESOURCE_PATH}/\\d+"),
         status_code=200,
         json=response_body,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_status_rules_ok(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     response_body = {"jobId": 456, "status": "Completed", "items": [1]}
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="GET",
         url=re.compile(
             f"{get_url(async_client.entity_matching)}{async_client.entity_matching._RESOURCE_PATH}/rules/\\d+"
@@ -81,7 +83,7 @@ def mock_status_rules_ok(
         status_code=200,
         json=response_body,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class TestEntityMatching:

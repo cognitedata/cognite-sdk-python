@@ -28,6 +28,18 @@ _OBJECT_AGGREGATES_CAMEL: frozenset[Literal["maxDatapoint", "minDatapoint"]] = f
 )
 OBJECT_AGGREGATES: frozenset[Literal["max_datapoint", "min_datapoint"]] = frozenset({"max_datapoint", "min_datapoint"})
 
+# These currently break existing logic (because they reuse the old simple aggregate names), and we have no special
+# data class for state aggregate datapoints yet (breaking -> v9) so we simply don't support them for now:
+_UNSUPPORTED_STATE_AGGS_CAMEL: frozenset[Literal["interpolation", "stepInterpolation"]] = frozenset(
+    {"interpolation", "stepInterpolation"}
+)
+
+# These are per-distinct-state breakdown aggregates (one entry per state, per interval) returned in a nested/repeated
+# shape that none of our data classes can represent yet. Not started on, but planned:
+_NOT_YET_IMPLEMENTED_STATE_AGGS_CAMEL: frozenset[Literal["stateCount", "stateTransitions", "stateDuration"]] = (
+    frozenset({"stateCount", "stateTransitions", "stateDuration"})
+)
+
 # Assumption: All INT aggregates should adhere to the following logic: Missing values can be replace with 0.
 #             Thus, if you add a new aggregate here, and this is no longer the case, a refactor is needed:
 _INT_AGGREGATES_CAMEL = frozenset(

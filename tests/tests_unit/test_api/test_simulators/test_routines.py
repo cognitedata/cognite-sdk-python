@@ -1,5 +1,5 @@
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.simulators import SimulatorRoutine, SimulatorRoutineWrite
@@ -57,12 +57,12 @@ class TestRoutines:
         self,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         write_input: SimulatorRoutineWrite,
         expected_routine: SimulatorRoutine,
         expected_request_body: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.simulators.routines, "/simulators/routines"),
             json={
@@ -79,7 +79,7 @@ class TestRoutines:
         created_routine = cognite_client.simulators.routines.create(write_input)
 
         assert created_routine == expected_routine
-        assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert expected_request_body == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     @pytest.mark.parametrize(
         "list_params,mock_response_fields,expected_routine,expected_request_body",
@@ -117,13 +117,13 @@ class TestRoutines:
         self,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         list_params: dict,
         mock_response_fields: dict,
         expected_routine: SimulatorRoutine,
         expected_request_body: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.simulators.routines, "/simulators/routines/list"),
             json={
@@ -141,4 +141,4 @@ class TestRoutines:
 
         assert len(listed_routines) == 1
         assert listed_routines[0] == expected_routine
-        assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert expected_request_body == jsgz_load(httpx2_mock.get_requests()[0].content)

@@ -68,6 +68,8 @@ class OneLakeCredentialsWrite(CogniteResource):
             and never returned in a response.
     """
 
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"client_secret"})
+
     def __init__(self, client_id: str, tenant_id: str, client_secret: str) -> None:
         self.client_id = client_id
         self.tenant_id = tenant_id

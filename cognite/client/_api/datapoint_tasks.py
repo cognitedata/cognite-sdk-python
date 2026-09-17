@@ -26,7 +26,9 @@ from cognite.client._proto.data_point_list_response_pb2 import TIMESERIES_TYPE_S
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
+    _NOT_YET_IMPLEMENTED_STATE_AGGS_CAMEL,
     _OBJECT_AGGREGATES_CAMEL,
+    _UNSUPPORTED_STATE_AGGS_CAMEL,
     Aggregate,
 )
 from cognite.client.data_classes.datapoints import (
@@ -730,14 +732,23 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             else:
                 return Datapoints(**self.ts_info, timestamp=[], value=[], **status_cols)
 
-        if self.is_state_dps:
-            raise NotImplementedError(
-                "State datapoints are not yet supported when using `retrieve_arrays(...)`. "
-                "Please use `retrieve(...)` instead"
-            )
-
         if self.query.include_status:
             status_cols.update(status_code=np.array([], dtype=np.int32), status_symbol=np.array([], dtype=np.object_))
+
+        if self.is_state_dps:
+            # Numpy has no notion of a nullable int32 array. Since bad status datapoints may be missing their numeric
+            # value, we always use float64 (NaN for missing) whenever the caller includes bad datapoints, regardless
+            # of whether any actually are missing so that the dtype stays consistent:
+            numeric_dtype = np.int32 if self.query.ignore_bad_datapoints else np.float64
+            return DatapointsArray._load_from_arrays(
+                {
+                    **self.ts_info,
+                    "timestamp": np.array([], dtype=np.int64),
+                    "numeric_states": np.array([], dtype=numeric_dtype),
+                    "string_states": np.array([], dtype=np.object_),
+                    **status_cols,
+                }
+            )
         return DatapointsArray._load_from_arrays(
             {
                 **self.ts_info,
@@ -765,11 +776,33 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
                 )
             if not self.query.ignore_bad_datapoints:
                 status_columns["null_timestamps"] = self.null_timestamps
+
+            data_columns: dict[str, Any]
+            if not self.is_state_dps:
+                data_columns = {"value": create_array_from_dps_container(self.dps_data)}
+            else:
+                # Numeric dtype for state dps depends on `ignore_bad_datapoints` setting (nullable or not), so we always
+                # warn the user about this. TODO: Maybe revisit this decision? Most users just call to_pandas() and then
+                # they get pandas extension dtype Int32, which is nullable...
+                numeric_dtype = np.int32 if self.query.ignore_bad_datapoints else np.float64
+                if not self.query.ignore_bad_datapoints:
+                    warnings.warn(
+                        "The setting `ignore_bad_datapoints=False` means a state time series' numeric state "
+                        "values can be missing. Since numpy has no notion of a nullable int32 array, the "
+                        "'numeric_states' array is upcast to float64, which can perfectly represent any int32 "
+                        "value and uses NaN for the missing ones.",
+                        UserWarning,
+                    )
+                num_list, str_list = create_state_lists_from_dps_container(self.dps_data)
+                data_columns = {
+                    "numeric_states": np.array(num_list, dtype=numeric_dtype),
+                    "string_states": np.array(str_list, dtype=np.object_),
+                }
             return DatapointsArray._load_from_arrays(
                 {
                     **self.ts_info,
                     "timestamp": create_array_from_dps_container(self.ts_data),
-                    "value": create_array_from_dps_container(self.dps_data),
+                    **data_columns,
                     **status_columns,
                 }
             )
@@ -828,25 +861,30 @@ class BaseRawTaskOrchestrator(BaseTaskOrchestrator):
             self._unpack_and_store_basic(idx, dps)
 
     def _unpack_and_store_numpy(self, idx: tuple[float, ...], dps: DatapointsRaw) -> None:
-        if self.is_state_dps:
-            raise NotImplementedError(
-                "Retrieving raw state datapoints using `retrieve_arrays(...)` is not yet supported. "
-                "Please use `retrieve(...)` instead."
-            )
         self.ts_data[idx].append(DpsUnpackFns.extract_timestamps_numpy(dps))
 
-        assert self.raw_dtype_numpy is not None
-        if self.query.ignore_bad_datapoints:
-            self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
+        if self.is_state_dps:
+            # Performance note: We don't materialize numpy arrays per-batch here like we do for "normal raw" datapoints
+            # to keep things simple (allows easy reuse of 'self.dps_data'). This gives a slightly higher-than-necessary
+            # memory footprint. Thus we do one final array conversion in `_get_result` instead.
+            dps = cast(StateDatapoints, dps)
+            if self.query.ignore_bad_datapoints:
+                self.dps_data[idx].append(DpsUnpackFns.extract_raw_num_and_str_state_dps(dps))
+            else:
+                self.dps_data[idx].append(DpsUnpackFns.extract_nullable_raw_num_and_str_state_dps(dps))
         else:
-            # After this step, missing values (represented with None) will become NaNs and thus become
-            # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
-            # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
-            # use the DatapointsArray to replicate datapoints (exactly).
-            arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps, self.raw_dtype_numpy)
-            self.dps_data[idx].append(arr)
-            if missing_idxs:
-                self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
+            assert self.raw_dtype_numpy is not None
+            if self.query.ignore_bad_datapoints:
+                self.dps_data[idx].append(DpsUnpackFns.extract_raw_dps_numpy(dps, self.raw_dtype_numpy))
+            else:
+                # After this step, missing values (represented with None) will become NaNs and thus become
+                # indistinguishable from any NaNs that was returned! We need to store these timestamps in a property
+                # to allow our users to inspect them - but maybe even more important, allow the SDK to accurately
+                # use the DatapointsArray to replicate datapoints (exactly).
+                arr, missing_idxs = DpsUnpackFns.extract_nullable_raw_dps_numpy(dps, self.raw_dtype_numpy)
+                self.dps_data[idx].append(arr)
+                if missing_idxs:
+                    self.null_timestamps.update(self.ts_data[idx][-1][missing_idxs].tolist())
 
         if self.query.include_status:
             self.status_code[idx].append(DpsUnpackFns.extract_status_code_numpy(dps))
@@ -951,6 +989,32 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         self._set_aggregate_vars(query.aggs_camel_case, use_numpy, query.include_status)
         super().__init__(query=query, use_numpy=use_numpy, **kwargs)
 
+    def _store_ts_info(self, res: DataPointListItem) -> None:
+        super()._store_ts_info(res)
+
+        # We raise as soon as we learn the time series is state-based (only known once the API has responded),
+        # rather than waiting until we're deep into unpacking/result-building:
+        if not self.is_state_dps:
+            return
+
+        if self.use_numpy:
+            raise NotImplementedError(
+                "Retrieving aggregate state datapoints is not yet supported when using numpy arrays "
+                "(i.e. retrieve_arrays). Please use 'retrieve' instead for now."
+            )
+        if unsupported_aggs := _UNSUPPORTED_STATE_AGGS_CAMEL.intersection(self.all_aggregates):
+            raise NotImplementedError(
+                f"Retrieving the aggregate(s) {sorted(unsupported_aggs)} for state datapoints is not yet supported. "
+                "It may not be supported until the next major version due to technicalities in what constitutes a breaking "
+                "change in our data classes. If you have an immediate need for this, please reach out on Github: "
+                "https://github.com/cognitedata/cognite-sdk-python/issues"
+            )
+        if not_yet_aggs := _NOT_YET_IMPLEMENTED_STATE_AGGS_CAMEL.intersection(self.all_aggregates):
+            raise NotImplementedError(
+                f"Retrieving the aggregate(s) {sorted(not_yet_aggs)} for state datapoints is not implemented yet, "
+                "but it's coming soon!"
+            )
+
     @cached_property
     def offset_next(self) -> int:
         return granularity_to_ms(cast(str, self.query.granularity))
@@ -996,9 +1060,6 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         return Datapoints(timestamp=[], **self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _get_result(self) -> Datapoints | DatapointsArray:
-        if self.is_state_dps:
-            raise NotImplementedError("Retrieving aggregate state datapoints is not yet supported.")
-
         if not self.ts_data or self.query.limit == 0:
             return self._create_empty_result()
 
@@ -1033,9 +1094,6 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         return Datapoints(**self.ts_info, **convert_all_keys_to_snake_case(lst_dct))
 
     def _unpack_and_store(self, idx: tuple[float, ...], dps: AggregateDatapoints) -> None:  # type: ignore [override]
-        if self.is_state_dps:
-            raise NotImplementedError("Retrieving aggregate state datapoints is not yet supported.")
-
         # Object aggregates are unpacked similarly for basic and numpy and only converted later (for numpy)
         if self.object_aggs:
             for agg, unpack_fn in zip(self.object_aggs, self.object_agg_unpack_fns):

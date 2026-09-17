@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
@@ -17,7 +17,7 @@ from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_url, jsgz_load
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
@@ -40,7 +40,7 @@ def example_event() -> dict[str, Any]:
 
 @pytest.fixture
 def mock_events_response(
-    httpx_mock: HTTPXMock,
+    httpx2_mock: HTTPXMock,
     cognite_client: CogniteClient,
     example_event: dict[str, Any],
     async_client: AsyncCogniteClient,
@@ -48,29 +48,29 @@ def mock_events_response(
     response_body = {"items": [example_event]}
     url_pattern = re.compile(re.escape(get_url(async_client.events)) + "/.+")
 
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    yield httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    yield httpx2_mock
 
 
 @pytest.fixture
 def mock_count_aggregate_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
     url_pattern = re.compile(re.escape(get_url(async_client.events)) + "/events/aggregate")
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": [{"count": 10}]})
-    yield httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": [{"count": 10}]})
+    yield httpx2_mock
 
 
 @pytest.fixture
 def mock_aggregate_unique_values_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
     url_pattern = re.compile(re.escape(get_url(async_client.events)) + "/events/aggregate")
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST", url=url_pattern, status_code=200, json={"items": [{"count": 5, "value": "WORKORDER"}]}
     )
-    yield httpx_mock
+    yield httpx2_mock
 
 
 class TestEvents:
@@ -96,14 +96,14 @@ class TestEvents:
         assert [example_event] == res.dump(camel_case=True)
 
     def test_list_partitions(
-        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient
     ) -> None:
         for _ in range(10):
-            httpx_mock.add_response(
+            httpx2_mock.add_response(
                 method="POST", url=get_url(async_client.events) + "/events/list", status_code=200, json={"items": []}
             )
         cognite_client.events.list(partitions=10, limit=float("inf"))  # type: ignore[arg-type]
-        assert 10 == len(httpx_mock.get_requests())
+        assert 10 == len(httpx2_mock.get_requests())
 
     def test_list_with_dataset_ids(self, cognite_client: CogniteClient, mock_events_response: Any) -> None:
         cognite_client.events.list(source="bla", data_set_ids=[1], data_set_external_ids=["x"])
@@ -263,11 +263,11 @@ class TestEvents:
 
 @pytest.fixture
 def mock_events_empty(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
     url_pattern = re.compile(re.escape(get_url(async_client.events)) + "/.+")
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
-    yield httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
+    yield httpx2_mock
 
 
 @pytest.mark.dsl

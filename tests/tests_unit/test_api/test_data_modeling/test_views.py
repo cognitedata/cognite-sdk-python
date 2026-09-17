@@ -4,7 +4,7 @@ import re
 from urllib.parse import parse_qs, urlparse
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_modeling import (
@@ -98,11 +98,11 @@ class TestViewsApiForRecordViews:
     def test_apply_single_record_view(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         views_url_pattern: re.Pattern,
     ) -> None:
         record_view = make_record_view_apply()
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=views_url_pattern, status_code=200, json={"items": [RECORD_VIEW_RESPONSE]}
         )
 
@@ -114,14 +114,14 @@ class TestViewsApiForRecordViews:
     def test_apply_record_view_failure(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         views_url_pattern: re.Pattern,
     ) -> None:
         real_error_message = (
             "Cannot update view 'sp:rv/v1', Referenced container does not exist: 'sp:recordContainer/v1'."
         )
         record_view = make_record_view_apply()
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=views_url_pattern, status_code=400, json={"error": {"message": real_error_message}}
         )
 
@@ -135,12 +135,12 @@ class TestViewsApiForRecordViews:
     def test_apply_mixed_batch_warns(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         views_url_pattern: re.Pattern,
     ) -> None:
         plain_view = ViewApply(space="sp", external_id="v", version="v1")
         record_view = make_record_view_apply()
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=views_url_pattern,
             status_code=200,
@@ -150,19 +150,19 @@ class TestViewsApiForRecordViews:
         with pytest.warns(FutureWarning, match="Views for Records"):
             cognite_client.data_modeling.views.apply([plain_view, record_view])
 
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         body = jsgz_load(request.content)
         assert body["items"][1]["streamId"] == ["my-stream"]
 
     def test_apply_plain_views_does_not_warn(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         views_url_pattern: re.Pattern,
         recwarn: pytest.WarningsRecorder,
     ) -> None:
         plain_view = ViewApply(space="sp", external_id="v", version="v1")
-        httpx_mock.add_response(method="POST", url=views_url_pattern, status_code=200, json={"items": [VIEW_RESPONSE]})
+        httpx2_mock.add_response(method="POST", url=views_url_pattern, status_code=200, json={"items": [VIEW_RESPONSE]})
 
         cognite_client.data_modeling.views.apply(plain_view)
 
@@ -171,30 +171,30 @@ class TestViewsApiForRecordViews:
     def test_list_used_for_mixed_warns(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         views_url_pattern: re.Pattern,
     ) -> None:
-        httpx_mock.add_response(method="GET", url=views_url_pattern, status_code=200, json={"items": []})
+        httpx2_mock.add_response(method="GET", url=views_url_pattern, status_code=200, json={"items": []})
 
         with pytest.warns(FutureWarning, match="Views for Records"):
             cognite_client.data_modeling.views.list(used_for=["node", "record"])
 
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         qs = parse_qs(urlparse(str(request.url)).query)
         assert qs.get("usedFor") == ["node", "record"]
 
     def test_list_default_does_not_warn(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         views_url_pattern: re.Pattern,
         recwarn: pytest.WarningsRecorder,
     ) -> None:
-        httpx_mock.add_response(method="GET", url=views_url_pattern, status_code=200, json={"items": []})
+        httpx2_mock.add_response(method="GET", url=views_url_pattern, status_code=200, json={"items": []})
 
         cognite_client.data_modeling.views.list()
 
         assert not any("Views for Records" in str(w.message) for w in recwarn.list)
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         qs = parse_qs(urlparse(str(request.url)).query)
         assert "usedFor" not in qs

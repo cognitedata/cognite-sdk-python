@@ -46,7 +46,7 @@ def prepare_content_for_upload(
 
 class AsyncFileChunker(AsyncIterator[bytes]):
     """
-    An asynchronous iterator for reading a file in chunks. Needed because httpx does not support
+    An asynchronous iterator for reading a file in chunks. Needed because httpx2 does not support
     file handles in a way that doesn't involve HTTP multipart encoding (as opposed to requests).
 
     Args:
@@ -55,7 +55,7 @@ class AsyncFileChunker(AsyncIterator[bytes]):
         size (int | None): Maximum number of bytes to yield in total. If None, reads until EOF.
     """
 
-    CHUNK_SIZE = 64 * 1024  # 64 KiB chunks by default, copying httpx default
+    CHUNK_SIZE = 64 * 1024  # 64 KiB chunks by default, copying httpx2 default
 
     def __init__(self, file_handle: BinaryIO, *, offset: int = 0, size: int | None = None) -> None:
         from cognite.client import global_config
@@ -85,7 +85,7 @@ class AsyncFileChunker(AsyncIterator[bytes]):
         raise StopAsyncIteration
 
 
-# Straight from httpx/_utils.py (comments removed) as it's currently not
+# Straight from httpx2/_utils.py (comments removed) as it's currently not
 # exposed - unlike requests and its super_len function:
 def peek_filelike_length(stream: Any) -> int | None:
     """

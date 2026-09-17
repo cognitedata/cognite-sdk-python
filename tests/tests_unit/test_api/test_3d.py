@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import unquote_plus
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.three_d import (
@@ -36,24 +36,24 @@ def expected_items() -> list[dict[str, Any]]:
 
 @pytest.fixture
 def mock_3d_model_response(
-    httpx_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_items: list[dict[str, Any]]
+    httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_items: list[dict[str, Any]]
 ) -> HTTPXMock:
     response_body = {"items": expected_items}
     url_pattern = re.compile(re.escape(get_url(async_client.three_d)) + "/3d/models.*")
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_retrieve_3d_model_response(
-    httpx_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_items: list[dict[str, Any]]
+    httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_items: list[dict[str, Any]]
 ) -> HTTPXMock:
     response_body = expected_items[0]
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="GET", url=get_url(async_client.three_d, "/3d/models/1"), status_code=200, json=response_body
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class Test3DModels:
@@ -178,39 +178,39 @@ def expected_items2() -> list[dict[str, Any]]:
 
 @pytest.fixture
 def mock_3d_model_revision_response(
-    httpx_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_items2: list[dict[str, Any]]
+    httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_items2: list[dict[str, Any]]
 ) -> HTTPXMock:
     response_body = {"items": expected_items2}
     url_pattern = re.compile(re.escape(get_url(async_client.three_d)) + "/3d/models/1/revisions.*")
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_retrieve_3d_model_revision_response(
-    httpx_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_items2: list[dict[str, Any]]
+    httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_items2: list[dict[str, Any]]
 ) -> HTTPXMock:
     res = expected_items2[0]
     res["id"] = 1000
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="GET",
         url=get_url(async_client.three_d, "/3d/models/1/revisions/1"),
         status_code=200,
         json=res,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_3d_model_revision_thumbnail_response(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_3d_model_revision_thumbnail_response(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.three_d, "/3d/models/1/revisions/1/thumbnail"),
         status_code=200,
         json={},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
@@ -230,38 +230,38 @@ def expected_items3() -> list[dict[str, Any]]:
 
 @pytest.fixture
 def mock_3d_model_revision_node_response(
-    httpx_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_items3: list[dict[str, Any]]
+    httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_items3: list[dict[str, Any]]
 ) -> HTTPXMock:
     response_body = {"items": expected_items3}
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="GET",
         url=get_url(async_client.three_d, "/3d/models/1/revisions/1/nodes?sortByNodeId=false&limit=10"),
         status_code=200,
         json=response_body,
         is_optional=True,
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="GET",
         url=get_url(async_client.three_d, "/3d/models/1/revisions/1/nodes?nodeId=&limit=10"),
         status_code=200,
         json=response_body,
         is_optional=True,
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.three_d, "/3d/models/1/revisions/1/nodes/list"),
         status_code=200,
         json=response_body,
         is_optional=True,
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="GET",
         url=get_url(async_client.three_d, "/3d/models/1/revisions/1/nodes/ancestors"),
         status_code=200,
         json=response_body,
         is_optional=True,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class Test3DModelRevisions:
@@ -395,8 +395,8 @@ class Test3DModelRevisions:
 
 class Test3DFiles:
     @pytest.fixture
-    def mock_3d_files_response(self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(method="GET", url=get_url(async_client.three_d, "/3d/files/1"), text="bla")
+    def mock_3d_files_response(self, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(method="GET", url=get_url(async_client.three_d, "/3d/files/1"), text="bla")
 
     def test_retrieve(self, cognite_client: CogniteClient, mock_3d_files_response: HTTPXMock) -> None:
         assert b"bla" == cognite_client.three_d.files.retrieve(1)
@@ -409,14 +409,14 @@ class Test3DAssetMappings:
 
     @pytest.fixture
     def mock_3d_asset_mappings_response(
-        self, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock, expected_items4: list[dict[str, Any]]
+        self, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock, expected_items4: list[dict[str, Any]]
     ) -> HTTPXMock:
         response_body = {"items": expected_items4}
         url_pattern = re.compile(re.escape(get_url(async_client.three_d)) + "/3d/models/1/revisions/1/mappings.*")
 
-        httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-        httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-        return httpx_mock
+        httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+        httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+        return httpx2_mock
 
     def test_list(
         self,
@@ -496,9 +496,9 @@ class Test3DAssetMappings:
         ]
 
     def test_delete_fails(
-        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.three_d, "/3d/models/1/revisions/1/mappings/delete"),
             status_code=500,

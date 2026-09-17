@@ -5,14 +5,14 @@ from collections.abc import AsyncIterator, Iterator
 from datetime import timedelta
 from typing import Any, Final
 
-from httpx import URL, Cookies, Headers, HTTPStatusError
-from httpx import Request as HttpxRequest
-from httpx import Response as HttpxResponse
+from httpx2 import URL, Cookies, Headers, HTTPStatusError
+from httpx2 import Request as HttpxRequest
+from httpx2 import Response as HttpxResponse
 
 
 class CogniteHTTPResponse:
     """
-    A wrapper class (currently around `httpx.Response`) to isolate the SDK from the
+    A wrapper class (currently around `httpx2.Response`) to isolate the SDK from the
     underlying HTTP library's public interface.
     """
 
@@ -26,7 +26,7 @@ class CogniteHTTPResponse:
     @property
     def httpx_response(self) -> HttpxResponse:
         """
-        Direct access to the Response object from the underlying http library (currently httpx).
+        Direct access to the Response object from the underlying http library (currently httpx2).
 
         Disclaimer: Usage is neither backwards- nor forwards-compatible.
         """
@@ -58,7 +58,7 @@ class CogniteHTTPResponse:
 
     @property
     def cookies(self) -> Cookies:
-        # Note: httpx.Response.cookies returns httpx.Cookies, which is a wrapper around SimpleCookie
+        # Note: httpx2.Response.cookies returns httpx2.Cookies, which is a wrapper around SimpleCookie
         return self._response.cookies
 
     @property

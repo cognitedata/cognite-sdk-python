@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 import cognite.client.data_classes.capabilities as capabilities_module  # F401
 from cognite.client import CogniteClient
@@ -33,7 +33,7 @@ from cognite.client.data_classes.capabilities import (
 from tests.utils import get_url
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
@@ -481,7 +481,7 @@ def unknown_acls_items() -> list[dict[str, Any]]:
 
 @pytest.fixture
 def mock_groups_resp(
-    httpx_mock: HTTPXMock,
+    httpx2_mock: HTTPXMock,
     cognite_client: CogniteClient,
     unknown_acls_items: list[dict],
     async_client: AsyncCogniteClient,
@@ -499,13 +499,13 @@ def mock_groups_resp(
         ]
     }
     url_pattern = get_url(async_client.iam.groups) + "/groups?all=false"
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
-    yield httpx_mock
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
+    yield httpx2_mock
 
 
 @pytest.fixture
 def mock_token_inspect_resp(
-    httpx_mock: HTTPXMock,
+    httpx2_mock: HTTPXMock,
     cognite_client: CogniteClient,
     unknown_acls_items: list[dict[str, Any]],
     async_client: AsyncCogniteClient,
@@ -516,8 +516,8 @@ def mock_token_inspect_resp(
         "capabilities": [{"projectScope": {"projects": ["my-sandbox"]}, **unknown} for unknown in unknown_acls_items],
     }
     url_pattern = get_url(async_client.iam.token) + "/api/v1/token/inspect"
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
-    yield httpx_mock
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
+    yield httpx2_mock
 
 
 class TestCogniteClientDoesntRaiseOnUnknownAcls:

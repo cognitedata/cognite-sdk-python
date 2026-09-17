@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, ClassVar, Literal, NoReturn, cast
 
 from typing_extensions import Self
@@ -147,6 +147,8 @@ class EventHubSourceWrite(SourceWrite):
     """
 
     _type = "eventhub"
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"key_value"})
 
     def __init__(
         self,
@@ -859,8 +861,11 @@ class AuthenticationWrite(CogniteResource, ABC):
 @dataclass
 class BasicAuthenticationWrite(AuthenticationWrite):
     _type = "basic"
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"password"})
+
     username: str
-    password: str
+    password: str = field(repr=False)
 
     @classmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
@@ -870,8 +875,13 @@ class BasicAuthenticationWrite(AuthenticationWrite):
 @dataclass
 class RESTHeaderAuthenticationWrite(AuthenticationWrite):
     _type = "header"
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"value"})
+    # 'value' only means a credential in an object that reports this type:
+    _SENSITIVE_TYPES: ClassVar[frozenset[str]] = frozenset({"header"})
+
     key: str
-    value: str
+    value: str = field(repr=False)
 
     @classmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
@@ -884,8 +894,12 @@ class RESTHeaderAuthenticationWrite(AuthenticationWrite):
 @dataclass
 class RESTQueryAuthenticationWrite(AuthenticationWrite):
     _type = "query"
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"value"})
+    _SENSITIVE_TYPES: ClassVar[frozenset[str]] = frozenset({"query"})
+
     key: str
-    value: str
+    value: str = field(repr=False)
 
     @classmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
@@ -898,8 +912,11 @@ class RESTQueryAuthenticationWrite(AuthenticationWrite):
 @dataclass
 class RESTClientCredentialsAuthenticationWrite(AuthenticationWrite):
     _type = "clientCredentials"
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"client_secret"})
+
     client_id: str
-    client_secret: str
+    client_secret: str = field(repr=False)
     token_url: str
     scopes: str
     default_expires_in: str | None
@@ -927,10 +944,15 @@ class CACertificateWrite(CogniteResource):
 
 @dataclass
 class AuthCertificateWrite(CogniteResource):
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"key", "key_password"})
+    # The field 'key' holds the private key, but that is a very generic name which we can't redact
+    # everywhere automatically without a lot of false positives. Thus, we only do so for...:
+    _SENSITIVE_TYPES: ClassVar[frozenset[str]] = frozenset({"der", "pem"})
+
     type: Literal["der", "pem"]
     certificate: str
-    key: str
-    key_password: str | None
+    key: str = field(repr=False)
+    key_password: str | None = field(repr=False)
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:

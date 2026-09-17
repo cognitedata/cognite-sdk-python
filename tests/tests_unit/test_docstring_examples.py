@@ -155,7 +155,16 @@ class TestDocstringExamples:
         run_docstring_tests(units)
 
     def test_config(self) -> None:
-        run_docstring_tests(config)
+        # Note: GlobalConfig's docstring examples mutate the real, singleton 'global_config'.
+        # Doctests have no monkeypatch/fixture teardown, so we need to very carefully do this
+        # ourselves to not get test pollution... (this was painful to debug)
+        original_settings = vars(config.global_config).copy()
+        original_settings["status_forcelist"] = original_settings["status_forcelist"].copy()
+        try:
+            run_docstring_tests(config)
+        finally:
+            for key, value in original_settings.items():
+                setattr(config.global_config, key, value)
 
     def test_hosted_extractors(self) -> None:
         run_docstring_tests(mappings)

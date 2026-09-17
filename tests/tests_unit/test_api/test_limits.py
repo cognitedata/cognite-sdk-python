@@ -1,7 +1,7 @@
 import re
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import Limit, LimitList
@@ -21,11 +21,11 @@ class TestLimits:
     def test_retrieve_single(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         async_client: AsyncCogniteClient,
         limits_url: str,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=f"{limits_url}/{ATLAS_LIMIT['limitId']}",
             status_code=200,
@@ -38,16 +38,16 @@ class TestLimits:
         assert isinstance(res, Limit)
         assert ATLAS_LIMIT == res.dump(camel_case=True)
 
-        self._verify_request(httpx_mock, async_client, limit_id)
+        self._verify_request(httpx2_mock, async_client, limit_id)
 
     def test_retrieve_single_not_found(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         async_client: AsyncCogniteClient,
         limits_url: str,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=f"{limits_url}/{NONEXISTENT_ID}",
             status_code=404,
@@ -61,7 +61,7 @@ class TestLimits:
     def test_list(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         async_client: AsyncCogniteClient,
         limits_url: str,
     ) -> None:
@@ -70,7 +70,7 @@ class TestLimits:
             {"limitId": "files.storage_bytes", "value": 5000},
         ]
         url_pattern = re.compile(re.escape(limits_url) + r"(?:\?.+)?")
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=url_pattern,
             status_code=200,
@@ -85,7 +85,7 @@ class TestLimits:
     def test_list_with_filter(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         async_client: AsyncCogniteClient,
         limits_url: str,
     ) -> None:
@@ -93,7 +93,7 @@ class TestLimits:
             {"limitId": "atlas.monthly_ai_tokens", "value": 1000},
             {"limitId": "atlas.monthly_ai_prompts", "value": 500},
         ]
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=f"{limits_url}/list",
             status_code=200,
@@ -106,7 +106,7 @@ class TestLimits:
         assert isinstance(res, LimitList)
         assert len(res) == 2
 
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 1
         request = requests[0]
         assert request.method == "POST"
@@ -118,8 +118,8 @@ class TestLimits:
         assert request_body["filter"]["prefix"]["value"] == "atlas."
 
     @staticmethod
-    def _verify_request(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_id: str) -> None:
-        requests = httpx_mock.get_requests()
+    def _verify_request(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient, expected_id: str) -> None:
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 1
 
         request = requests[0]

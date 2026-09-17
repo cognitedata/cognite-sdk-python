@@ -13,7 +13,7 @@ from zipfile import ZipFile
 import pytest
 from _pytest._py.path import LocalPath
 from _pytest.monkeypatch import MonkeyPatch
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client._api.functions import (
@@ -45,7 +45,7 @@ from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_or_raise, get_url, jsgz_load
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
@@ -132,30 +132,30 @@ CALL_SCHEDULED = {
 
 @pytest.fixture
 def mock_functions_filter_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     response_body = {"items": [EXAMPLE_FUNCTION]}
 
     url = get_url(async_client.functions, "/functions/list")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_functions_retrieve_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     response_body = {"items": [EXAMPLE_FUNCTION]}
 
     url = get_url(async_client.functions, "/functions/byids")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_functions_create_response(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+def mock_functions_create_response(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
     files_response_body = {
         "name": "myfunction",
         "id": FUNCTION_ID,
@@ -169,21 +169,21 @@ def mock_functions_create_response(httpx_mock: HTTPXMock, async_client: AsyncCog
     files_byids_url = get_url(async_client.files, "/files/byids")
     functions_url = get_url(async_client.functions, "/functions")
 
-    httpx_mock.add_response(method="POST", url=files_url, status_code=201, json=files_response_body, is_optional=True)
-    httpx_mock.add_response(method="PUT", url="https://upload.here", status_code=201, is_optional=True)
-    httpx_mock.add_response(
+    httpx2_mock.add_response(method="POST", url=files_url, status_code=201, json=files_response_body, is_optional=True)
+    httpx2_mock.add_response(method="PUT", url="https://upload.here", status_code=201, is_optional=True)
+    httpx2_mock.add_response(
         method="POST", url=files_byids_url, status_code=201, json={"items": [files_response_body]}, is_optional=True
     )
     # Use EXAMPLE_FUNCTION_CREATED for creation scenarios - newly created functions haven't been called yet
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST", url=functions_url, status_code=201, json={"items": [EXAMPLE_FUNCTION_CREATED]}, is_optional=True
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_file_not_uploaded(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     files_response_body = {
         "name": "myfunction",
@@ -196,75 +196,75 @@ def mock_file_not_uploaded(
 
     files_byids_url = get_url(async_client.files, "/files/byids")
 
-    httpx_mock.add_response(method="POST", url=files_byids_url, status_code=201, json={"items": [files_response_body]})
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=files_byids_url, status_code=201, json={"items": [files_response_body]})
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_functions_delete_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     url = get_url(async_client.functions, "/functions/delete")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json={})
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json={})
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_functions_call_responses(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     url = get_url(async_client.functions, f"/functions/{FUNCTION_ID}/call")
-    httpx_mock.add_response(method="POST", url=url, status_code=201, json=CALL_RUNNING)
+    httpx2_mock.add_response(method="POST", url=url, status_code=201, json=CALL_RUNNING)
 
     url = get_url(async_client.functions, f"/functions/{FUNCTION_ID}/calls/byids")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json={"items": [CALL_COMPLETED]})
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json={"items": [CALL_COMPLETED]})
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_sessions_bad_request_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     url = get_url(async_client.functions) + "/sessions"
-    httpx_mock.add_response(method="POST", url=url, status_code=403)
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url, status_code=403)
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_functions_call_by_external_id_responses(
     mock_functions_retrieve_response: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
-    httpx_mock = mock_functions_retrieve_response
+    httpx2_mock = mock_functions_retrieve_response
 
     url = get_url(async_client.functions, f"/functions/{FUNCTION_ID}/call")
-    httpx_mock.add_response(method="POST", url=url, status_code=201, json=CALL_RUNNING)
+    httpx2_mock.add_response(method="POST", url=url, status_code=201, json=CALL_RUNNING)
 
     url = get_url(async_client.functions, f"/functions/{FUNCTION_ID}/calls/byids")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json={"items": [CALL_COMPLETED]})
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json={"items": [CALL_COMPLETED]})
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_functions_call_failed_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     url = get_url(async_client.functions, f"/functions/{FUNCTION_ID}/call")
-    httpx_mock.add_response(method="POST", url=url, status_code=201, json=CALL_FAILED)
+    httpx2_mock.add_response(method="POST", url=url, status_code=201, json=CALL_FAILED)
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_functions_call_timeout_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     url = get_url(async_client.functions, f"/functions/{FUNCTION_ID}/call")
-    httpx_mock.add_response(method="POST", url=url, status_code=201, json=CALL_TIMEOUT)
+    httpx2_mock.add_response(method="POST", url=url, status_code=201, json=CALL_TIMEOUT)
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
@@ -318,17 +318,17 @@ def function_handle_as_variable() -> Any:
 
 @pytest.fixture
 def mock_function_calls_filter_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     response_body = {"items": [CALL_COMPLETED, CALL_SCHEDULED]}
     url = get_url(async_client.functions, f"/functions/{FUNCTION_ID}/calls/list")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def cognite_client_with_client_credentials_flow(httpx_mock: HTTPXMock) -> CogniteClient:
+def cognite_client_with_client_credentials_flow(httpx2_mock: HTTPXMock) -> CogniteClient:
     # We allow the mock to pass isinstance checks
     (credentials := MagicMock()).__class__ = OAuthClientCredentials  # type: ignore[assignment]
 
@@ -350,18 +350,18 @@ def cognite_client_with_token() -> CogniteClient:
 
 @pytest.fixture
 def mock_function_calls_filter_response_with_limit(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     response_body = {"items": [CALL_COMPLETED, CALL_SCHEDULED]}
     url = get_url(async_client.functions, f"/functions/{FUNCTION_ID}/calls/list")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_functions_limit_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> dict[str, Any]:
     response_body = {
         "timeoutMinutes": 10,
@@ -371,26 +371,26 @@ def mock_functions_limit_response(
         "runtimes": ["py310", "py311", "py312", "py313", "py314"],
     }
     url = get_url(async_client.functions, "/functions/limits")
-    httpx_mock.add_response(method="GET", url=url, status_code=200, json=response_body)
+    httpx2_mock.add_response(method="GET", url=url, status_code=200, json=response_body)
 
     return response_body
 
 
 @pytest.fixture
 def mock_functions_status_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> dict[str, Any]:
     response_body = {"status": "IN PROGRESS"}
     url = get_url(async_client.functions, "/functions/status")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
-    httpx_mock.add_response(method="GET", url=url, status_code=200, json=response_body)
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json=response_body)
+    httpx2_mock.add_response(method="GET", url=url, status_code=200, json=response_body)
 
     return response_body
 
 
 @pytest.fixture
 def mock_file_create_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     response_body = {
         "externalId": "string",
@@ -407,17 +407,17 @@ def mock_file_create_response(
         "lastUpdatedTime": 0,
         "uploadUrl": "https://upload.here",
     }
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.files, "/files?overwrite=false"),
         status_code=200,
         json=response_body,
         is_optional=True,
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="PUT", url="https://upload.here", status_code=200, json=response_body, is_optional=True
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class TestFunctionsAPI:
@@ -808,29 +808,29 @@ class TestRequirementsParser:
 
 @pytest.fixture
 def mock_function_calls_retrieve_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     response_body = CALL_COMPLETED
     url = get_url(async_client.functions, f"/functions/{FUNCTION_ID}/calls/byids")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json={"items": [response_body]})
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json={"items": [response_body]})
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_function_call_response_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> dict[str, Any]:
     response_body = {"callId": CALL_ID, "functionId": 1234, "response": {"key": "value"}}
     url = get_url(async_client.functions, f"/functions/{FUNCTION_ID}/calls/{CALL_ID}/response")
-    httpx_mock.add_response(method="GET", url=url, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url, status_code=200, json=response_body, is_optional=True)
 
     return response_body
 
 
 @pytest.fixture
 def mock_function_call_logs_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> dict[str, Any]:
     response_body = {
         "items": [
@@ -839,7 +839,7 @@ def mock_function_call_logs_response(
         ]
     }
     url = get_url(async_client.functions, f"/functions/{FUNCTION_ID}/calls/{CALL_ID}/logs")
-    httpx_mock.add_response(method="GET", url=url, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url, status_code=200, json=response_body, is_optional=True)
 
     return response_body
 
@@ -869,36 +869,36 @@ SCHEDULE_WITH_FUNCTION_ID_AND_SESSION = {
 
 @pytest.fixture
 def mock_filter_function_schedules_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     url = get_url(async_client.functions, "/functions/schedules/list")
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST", url=url, status_code=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]}
     )
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_function_schedules_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     url = get_url(async_client.functions, "/functions/schedules")
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="GET", url=url, status_code=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]}, is_optional=True
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST", url=url, status_code=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]}
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_function_schedules_response_with_xid(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     # Creating a new schedule first needs a session (to pass the nonce):
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.functions, "/sessions"),
         status_code=200,
@@ -906,54 +906,54 @@ def mock_function_schedules_response_with_xid(
     )
 
     schedule_url = get_url(async_client.functions, "/functions/schedules")
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST", url=schedule_url, status_code=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]}
     )
 
     retrieve_url = get_url(async_client.functions, "/functions/byids")
-    httpx_mock.add_response(method="POST", url=retrieve_url, status_code=200, json={"items": [EXAMPLE_FUNCTION]})
+    httpx2_mock.add_response(method="POST", url=retrieve_url, status_code=200, json={"items": [EXAMPLE_FUNCTION]})
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_function_schedules_retrieve_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     url = get_url(async_client.functions, "/functions/schedules/byids")
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST", url=url, status_code=200, json={"items": [SCHEDULE_WITH_FUNCTION_EXTERNAL_ID]}
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_function_schedules_delete_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     url = get_url(async_client.functions, "/functions/schedules/delete")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json={})
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json={})
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_schedule_get_data_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     schedule_id = SCHEDULE_WITH_FUNCTION_ID_AND_SESSION["id"]
     url = get_url(async_client.functions, f"/functions/schedules/{schedule_id}/input_data")
-    httpx_mock.add_response(method="GET", url=url, status_code=200, json={"id": schedule_id, "data": {"value": 2}})
-    return httpx_mock
+    httpx2_mock.add_response(method="GET", url=url, status_code=200, json={"id": schedule_id, "data": {"value": 2}})
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_schedule_no_data_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     schedule_id = SCHEDULE_WITH_FUNCTION_ID_AND_SESSION["id"]
     url = get_url(async_client.functions, f"/functions/schedules/{schedule_id}/input_data")
-    httpx_mock.add_response(method="GET", url=url, status_code=200, json={"id": schedule_id})
-    return httpx_mock
+    httpx2_mock.add_response(method="GET", url=url, status_code=200, json={"id": schedule_id})
+    return httpx2_mock
 
 
 class TestFunctionSchedulesAPI:
@@ -1023,7 +1023,7 @@ class TestFunctionSchedulesAPI:
     def test_create_schedules_with_data(
         self, mock_function_schedules_response: HTTPXMock, cognite_client: CogniteClient, monkeypatch: MonkeyPatch
     ) -> None:
-        # @patch seems to conflict with httpx_mock, so we use monkeypatch instead:
+        # @patch seems to conflict with httpx2_mock, so we use monkeypatch instead:
         async def mock_nonce(*args: Any, **kwargs: Any) -> str:
             return "very noncy"
 
@@ -1074,7 +1074,7 @@ class TestFunctionSchedulesAPI:
         expected_call_count: int,
         expected_client_id: str | None,
         expected_nonce: str,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
     ) -> None:
         credentials = MagicMock(spec=OAuthClientCredentials)
         credentials.client_id = "client_id"
@@ -1093,13 +1093,13 @@ class TestFunctionSchedulesAPI:
             nonce=nonce,
         )
         if expected_call_count > 1:
-            httpx_mock.add_response(
+            httpx2_mock.add_response(
                 method="POST",
                 url=f"{base_url}/sessions",
                 status_code=200,
                 json={"items": [{"id": 456, "nonce": "credentials_nonce", "status": "READY"}]},
             )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=f"{base_url}/functions/schedules",
             status_code=200,
@@ -1117,12 +1117,12 @@ class TestFunctionSchedulesAPI:
             },
         )
         result = cognite_client.functions.schedules.create(schedule, client_credentials=client_credentials)
-        assert len(httpx_mock.get_requests()) == expected_call_count
+        assert len(httpx2_mock.get_requests()) == expected_call_count
         if expected_call_count > 1:
-            first_body = json.loads(httpx_mock.get_requests()[0].content)
+            first_body = json.loads(httpx2_mock.get_requests()[0].content)
             assert first_body["items"][0]["clientId"] == expected_client_id
 
-        body = json.loads(httpx_mock.get_requests()[-1].content)
+        body = json.loads(httpx2_mock.get_requests()[-1].content)
         assert body["items"][0]["nonce"] == expected_nonce
 
         assert isinstance(result, FunctionSchedule)
