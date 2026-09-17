@@ -14,7 +14,13 @@ from cognite.client.data_classes.hosted_extractors.sources import (
     RestSourceWrite,
 )
 from cognite.client.data_classes.iam import ClientCredentials
-from cognite.client.utils._redaction import redact, redact_headers, redact_response_body, sensitive_fields
+from cognite.client.utils._redaction import (
+    SENSITIVE_HEADER_REGEX,
+    redact,
+    redact_headers,
+    redact_response_body,
+    sensitive_fields,
+)
 
 SECRET = "PLANTED-SECRET-VALUE"
 
@@ -146,6 +152,79 @@ class TestRedactHeaders:
 
         assert before != after
         assert after == redact_headers(before)
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "Authorization",
+            "authorization",
+            "Proxy-Authorization",
+            "api-key",
+            "Api-Key",
+            "x-api-key",
+            "X-API-KEY",
+            "apikey",
+            "api_key",
+            "x-service-token",
+            "X-Auth-Token",
+            "x-refresh-token",
+            "x-client-secret",
+            "my-password",
+            "passphrase",
+            "Cookie",
+            "Set-Cookie",
+            "x-credentials",
+            "x-access-key",
+            "X-Access-Key-Id",
+            "x-private-key",
+            "x-signing-key",
+            "x-session-key",
+            "X-Hub-Signature-256",
+            "x-jwt",
+        ],
+    )
+    def test_credential_header_names_are_redacted(self, name: str) -> None:
+        # ClientConfig.headers accepts arbitrary headers, so a credential may show up under any name
+        assert redact_headers({name: SECRET}) == {name: "***"}
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "content-type",
+            "accept",
+            "x-cdp-sdk",
+            "x-cdp-app",
+            "cdf-version",
+            "user-agent",
+            "x-request-id",
+            "key",
+            "x-public-key",
+        ],
+    )
+    def test_harmless_headers_stay_visible(self, name: str) -> None:
+        # Redacting these would only make debug logs less useful
+        assert redact_headers({name: "value"}) == {name: "value"}
+
+    @pytest.mark.parametrize(
+        "name",
+        ["WWW-Authenticate", "Proxy-Authenticate", "Access-Control-Allow-Credentials", "X-Auth-Request-Email"],
+    )
+    def test_known_false_positives_are_not_redacted(self, name: str) -> None:
+        # These header names match SENSITIVE_HEADER_REGEX (contain 'auth'/'credential'), but their
+        # values are never a credential, so redacting them would remove useful info
+        assert SENSITIVE_HEADER_REGEX.search(name) is not None
+        assert redact_headers({name: "value"}) == {name: "value"}
+
+    def test_does_not_mutate(self) -> None:
+        headers = {"Authorization": SECRET}
+        assert redact_headers(headers) == {"Authorization": "***"}
+        assert headers == {"Authorization": SECRET}
+
+    def test_padded_header_name_is_still_redacted(self) -> None:
+        assert redact_headers({" x-client-secret ": SECRET}) == {" x-client-secret ": "***"}
+
+    def test_padded_allowlisted_header_name_is_still_exempted(self) -> None:
+        assert redact_headers({" www-authenticate ": "value"}) == {" www-authenticate ": "value"}
 
 
 class TestStrAndRepr:
