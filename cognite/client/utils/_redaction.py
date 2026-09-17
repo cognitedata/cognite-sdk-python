@@ -94,7 +94,8 @@ def redact_headers(headers: httpx2.Headers | Mapping[str, str]) -> dict[str, str
 
 
 def _is_sensitive_header(name: str) -> bool:
-    return name.lower() not in NEVER_REDACT_HEADER_NAMES and bool(SENSITIVE_HEADER_REGEX.search(name))
+    name = name.strip().lower()
+    return name not in NEVER_REDACT_HEADER_NAMES and bool(SENSITIVE_HEADER_REGEX.search(name))
 
 
 def redact(obj: _T) -> _T:
