@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import sys
+import tempfile
 import time
 from json import JSONDecodeError
+from pathlib import Path
 from types import MappingProxyType
 from typing import Any, ClassVar
 from unittest.mock import MagicMock, Mock, patch
@@ -17,6 +20,7 @@ from cognite.client.credentials import (
     OAuthDeviceCode,
     OAuthInteractive,
     Token,
+    _WithMsalSerializableTokenCache,
 )
 from cognite.client.exceptions import CogniteAuthError, CogniteOAuthError
 
@@ -377,6 +381,68 @@ class TestOAuthDeviceCode:
         # Verify device flow was NOT triggered
         assert creds.authorization_header() == ("Authorization", "Bearer cached_access_token")
         mock_public_client().http_client.post.assert_not_called()
+
+
+class TestWithMsalSerializableTokenCache:
+    def test_resolve_token_cache_path_default_not_in_system_tempdir(self) -> None:
+        resolved = _WithMsalSerializableTokenCache._resolve_token_cache_path(None, "some-client-id")
+        assert not str(resolved).startswith(str(Path(tempfile.gettempdir())))
+        assert resolved.name == "cognitetokencache.some-client-id.bin"
+
+    def test_resolve_token_cache_path_custom_path_passthrough(self, tmp_path: Path) -> None:
+        custom = tmp_path / "custom-cache.bin"
+        resolved = _WithMsalSerializableTokenCache._resolve_token_cache_path(custom, "some-client-id")
+        assert resolved == custom
+
+    @pytest.mark.skipif(sys.platform == "win32", reason="symlink semantics not applicable")
+    def test_get_cached_token_symlink_is_ignored(self, tmp_path: Path) -> None:
+        victim = tmp_path / "victim.txt"
+        victim.write_text("not a token cache")
+        link = tmp_path / "cache.bin"
+        link.symlink_to(victim)
+
+        with pytest.warns(UserWarning, match="refusing to follow a symlink"):
+            result = _WithMsalSerializableTokenCache._get_cached_token(link)
+        assert result == {}
+
+    @patch("cognite.client.credentials.atexit.register")
+    @patch("cognite.client.credentials.PublicClientApplication")
+    @patch("cognite.client.credentials.SerializableTokenCache")
+    def test_at_exit_callback_uses_secure_write(
+        self,
+        mock_token_cache_cls: MagicMock,
+        mock_public_client: MagicMock,
+        mock_atexit_register: MagicMock,
+        tmp_path: Path,
+    ) -> None:
+        fake_cache = MagicMock()
+        fake_cache.has_state_changed = True
+        fake_cache.serialize.return_value = "serialized-content"
+        mock_token_cache_cls.return_value = fake_cache
+
+        cache_path = tmp_path / "cache.bin"
+        OAuthDeviceCode(token_cache_path=cache_path, **TestOAuthDeviceCode.DEFAULT_PROVIDER_ARGS)
+
+        mock_atexit_register.assert_called_once()
+        at_exit_callback = mock_atexit_register.call_args[0][0]
+
+        with patch("cognite.client.credentials.write_securely") as mock_write_securely:
+            at_exit_callback()
+        mock_write_securely.assert_called_once_with(cache_path, "serialized-content")
+
+    @patch("cognite.client.credentials.write_securely")
+    @patch("cognite.client.credentials.PublicClientApplication")
+    def test_get_token_second_write_site_uses_secure_write(
+        self, mock_public_client: MagicMock, mock_write_securely: MagicMock, tmp_path: Path
+    ) -> None:
+        cache_path = tmp_path / "cache.bin"  # does not exist
+        mock_public_client().token_cache.has_state_changed = True
+        mock_public_client().token_cache.serialize.return_value = "serialized-content"
+
+        creds = OAuthDeviceCode(token_cache_path=cache_path, **TestOAuthDeviceCode.DEFAULT_PROVIDER_ARGS)
+        creds._get_token()
+
+        mock_write_securely.assert_called_once_with(cache_path, "serialized-content")
 
 
 class TestOAuthInteractive:
