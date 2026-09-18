@@ -1028,6 +1028,77 @@ class TestFilesAPI:
             with pytest.raises(RuntimeError, match="not inside download directory"):
                 cognite_client.files.download(directory=directory, id=[1])
 
+    @staticmethod
+    def _file_metadata(directory: str, name: str = "report.pdf") -> FileMetadata:
+        return FileMetadata(id=1, uploaded=False, created_time=0, last_updated_time=0, name=name, directory=directory)
+
+    @pytest.mark.parametrize(
+        "raw_directory,expected_relative_parts",
+        [
+            ("/a/b", ("a", "b")),
+            ("//attacker-chosen/path", ("attacker-chosen", "path")),
+            ("///attacker-chosen/path", ("attacker-chosen", "path")),
+        ],
+    )
+    def test_get_ids_filepaths_directories_normalizes_leading_slashes(
+        self, tmp_path: Path, raw_directory: str, expected_relative_parts: tuple[str, ...]
+    ) -> None:
+        metadata = self._file_metadata(raw_directory)
+        _, filepaths, directories = FilesAPI._get_ids_filepaths_directories(
+            tmp_path, {1: metadata}, keep_directory_structure=True
+        )
+        expected_directory = tmp_path.joinpath(*expected_relative_parts)
+        assert directories == [expected_directory]
+        assert filepaths == [expected_directory / "report.pdf"]
+        assert directories[0].resolve().is_relative_to(tmp_path.resolve())
+
+    def test_get_ids_filepaths_directories_rejects_parent_traversal(self, tmp_path: Path) -> None:
+        metadata = self._file_metadata("/../../etc", name="passwd")
+        with pytest.raises(RuntimeError, match=r"has a directory \('/\.\./\.\./etc'\) that resolves outside"):
+            FilesAPI._get_ids_filepaths_directories(tmp_path, {1: metadata}, keep_directory_structure=True)
+
+    def test_get_ids_filepaths_directories_ignores_directory_when_not_keeping_structure(self, tmp_path: Path) -> None:
+        metadata = self._file_metadata("//attacker-chosen/path")
+        _, filepaths, directories = FilesAPI._get_ids_filepaths_directories(
+            tmp_path, {1: metadata}, keep_directory_structure=False
+        )
+        assert directories == [tmp_path]
+        assert filepaths == [tmp_path / "report.pdf"]
+
+    @pytest.fixture
+    def mock_byids_response__file_with_escaping_directory(
+        self, httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    ) -> HTTPXMock:
+        httpx2_mock.add_response(
+            method="POST",
+            url=get_url(async_client.files) + "/files/byids",
+            status_code=200,
+            json={
+                "items": [
+                    {
+                        "id": 1,
+                        "name": "file1",
+                        "directory": "/../../escaped",
+                        "uploaded": False,
+                        "createdTime": 123,
+                        "lastUpdatedTime": 123,
+                    }
+                ]
+            },
+        )
+        return httpx2_mock
+
+    def test_download_with_keep_directory_structure_rejects_traversal_before_mkdir(
+        self,
+        tmp_path: Path,
+        cognite_client: CogniteClient,
+        mock_byids_response__file_with_escaping_directory: HTTPXMock,
+    ) -> None:
+        with pytest.raises(RuntimeError, match=r"has a directory \('/\.\./\.\./escaped'\) that resolves outside"):
+            cognite_client.files.download(directory=tmp_path, id=[1], keep_directory_structure=True)
+        assert not any(tmp_path.parent.glob("escaped"))
+        assert list(tmp_path.iterdir()) == []
+
     def test_download_one_file_fails(
         self, cognite_client: CogniteClient, mock_file_download_response_one_fails: HTTPXMock
     ) -> None:
