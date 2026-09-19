@@ -14,6 +14,21 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.18.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.17.0...v8.18.0) (2026-09-19)
+
+
+### Features
+
+* **datapoints:** add timestamp_ms property to LatestDatapoint ([#2843](https://github.com/cognitedata/cognite-sdk-python/issues/2843)) ([402d537](https://github.com/cognitedata/cognite-sdk-python/commit/402d537c8a657f1e114ac8a62513c0316c1072e3))
+* **state time series:** add to_pandas support for raw state datapoints (DatapointsArray) (DM-4093) ([#2840](https://github.com/cognitedata/cognite-sdk-python/issues/2840)) ([3afc8a1](https://github.com/cognitedata/cognite-sdk-python/commit/3afc8a177ed985a367f141aabb4a207cb9a3ab7b))
+
+
+### Bug Fixes
+
+* **credentials:** Store OAuth token cache securely instead of a predictable shared temp path ([#2845](https://github.com/cognitedata/cognite-sdk-python/issues/2845)) ([174e529](https://github.com/cognitedata/cognite-sdk-python/commit/174e529fdfe5192c70fda2831eb53d007d2710b7))
+* **files:** prevent path traversal via file metadata directory in download() ([#2847](https://github.com/cognitedata/cognite-sdk-python/issues/2847)) ([011a4d4](https://github.com/cognitedata/cognite-sdk-python/commit/011a4d47222dc6311d1d015fa03c8600158cc921))
+* **tests:** update expected error message in test_search_node_data_with_invalid_property ([#2846](https://github.com/cognitedata/cognite-sdk-python/issues/2846)) ([d3f61b9](https://github.com/cognitedata/cognite-sdk-python/commit/d3f61b9980334e59e8b01bce2e1c26f5de21943c))
+
 ## [8.17.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.16.1...v8.17.0) (2026-09-15)
 
 
