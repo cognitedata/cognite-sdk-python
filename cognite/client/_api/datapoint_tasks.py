@@ -997,11 +997,6 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         if not self.is_state_dps:
             return
 
-        if self.use_numpy:
-            raise NotImplementedError(
-                "Retrieving aggregate state datapoints is not yet supported when using numpy arrays "
-                "(i.e. retrieve_arrays). Please use 'retrieve' instead for now."
-            )
         if unsupported_aggs := _UNSUPPORTED_STATE_AGGS_CAMEL.intersection(self.all_aggregates):
             raise NotImplementedError(
                 f"Retrieving the aggregate(s) {sorted(unsupported_aggs)} for state datapoints is not yet supported. "

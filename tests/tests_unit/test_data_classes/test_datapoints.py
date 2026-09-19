@@ -327,7 +327,7 @@ class TestStateDatapointsToPandas:
         assert df[123, "", "code"].tolist() == [0, 2147483648]
         assert df[123, "", "symbol"].tolist() == ["Good", "Bad"]
 
-    def test_datapoints_array_with_state_type_raises(self) -> None:
+    def test_datapoints_array_state_type_simple_aggregate_data_to_pandas(self) -> None:
         import numpy as np
 
         arr = DatapointsArray(
@@ -335,13 +335,18 @@ class TestStateDatapointsToPandas:
             is_string=False,
             is_step=False,
             type="state",
-            timestamp=np.array([1000], dtype="datetime64[ns]"),
+            granularity="1h",
+            timestamp=np.array([1000, 2000], dtype="datetime64[ns]"),
+            count=np.array([3, 5], dtype=np.int64),
+            duration_good=np.array([100, 200], dtype=np.int64),
         )
-        arr_lst = DatapointsArrayList([arr])
+        assert arr.numeric_states is None
+        assert arr.string_states is None
 
-        for dps in [arr, arr_lst]:
-            with pytest.raises(NotImplementedError, match="DatapointsArray are not supported"):
-                dps.to_pandas()  # type: ignore [attr-defined]
+        df = arr.to_pandas(include_aggregate_name=True)
+        assert list(df.columns) == [(123, "count"), (123, "duration_good")]
+        assert df[123, "count"].tolist() == [3, 5]
+        assert df[123, "duration_good"].tolist() == [100, 200]
 
     def test_mixed_state_and_numeric_dps_list_to_pandas(self, state_dps: Datapoints, node_id: NodeId) -> None:
         numeric_dps = Datapoints(
