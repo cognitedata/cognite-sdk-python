@@ -261,10 +261,14 @@ Internally this library uses the ``httpx2`` library to perform network calls to 
 token management we depend on ``authlib`` and ``msal``. ``msal`` uses the `requests <https://pypi.org/project/requests/>`_ library under
 the hood, which in turn is built on `urllib3 <https://pypi.org/project/urllib3/>`_.
 
-The SDK redacts the credentials it knows about before they reach a log record: authorization headers, and credential fields in request
+The SDK redacts the credentials it knows about before they reach a log record: credential-carrying headers, and credential fields in request
 payloads and response bodies, such as client secrets, passwords, session nonces, private keys and function secrets. For payloads the SDK
 did not build itself, such as a raw ``dict`` passed to ``client.post()``, all we have to go by is the field names, so treat that case as
 best-effort.
+
+Because ``ClientConfig.headers`` accepts custom headers, the SDK automatically identifies and redacts sensitive header names—such as those
+containing authentication keywords, API keys (not that we use them anymore), and tokens using case-insensitive pattern matching. Standard
+headers whose values do not contain secrets are automatically excluded from redaction.
 
 Enabling DEBUG level logging for the third-party libraries above is a different matter: requests going through e.g. ``urllib3`` will not be
 sanitized at all, meaning sensitive information such as authentication credentials and sensitive data may be logged. Thus, it is not

@@ -15,8 +15,31 @@ if TYPE_CHECKING:
 _T = TypeVar("_T")
 
 REDACTED = "***"
-SENSITIVE_HEADER_NAMES = frozenset({"authorization", "proxy-authorization"})
-
+# We consider (and redact) any header that has even a partial match with any of these words. It's better
+# to redact too much than too little:
+SENSITIVE_HEADER_REGEX = re.compile(
+    r"auth|token|secret|password|passphrase|cookie|credential|signature|jwt|"
+    r"(?:api|access|private|signing|session|encryption|master|client|app|application|customer)[-_ ]?key",
+    re.IGNORECASE,
+)
+# This approach thus needs an allowlist for known false positives:
+NEVER_REDACT_HEADER_NAMES = frozenset(
+    {
+        # Standard HTTP authentication challenge headers (RFC 9110)
+        "www-authenticate",
+        "proxy-authenticate",
+        "access-control-allow-credentials",  # CORS metadata flag
+        # oauth2-proxy (and similar auth proxies) relay identity metadata to the upstream via these headers:
+        "x-auth-request-user",
+        "x-auth-request-email",
+        "x-auth-request-name",
+        "x-auth-request-preferred-username",
+        "x-auth-request-groups",
+        "x-auth-request-roles",
+        "x-auth-request-sub",
+        "x-auth-request-redirect",
+    }
+)
 # We also need to do a "best effort" attempt at redacting payloads that were not produced by one of our data classes,
 # since a user of course can pass a payload/dict straight to e.g. client.post(). What we look for here are words
 # that should never turn up in a "harmless" CDF field name.
@@ -66,11 +89,13 @@ def sensitive_fields() -> SensitiveFields:
 
 
 def redact_headers(headers: httpx2.Headers | Mapping[str, str]) -> dict[str, str]:
-    redacted = dict(headers)
-    for name in redacted:
-        if name.lower() in SENSITIVE_HEADER_NAMES:
-            redacted[name] = REDACTED
-    return redacted
+    """Copy the given headers and return with the value of all credential-carrying headers redacted."""
+    return {name: REDACTED if _is_sensitive_header(name) else value for name, value in headers.items()}
+
+
+def _is_sensitive_header(name: str) -> bool:
+    name = name.strip().lower()
+    return name not in NEVER_REDACT_HEADER_NAMES and bool(SENSITIVE_HEADER_REGEX.search(name))
 
 
 def redact(obj: _T) -> _T:

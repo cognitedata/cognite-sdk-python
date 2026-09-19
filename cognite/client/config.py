@@ -307,11 +307,16 @@ class ClientConfig:
                 )
 
     def __str__(self) -> str:
-        return pprint.pformat(vars(self), indent=4)
+        return pprint.pformat(self._vars_redacted(), indent=4)
 
     def _repr_html_(self) -> str:
         pd = local_import("pandas")
-        return pd.Series(vars(self)).to_frame("ClientConfig").sort_index()._repr_html_()
+        return pd.Series(self._vars_redacted()).to_frame("ClientConfig").sort_index()._repr_html_()
+
+    def _vars_redacted(self) -> dict[str, Any]:
+        from cognite.client.utils._redaction import redact_headers
+
+        return {**vars(self), "headers": redact_headers(self.headers)}
 
     @classmethod
     def default(
