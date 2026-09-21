@@ -40,7 +40,19 @@ class TestIntegrations:
 
         request = httpx2_mock.get_requests()[0]
         assert request.method == "GET"
-        assert request.headers["cdf-version"] == async_client.integrations._beta_version_header()["cdf-version"]
+        assert request.headers["cdf-version"] == "20230101-beta"
+
+    def test_iterate(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
+        url_pattern = re.compile(re.escape(get_url(async_client.integrations, "/integrations")) + r"(?:\?.*)?$")
+        httpx2_mock.add_response(method="GET", url=url_pattern, json={"items": [INTEGRATION_RESPONSE]})
+
+        integrations = list(cognite_client.integrations())
+
+        assert len(integrations) == 1
+        assert isinstance(integrations[0], Integration)
+        assert integrations[0].external_id == "my-integration"
 
     def test_create(
         self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
