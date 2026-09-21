@@ -6,6 +6,13 @@ from cognite.client.data_classes.integrations.actions import (
     ActionWrite,
     ActionWriteList,
 )
+from cognite.client.data_classes.integrations.checkin import (
+    CheckinRequest,
+    CheckinResponse,
+    ErrorWithTask,
+    StartupRequest,
+    TaskUpdate,
+)
 from cognite.client.data_classes.integrations.config import (
     ConfigRevision,
     ConfigRevisionMetadata,
@@ -36,10 +43,13 @@ __all__ = [
     "ActionList",
     "ActionWrite",
     "ActionWriteList",
+    "CheckinRequest",
+    "CheckinResponse",
     "ConfigRevision",
     "ConfigRevisionMetadata",
     "ConfigRevisionMetadataList",
     "ConfigRevisionWrite",
+    "ErrorWithTask",
     "Extractor",
     "Integration",
     "IntegrationError",
@@ -48,8 +58,10 @@ __all__ = [
     "IntegrationUpdate",
     "IntegrationWrite",
     "IntegrationWriteList",
+    "StartupRequest",
     "SyncResult",
     "Task",
     "TaskHistory",
     "TaskHistoryList",
+    "TaskUpdate",
 ]

@@ -71,5 +71,11 @@ repos:
     hooks:
     - id: codespell
       files: ^cognite/.*
+      # "checkin" matches the Integrations API's actual operationId (integration_checkin) and
+      # URL path (/integrations/checkin), so it can't be reworded to "check-in" without diverging
+      # from the real API surface. Passed as a hook arg (not pyproject.toml's [tool.codespell])
+      # since reading TOML config requires tomli/tomllib, which isn't guaranteed to be available
+      # in the hook's isolated environment on Python <3.11.
       args:
+        - --ignore-words-list=checkin
         - --write-changes

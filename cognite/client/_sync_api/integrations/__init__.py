@@ -1,6 +1,6 @@
 """
 ===============================================================================
-e76b177ed7a693a6551979741ff94979
+b875794d0b27a94c97637678fc1ccd6a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -17,6 +17,7 @@ from cognite.client._sync_api.integrations.config import SyncIntegrationConfigAP
 from cognite.client._sync_api.integrations.errors import SyncIntegrationErrorsAPI
 from cognite.client._sync_api.integrations.tasks import SyncIntegrationTasksAPI
 from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.data_classes.integrations.checkin import CheckinRequest, CheckinResponse, StartupRequest
 from cognite.client.data_classes.integrations.integrations import (
     Integration,
     IntegrationList,
@@ -207,3 +208,63 @@ class SyncIntegrationsAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.integrations.delete(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)
         )
+
+    def startup(self, request: StartupRequest) -> CheckinResponse:
+        """
+        `Report extractor startup <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/integration_startup>`_
+
+        Reports that the extractor has (re)started, along with its current task configuration.
+        This closes any currently running tasks with an error.
+
+        Note:
+            This is normally only called by extractor implementations as part of the
+            integrations startup protocol, not by typical SDK consumers.
+
+        Args:
+            request (StartupRequest): The startup event to report.
+
+        Returns:
+            CheckinResponse: The integration's latest config revision.
+
+        Examples:
+
+            Report extractor startup:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.integrations import Extractor, StartupRequest
+                >>> client = CogniteClient()
+                >>> req = StartupRequest(
+                ...     external_id="my-integration",
+                ...     extractor=Extractor(external_id="cognite-simple-influxdb-extractor"),
+                ... )
+                >>> res = client.integrations.startup(req)
+        """
+        return run_sync(self.__async_client.integrations.startup(request=request))
+
+    def checkin(self, request: CheckinRequest) -> CheckinResponse:
+        """
+        `Check in with the integrations service <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/integration_checkin>`_
+
+        Called periodically by extractors to signal that they are still alive, and to report task
+        start/stop events and errors that have occurred since the last check-in.
+
+        Note:
+            This is normally only called by extractor implementations as part of the
+            integrations check-in protocol, not by typical SDK consumers.
+
+        Args:
+            request (CheckinRequest): The check-in event to report.
+
+        Returns:
+            CheckinResponse: The integration's latest config revision.
+
+        Examples:
+
+            Check in with no updates:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.integrations import CheckinRequest
+                >>> client = CogniteClient()
+                >>> res = client.integrations.checkin(CheckinRequest(external_id="my-integration"))
+        """
+        return run_sync(self.__async_client.integrations.checkin(request=request))
