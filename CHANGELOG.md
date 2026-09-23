@@ -29,7 +29,6 @@ As of 2025-08-29, changes are grouped as follows
 * **credentials:** Store OAuth token cache securely instead of a predictable shared temp path ([#2845](https://github.com/cognitedata/cognite-sdk-python/issues/2845)) ([174e529](https://github.com/cognitedata/cognite-sdk-python/commit/174e529fdfe5192c70fda2831eb53d007d2710b7))
 * **files:** prevent path traversal via file metadata directory in download() ([#2847](https://github.com/cognitedata/cognite-sdk-python/issues/2847)) ([011a4d4](https://github.com/cognitedata/cognite-sdk-python/commit/011a4d47222dc6311d1d015fa03c8600158cc921))
 * **logging:** Redact all credential-carrying headers from logs (DM-4117, VULN-113) ([#2848](https://github.com/cognitedata/cognite-sdk-python/issues/2848)) ([400d173](https://github.com/cognitedata/cognite-sdk-python/commit/400d173890ad90d11687a46b5eabecd68c341cdf))
-* **tests:** update expected error message in test_search_node_data_with_invalid_property ([#2846](https://github.com/cognitedata/cognite-sdk-python/issues/2846)) ([d3f61b9](https://github.com/cognitedata/cognite-sdk-python/commit/d3f61b9980334e59e8b01bce2e1c26f5de21943c))
 
 ## [8.17.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.16.1...v8.17.0) (2026-09-15)
 
