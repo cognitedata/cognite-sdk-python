@@ -26,6 +26,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
+    _NOT_YET_IMPLEMENTED_STATE_AGGS_SNAKE,
     ALL_SORTED_DP_AGGS,
     Aggregate,
 )
@@ -434,6 +435,15 @@ def _load_state_only_aggregate_entries(
     return [val if isinstance(val, state_cls) else state_cls._load(val) for val in values]
 
 
+def _raise_on_state_only_aggregate(dps: Any) -> None:
+    if populated := sorted(agg for agg in _NOT_YET_IMPLEMENTED_STATE_AGGS_SNAKE if getattr(dps, agg, None) is not None):
+        raise NotImplementedError(
+            f"Converting the state aggregate(s) {populated} to a pandas DataFrame is not supported yet, as a single "
+            "aggregate interval may contain many distinct states, each needing its own column. "
+            f"Access the data directly instead, e.g. via `dps.{populated[0]}`."
+        )
+
+
 @dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
@@ -768,6 +778,7 @@ class Datapoint(CogniteResource):
         Returns:
             pandas.DataFrame: The DataFrame representation of the datapoint.
         """
+        _raise_on_state_only_aggregate(self)
         pd = local_import("pandas")
 
         dumped = self.dump(camel_case=camel_case)
