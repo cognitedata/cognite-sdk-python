@@ -80,8 +80,9 @@ _T_DPS = TypeVar("_T_DPS", "Datapoints", "DatapointsArray")
 
 
 def numpy_dtype_fix(
-    element: np.float64 | str | MaxOrMinDatapoint | None, camel_case: bool = False
-) -> float | str | dict[str, int | float | str] | None:
+    element: np.float64 | str | MaxOrMinDatapoint | list[StateCount | StateTransition | StateDuration] | None,
+    camel_case: bool = False,
+) -> float | str | dict[str, int | float | str] | list[dict[str, Any]] | None:
     try:
         # Using .item() on numpy scalars gives us vanilla python types:
         return element.item()  # type: ignore [union-attr]
@@ -91,6 +92,9 @@ def numpy_dtype_fix(
             return element
         elif isinstance(element, MaxOrMinDatapoint):
             return element.dump(camel_case=camel_case)
+        elif isinstance(element, list):
+            # State-only aggregates holds a list of objs -per- row:
+            return [val.dump(camel_case=camel_case) for val in element]
         elif element is None:
             # State dps (string version) holds None whenever the state no longer exists in the StateSet
             # mapping (ie. this is expected also outside of the "missing-due-to-bad-status" scenario):
