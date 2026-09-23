@@ -80,7 +80,7 @@ _T_DPS = TypeVar("_T_DPS", "Datapoints", "DatapointsArray")
 
 
 def numpy_dtype_fix(
-    element: np.float64 | str | MaxOrMinDatapoint | list[StateCount | StateTransition | StateDuration] | None,
+    element: np.float64 | str | MaxOrMinDatapoint | list[_BaseStateOnlyAggregate] | None,
     camel_case: bool = False,
 ) -> float | str | dict[str, int | float | str] | list[dict[str, Any]] | None:
     try:
@@ -430,16 +430,18 @@ _STATE_ONLY_AGG_CLS_LOOKUP: dict[str, type[StateCount] | type[StateTransition] |
     "stateDuration": StateDuration,
 }
 
+_T_StateOnlyAggregate = TypeVar("_T_StateOnlyAggregate", bound=_BaseStateOnlyAggregate)
+
 
 def _load_state_only_aggregate_entries(
-    state_cls: type[_BaseStateOnlyAggregate], values: list[Any] | None
-) -> list[Any] | None:
+    state_cls: type[_T_StateOnlyAggregate], values: list[dict[str, Any] | _T_StateOnlyAggregate] | None
+) -> list[_T_StateOnlyAggregate] | None:
     if values is None:
         return None
-    return [val if isinstance(val, state_cls) else state_cls._load(val) for val in values]
+    return [val if isinstance(val, state_cls) else state_cls._load(val) for val in values]  # type: ignore [arg-type]
 
 
-def _raise_on_state_only_aggregate(dps: Any) -> None:
+def _raise_on_state_only_aggregate(dps: Datapoint | Datapoints | DatapointsArray) -> None:
     if populated := sorted(agg for agg in _NOT_YET_IMPLEMENTED_STATE_AGGS_SNAKE if getattr(dps, agg, None) is not None):
         raise NotImplementedError(
             f"Converting the state aggregate(s) {populated} to a pandas DataFrame is not supported yet, as a single "
