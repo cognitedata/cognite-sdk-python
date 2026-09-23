@@ -10,7 +10,16 @@ import pytest
 from cognite.client.data_classes import Datapoint, DatapointsArray, StateDatapointsInsert, StateDatapointWrite
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
-from cognite.client.data_classes.datapoints import Datapoints, DatapointsArrayList, DatapointsList
+from cognite.client.data_classes.datapoints import (
+    Datapoints,
+    DatapointsArrayList,
+    DatapointsList,
+    StateCount,
+    StateDuration,
+    StateTransition,
+    _BaseStateOnlyAggregate,
+)
+from cognite.client.utils._text import to_camel_case
 from tests.utils import PANDAS_TS_UNIT
 
 
@@ -203,6 +212,74 @@ class TestStateDatapointsArray:
         assert [dp[str_key] for dp in dumped] == ["on", None, None]
 
 
+class TestStateOnlyAggregateTypes:
+    @pytest.mark.parametrize(
+        "instance, exp_value, field",
+        [
+            (StateCount(1, "on", state_count=3), 3, "state_count"),
+            (StateTransition(1, "on", state_transitions=1), 1, "state_transitions"),
+            (StateDuration(1, "on", state_duration=1000), 1000, "state_duration"),
+        ],
+    )
+    @pytest.mark.parametrize("camel_case", [True, False])
+    def test_dump_and_load_roundtrip(
+        self, instance: _BaseStateOnlyAggregate, exp_value: int, field: str, camel_case: bool
+    ) -> None:
+        dumped = instance.dump(camel_case=camel_case)
+        assert dumped == {
+            ("numericValue" if camel_case else "numeric_value"): 1,
+            ("stringValue" if camel_case else "string_value"): "on",
+            (to_camel_case(field) if camel_case else field): exp_value,
+        }
+        loaded = type(instance)._load(instance.dump(camel_case=True))
+        assert loaded == instance
+
+    @pytest.mark.parametrize(
+        "state_cls, field",
+        [(StateCount, "state_count"), (StateTransition, "state_transitions"), (StateDuration, "state_duration")],
+    )
+    def test_dump_omits_string_value_when_none(self, state_cls: type, field: str) -> None:
+        instance = state_cls(numeric_value=0, string_value=None, **{field: 3})
+        assert instance.dump() == {"numericValue": 0, to_camel_case(field): 3}
+
+    def test_datapoints_getitem_and_dump(self) -> None:
+        state_counts_by_ts = [
+            [
+                StateCount(numeric_value=0, string_value="off", state_count=3),
+                StateCount(numeric_value=1, string_value="on", state_count=2),
+            ],
+            [
+                StateCount(numeric_value=0, string_value="off", state_count=5),
+            ],
+        ]
+        transitions_by_ts = [
+            [
+                StateTransition(numeric_value=e.numeric_value, string_value=e.string_value, state_transitions=1)
+                for e in ts
+            ]
+            for ts in state_counts_by_ts
+        ]
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=[1000, 2000],
+            state_count=state_counts_by_ts,
+            state_transitions=transitions_by_ts,
+        )
+        dp = dps[0]
+        assert isinstance(dp, Datapoint)
+        assert dp.state_count == state_counts_by_ts[0]
+        assert dp.state_transitions == transitions_by_ts[0]
+
+        dumped = dps.dump()["datapoints"]
+        assert dumped[0]["stateCount"] == [e.dump() for e in state_counts_by_ts[0]]
+        assert dumped[0]["stateTransitions"] == [e.dump() for e in transitions_by_ts[0]]
+        assert dumped[1]["stateCount"] == [e.dump() for e in state_counts_by_ts[1]]
+
+
 @pytest.mark.dsl
 class TestToPandas:
     @pytest.mark.parametrize("dps_lst_cls", [DatapointsList, DatapointsArrayList])
@@ -386,6 +463,28 @@ class TestStateDatapointsToPandas:
         )
         assert df[node_id, "numeric"].dtype == "Int32"
         assert df[456, "numeric"].dtype == "Int32"
+
+    @pytest.mark.parametrize(
+        "agg, state_cls",
+        [("state_count", StateCount), ("state_transitions", StateTransition), ("state_duration", StateDuration)],
+    )
+    def test_to_pandas_raises_for_state_breakdown_aggregates(self, agg: str, state_cls: type) -> None:
+        entries = [[state_cls(numeric_value=0, string_value="off", **{agg: 3})]]
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=[1000],
+            **{agg: entries},  # type: ignore [arg-type]
+        )
+        with pytest.raises(NotImplementedError, match=agg):
+            dps.to_pandas()
+
+        dp = Datapoint(timestamp=1000, **{agg: entries[0]})  # type: ignore [arg-type]
+        with pytest.raises(NotImplementedError, match=agg):
+            dp.to_pandas()
 
 
 class TestStateDatapointWrite:

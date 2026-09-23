@@ -39,6 +39,7 @@ _UNSUPPORTED_STATE_AGGS_CAMEL: frozenset[Literal["interpolation", "stepInterpola
 _NOT_YET_IMPLEMENTED_STATE_AGGS_CAMEL: frozenset[Literal["stateCount", "stateTransitions", "stateDuration"]] = (
     frozenset({"stateCount", "stateTransitions", "stateDuration"})
 )
+_NOT_YET_IMPLEMENTED_STATE_AGGS_SNAKE = frozenset(map(to_snake_case, _NOT_YET_IMPLEMENTED_STATE_AGGS_CAMEL))
 
 # Assumption: All INT aggregates should adhere to the following logic: Missing values can be replace with 0.
 #             Thus, if you add a new aggregate here, and this is no longer the case, a refactor is needed:
