@@ -351,7 +351,10 @@ def create_array_from_dps_container(container: _DataContainer) -> npt.NDArray:
 
 
 def create_object_array_from_container(container: _DataContainer) -> npt.NDArray[np.object_]:
-    return np.array(create_list_from_dps_container(container), dtype=np.object_)
+    # We don't use a simple `np.array(..., dtype=np.object_)` call here as numpy very helpfully
+    # builds a proper N-dimensional array instead of the 1D array-of-objects we actually want:
+    count = sum(len(chunk) for chunk in datapoints_in_order(container))
+    return np.fromiter(chain.from_iterable(datapoints_in_order(container)), dtype=np.object_, count=count)
 
 
 def create_aggregates_arrays_from_dps_container(container: _DataContainer, n_aggs: int) -> list[npt.NDArray]:
