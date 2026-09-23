@@ -905,6 +905,9 @@ class DatapointsArray(CogniteResource):
         duration_bad: NumpyInt64Array | None = None,
         duration_good: NumpyInt64Array | None = None,
         duration_uncertain: NumpyInt64Array | None = None,
+        state_count: NumpyObjArray | None = None,
+        state_transitions: NumpyObjArray | None = None,
+        state_duration: NumpyObjArray | None = None,
         status_code: NumpyUInt32Array | None = None,
         status_symbol: NumpyObjArray | None = None,
         null_timestamps: set[int] | None = None,
@@ -943,6 +946,9 @@ class DatapointsArray(CogniteResource):
         self.duration_bad = duration_bad
         self.duration_good = duration_good
         self.duration_uncertain = duration_uncertain
+        self.state_count = state_count
+        self.state_transitions = state_transitions
+        self.state_duration = state_duration
         self.status_code = status_code
         self.status_symbol = status_symbol
         self.null_timestamps = null_timestamps
@@ -1047,6 +1053,9 @@ class DatapointsArray(CogniteResource):
             duration_bad=array_by_attr.get("durationBad"),
             duration_good=array_by_attr.get("durationGood"),
             duration_uncertain=array_by_attr.get("durationUncertain"),
+            state_count=array_by_attr.get("stateCount"),
+            state_transitions=array_by_attr.get("stateTransitions"),
+            state_duration=array_by_attr.get("stateDuration"),
             status_code=array_by_attr.get("statusCode"),
             status_symbol=array_by_attr.get("statusSymbol"),
             null_timestamps=set(dps_dct["nullTimestamps"]) if "nullTimestamps" in dps_dct else None,
@@ -1076,10 +1085,10 @@ class DatapointsArray(CogniteResource):
 
         attrs, arrays = self._data_fields()
         timestamp = arrays[0][item].item() // 1_000_000
-        data: dict[str, float | str | dict | None] = {
+        data: dict[str, float | str | dict | list | None] = {
             attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])
         }
-        for key in ("min_datapoint", "max_datapoint"):
+        for key in ("min_datapoint", "max_datapoint", "state_count", "state_transitions", "state_duration"):
             if key in data:
                 data[key] = getattr(self, key)[item]
         for key in ("numeric_states", "string_states"):
@@ -1116,7 +1125,16 @@ class DatapointsArray(CogniteResource):
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
         # Note: Does not return status-related fields. ts must be first:
-        fields = ("timestamp", "value", "numeric_states", "string_states", *ALL_SORTED_DP_AGGS)
+        fields = (
+            "timestamp",
+            "value",
+            "numeric_states",
+            "string_states",
+            *ALL_SORTED_DP_AGGS,
+            "state_count",
+            "state_transitions",
+            "state_duration",
+        )
         data_field_tuples = [(attr, arr) for attr in fields if (arr := getattr(self, attr)) is not None]
         attrs, arrays = map(list, zip(*data_field_tuples))
         return attrs, arrays
@@ -1272,6 +1290,9 @@ class Datapoints(CogniteResource):
         duration_bad (list[int] | None): The duration the aggregate is defined and marked as bad (measured in milliseconds).
         duration_good (list[int] | None): The duration the aggregate is defined and marked as good (measured in milliseconds).
         duration_uncertain (list[int] | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
+        state_count (list[list[StateCount]] | None): Per-distinct-state breakdown of the number of raw datapoints with that state, per aggregate interval. Only returned for state time series.
+        state_transitions (list[list[StateTransition]] | None): Per-distinct-state breakdown of the number of times a raw datapoint transitioned into that state, per aggregate interval. Only returned for state time series.
+        state_duration (list[list[StateDuration]] | None): Per-distinct-state breakdown of the duration that state was active, per aggregate interval. Only returned for state time series.
         status_code (list[int] | None): The status codes for the raw datapoints.
         status_symbol (list[str] | None): The status symbols for the raw datapoints.
         timezone (datetime.timezone | ZoneInfo | None): The timezone to use when displaying the datapoints.
@@ -1310,6 +1331,9 @@ class Datapoints(CogniteResource):
         duration_bad: list[int] | None = None,
         duration_good: list[int] | None = None,
         duration_uncertain: list[int] | None = None,
+        state_count: list[list[StateCount]] | None = None,
+        state_transitions: list[list[StateTransition]] | None = None,
+        state_duration: list[list[StateDuration]] | None = None,
         status_code: list[int] | None = None,
         status_symbol: list[str] | None = None,
         timezone: datetime.timezone | ZoneInfo | None = None,
@@ -1345,6 +1369,9 @@ class Datapoints(CogniteResource):
         self.duration_bad = duration_bad
         self.duration_good = duration_good
         self.duration_uncertain = duration_uncertain
+        self.state_count = state_count
+        self.state_transitions = state_transitions
+        self.state_duration = state_duration
         self.status_code = status_code
         self.status_symbol = status_symbol
         self.timezone = timezone
@@ -1498,6 +1525,9 @@ class Datapoints(CogniteResource):
             data_lists["minDatapoint"] = list(map(_min_dp_class(min_dp[0])._load, min_dp))
         if max_dp := data_lists.get("maxDatapoint"):
             data_lists["maxDatapoint"] = list(map(_max_dp_class(max_dp[0])._load, max_dp))
+        for key, state_cls in _STATE_ONLY_AGG_CLS_LOOKUP.items():
+            if raw_state_entries := data_lists.get(key):
+                data_lists[key] = [[state_cls._load(e) for e in values] for values in raw_state_entries]
 
         for key, data in data_lists.items():
             snake_key = to_snake_case(key)
