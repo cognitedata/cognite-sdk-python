@@ -26,7 +26,6 @@ from cognite.client._proto.data_point_list_response_pb2 import TIMESERIES_TYPE_S
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
-    _NOT_YET_IMPLEMENTED_STATE_AGGS_CAMEL,
     _OBJECT_AGGREGATES_CAMEL,
     _UNSUPPORTED_STATE_AGGS_CAMEL,
     Aggregate,
@@ -1003,11 +1002,6 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
                 "It may not be supported until the next major version due to technicalities in what constitutes a breaking "
                 "change in our data classes. If you have an immediate need for this, please reach out on Github: "
                 "https://github.com/cognitedata/cognite-sdk-python/issues"
-            )
-        if not_yet_aggs := _NOT_YET_IMPLEMENTED_STATE_AGGS_CAMEL.intersection(self.all_aggregates):
-            raise NotImplementedError(
-                f"Retrieving the aggregate(s) {sorted(not_yet_aggs)} for state datapoints is not implemented yet, "
-                "but it's coming soon!"
             )
 
     @cached_property
