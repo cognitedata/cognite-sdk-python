@@ -1209,17 +1209,77 @@ class TestRetrieveStateDatapoints:
             with pytest.raises(NotImplementedError, match="not yet supported"):
                 endpoint(instance_id=ts_id, aggregates=aggregate, granularity="1h")
 
-    @pytest.mark.parametrize("aggregate", ["state_count", "state_transitions", "state_duration"])
-    def test_retrieve_state_aggregate_datapoints_not_yet_implemented_raises(
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    @pytest.mark.parametrize("retrieve_method_name", ["retrieve", "retrieve_arrays"])
+    def test_retrieve_state_only_aggregate_datapoints(
         self,
-        empty_state_ts: NodeApplyResult,
-        aggregate: str,
+        cognite_client: CogniteClient,
+        state_ts_with_aggregate_data: tuple[NodeId, int],
+        retrieve_method_name: str,
+    ) -> None:
+        # state_count/state_transitions/state_duration are per-distinct-state breakdown aggregates: a single interval
+        # may contain several distinct states, so each yields a *list* of entries per interval rather than a single value
+        # like every other aggregate does.
+        node_id, base = state_ts_with_aggregate_data
+        retrieve_fn = getattr(cognite_client.time_series.data, retrieve_method_name)
+
+        aggs = random.choice(
+            (
+                ["state_count", "state_transitions", "state_duration"],  # All snake case
+                ["stateCount", "stateTransitions", "stateDuration"],  # All camelCase
+                ["state_count", "stateTransitions", "state_duration"],  # Mix
+            )
+        )
+        dps = retrieve_fn(
+            instance_id=node_id,
+            start=base,
+            end=base + 3 * HOUR_MS,
+            aggregates=aggs,
+            granularity="1h",
+        )
+        assert dps is not None
+        assert dps.type == "state"
+        assert len(dps) == 3
+        assert dps.state_count is not None
+        assert dps.state_transitions is not None
+        assert dps.state_duration is not None
+        assert len(dps.state_count) == len(dps.state_transitions) == len(dps.state_duration) == 3
+
+        # Bucket 0, [base, base+1h): three good datapoints, states 0, 1, 0 -> two distinct states:
+        count_bucket_0, transitions_bucket_0, duration_bucket_0 = (
+            dps.state_count[0],
+            dps.state_transitions[0],
+            dps.state_duration[0],
+        )
+        assert {e.numeric_value for e in count_bucket_0} == {0, 1}
+        assert sum(e.state_count for e in count_bucket_0) == 3  # matches the simple 'count' aggregate
+        assert sum(e.state_duration for e in duration_bucket_0) == HOUR_MS  # bucket is 100% covered by good data
+        assert all(e.state_transitions >= 1 for e in transitions_bucket_0)
+
+    def test_state_only_aggregate_datapoints_to_pandas_raises(
+        self,
+        cognite_client: CogniteClient,
+        state_ts_with_aggregate_data: tuple[NodeId, int],
         retrieve_endpoints: list[Callable],
     ) -> None:
-        ts_id = empty_state_ts.as_id()
-        for endpoint in retrieve_endpoints:
-            with pytest.raises(NotImplementedError, match="coming soon"):
-                endpoint(instance_id=ts_id, aggregates=aggregate, granularity="1h")
+        # to_pandas() is not supported for state_count/state_transitions/state_duration: a single interval may
+        # contain dozens (or more) distinct states, each needing its own column, for each of the three aggregates.
+        node_id, base = state_ts_with_aggregate_data
+        for aggregate in ("state_count", "state_transitions", "state_duration"):
+            for endpoint in retrieve_endpoints:
+                dps = endpoint(instance_id=node_id, limit=1, aggregates=aggregate, granularity="1h")
+
+                with pytest.raises(NotImplementedError, match=aggregate):
+                    dps.to_pandas()
+
+            # retrieve_dataframe() fetches via retrieve_arrays(), then converts to pandas, so it should raise too:
+            with pytest.raises(NotImplementedError, match=aggregate):
+                cognite_client.time_series.data.retrieve_dataframe(
+                    instance_id=node_id, limit=1, aggregates=aggregate, granularity="1h"
+                )
 
 
 @pytest.fixture
