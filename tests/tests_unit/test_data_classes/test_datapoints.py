@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from datetime import timedelta, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -19,6 +20,7 @@ from cognite.client.data_classes.datapoints import (
     StateTransition,
     _BaseStateOnlyAggregate,
 )
+from cognite.client.utils._datapoints import create_object_array_from_container
 from cognite.client.utils._text import to_camel_case
 from tests.utils import PANDAS_TS_UNIT
 
@@ -242,8 +244,9 @@ class TestStateOnlyAggregateTypes:
         instance = state_cls(numeric_value=0, string_value=None, **{field: 3})
         assert instance.dump() == {"numericValue": 0, to_camel_case(field): 3}
 
-    def test_datapoints_getitem_and_dump(self) -> None:
-        state_counts_by_ts = [
+    @pytest.fixture
+    def state_counts_by_ts(self) -> list[list[StateCount]]:
+        return [
             [
                 StateCount(numeric_value=0, string_value="off", state_count=3),
                 StateCount(numeric_value=1, string_value="on", state_count=2),
@@ -252,6 +255,8 @@ class TestStateOnlyAggregateTypes:
                 StateCount(numeric_value=0, string_value="off", state_count=5),
             ],
         ]
+
+    def test_datapoints_getitem_and_dump(self, state_counts_by_ts: list[list[StateCount]]) -> None:
         transitions_by_ts = [
             [
                 StateTransition(numeric_value=e.numeric_value, string_value=e.string_value, state_transitions=1)
@@ -278,6 +283,42 @@ class TestStateOnlyAggregateTypes:
         assert dumped[0]["stateCount"] == [e.dump() for e in state_counts_by_ts[0]]
         assert dumped[0]["stateTransitions"] == [e.dump() for e in transitions_by_ts[0]]
         assert dumped[1]["stateCount"] == [e.dump() for e in state_counts_by_ts[1]]
+
+    def test_datapoints_array_getitem_and_dump(self, state_counts_by_ts: list[list[StateCount]]) -> None:
+        import numpy as np
+
+        arr = DatapointsArray(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=np.array([1000, 2000], dtype="datetime64[ns]"),
+            # Use the helper fn to create the array-of-list-of-state-aggs:
+            state_count=create_object_array_from_container(defaultdict(list, {(0,): [state_counts_by_ts]})),
+        )
+        assert arr.state_count is not None
+        assert arr.state_count.shape == (2,)
+        assert list(arr.state_count) == state_counts_by_ts
+
+        dp = arr[0]
+        assert isinstance(dp, Datapoint)
+        assert dp.state_count == state_counts_by_ts[0]
+
+        dumped = arr.dump()["datapoints"]
+        assert dumped[0]["stateCount"] == [e.dump() for e in state_counts_by_ts[0]]
+        assert dumped[1]["stateCount"] == [e.dump() for e in state_counts_by_ts[1]]
+
+    def test_create_object_array_from_container_does_not_collapse_equal_length_rows(self) -> None:
+        # "Regression" test (failed hard during development): if every "row" has the same length (like here, 2 each)
+        # the numpy call np.array(..., dtype=object) would build a proper 2D array instead of a 1D array-of-lists,
+        # thus keeping this test here as a guard for future "optimizations" ;)
+        container = defaultdict(list, {(0,): [[[1, 2], [3, 4], [5, 6]]]})
+        arr = create_object_array_from_container(container)  # type: ignore [arg-type]
+        assert arr.shape == (3,)
+        assert arr.dtype == object
+        assert arr[0] == [1, 2]
+        assert arr[2] == [5, 6]
 
 
 @pytest.mark.dsl
@@ -485,6 +526,22 @@ class TestStateDatapointsToPandas:
         dp = Datapoint(timestamp=1000, **{agg: entries[0]})  # type: ignore [arg-type]
         with pytest.raises(NotImplementedError, match=agg):
             dp.to_pandas()
+
+    def test_to_pandas_raises_for_state_only_aggregates_array(self) -> None:
+        import numpy as np
+
+        entries = [[StateCount(numeric_value=0, string_value="off", state_count=3)]]
+        arr = DatapointsArray(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=np.array([1000], dtype="datetime64[ns]"),
+            state_count=create_object_array_from_container(defaultdict(list, {(0,): [entries]})),
+        )
+        with pytest.raises(NotImplementedError, match="state_count"):
+            arr.to_pandas()
 
 
 class TestStateDatapointWrite:
