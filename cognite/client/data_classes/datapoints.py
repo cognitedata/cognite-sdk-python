@@ -426,6 +426,14 @@ _STATE_ONLY_AGG_CLS_LOOKUP: dict[str, type[StateCount] | type[StateTransition] |
 }
 
 
+def _load_state_only_aggregate_entries(
+    state_cls: type[_BaseStateOnlyAggregate], values: list[Any] | None
+) -> list[Any] | None:
+    if values is None:
+        return None
+    return [val if isinstance(val, state_cls) else state_cls._load(val) for val in values]
+
+
 @dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
@@ -678,6 +686,9 @@ class Datapoint(CogniteResource):
         duration_bad (int | None): The duration the aggregate is defined and marked as bad (measured in milliseconds).
         duration_good (int | None): The duration the aggregate is defined and marked as good (measured in milliseconds).
         duration_uncertain (int | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
+        state_count (list[StateCount] | None): Per-distinct-state breakdown of the number of raw datapoints with that state, in the aggregate interval. Only returned for state time series.
+        state_transitions (list[StateTransition] | None): Per-distinct-state breakdown of the number of times a raw datapoint transitioned into that state, in the aggregate interval. Only returned for state time series.
+        state_duration (list[StateDuration] | None): Per-distinct-state breakdown of the duration that state was active, in the aggregate interval. Only returned for state time series.
         status_code (int | None): The status code for the raw datapoint.
         status_symbol (str | None): The status symbol for the raw datapoint.
         timezone (datetime.timezone | ZoneInfo | None): The timezone to use when displaying the datapoint.
@@ -707,6 +718,9 @@ class Datapoint(CogniteResource):
         duration_bad: int | None = None,
         duration_good: int | None = None,
         duration_uncertain: int | None = None,
+        state_count: list[StateCount] | None = None,
+        state_transitions: list[StateTransition] | None = None,
+        state_duration: list[StateDuration] | None = None,
         status_code: int | None = None,
         status_symbol: str | None = None,
         timezone: datetime.timezone | ZoneInfo | None = None,
@@ -733,6 +747,9 @@ class Datapoint(CogniteResource):
         self.duration_bad = duration_bad
         self.duration_good = duration_good
         self.duration_uncertain = duration_uncertain
+        self.state_count = state_count
+        self.state_transitions = state_transitions
+        self.state_duration = state_duration
         self.status_code = status_code
         self.status_symbol = status_symbol
         self.timezone = timezone
@@ -811,6 +828,9 @@ class Datapoint(CogniteResource):
             duration_bad=resource.get("durationBad"),
             duration_good=resource.get("durationGood"),
             duration_uncertain=resource.get("durationUncertain"),
+            state_count=_load_state_only_aggregate_entries(StateCount, resource.get("stateCount")),
+            state_transitions=_load_state_only_aggregate_entries(StateTransition, resource.get("stateTransitions")),
+            state_duration=_load_state_only_aggregate_entries(StateDuration, resource.get("stateDuration")),
             status_code=resource.get("statusCode"),
             status_symbol=resource.get("statusSymbol"),
             timezone=timezone,
@@ -824,6 +844,12 @@ class Datapoint(CogniteResource):
             dumped["maxDatapoint" if camel_case else "max_datapoint"] = self.max_datapoint.dump(camel_case)
         if self.min_datapoint:
             dumped["minDatapoint" if camel_case else "min_datapoint"] = self.min_datapoint.dump(camel_case)
+        for attr, key in zip(
+            ("state_count", "state_transitions", "state_duration"),
+            ("stateCount", "stateTransitions", "stateDuration"),
+        ):
+            if values := getattr(self, attr):
+                dumped[key if camel_case else attr] = [e.dump(camel_case) for e in values]
         if include_timezone:
             if self.timezone is not None:
                 dumped["timezone"] = convert_timezone_to_str(self.timezone)
