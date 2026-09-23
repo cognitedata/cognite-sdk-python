@@ -345,6 +345,87 @@ def _max_dp_class(dct: dict[str, Any]) -> type[MaxDatapoint | MaxDatapointWithSt
     return MaxDatapointWithStatus if "statusCode" in dct else MaxDatapoint
 
 
+@dataclass(slots=True, frozen=True)
+class _BaseStateOnlyAggregate:
+    numeric_value: int
+    string_value: str | None
+
+    _agg_name: ClassVar[Literal["state_count", "state_transitions", "state_duration"]]
+    _agg_name_camel_case: ClassVar[Literal["stateCount", "stateTransitions", "stateDuration"]]
+
+    @classmethod
+    def _load(cls, dct: dict[str, Any]) -> Self:
+        return cls(
+            numeric_value=dct["numericValue"],
+            string_value=dct.get("stringValue"),
+            **{cls._agg_name: dct[cls._agg_name_camel_case]},
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped: dict[str, Any] = {
+            "numericValue" if camel_case else "numeric_value": self.numeric_value,
+            self._agg_name_camel_case if camel_case else self._agg_name: getattr(self, self._agg_name),
+        }
+        if self.string_value is not None:
+            dumped["stringValue" if camel_case else "string_value"] = self.string_value
+        return dumped
+
+
+@dataclass(slots=True, frozen=True)
+class StateCount(_BaseStateOnlyAggregate):
+    """One distinct state's raw datapoint count within a single aggregate interval, for a state time series.
+
+    Args:
+        numeric_value (int): The numeric value identifying the state.
+        string_value (str | None): The string value identifying the state, may be None if the state set no longer contains it.
+        state_count (int): The number of raw datapoints with this state, in the aggregate interval.
+    """
+
+    state_count: int
+
+    _agg_name = "state_count"
+    _agg_name_camel_case = "stateCount"
+
+
+@dataclass(slots=True, frozen=True)
+class StateTransition(_BaseStateOnlyAggregate):
+    """One distinct state's transition count within a single aggregate interval, for a state time series.
+
+    Args:
+        numeric_value (int): The numeric value identifying the state.
+        string_value (str | None): The string value identifying the state, may be None if the state set no longer contains it.
+        state_transitions (int): The number of times a raw datapoint transitioned into this state, in the aggregate interval.
+    """
+
+    state_transitions: int
+
+    _agg_name = "state_transitions"
+    _agg_name_camel_case = "stateTransitions"
+
+
+@dataclass(slots=True, frozen=True)
+class StateDuration(_BaseStateOnlyAggregate):
+    """One distinct state's active duration within a single aggregate interval, for a state time series.
+
+    Args:
+        numeric_value (int): The numeric value identifying the state.
+        string_value (str | None): The string value identifying the state, may be None if the state set no longer contains it.
+        state_duration (int): The duration this state was active, in the aggregate interval, measured in milliseconds.
+    """
+
+    state_duration: int
+
+    _agg_name = "state_duration"
+    _agg_name_camel_case = "stateDuration"
+
+
+_STATE_ONLY_AGG_CLS_LOOKUP: dict[str, type[StateCount] | type[StateTransition] | type[StateDuration]] = {
+    "stateCount": StateCount,
+    "stateTransitions": StateTransition,
+    "stateDuration": StateDuration,
+}
+
+
 @dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
