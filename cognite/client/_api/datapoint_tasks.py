@@ -27,6 +27,7 @@ from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
     _OBJECT_AGGREGATES_CAMEL,
+    _STATE_AGGS_CAMEL,
     _UNSUPPORTED_STATE_AGGS_CAMEL,
     Aggregate,
 )
@@ -1012,13 +1013,13 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         # Developer note here: If you ask for datapoints to be returned in JSON, you get `count` as an integer.
         # Nice. However, when using protobuf, you get `double` xD
         self.all_aggregates = aggs_camel_case
-        self.object_aggs = list(_OBJECT_AGGREGATES_CAMEL.intersection(aggs_camel_case))
+        # 'object_aggs' covers both the classic "object" aggregates (min_datapoint/max_datapoint, one object per row)
+        # and the state-only aggregates (state_count/state_transitions/state_duration, one *list* of objects per row)
+        self.object_aggs = list((_OBJECT_AGGREGATES_CAMEL | _STATE_AGGS_CAMEL).intersection(aggs_camel_case))
         if self.object_aggs:
-            self.object_data: dict[Literal["minDatapoint", "maxDatapoint"], _DataContainer] = {
-                agg: defaultdict(list) for agg in self.object_aggs
-            }
+            self.object_data: dict[str, _DataContainer] = {agg: defaultdict(list) for agg in self.object_aggs}
             self.object_agg_unpack_fns = [
-                DpsUnpackFns.extract_fn_min_or_max_dp(agg, include_status) for agg in self.object_aggs
+                DpsUnpackFns.extract_fn_for_object_agg(agg, include_status) for agg in self.object_aggs
             ]
         self.numeric_aggs = [agg for agg in aggs_camel_case if agg not in self.object_aggs]
         self.n_numeric_aggs = len(self.numeric_aggs)
