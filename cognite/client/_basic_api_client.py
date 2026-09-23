@@ -493,7 +493,7 @@ class BasicAsyncAPIClient:
         extra: dict[str, Any] = {
             "headers": redact_headers(res.request.headers),
             "payload": redact(payload),
-            "response-headers": dict(res.headers),
+            "response-headers": redact_headers(res.headers),
         }
         if not stream and self._config.debug:
             extra["response-payload"] = redact_response_body(res.text, 1_000)
