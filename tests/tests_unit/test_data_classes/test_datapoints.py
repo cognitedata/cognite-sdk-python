@@ -309,6 +309,7 @@ class TestStateOnlyAggregateTypes:
         assert dumped[0]["stateCount"] == [e.dump() for e in state_counts_by_ts[0]]
         assert dumped[1]["stateCount"] == [e.dump() for e in state_counts_by_ts[1]]
 
+    @pytest.mark.dsl
     def test_create_object_array_from_container_does_not_collapse_equal_length_rows(self) -> None:
         # "Regression" test (failed hard during development): if every "row" has the same length (like here, 2 each)
         # the numpy call np.array(..., dtype=object) would build a proper 2D array instead of a 1D array-of-lists,
