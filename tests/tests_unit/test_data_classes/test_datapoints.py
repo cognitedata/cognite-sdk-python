@@ -284,6 +284,7 @@ class TestStateOnlyAggregateTypes:
         assert dumped[0]["stateTransitions"] == [e.dump() for e in transitions_by_ts[0]]
         assert dumped[1]["stateCount"] == [e.dump() for e in state_counts_by_ts[1]]
 
+    @pytest.mark.dsl
     def test_datapoints_array_getitem_and_dump(self, state_counts_by_ts: list[list[StateCount]]) -> None:
         import numpy as np
 
