@@ -5,7 +5,11 @@ from collections.abc import AsyncIterator, Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client._api_client import APIClient
-from cognite.client.data_classes.data_modeling.aggregates import Aggregate, _dump_aggregate_value
+from cognite.client.data_classes.data_modeling.aggregates import (
+    Aggregate,
+    _dump_aggregate_value,
+    _validate_aggregates,
+)
 from cognite.client.data_classes.data_modeling.instances import InstanceSort
 from cognite.client.data_classes.data_modeling.records import (
     Record,
@@ -340,7 +344,7 @@ class RecordsAPI(APIClient):
                 ... )
         """
         self._warning.warn()
-        body: dict[str, Any] = {"aggregates": _dump_aggregate_value(aggregates)}
+        body: dict[str, Any] = {"aggregates": _dump_aggregate_value(_validate_aggregates(aggregates))}
         if last_updated_time is not None:
             body["lastUpdatedTime"] = last_updated_time.dump()
         if filter is not None:
