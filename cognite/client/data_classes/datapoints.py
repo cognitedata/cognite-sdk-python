@@ -26,7 +26,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
-    _NOT_YET_IMPLEMENTED_STATE_AGGS_SNAKE,
+    _NOT_YET_IMPLEMENTED_TO_PANDAS_STATE_AGGS_SNAKE,
     ALL_SORTED_DP_AGGS,
     Aggregate,
 )
@@ -442,7 +442,9 @@ def _load_state_only_aggregate_entries(
 
 
 def _raise_on_state_only_aggregate(dps: Datapoint | Datapoints | DatapointsArray) -> None:
-    if populated := sorted(agg for agg in _NOT_YET_IMPLEMENTED_STATE_AGGS_SNAKE if getattr(dps, agg, None) is not None):
+    if populated := sorted(
+        agg for agg in _NOT_YET_IMPLEMENTED_TO_PANDAS_STATE_AGGS_SNAKE if getattr(dps, agg, None) is not None
+    ):
         raise NotImplementedError(
             f"Converting the state aggregate(s) {populated} to a pandas DataFrame is not supported yet, as a single "
             "aggregate interval may contain many distinct states, each needing its own column. "
