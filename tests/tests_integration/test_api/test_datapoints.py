@@ -1259,27 +1259,88 @@ class TestRetrieveStateDatapoints:
         assert sum(e.state_duration for e in duration_bucket_0) == HOUR_MS  # bucket is 100% covered by good data
         assert all(e.state_transitions >= 1 for e in transitions_bucket_0)
 
-    def test_state_only_aggregate_datapoints_to_pandas_raises(
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    @pytest.mark.parametrize("retrieve_method_name", ["retrieve", "retrieve_arrays"])
+    def test_state_only_aggregate_datapoints_to_pandas(
         self,
         cognite_client: CogniteClient,
         state_ts_with_aggregate_data: tuple[NodeId, int],
-        retrieve_endpoints: list[Callable],
+        retrieve_method_name: str,
     ) -> None:
-        # to_pandas() is not supported for state_count/state_transitions/state_duration: a single interval may
-        # contain dozens (or more) distinct states, each needing its own column, for each of the three aggregates.
+        # state_count/state_transitions/state_duration each get one column per distinct state (numeric_value),
+        # in a separate 'state_value' MultiIndex level:
         node_id, base = state_ts_with_aggregate_data
-        for aggregate in ("state_count", "state_transitions", "state_duration"):
-            for endpoint in retrieve_endpoints:
-                dps = endpoint(instance_id=node_id, limit=1, aggregates=aggregate, granularity="1h")
+        retrieve_fn = getattr(cognite_client.time_series.data, retrieve_method_name)
 
-                with pytest.raises(NotImplementedError, match=aggregate):
-                    dps.to_pandas()
+        dps = retrieve_fn(
+            instance_id=node_id,
+            start=base,
+            end=base + 3 * HOUR_MS,
+            aggregates=["state_count", "state_transitions", "state_duration"],
+            granularity="1h",
+        )
+        assert dps is not None
+        df = dps.to_pandas(include_aggregate_name=True)
+        assert len(df) == 3
+        assert set(df.columns.get_level_values("aggregate")) == {"state_count", "state_transitions", "state_duration"}
+        assert set(df.columns.get_level_values("state_value")) == {0, 1}
 
-            # retrieve_dataframe() fetches via retrieve_arrays(), then converts to pandas, so it should raise too:
-            with pytest.raises(NotImplementedError, match=aggregate):
-                cognite_client.time_series.data.retrieve_dataframe(
-                    instance_id=node_id, limit=1, aggregates=aggregate, granularity="1h"
-                )
+        # Bucket 0 has three good datapoints across states 0 and 1: state_count sums back up to the simple 'count':
+        state_count_cols = [col for col in df.columns if col[1] == "state_count"]
+        assert df.loc[:, state_count_cols].iloc[0].sum() == 3
+
+        # When expand_state_aggregates=False we expect one column per aggregate holding the raw lists:
+        df_unexpanded = dps.to_pandas(include_aggregate_name=True, expand_state_aggregates=False)
+        assert "state_value" not in df_unexpanded.columns.names
+        assert set(df_unexpanded.columns.get_level_values("aggregate")) == {
+            "state_count",
+            "state_transitions",
+            "state_duration",
+        }
+        state_count_col = next(col for col in df_unexpanded.columns if col[1] == "state_count")
+        assert {e.numeric_value for e in df_unexpanded[state_count_col].iloc[0]} == {0, 1}
+
+    def test_state_only_aggregate_datapoints_retrieve_dataframe(
+        self,
+        cognite_client: CogniteClient,
+        state_ts_with_aggregate_data: tuple[NodeId, int],
+    ) -> None:
+        # retrieve_dataframe() fetches via retrieve_arrays(), so it must produce the exact same columns:
+        node_id, base = state_ts_with_aggregate_data
+        aggs = ["state_count", "state_transitions", "state_duration"]
+
+        df = cognite_client.time_series.data.retrieve_dataframe(
+            instance_id=node_id,
+            start=base,
+            end=base + 3 * HOUR_MS,
+            aggregates=aggs,
+            granularity="1h",
+            include_aggregate_name=True,
+        )
+        arr = cognite_client.time_series.data.retrieve_arrays(
+            instance_id=node_id, start=base, end=base + 3 * HOUR_MS, aggregates=aggs, granularity="1h"
+        )
+        assert arr is not None
+        pd.testing.assert_frame_equal(df, arr.to_pandas(include_aggregate_name=True))
+
+        # expand_state_aggregates=False must also match between retrieve_dataframe() and to_pandas():
+        df_unexpanded = cognite_client.time_series.data.retrieve_dataframe(
+            instance_id=node_id,
+            limit=1,
+            aggregates="state_count",
+            granularity="1h",
+            expand_state_aggregates=False,
+        )
+        arr_single = cognite_client.time_series.data.retrieve_arrays(
+            instance_id=node_id, limit=1, aggregates="state_count", granularity="1h"
+        )
+        assert arr_single is not None
+        pd.testing.assert_frame_equal(
+            df_unexpanded, arr_single.to_pandas(include_aggregate_name=True, expand_state_aggregates=False)
+        )
 
 
 @pytest.fixture
