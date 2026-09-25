@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
-from cognite.client.data_classes import filters
+from cognite.client.data_classes import Datapoint, filters
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
     DataPointSubscriptionWrite,
+    DatapointsUpdate,
     TimeSeriesID,
     TimeSeriesIDList,
 )
@@ -98,3 +102,67 @@ class TestTimeSeriesID:
         assert ts_list[0].is_resolved is True
         assert ts_list[1].is_resolved is False
         assert ts_list[2].is_resolved is True
+
+
+class TestSubscriptionDatapoints:
+    @pytest.fixture
+    def state_update(self) -> dict[str, Any]:
+        return {
+            "timeSeries": {
+                "id": 1,
+                "instanceId": {"space": "sp", "externalId": "xid"},
+                "type": "state",
+                "isString": False,
+            },
+            "upserts": [
+                {"timestamp": 1000, "numericValue": 1, "stringValue": "ON"},
+                {"timestamp": 2000, "numericValue": 0},  # state no longer part of the state set
+                {"timestamp": 3000, "status": {"code": 0x80000000, "symbol": "Bad"}},  # bad status, no state
+            ],
+            "deletes": [],
+        }
+
+    @pytest.mark.parametrize("include_status", [False, True])
+    def test_load_state_datapoints(self, state_update: dict[str, Any], include_status: bool) -> None:
+        update = DatapointsUpdate.load(state_update, include_status=include_status, ignore_bad_datapoints=False)
+        dps = update.upserts
+        assert dps.type == "state"
+        assert dps.value is None
+        assert dps.timestamp == [1000, 2000, 3000]
+        assert dps.numeric_states == [1, 0, None]
+        assert dps.string_states == ["ON", None, None]
+        if include_status:
+            assert dps.status_code == [0, 0, 0x80000000]
+            assert dps.status_symbol == ["Good", "Good", "Bad"]
+        else:
+            assert dps.status_code is None and dps.status_symbol is None
+
+    def test_iterate_state_datapoints(self, state_update: dict[str, Any]) -> None:
+        dps = DatapointsUpdate.load(state_update, include_status=True, ignore_bad_datapoints=False).upserts
+        first, _, last = list(dps)
+        assert isinstance(first, Datapoint)
+        assert (first.timestamp, first.value, first.numeric_state, first.string_state) == (1000, None, 1, "ON")
+        assert (last.numeric_state, last.string_state, last.status_symbol) == (None, None, "Bad")
+
+    def test_load_numeric_datapoints_unchanged(self) -> None:
+        update = DatapointsUpdate.load(
+            {
+                "timeSeries": {"id": 1, "externalId": "xid", "type": "numeric", "isString": False},
+                "upserts": [{"timestamp": 1000, "value": 1.5}],
+                "deletes": [],
+            }
+        )
+        dps = update.upserts
+        assert dps.value == [1.5]
+        assert dps.numeric_states is None and dps.string_states is None
+        (dp,) = list(dps)
+        assert (dp.timestamp, dp.value, dp.numeric_state) == (1000, 1.5, None)
+
+    @pytest.mark.dsl
+    def test_state_datapoints_to_pandas(self, state_update: dict[str, Any]) -> None:
+        dps = DatapointsUpdate.load(state_update, include_status=False, ignore_bad_datapoints=False).upserts
+        df = dps.to_pandas()
+        node_id = NodeId("sp", "xid")
+        assert list(df.columns) == [(node_id, "numeric"), (node_id, "string")]
+        assert df[(node_id, "numeric")].tolist()[:2] == [1, 0]
+        assert df[(node_id, "string")].tolist()[0] == "ON"

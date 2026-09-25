@@ -362,11 +362,13 @@ class SubscriptionDatapoints(CogniteResource):
         is_string: bool,
         type: Literal["numeric", "string", "state"],
         timestamp: list[int],
-        value: list[str] | list[float],
+        value: list[str] | list[float] | None,
         external_id: str | None = None,
         instance_id: NodeId | None = None,
         status_code: list[int] | None = None,
         status_symbol: list[str] | None = None,
+        numeric_states: list[int] | None = None,
+        string_states: list[str | None] | None = None,
     ) -> None:
         self.id = id
         self.is_string = is_string
@@ -377,6 +379,8 @@ class SubscriptionDatapoints(CogniteResource):
         self.instance_id = instance_id
         self.status_code = status_code
         self.status_symbol = status_symbol
+        self.numeric_states = numeric_states
+        self.string_states = string_states
 
     @classmethod
     def _load(  # type: ignore [override]
@@ -387,13 +391,13 @@ class SubscriptionDatapoints(CogniteResource):
     ) -> Self:
         # The API response is -quite- involved... in order to load correctly, we need a lot of info...
         ts_obj, dps_obj = data["timeSeries"], data["upserts"]
-        is_string = ts_obj["isString"]
+        is_string, is_state = ts_obj["isString"], ts_obj["type"] == "state"
         if include_status or not ignore_bad_datapoints:  # Prepare all dps only when necessary
             for dp in dps_obj:
                 if include_status:
                     # Not returned from API by default:
                     dp.setdefault("status", {"code": 0, "symbol": "Good"})
-                if not ignore_bad_datapoints:
+                if not ignore_bad_datapoints and not is_state:
                     # Bad data can have value missing (we translate to None):
                     dp.setdefault("value", None)
                     if not is_string:
@@ -405,25 +409,42 @@ class SubscriptionDatapoints(CogniteResource):
             status_code = [dp["status"]["code"] for dp in dps_obj]
             status_symbol = [dp["status"]["symbol"] for dp in dps_obj]
 
+        value: list[str] | list[float] | None = None
+        numeric_states: list[int] | None = None
+        string_states: list[str | None] | None = None
+        if is_state:
+            # State datapoints have no 'value', but a numeric and a string state (both may be missing for bad data):
+            numeric_states = [dp.get("numericValue") for dp in dps_obj]
+            string_states = [dp.get("stringValue") for dp in dps_obj]
+        else:
+            value = [dp["value"] for dp in dps_obj]
+
         return cls(
             id=ts_obj["id"],
             is_string=ts_obj["isString"],
             type=ts_obj["type"],
             timestamp=[dp["timestamp"] for dp in dps_obj],
-            value=[dp["value"] for dp in dps_obj],
+            value=value,
             external_id=ts_obj.get("externalId"),
             instance_id=NodeId._load_if(ts_obj.get("instanceId")),
             status_code=status_code,
             status_symbol=status_symbol,
+            numeric_states=numeric_states,
+            string_states=string_states,
         )
 
     def __iter__(self) -> Iterator[Datapoint]:
-        if self.status_code and self.status_symbol:
-            for ts, val, code, symbol in zip(self.timestamp, self.value, self.status_code, self.status_symbol):
-                yield Datapoint(timestamp=ts, value=val, status_code=code, status_symbol=symbol)  # type: ignore[arg-type]
-        else:
-            for ts, val in zip(self.timestamp, self.value):
-                yield Datapoint(timestamp=ts, value=val)  # type: ignore[arg-type]
+        for i, ts in enumerate(self.timestamp):
+            dp_args: dict[str, Any] = {"timestamp": ts}
+            if self.value is not None:
+                dp_args["value"] = self.value[i]
+            if self.numeric_states is not None:
+                dp_args["numeric_state"] = self.numeric_states[i]
+            if self.string_states is not None:
+                dp_args["string_state"] = self.string_states[i]
+            if self.status_code and self.status_symbol:
+                dp_args.update(status_code=self.status_code[i], status_symbol=self.status_symbol[i])
+            yield Datapoint(**dp_args)
 
     def __len__(self) -> int:
         return len(self.timestamp)
@@ -455,6 +476,8 @@ class SubscriptionDatapoints(CogniteResource):
             instance_id=self.instance_id,
             timestamp=self.timestamp,
             value=self.value,
+            numeric_states=self.numeric_states,
+            string_states=self.string_states,
             status_code=self.status_code,
             status_symbol=self.status_symbol,
             # "Is step" is not returned from Dps. Subscriptions API. After conversion to pandas, it vanishies anyway:
