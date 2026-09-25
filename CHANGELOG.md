@@ -14,6 +14,14 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.19.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.18.0...v8.19.0) (2026-09-25)
+
+
+### Features
+
+* **ACL:** Add data products ACL ([#2857](https://github.com/cognitedata/cognite-sdk-python/issues/2857)) ([9ab774a](https://github.com/cognitedata/cognite-sdk-python/commit/9ab774a42fd5f1ee73ee7cee93d28b74eb2495c5))
+* **time series:** Retrieve support for state-only aggregates `state_count`, `state_transitions`, `state_duration` (DM-4097) ([#2851](https://github.com/cognitedata/cognite-sdk-python/issues/2851)) ([d59a99e](https://github.com/cognitedata/cognite-sdk-python/commit/d59a99e19ba4ee468027ccd3688c29704b5977ae))
+
 ## [8.18.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.17.0...v8.18.0) (2026-09-23)
 
 
