@@ -71,6 +71,13 @@ def all_acls() -> Iterator[dict[str, Any]]:
                 "scope": {"dataModelScope": {"externalIds": ["maintain", "main-data"]}},
             }
         },
+        {"dataProductsAcl": {"actions": ["READ", "CREATE", "UPDATE", "DELETE", "USE"], "scope": {"all": {}}}},
+        {
+            "dataProductsAcl": {
+                "actions": ["READ", "USE"],
+                "scope": {"dataProductScope": {"externalIds": ["maintenance-planning", "product.manager"]}},
+            }
+        },
         {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"all": {}}}},
         {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"idScope": {"ids": ["2918026428"]}}}},
         {"diagramParsingAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
@@ -271,6 +278,12 @@ class TestCapabilities:
                 "appHostingAcl": {
                     "actions": ["READ", "RUN"],
                     "scope": {"appExternalIdScope": {"externalIds": ["my-app", "other-app"]}},
+                }
+            },
+            {
+                "dataProductsAcl": {
+                    "actions": ["READ", "CREATE"],
+                    "scope": {"dataProductScope": {"externalIds": ["maintenance-planning", "supply-chain.editor"]}},
                 }
             },
         ],
