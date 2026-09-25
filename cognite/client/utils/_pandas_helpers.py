@@ -3,6 +3,7 @@ from __future__ import annotations
 import datetime
 import itertools
 import warnings
+from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import cache
@@ -14,6 +15,7 @@ from zoneinfo import ZoneInfo
 from cognite.client.data_classes.datapoint_aggregates import (
     _AGGREGATES_WITH_UNIT,
     _ALL_AGGREGATES,
+    _STATE_AGGS_SNAKE,
     INT_AGGREGATES,
     OBJECT_AGGREGATES,
 )
@@ -142,6 +144,7 @@ def concat_dps_dataframe_list(
     include_unit: bool,
     include_numeric_states: bool,
     include_string_states: bool,
+    expand_state_aggregates: bool,
 ) -> pd.DataFrame:
     import pandas as pd
 
@@ -165,6 +168,7 @@ def concat_dps_dataframe_list(
             include_status=include_status,
             include_numeric_states=include_numeric_states,
             include_string_states=include_string_states,
+            expand_state_aggregates=expand_state_aggregates,
         )
         for dps in dps_lst
     ]
@@ -277,6 +281,7 @@ def convert_dps_to_dataframe(
     include_unit: bool,
     include_numeric_states: bool,
     include_string_states: bool,
+    expand_state_aggregates: bool,
 ) -> pd.DataFrame:
     pd = local_import("pandas")
     columns = _extract_column_info_from_dps_for_dataframe(
@@ -284,6 +289,7 @@ def convert_dps_to_dataframe(
         include_status=include_status,
         include_numeric_states=include_numeric_states,
         include_string_states=include_string_states,
+        expand_state_aggregates=expand_state_aggregates,
     )
     df = pd.DataFrame(
         # We initially use integer indexing to allow duplicate column names:
@@ -309,11 +315,9 @@ class _DpsColumnInfo:
     - the number of classic aggregates (10+, but just 1 value per granularity interval)
     - status codes & symbols (2 extra columns, if requested)
     - state datapoints (2 columns, numeric and string states)
+    - specialized state aggregates ("arbitrary" number of states, easily several hundrer columns)
 
-    ...and not yet implemented, but I'm scared:
-    - state aggregate datapoints ("arbitrary" number of states, leading to possibly 200+ columns (1 value per state per gran. interval))
-
-    Thus, a single Datapoints/DatapointsArray can result in anything between 1 to 300 columns. Yey.
+    Thus, a single Datapoints/DatapointsArray can result in anything between 1 to 300+ columns. Yey.
     """
 
     column_id: NodeId | str | int
@@ -335,6 +339,7 @@ class _DpsColumnInfo:
     unit_xid: str | None = None
     status_info: Literal["code", "symbol"] | None = None
     state_type: Literal["numeric", "string"] | None = None
+    state_value: int | None = None
 
     def as_multi_index_tuple(self, include_aggregate: bool, include_granularity: bool, include_unit: bool) -> tuple:
         return (
@@ -343,6 +348,7 @@ class _DpsColumnInfo:
             self.status_info,  # since these split to separate cols, they are already filtered out if not wanted
             self.aggregate if include_aggregate else None,
             self.granularity if include_granularity else None,
+            self.state_value,  # always included, dropped automatically when unused (like state_type/status_info)
             self.unit_xid if include_unit else None,
         )
 
@@ -356,18 +362,25 @@ class _DpsColumnInfo:
         | pd.arrays.IntegerArray
         | pd.arrays.Categorical
     ):
-        if self.is_array:
+        import numpy as np
+        import pandas as pd
+
+        if self.state_value is not None:
+            # A state not present in a given interval genuinely means zero (count/transitions/duration),
+            # same assumption as for the other INT_AGGREGATES. Thus we use a simple non-nullable int64.
+            # See _extract_and_expand_state_only_agg_column_info for data extraction details:
+            return np.array(self.data, dtype=np.int64)
+
+        elif self.is_array:
             if self.state_type == "numeric":
                 # Numeric states are guaranteed to be valid 32-bit ints, but may contain missing values due to "bad status",
                 # so we always use the pandas extension dtype which is nullable (for consistency):
-                pd = local_import("pandas")
                 return pd.array(self.data, dtype="Int32")
 
             elif self.state_type == "string":
                 # String states come from a small, fixed set of possible values (the state set), so we use the categorical
                 # dtype here which is dirt cheap to store and operate (no repeated string objects).
                 # It also fixes the annoying pandas v2/v3 difference between missing (None vs NaN) for 'object' and 'str'.
-                pd = local_import("pandas")
                 return pd.Categorical(self.data, ordered=False)
             else:
                 return self.data
@@ -419,7 +432,12 @@ class _DpsColumnInfo:
 
         from cognite.client.utils._datapoints import ensure_int_numpy
 
-        if self.aggregate in OBJECT_AGGREGATES:
+        if self.aggregate in _STATE_AGGS_SNAKE:
+            # Each entry is itself a list (of distinct state entries per interval), hence we can't use the
+            # default np.array constructor:
+            return np.fromiter(self.data, dtype=np.object_, count=len(self.data))
+
+        elif self.aggregate in OBJECT_AGGREGATES:
             return np.array(self.data, dtype=np.object_)
 
         elif self.aggregate in INT_AGGREGATES:
@@ -520,18 +538,70 @@ def _extract_aggregate_column_info_from_dps(
     ]
 
 
+def _extract_and_expand_state_only_agg_column_info(
+    dps: Datapoints | DatapointsArray, identifier: NodeId | str | int, is_array: bool
+) -> list[_DpsColumnInfo]:
+    # Each of state_count/state_transitions/state_duration holds, per row (ie granularity interval), a *list* of entries,
+    # one per distinct state present in that particular interval. In order to expand these into one column per distinct
+    # state, we need pivot the values: for every state seen anywhere across all rows, build a column of length n_dps,
+    # filling in each row's value for that state.
+    # Note: Instead of filling missing with NaN, we use 0 (zero) as that makes sense for all these state-only aggregates.
+    n_dps = len(dps)
+    columns: list[_DpsColumnInfo] = []
+    for attr in ("state_count", "state_transitions", "state_duration"):
+        if (state_aggregate := getattr(dps, attr)) is None:
+            continue
+        by_state: defaultdict[int, list[int]] = defaultdict(lambda: [0] * n_dps)
+        for idx in range(n_dps):
+            for entry in state_aggregate[idx]:
+                by_state[entry.numeric_value][idx] = getattr(entry, entry._agg_name)
+
+        columns.extend(
+            _DpsColumnInfo(
+                identifier,
+                data=by_state[numeric_value],
+                is_array=is_array,
+                aggregate=attr,
+                granularity=dps.granularity,
+                state_value=numeric_value,
+            )
+            for numeric_value in sorted(by_state)
+        )
+    return columns
+
+
+def _extract_state_only_agg_column_info(
+    dps: Datapoints | DatapointsArray, identifier: NodeId | str | int, is_array: bool
+) -> list[_DpsColumnInfo]:
+    # When the user does not want expanded columns, we treat the state-only aggregates as simple lists:
+    return [
+        _DpsColumnInfo(identifier, data=rows, is_array=is_array, aggregate=attr, granularity=dps.granularity)
+        for attr in ("state_count", "state_transitions", "state_duration")
+        if (rows := getattr(dps, attr)) is not None
+    ]
+
+
 def _extract_column_info_from_dps_for_dataframe(
-    dps: Datapoints | DatapointsArray, include_status: bool, include_numeric_states: bool, include_string_states: bool
+    dps: Datapoints | DatapointsArray,
+    include_status: bool,
+    include_numeric_states: bool,
+    include_string_states: bool,
+    expand_state_aggregates: bool,
 ) -> list[_DpsColumnInfo]:
     from cognite.client.data_classes import DatapointsArray
-    from cognite.client.data_classes.datapoints import _raise_on_state_only_aggregate
 
-    _raise_on_state_only_aggregate(dps)
     identifier = _resolve_ts_identifier_as_df_column_name(dps)
     is_array = isinstance(dps, DatapointsArray)
     if dps.type == "state":
         if dps.numeric_states is None or dps.string_states is None:
-            return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
+            # State time series can have both "old and simple" aggregates...:
+            simple_cols = _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
+            # ...and state-only aggregates, that we may want to expand into per-unique-state columns:
+            if expand_state_aggregates:
+                state_only_cols = _extract_and_expand_state_only_agg_column_info(dps, identifier, is_array)
+            else:
+                state_only_cols = _extract_state_only_agg_column_info(dps, identifier, is_array)
+            return simple_cols + state_only_cols
         else:
             return _extract_raw_states_column_info(
                 dps, identifier, is_array, include_status, include_numeric_states, include_string_states
@@ -559,11 +629,16 @@ def _create_multi_index_from_columns(
             )
             for col in columns
         ],
-        columns=["identifier", "state", "status", "aggregate", "granularity", "unit"],
+        columns=["identifier", "state", "status", "aggregate", "granularity", "state_value", "unit"],
     )
+    # Ensure the numeric state values don't get upcast to float (likely None's present):
+    column_ids["state_value"] = column_ids["state_value"].astype("Int32").astype(object)
+
     # Key operation is to drop all-nan columns, which in the multi-index translates to dropping
     # the corresponding levels:
-    non_id_levels = column_ids.iloc[:, 1:].dropna(axis="columns", how="all").fillna("")
+    non_id_levels = column_ids.iloc[:, 1:].dropna(axis="columns", how="all")
+    non_id_levels = non_id_levels.where(non_id_levels.notna(), "")
+
     # When none of the extra levels survive (status/agg./gran./unit), return a plain Index so
     # columns are the bare identifiers rather than 1-tuples:
     if non_id_levels.columns.empty:
