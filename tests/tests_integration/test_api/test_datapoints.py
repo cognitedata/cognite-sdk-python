@@ -1324,7 +1324,9 @@ class TestRetrieveStateDatapoints:
             instance_id=node_id, start=base, end=base + 3 * HOUR_MS, aggregates=aggs, granularity="1h"
         )
         assert arr is not None
-        pd.testing.assert_frame_equal(df, arr.to_pandas(include_aggregate_name=True))
+        # We compare using DatapointsArrayList here as retrieve_dataframe() always fetches via fetch_all_datapoints_numpy(),
+        # which always returns a DatapointsArrayList (even for a single time series):
+        pd.testing.assert_frame_equal(df, DatapointsArrayList([arr]).to_pandas(include_aggregate_name=True))
 
         # expand_state_aggregates=False must also match between retrieve_dataframe() and to_pandas():
         df_unexpanded = cognite_client.time_series.data.retrieve_dataframe(
@@ -1339,7 +1341,8 @@ class TestRetrieveStateDatapoints:
         )
         assert arr_single is not None
         pd.testing.assert_frame_equal(
-            df_unexpanded, arr_single.to_pandas(include_aggregate_name=True, expand_state_aggregates=False)
+            df_unexpanded,
+            DatapointsArrayList([arr_single]).to_pandas(include_aggregate_name=True, expand_state_aggregates=False),
         )
 
 
