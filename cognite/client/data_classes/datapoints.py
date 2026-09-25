@@ -765,21 +765,38 @@ class Datapoint(CogniteResource):
         item["timestamp"] = convert_and_isoformat_timestamp(self.timestamp, self.timezone)
         return _json.dumps(item, indent=4)
 
-    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
+    def to_pandas(  # type: ignore[override]
+        self, camel_case: bool = False, expand_state_aggregates: bool = True
+    ) -> pandas.DataFrame:
         """Convert the datapoint into a pandas DataFrame.
 
         Args:
             camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate
+                DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/
+                ``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct
+                state present per granularity interval. Defaults to True.
 
         Returns:
             pandas.DataFrame: The DataFrame representation of the datapoint.
         """
         pd = local_import("pandas")
 
-        dumped = self.dump(camel_case=camel_case)
+        dumped: dict[str, Any] = self.dump(camel_case=camel_case)
         for key in iterable_to_case(["min_datapoint", "max_datapoint"], camel_case):
             if dp := dumped.get(key):
                 dumped[key] = [dp]  # make pandas treat this dict as a scalar value
+
+        for attr in ("state_count", "state_transitions", "state_duration"):
+            key = to_camel_case(attr) if camel_case else attr
+            if not (entries := getattr(self, attr)):
+                continue
+            dumped.pop(key, None)
+            if expand_state_aggregates:
+                for entry in sorted(entries, key=lambda e: e.numeric_value):
+                    dumped[(key, entry.numeric_value)] = getattr(entry, entry._agg_name)
+            else:
+                dumped[key] = [entries]  # make pandas treat this list as a scalar value
 
         timestamp = dumped.pop("timestamp")
         tz = convert_tz_for_pandas(self.timezone)
@@ -1222,6 +1239,7 @@ class DatapointsArray(CogniteResource):
         include_status: bool = True,
         include_numeric_states: bool = True,
         include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArray into a pandas DataFrame.
 
@@ -1233,6 +1251,7 @@ class DatapointsArray(CogniteResource):
                 as a separate level in the columns (MultiIndex).
             include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
             include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
@@ -1247,6 +1266,7 @@ class DatapointsArray(CogniteResource):
             include_unit=include_unit,
             include_numeric_states=include_numeric_states,
             include_string_states=include_string_states,
+            expand_state_aggregates=expand_state_aggregates,
         )
 
 
@@ -1460,6 +1480,7 @@ class Datapoints(CogniteResource):
         include_status: bool = True,
         include_numeric_states: bool = True,
         include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
@@ -1471,6 +1492,7 @@ class Datapoints(CogniteResource):
                 as a separate level in the columns (MultiIndex).
             include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
             include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -1485,6 +1507,7 @@ class Datapoints(CogniteResource):
             include_unit=include_unit,
             include_numeric_states=include_numeric_states,
             include_string_states=include_string_states,
+            expand_state_aggregates=expand_state_aggregates,
         )
 
     @classmethod
@@ -1787,6 +1810,7 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
         include_status: bool = True,
         include_numeric_states: bool = True,
         include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
@@ -1798,6 +1822,7 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
                 as a separate level in the columns (MultiIndex).
             include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
             include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
@@ -1810,6 +1835,7 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
             include_unit=include_unit,
             include_numeric_states=include_numeric_states,
             include_string_states=include_string_states,
+            expand_state_aggregates=expand_state_aggregates,
         )
 
     def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> list[dict[str, Any]]:
@@ -1877,6 +1903,7 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
         include_status: bool = True,
         include_numeric_states: bool = True,
         include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints list into a pandas DataFrame.
 
@@ -1888,6 +1915,7 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
                 as a separate level in the columns (MultiIndex).
             include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
             include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
@@ -1900,6 +1928,7 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
             include_unit=include_unit,
             include_numeric_states=include_numeric_states,
             include_string_states=include_string_states,
+            expand_state_aggregates=expand_state_aggregates,
         )
 
 
