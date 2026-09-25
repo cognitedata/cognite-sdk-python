@@ -2033,9 +2033,11 @@ class LatestDatapoint(CogniteResource):
             dumped["datapoints"] = []
         else:
             dp: dict[str, Any] = {"timestamp": datetime_to_ms(self.timestamp), "value": self.value}
-            if self.type == "state":
-                dp["numericState" if camel_case else "numeric_state"] = self.numeric_state
-                dp["stringState" if camel_case else "string_state"] = self.string_state
+            # We follow the API response format (also to allow load(dump()) round-trips):
+            if self.numeric_state is not None:
+                dp["numericValue" if camel_case else "numeric_value"] = self.numeric_state
+            if self.string_state is not None:
+                dp["stringValue" if camel_case else "string_value"] = self.string_state
             if self.status_code is not None:
                 dp["status"] = {"code": self.status_code, "symbol": self.status_symbol}
             dumped["datapoints"] = [dp]

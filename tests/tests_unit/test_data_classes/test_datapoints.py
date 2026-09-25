@@ -694,17 +694,22 @@ class TestLatestDatapointStateTimeSeries:
 
     def test_dump_state_values(self, state_resource: dict[str, Any]) -> None:
         dp = LatestDatapoint._load(state_resource)
+        # The dump follows the API response format (numericValue/stringValue), so it round-trips through load:
         assert dp.dump()["datapoints"] == [
             {
                 "timestamp": 1700000000000,
                 "value": None,
-                "numericState": 1,
-                "stringState": "ON",
+                "numericValue": 1,
+                "stringValue": "ON",
                 "status": {"code": 0, "symbol": "Good"},
             }
         ]
         (dumped_dp,) = dp.dump(camel_case=False)["datapoints"]
-        assert dumped_dp["numeric_state"] == 1 and dumped_dp["string_state"] == "ON"
+        assert dumped_dp["numeric_value"] == 1 and dumped_dp["string_value"] == "ON"
+
+        reloaded = LatestDatapoint._load(dp.dump())
+        assert reloaded.numeric_state == 1 and reloaded.string_state == "ON"
+        assert reloaded.dump() == dp.dump()
 
     def test_load_bad_status_without_state_values(self, state_resource: dict[str, Any]) -> None:
         state_resource["datapoints"] = [{"timestamp": 1, "status": {"code": 0x80000000, "symbol": "Bad"}}]
