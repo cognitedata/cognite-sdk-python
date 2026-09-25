@@ -11,7 +11,7 @@ from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
 from functools import cached_property, partial
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeAlias, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeAlias, TypeVar, overload
 from zoneinfo import ZoneInfo
 
 from typing_extensions import Self
@@ -782,7 +782,7 @@ class Datapoint(CogniteResource):
         """
         pd = local_import("pandas")
 
-        dumped: dict[str, Any] = self.dump(camel_case=camel_case)
+        dumped = self.dump(camel_case=camel_case)
         for key in iterable_to_case(["min_datapoint", "max_datapoint"], camel_case):
             if dp := dumped.get(key):
                 dumped[key] = [dp]  # make pandas treat this dict as a scalar value
@@ -794,7 +794,7 @@ class Datapoint(CogniteResource):
             dumped.pop(key, None)
             if expand_state_aggregates:
                 for entry in sorted(entries, key=lambda e: e.numeric_value):
-                    dumped[(key, entry.numeric_value)] = getattr(entry, entry._agg_name)
+                    dumped[(key, entry.numeric_value)] = getattr(entry, entry._agg_name)  # type: ignore [index]
             else:
                 dumped[key] = [entries]  # make pandas treat this list as a scalar value
 
