@@ -15,6 +15,8 @@ from cognite.client.data_classes.datapoints import (
     Datapoints,
     DatapointsArrayList,
     DatapointsList,
+    LatestDatapoint,
+    LatestDatapointList,
     StateCount,
     StateDuration,
     StateTransition,
@@ -661,3 +663,76 @@ class TestStateDatapointsInsert:
     def test_non_sequence_datapoints_raises(self) -> None:
         with pytest.raises(TypeError, match="sequence"):
             StateDatapointsInsert(instance_id=NodeId("sp", "xid"), datapoints="bad")  # type: ignore[arg-type]
+
+
+class TestLatestDatapointStateTimeSeries:
+    @pytest.fixture
+    def state_resource(self) -> dict[str, Any]:
+        return {
+            "id": 123,
+            "instanceId": {"space": "sp", "externalId": "xid"},
+            "type": "state",
+            "isString": False,
+            "isStep": True,
+            "datapoints": [
+                {
+                    "timestamp": 1700000000000,
+                    "numericValue": 1,
+                    "stringValue": "ON",
+                    "status": {"code": 0, "symbol": "Good"},
+                }
+            ],
+        }
+
+    def test_load_state_values(self, state_resource: dict[str, Any]) -> None:
+        dp = LatestDatapoint._load(state_resource)
+        assert dp.has_datapoint
+        assert dp.value is None
+        assert dp.numeric_state == 1
+        assert dp.string_state == "ON"
+        assert dp.status_symbol == "Good"
+
+    def test_dump_state_values(self, state_resource: dict[str, Any]) -> None:
+        dp = LatestDatapoint._load(state_resource)
+        assert dp.dump()["datapoints"] == [
+            {
+                "timestamp": 1700000000000,
+                "value": None,
+                "numericState": 1,
+                "stringState": "ON",
+                "status": {"code": 0, "symbol": "Good"},
+            }
+        ]
+        (dumped_dp,) = dp.dump(camel_case=False)["datapoints"]
+        assert dumped_dp["numeric_state"] == 1 and dumped_dp["string_state"] == "ON"
+
+    def test_load_bad_status_without_state_values(self, state_resource: dict[str, Any]) -> None:
+        state_resource["datapoints"] = [{"timestamp": 1, "status": {"code": 0x80000000, "symbol": "Bad"}}]
+        dp = LatestDatapoint._load(state_resource)
+        assert dp.numeric_state is None and dp.string_state is None
+        assert dp.status_symbol == "Bad"
+
+    def test_numeric_time_series_has_no_state_keys(self) -> None:
+        dp = LatestDatapoint._load(
+            {
+                "id": 1,
+                "type": "numeric",
+                "isString": False,
+                "isStep": False,
+                "datapoints": [{"timestamp": 1, "value": 2.0}],
+            }
+        )
+        assert dp.numeric_state is None and dp.string_state is None
+        assert dp.dump()["datapoints"] == [{"timestamp": 1, "value": 2.0}]
+
+    @pytest.mark.dsl
+    def test_to_pandas(self, state_resource: dict[str, Any]) -> None:
+        dp = LatestDatapoint._load(state_resource)
+        df = dp.to_pandas()
+        assert df.loc["numeric_state", "value"] == 1
+        assert df.loc["string_state", "value"] == "ON"
+
+        df_lst = LatestDatapointList([dp]).to_pandas()
+        assert df_lst["numeric_state"].tolist() == [1]
+        assert df_lst["string_state"].tolist() == ["ON"]
+        assert df_lst["value"].tolist() == [None]
