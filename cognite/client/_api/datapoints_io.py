@@ -995,7 +995,7 @@ class RetrieveLatestDpsFetcher:
             )
             for chunk in split_into_chunks(self._all_identifiers, self.dps_client._RETRIEVE_LATEST_LIMIT)
         ]
-        tasks_summary = await execute_async_tasks(tasks)
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=unpack_items_in_payload,
             task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,

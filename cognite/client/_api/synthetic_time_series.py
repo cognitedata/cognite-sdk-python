@@ -184,7 +184,7 @@ class SyntheticDatapointsAPI(APIClient):
                 query["timeZone"] = timezone
             tasks.append(AsyncSDKTask(self._fetch_datapoints, query, limit, short_expression))
 
-        datapoints_summary = await execute_async_tasks(tasks)
+        datapoints_summary = await execute_async_tasks(tasks, fail_fast=True)
         datapoints_summary.raise_compound_exception_if_failed_tasks()
         return SyntheticDatapointsList(datapoints_summary.results) if not single_expr else datapoints_summary.results[0]
 

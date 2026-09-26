@@ -1,6 +1,6 @@
 """
 ===============================================================================
-27610a606ea85c11b51eeb8555d47324
+552e8f69f55c45968b58c485e1d92916
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +8,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 import typing
-from typing import TYPE_CHECKING, Any, NoReturn, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
@@ -160,17 +160,6 @@ class SyncSequencesDataAPI(SyncAPIClient):
         return run_sync(
             self.__async_client.sequences.data.delete_range(start=start, end=end, id=id, external_id=external_id)
         )
-
-    @overload
-    def retrieve(
-        self,
-        external_id: None = None,
-        id: None = None,
-        start: int = 0,
-        end: int | None = None,
-        columns: SequenceNotStr[str] | None = None,
-        limit: int | None = None,
-    ) -> NoReturn: ...
 
     @overload
     def retrieve(
