@@ -617,8 +617,7 @@ class AssetList(WriteableCogniteResourceListWithClientRef[AssetWrite, Asset], Id
         ]
         task_summary = await execute_async_tasks(tasks, fail_fast=True)
         task_summary.raise_compound_exception_if_failed_tasks()
-        # TODO: Using .results here may need to be changed to .joined_results()
-        return resource_list_class(list(itertools.chain.from_iterable(task_summary.results)))
+        return resource_list_class(task_summary.joined_results())
 
 
 class AssetFilter(CogniteFilter):
