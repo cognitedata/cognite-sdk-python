@@ -1220,7 +1220,7 @@ class FilesAPI(APIClient):
             )
             for batch in identifiers.chunked(100)
         ]
-        tasks_summary = await execute_async_tasks(tasks)
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         results = tasks_summary.joined_results(unpack_items)
         return {
@@ -1387,7 +1387,7 @@ class FilesAPI(APIClient):
             AsyncSDKTask(self._process_file_download, directory, identifier={"id": id_}, path=filepath)
             for id_, filepath in zip(all_ids, filepaths)
         ]
-        tasks_summary = await execute_async_tasks(tasks)
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: id_to_metadata[task["identifier"]["id"]]
         )

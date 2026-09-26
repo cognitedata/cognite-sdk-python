@@ -615,7 +615,8 @@ class AssetList(WriteableCogniteResourceListWithClientRef[AssetWrite, Asset], Id
         tasks = [
             AsyncSDKTask(retrieve_and_deduplicate, asset_ids=chunk) for chunk in split_into_chunks(set(ids), chunk_size)
         ]
-        task_summary = await execute_async_tasks(tasks)
+        task_summary = await execute_async_tasks(tasks, fail_fast=True)
+        task_summary.raise_compound_exception_if_failed_tasks()
         # TODO: Using .results here may need to be changed to .joined_results()
         return resource_list_class(list(itertools.chain.from_iterable(task_summary.results)))
 
