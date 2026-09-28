@@ -266,6 +266,9 @@ def _find_functionally_identical_files(files: set[SingleAPIFile]) -> dict[Single
         run_ruff([f.temp_filepath for f in files], verbose=False)
 
         for f in files:
+            if f.new_hash is None:
+                # E.g. an __init__.py that should be empty, it can't be identical to the (non-empty) file on disk:
+                continue
             try:
                 is_valid, existing_hash = read_hash_from_file(f.filepath)
                 if not is_valid:
