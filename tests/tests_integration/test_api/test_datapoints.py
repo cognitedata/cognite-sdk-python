@@ -1345,6 +1345,95 @@ class TestRetrieveStateDatapoints:
             DatapointsArrayList([arr_single]).to_pandas(include_aggregate_name=True, expand_state_aggregates=False),
         )
 
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    def test_state_only_aggregates_after_states_dropped_from_state_set(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        space_for_time_series: Space,
+        request: pytest.FixtureRequest,
+    ) -> None:
+        # States no longer part of the state set are returned without a string value by the API. When more than
+        # one such state is present, they must still end up as separate (unique) columns when converting to pandas.
+        xid = f"dms-state-set-agg-dropped-{random_string(10)}"
+        node_id = NodeId(space_for_time_series.space, xid)
+        apply_ss_fn = functools.partial(
+            _create_state_set,
+            cognite_client=cognite_client,
+            async_client=async_client,
+            space=space_for_time_series,
+            external_id=xid,
+            name="PySDK integration test state set for state-only aggregates with dropped states",
+        )
+        ss = apply_ss_fn(states=[StateSetEntry(10, "ten"), StateSetEntry(20, "twenty"), StateSetEntry(30, "thirty")])
+        request.addfinalizer(lambda: cognite_client.data_modeling.instances.delete(node_id))
+        _create_state_time_series(
+            external_id=xid,
+            cognite_client=cognite_client,
+            async_client=async_client,
+            space_for_time_series=space_for_time_series,
+            state_set=ss,
+        )
+        base = 1_700_000_000_000
+        base -= base % HOUR_MS
+        # Bucket 0 (before the state set change): all three states present
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=node_id,
+                datapoints=[
+                    StateDatapointWrite(base, numeric_value=10),
+                    StateDatapointWrite(base + 10 * MINUTE_MS, numeric_value=20),
+                    StateDatapointWrite(base + 20 * MINUTE_MS, numeric_value=30),
+                ],
+            )
+        )
+        # Drop BOTH 20 and 30 (to check for duplicate labels), and add a new state 40:
+        apply_ss_fn(states=[StateSetEntry(10, "ten"), StateSetEntry(40, "forty")])
+
+        # Bucket 1 (after the change): known states only
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=node_id,
+                datapoints=[
+                    StateDatapointWrite(base + HOUR_MS, numeric_value=10),
+                    StateDatapointWrite(base + HOUR_MS + 10 * MINUTE_MS, numeric_value=40),
+                ],
+            )
+        )
+        # A numeric value that was dropped from the state set can no longer be inserted:
+        with pytest.raises(CogniteAPIError):
+            cognite_client.time_series.data.insert_states(
+                StateDatapointsInsert(
+                    instance_id=node_id,
+                    datapoints=[StateDatapointWrite(base + HOUR_MS + 20 * MINUTE_MS, numeric_value=20)],
+                )
+            )
+
+        aggs = ["state_count", "state_transitions", "state_duration"]
+        for retrieve_fn in (cognite_client.time_series.data.retrieve, cognite_client.time_series.data.retrieve_arrays):
+            dps = retrieve_fn(
+                instance_id=node_id, start=base, end=base + 2 * HOUR_MS, aggregates=aggs, granularity="1h"
+            )
+            assert dps is not None and dps.state_count is not None
+            bucket_0, bucket_1 = dps.state_count
+            # String values are resolved against the current state set, so the dropped states have none:
+            assert [(e.numeric_value, e.string_value) for e in bucket_0] == [(10, "ten"), (20, None), (30, None)]
+            assert [(e.numeric_value, e.string_value) for e in bucket_1] == [(10, "ten"), (40, "forty")]
+
+            df = dps.to_pandas(include_aggregate_name=True)
+            assert df.columns.is_unique
+            assert df.columns.names == ["identifier", "aggregate", "state_value", "state_string"]
+            assert list(df.columns) == [
+                (node_id, agg, value, label)
+                for agg in aggs
+                for value, label in [(10, "ten"), (20, ""), (30, ""), (40, "forty")]
+            ]
+            assert df[node_id, "state_count", 20, ""].tolist() == [1, 0]
+            assert df[node_id, "state_count", 30, ""].tolist() == [1, 0]
+
 
 @pytest.fixture
 def queries_for_iteration(all_test_time_series: TimeSeriesList) -> list[DatapointsQuery]:

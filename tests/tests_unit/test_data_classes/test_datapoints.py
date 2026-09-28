@@ -594,15 +594,15 @@ class TestStateDatapointsToPandas:
         df = dps.to_pandas(include_aggregate_name=True)
 
         # Ascending sort order by numeric_value (state_value):
-        assert list(df.columns) == [(123, "state_count", 0), (123, "state_count", 1)]
-        assert df.columns.names == ["identifier", "aggregate", "state_value"]
+        assert list(df.columns) == [(123, "state_count", 0, "off"), (123, "state_count", 1, "on")]
+        assert df.columns.names == ["identifier", "aggregate", "state_value", "state_string"]
 
-        assert df[123, "state_count", 0].tolist() == [3, 5]
-        assert df[123, "state_count", 0].dtype == "int64"
+        assert df[123, "state_count", 0, "off"].tolist() == [3, 5]
+        assert df[123, "state_count", 0, "off"].dtype == "int64"
 
         # State 1 didn't occur in the second interval -> filled with 0 (same assumption as e.g. 'count'):
-        assert df[123, "state_count", 1].tolist() == [2, 0]
-        assert df[123, "state_count", 1].dtype == "int64"
+        assert df[123, "state_count", 1, "on"].tolist() == [2, 0]
+        assert df[123, "state_count", 1, "on"].dtype == "int64"
 
     def test_to_pandas_state_value_level_stays_int_when_mixed_with_other_columns(
         self, state_count_by_ts: list[list[StateCount]]
@@ -621,7 +621,11 @@ class TestStateDatapointsToPandas:
             state_count=state_count_by_ts,
         )
         df = dps.to_pandas(include_aggregate_name=True)
-        assert list(df.columns) == [(123, "count", ""), (123, "state_count", 0), (123, "state_count", 1)]
+        assert list(df.columns) == [
+            (123, "count", "", ""),
+            (123, "state_count", 0, "off"),
+            (123, "state_count", 1, "on"),
+        ]
         state_values = df.columns.get_level_values("state_value")
         assert state_values.tolist() == ["", 0, 1]
         assert [type(v) for v in state_values] == [str, int, int]
@@ -677,9 +681,99 @@ class TestStateDatapointsToPandas:
         dp = Datapoint(timestamp=1000, state_count=state_count_by_ts[0])
         df = dp.to_pandas()
 
-        assert list(df.columns) == ["value", ("state_count", 0), ("state_count", 1)]
-        assert df[("state_count", 0)].iloc[0] == 3
-        assert df[("state_count", 1)].iloc[0] == 2
+        assert list(df.columns) == ["value", ("state_count", 0, "off"), ("state_count", 1, "on")]
+        assert df[("state_count", 0, "off")].iloc[0] == 3
+        assert df[("state_count", 1, "on")].iloc[0] == 2
+
+    @pytest.fixture
+    def state_count_with_dropped_states(self) -> list[list[StateCount]]:
+        # States 20 and 30 are no longer part of the state set, so the API omits their string value:
+        return [
+            [
+                StateCount(numeric_value=10, string_value="ten", state_count=1),
+                StateCount(numeric_value=20, string_value=None, state_count=2),
+                StateCount(numeric_value=30, string_value=None, state_count=3),
+            ],
+            [
+                StateCount(numeric_value=10, string_value="ten", state_count=4),
+                StateCount(numeric_value=40, string_value="forty", state_count=5),
+            ],
+        ]
+
+    @pytest.mark.parametrize("use_array", [False, True])
+    def test_to_pandas_multiple_states_without_string_value_gives_unique_columns(
+        self, state_count_with_dropped_states: list[list[StateCount]], use_array: bool
+    ) -> None:
+        import numpy as np
+
+        if use_array:
+            dps: Datapoints | DatapointsArray = DatapointsArray(
+                id=123,
+                is_string=False,
+                is_step=False,
+                type="state",
+                granularity="1h",
+                timestamp=np.array([1000, 2000], dtype="datetime64[ms]").astype("datetime64[ns]"),
+                state_count=create_object_array_from_container(
+                    defaultdict(list, {(0,): [state_count_with_dropped_states]})
+                ),
+            )
+        else:
+            dps = Datapoints(
+                id=123,
+                is_string=False,
+                is_step=False,
+                type="state",
+                granularity="1h",
+                timestamp=[1000, 2000],
+                state_count=state_count_with_dropped_states,
+            )
+        df = dps.to_pandas(include_aggregate_name=True)
+
+        assert df.columns.is_unique
+        assert list(df.columns) == [
+            (123, "state_count", 10, "ten"),
+            (123, "state_count", 20, ""),
+            (123, "state_count", 30, ""),
+            (123, "state_count", 40, "forty"),
+        ]
+        assert df[123, "state_count", 20, ""].tolist() == [2, 0]
+        assert df[123, "state_count", 30, ""].tolist() == [3, 0]
+        # The numeric value is what makes these columns unique, selecting on the string alone gives both:
+        assert df.xs("", axis="columns", level="state_string").shape == (2, 2)
+
+    def test_to_pandas_all_states_without_string_value_keeps_state_string_level(self) -> None:
+        # If every single string state value is missing, we still want the 'state_string' level to be present
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=[1000],
+            state_count=[
+                [
+                    StateCount(numeric_value=20, string_value=None, state_count=2),
+                    StateCount(numeric_value=30, string_value=None, state_count=3),
+                ]
+            ],
+        )
+        df = dps.to_pandas(include_aggregate_name=True)
+        assert df.columns.is_unique
+        assert df.columns.names == ["identifier", "aggregate", "state_value", "state_string"]
+        assert list(df.columns) == [(123, "state_count", 20, ""), (123, "state_count", 30, "")]
+
+    def test_datapoint_to_pandas_multiple_states_without_string_value(
+        self, state_count_with_dropped_states: list[list[StateCount]]
+    ) -> None:
+        df = Datapoint(timestamp=1000, state_count=state_count_with_dropped_states[0]).to_pandas()
+        assert df.columns.is_unique
+        assert list(df.columns) == [
+            "value",
+            ("state_count", 10, "ten"),
+            ("state_count", 20, ""),
+            ("state_count", 30, ""),
+        ]
 
 
 class TestStateDatapointWrite:
