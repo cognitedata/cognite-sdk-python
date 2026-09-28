@@ -17,6 +17,7 @@ from scripts.sync_client_codegen.codegen_utils import (
     get_all_imports,
     get_canonical_source,
     get_dot_path_lookup,
+    get_imported_names,
     get_source_code,
     is_pyfile,
     list_apis,
@@ -39,6 +40,13 @@ from scripts.sync_client_codegen.create_sync_client import (
 )
 
 SYNC_API_TEMPLATE = Path("scripts/sync_client_codegen/sync_api_template.txt").read_text(encoding="utf-8")
+# Imports done at runtime by the template, which we don't want to duplicate under 'if TYPE_CHECKING:':
+SYNC_API_TEMPLATE_IMPORTS = frozenset(
+    name
+    for line in SYNC_API_TEMPLATE.splitlines()
+    if line.startswith(("from ", "import "))
+    for name in get_imported_names(ast.parse(line).body[0])
+)
 
 
 def _generate_code_for_single_sync_api(
@@ -140,7 +148,7 @@ def _generate_code_for_single_sync_api(
         )
         generated_methods.append(impl_def)
 
-    all_imports, type_checking_imports = get_all_imports(tree, source_path)
+    all_imports, type_checking_imports = get_all_imports(tree, source_path, SYNC_API_TEMPLATE_IMPORTS)
     # In init, we find nested APIs - we also may need to modify existing imports:
     api_names, nested_apis = find_self_assignments(class_def)
     all_imports = fix_imports_for_sync_apis(all_imports, api_names)

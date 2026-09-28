@@ -1,4 +1,5 @@
 import ast
+import copy
 import inspect
 import re
 import shlex
@@ -71,7 +72,14 @@ def get_module_level_names(tree: ast.Module) -> list[str]:
     return [name for name in names if name != "__all__"]
 
 
-def get_module_level_type_checking_imports(tree: ast.Module) -> str:
+def get_imported_names(node: ast.Import | ast.ImportFrom) -> set[tuple[str | None, str, str | None]]:
+    module = node.module if isinstance(node, ast.ImportFrom) else None
+    return {(module, alias.name, alias.asname) for alias in node.names}
+
+
+def get_module_level_type_checking_imports(
+    tree: ast.Module, skip: frozenset[tuple[str | None, str, str | None]]
+) -> str:
     imports: list[str] = []
     for node in tree.body:
         if not isinstance(node, ast.If):
@@ -86,15 +94,23 @@ def get_module_level_type_checking_imports(tree: ast.Module) -> str:
                 continue
 
         for sub in node.body:
-            if isinstance(sub, (ast.Import, ast.ImportFrom)):
+            if not isinstance(sub, (ast.Import, ast.ImportFrom)):
+                continue
+            # Skip names already imported (at runtime) elsewhere, e.g. by the template:
+            module = sub.module if isinstance(sub, ast.ImportFrom) else None
+            if names := [alias for alias in sub.names if (module, alias.name, alias.asname) not in skip]:
+                sub = copy.copy(sub)
+                sub.names = names
                 imports.append(ast.unparse(sub))
     # Joined so that all imports end up indented under 'if TYPE_CHECKING:' in the template:
     return "\n    ".join(imports)
 
 
-def get_all_imports(tree: ast.Module, source_path: Path) -> tuple[str, str]:
+def get_all_imports(
+    tree: ast.Module, source_path: Path, skip_type_checking: frozenset[tuple[str | None, str, str | None]]
+) -> tuple[str, str]:
     all_imports = get_module_level_imports(tree)
-    type_checking_imports = get_module_level_type_checking_imports(tree)
+    type_checking_imports = get_module_level_type_checking_imports(tree, skip_type_checking)
     # Module-level names (type aliases, TypeVars, constants etc.) may be needed by the sync API, e.g. in
     # signatures or as default values. We import them from the async API module rather than copying the
     # definitions over. Unused names are removed by ruff afterwards:
