@@ -340,6 +340,7 @@ class _DpsColumnInfo:
     status_info: Literal["code", "symbol"] | None = None
     state_type: Literal["numeric", "string"] | None = None
     state_value: int | None = None
+    state_string: str | None = None
 
     def as_multi_index_tuple(self, include_aggregate: bool, include_granularity: bool, include_unit: bool) -> tuple:
         return (
@@ -348,7 +349,8 @@ class _DpsColumnInfo:
             self.status_info,  # since these split to separate cols, they are already filtered out if not wanted
             self.aggregate if include_aggregate else None,
             self.granularity if include_granularity else None,
-            self.state_value,  # always included, dropped automatically when unused (like state_type/status_info)
+            self.state_value,
+            self.state_string,
             self.unit_xid if include_unit else None,
         )
 
@@ -546,15 +548,20 @@ def _extract_and_expand_state_only_agg_column_info(
     # state, we need pivot the values: for every state seen anywhere across all rows, build a column of length n_dps,
     # filling in each row's value for that state.
     # Note: Instead of filling missing with NaN, we use 0 (zero) as that makes sense for all these state-only aggregates.
+    # The numeric value is the column key since it's unique. The string value is added as an extra level for readability,
+    # but it is missing for states no longer part of the state set (so there can be several states with the label ""):
     n_dps = len(dps)
     columns: list[_DpsColumnInfo] = []
     for attr in ("state_count", "state_transitions", "state_duration"):
         if (state_aggregate := getattr(dps, attr)) is None:
             continue
         by_state: defaultdict[int, list[int]] = defaultdict(lambda: [0] * n_dps)
+        labels: dict[int, str] = {}
         for idx in range(n_dps):
             for entry in state_aggregate[idx]:
                 by_state[entry.numeric_value][idx] = getattr(entry, entry._agg_name)
+                if entry.string_value is not None:
+                    labels[entry.numeric_value] = entry.string_value
 
         columns.extend(
             _DpsColumnInfo(
@@ -564,6 +571,7 @@ def _extract_and_expand_state_only_agg_column_info(
                 aggregate=attr,
                 granularity=dps.granularity,
                 state_value=numeric_value,
+                state_string=labels.get(numeric_value, ""),
             )
             for numeric_value in sorted(by_state)
         )
@@ -629,7 +637,7 @@ def _create_multi_index_from_columns(
             )
             for col in columns
         ],
-        columns=["identifier", "state", "status", "aggregate", "granularity", "state_value", "unit"],
+        columns=["identifier", "state", "status", "aggregate", "granularity", "state_value", "state_string", "unit"],
     )
     # Ensure the numeric state values don't get upcast to float (likely None's present):
     column_ids["state_value"] = column_ids["state_value"].astype("Int32").astype(object)

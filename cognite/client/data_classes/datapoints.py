@@ -794,7 +794,8 @@ class Datapoint(CogniteResource):
             dumped.pop(key, None)
             if expand_state_aggregates:
                 for entry in sorted(entries, key=lambda e: e.numeric_value):
-                    dumped[(key, entry.numeric_value)] = getattr(entry, entry._agg_name)  # type: ignore [index]
+                    state_key = (key, entry.numeric_value, entry.string_value or "")
+                    dumped[state_key] = getattr(entry, entry._agg_name)  # type: ignore [index]
             else:
                 dumped[key] = [entries]  # make pandas treat this list as a scalar value
 
