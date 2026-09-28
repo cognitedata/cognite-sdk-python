@@ -1,5 +1,4 @@
 import ast
-import hashlib
 import inspect
 import re
 import shlex
@@ -40,10 +39,6 @@ def find_api_class_name(source_code: str, file: Path) -> str | None:
             raise RuntimeError(f"Found multiple API classes in file='{file}': {multiple}")
 
 
-def hash_file(path: Path) -> str:
-    return hashlib.new("md5", path.read_bytes()).hexdigest()
-
-
 def is_pyfile(file: Path) -> bool:
     return file.suffix == ".py"
 
@@ -58,19 +53,6 @@ def list_sync_apis() -> Iterator[Path]:
 
 def path_as_importable(path: Path) -> str:
     return ".".join(path.with_suffix("").parts)
-
-
-def is_md5_hash(s: str) -> bool:
-    return bool(re.match(r"^[a-f0-9]{32}$", s))
-
-
-def read_hash_from_file(path: Path) -> tuple[bool, str]:
-    with path.open("r", encoding="utf-8") as f:
-        f.readline()
-        f.readline()
-        maybe_hash = f.readline().strip()
-
-    return is_md5_hash(maybe_hash), maybe_hash
 
 
 def get_module_level_imports(tree: ast.Module):
