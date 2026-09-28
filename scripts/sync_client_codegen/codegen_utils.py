@@ -78,9 +78,15 @@ def get_module_level_imports(tree: ast.Module):
     return "\n".join(ast.unparse(node) for node in import_nodes)
 
 
-def get_module_level_constants(tree: ast.Module) -> str:
-    constant_nodes = [node for node in tree.body if isinstance(node, (ast.Assign, ast.AnnAssign))]
-    return "\n".join(ast.unparse(node) for node in constant_nodes)
+def get_module_level_names(tree: ast.Module) -> list[str]:
+    names = []
+    for node in tree.body:
+        match node:
+            case ast.Assign(targets=targets):
+                names.extend(t.id for t in targets if isinstance(t, ast.Name))
+            case ast.AnnAssign(target=ast.Name(id=name), value=value) if value is not None:
+                names.append(name)
+    return [name for name in names if name != "__all__"]
 
 
 def get_module_level_type_checking_imports(tree: ast.Module) -> str:
@@ -100,10 +106,11 @@ def get_module_level_type_checking_imports(tree: ast.Module) -> str:
         for sub in node.body:
             if isinstance(sub, (ast.Import, ast.ImportFrom)):
                 imports.append(ast.unparse(sub))
-    return "\n".join(imports)
+    # Joined so that all imports end up indented under 'if TYPE_CHECKING:' in the template:
+    return "\n    ".join(imports)
 
 
-def get_all_imports(tree: ast.Module, source_code: str, source_path: Path) -> tuple[str, str]:
+def get_all_imports(tree: ast.Module, source_path: Path) -> tuple[str, str]:
     all_imports = get_module_level_imports(tree)
     type_checking_imports = get_module_level_type_checking_imports(tree)
     # Module-level names (type aliases, TypeVars, constants etc.) may be needed by the sync API, e.g. in

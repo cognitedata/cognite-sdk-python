@@ -17,7 +17,6 @@ from scripts.sync_client_codegen.codegen_utils import (
     get_all_imports,
     get_canonical_source,
     get_dot_path_lookup,
-    get_module_level_constants,
     get_source_code,
     hash_file,
     is_pyfile,
