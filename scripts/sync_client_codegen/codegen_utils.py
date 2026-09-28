@@ -13,7 +13,7 @@ from cognite.client import AsyncCogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import Token
-from scripts.sync_client_codegen.constants import ASYNC_METHODS_TO_KEEP, MAYBE_IMPORTS, SYNC_METHODS_TO_KEEP
+from scripts.sync_client_codegen.constants import ASYNC_METHODS_TO_KEEP, SYNC_METHODS_TO_KEEP
 
 
 def get_api_class_by_attribute(cls_: object, parent_name: tuple[str, ...] = ()) -> dict[str, type[APIClient]]:
@@ -115,21 +115,13 @@ def get_module_level_type_checking_imports(tree: ast.Module) -> str:
 def get_all_imports(tree: ast.Module, source_code: str, source_path: Path) -> tuple[str, str]:
     all_imports = get_module_level_imports(tree)
     type_checking_imports = get_module_level_type_checking_imports(tree)
-    extras = []
-    parent = source_path.parent
-    parent_api_in_init = parent != Path("cognite/client/_api") and (parent / "__init__.py").exists()
-    parent_source = get_source_code(parent / "__init__.py") if parent_api_in_init else ""
-
-    for maybe in MAYBE_IMPORTS:
-        # If the alias is defined in this file, it will be included via module_constants — no import needed.
-        # For nested APIs, the alias lives in the parent init and must be imported explicitly:
-        if maybe in parent_source and maybe not in source_code:
-            to_import = maybe.split(": ")[0]
-            extras.append(f"from {path_as_importable(parent)} import {to_import}")
-
-    if extras:
-        all_imports += "\n"
-    return all_imports + "\n".join(extras), type_checking_imports
+    # Module-level names (type aliases, TypeVars, constants etc.) may be needed by the sync API, e.g. in
+    # signatures or as default values. We import them from the async API module rather than copying the
+    # definitions over. Unused names are removed by ruff afterwards:
+    if module_names := get_module_level_names(tree):
+        module = path_as_importable(source_path).removesuffix(".__init__")
+        all_imports += f"\nfrom {module} import {', '.join(module_names)}"
+    return all_imports, type_checking_imports
 
 
 def find_class_node(tree: ast.Module, class_name: str) -> ast.ClassDef:
