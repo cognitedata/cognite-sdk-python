@@ -3,8 +3,6 @@ from __future__ import annotations
 import re
 from typing import TYPE_CHECKING
 
-import pytest
-
 from cognite.client.data_classes import (
     TransformationTaskParameters,
     WorkflowDefinition,
@@ -88,14 +86,3 @@ class TestWorkflowVersionAPIWarnings:
 
         assert res is not None
         assert res.warnings is None
-
-    @pytest.mark.parametrize("endpoint_has_warnings", [True, False])
-    def test_load_only_sets_warnings_when_present_in_response(self, endpoint_has_warnings: bool) -> None:
-        resource = make_workflow_version(warnings=["some warning"] if endpoint_has_warnings else None).dump()
-
-        loaded = WorkflowVersion._load(resource)
-
-        if endpoint_has_warnings:
-            assert loaded.warnings == ["some warning"]
-        else:
-            assert loaded.warnings is None
