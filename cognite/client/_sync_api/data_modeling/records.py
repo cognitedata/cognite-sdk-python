@@ -31,8 +31,6 @@ from cognite.client.utils._async_helpers import SyncIterator, run_sync
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
 
-_FILTER_MAX_LIMIT = 1000
-
 
 class SyncRecordsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""

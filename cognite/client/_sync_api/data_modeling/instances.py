@@ -7,15 +7,14 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 
 from __future__ import annotations
 
-import logging
 from collections.abc import Awaitable, Callable, Iterator, Sequence
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._api.data_modeling.instances import Source
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes import filters
 from cognite.client.data_classes.aggregations import (
     AggregatedNumberedValue,
     Histogram,
@@ -42,22 +41,15 @@ from cognite.client.data_classes.data_modeling.instances import (
     T_Node,
     TargetUnit,
 )
-from cognite.client.data_classes.data_modeling.query import Query, QueryResult, QuerySync, SourceSelector
+from cognite.client.data_classes.data_modeling.query import Query, QueryResult, QuerySync
 from cognite.client.data_classes.data_modeling.sync import SubscriptionContext, SyncSessionWithCache
-from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.data_classes.filters import _BASIC_FILTERS, Filter
+from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
-from cognite.client.data_classes.data_modeling.debug import DebugParameters
-
-_FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS.union(
-    {filters.Nested, filters.HasData, filters.MatchAll, filters.Overlaps, filters.InstanceReferences}
-)
-logger = logging.getLogger(__name__)
-Source: TypeAlias = SourceSelector | View | ViewId | tuple[str, str] | tuple[str, str, str]
+    from cognite.client.data_classes.data_modeling.debug import DebugParameters
 
 
 class SyncInstancesAPI(SyncAPIClient):

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from cognite.client import AsyncCogniteClient
 from cognite.client._api.iam import ComparableCapability
 from cognite.client._sync_api.iam.groups import SyncGroupsAPI
 from cognite.client._sync_api.iam.security_categories import SyncSecurityCategoriesAPI
@@ -17,7 +18,9 @@ from cognite.client._sync_api.iam.token import SyncTokenAPI
 from cognite.client._sync_api.org_apis.principals import SyncPrincipalsAPI
 from cognite.client._sync_api.user_profiles import SyncUserProfilesAPI
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes.capabilities import Capability
+from cognite.client.data_classes.capabilities import (
+    Capability,
+)
 from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:

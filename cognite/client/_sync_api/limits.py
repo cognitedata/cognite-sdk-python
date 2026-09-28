@@ -17,7 +17,7 @@ from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
-from cognite.client.data_classes import filters
+    from cognite.client.data_classes import filters
 
 
 class SyncLimitsAPI(SyncAPIClient):

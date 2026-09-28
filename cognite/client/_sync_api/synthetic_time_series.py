@@ -22,6 +22,8 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     import sympy
 
+    from cognite.client import AsyncCogniteClient
+
 
 class SyncSyntheticDatapointsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
