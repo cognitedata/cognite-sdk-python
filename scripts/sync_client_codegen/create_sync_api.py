@@ -143,7 +143,7 @@ def _generate_code_for_single_sync_api(
         )
         generated_methods.append(impl_def)
 
-    all_imports, type_checking_imports = get_all_imports(tree, source_code, source_path)
+    all_imports, type_checking_imports = get_all_imports(tree, source_path)
     # In init, we find nested APIs - we also may need to modify existing imports:
     api_names, nested_apis = find_self_assignments(class_def)
     all_imports = fix_imports_for_sync_apis(all_imports, api_names)
@@ -222,12 +222,12 @@ def _maybe_regenerate_file(
         if read_file.name != "__init__.py":
             raise RuntimeError(f"Could not find API class name in file='{read_file}'")
 
-        if not verify:
-            ensure_parent_dir(write_file)
-            write_file.touch(exist_ok=True)
-            if args.verbose:
+        if write_file.is_file() and not write_file.read_text(encoding="utf-8").strip():
+            if args.verbose and not verify:
                 print(f"- Skipping codegen for '{read_file}': empty __init__.py file ⏭️")
-        return SingleAPIFile(write_file, read_file)
+            return SingleAPIFile(write_file, read_file)
+        # Missing or (manually) modified, needs to be (re)written as an empty file:
+        return SingleAPIFile(write_file, read_file, new_source="")
 
     # Note: We always regenerate and never trust a matching hash, as the sync file may have been edited manually.
     # Whether it is up to date is determined later by comparing it with the newly generated code:
@@ -249,23 +249,25 @@ def _maybe_regenerate_file(
     )
 
 
-def _compare_normalized_files_and_maybe_update_hash_only(files_to_update: set[SingleAPIFile], args: Namespace):
+def _find_functionally_identical_files(files: set[SingleAPIFile]) -> dict[SingleAPIFile, str]:
+    """
+    Compares newly generated code with the current sync API files, ignoring comments and the stored
+    file hash (but not docstrings). Returns the files that are functionally identical, mapped to
+    their currently stored hash.
+    """
+    identical = {}
     with tempfile.TemporaryDirectory() as tmp_dir:
-        for f in files_to_update:
+        for f in files:
             f.temp_filepath = tmp_dir / f.filepath
             ensure_parent_dir(f.temp_filepath)
             f.temp_filepath.write_text(f.get_new_source, encoding="utf-8")
 
         # Before compare, we need to run ruff (large overhead, so we do it once for all files):
-        run_ruff([f.temp_filepath for f in files_to_update], verbose=False)
+        run_ruff([f.temp_filepath for f in files], verbose=False)
 
-        for f in files_to_update.copy():
-            write_file = f.filepath
-            normalized_src = get_canonical_source(write_file)
-            normalized_new_src = get_canonical_source(f.temp_filepath)
-
+        for f in files:
             try:
-                is_valid, existing_hash = read_hash_from_file(write_file)
+                is_valid, existing_hash = read_hash_from_file(f.filepath)
                 if not is_valid:
                     continue
             except FileNotFoundError:
@@ -273,25 +275,40 @@ def _compare_normalized_files_and_maybe_update_hash_only(files_to_update: set[Si
 
             # The hash is part of the module docstring, which gets preserved, so we must
             # replace it before comparing:
-            normalized_src = normalized_src.replace(existing_hash, f.get_new_hash)
-            if normalized_src != normalized_new_src:
-                continue
+            normalized_src = get_canonical_source(f.filepath).replace(existing_hash, f.get_new_hash)
+            if normalized_src == get_canonical_source(f.temp_filepath):
+                identical[f] = existing_hash
+    return identical
 
-            # We just need to update the hash of this file:
-            files_to_update.remove(f)
 
+def _update_hash_only_for_identical_files(files_to_update: set[SingleAPIFile], args: Namespace) -> None:
+    for f, existing_hash in _find_functionally_identical_files(files_to_update).items():
+        files_to_update.remove(f)
+        if existing_hash == f.get_new_hash:
             if args.verbose:
-                print(
-                    f"- Updating hash only for '{f.read_filepath}'. The newly generated code is functionally "
-                    "identical to current (including docstrings) ✅"
-                )
-            else:
-                print(f"- Updating hash only for '{f.read_filepath}' ✅")
-            ensure_parent_dir(write_file)
-            # Note: DO NOT use normalized_src here, the reason we do all of this is precisely to preserve
-            # e.g. type-ignore comments that would otherwise be lost on regeneration.
-            current_source = get_source_code(write_file)
-            write_file.write_text(current_source.replace(existing_hash, f.get_new_hash), encoding="utf-8")
+                print(f"- Skipping codegen for '{f.read_filepath}': no changes detected ⏭️")
+            continue
+
+        # We just need to update the hash of this file:
+        if args.verbose:
+            print(
+                f"- Updating hash only for '{f.read_filepath}'. The newly generated code is functionally "
+                "identical to current (including docstrings) ✅"
+            )
+        else:
+            print(f"- Updating hash only for '{f.read_filepath}' ✅")
+        # Note: DO NOT use the normalized source here, the reason we do all of this is precisely to preserve
+        # e.g. type-ignore comments that would otherwise be lost on regeneration.
+        current_source = get_source_code(f.filepath)
+        f.filepath.write_text(current_source.replace(existing_hash, f.get_new_hash), encoding="utf-8")
+
+
+def _remove_up_to_date_files(files_to_update: set[SingleAPIFile]) -> None:
+    # A file is up to date when its stored hash matches and its code is functionally identical to what
+    # we would generate (i.e. we don't blindly trust the hash, since manual edits leave it untouched):
+    for f, existing_hash in _find_functionally_identical_files(files_to_update).items():
+        if existing_hash == f.get_new_hash:
+            files_to_update.remove(f)
 
 
 def _report_after_verification(
@@ -315,7 +332,7 @@ def _report_after_verification(
             "$ python scripts/sync_client_codegen/main.py run --files FILE1 FILE2"
         )
         for not_updated in files_to_update:
-            print(f"- File needs update: '{not_updated}' ❌")
+            print(f"- File needs update: '{not_updated.filepath}' ❌")
     if should_be_cleaned_up:
         print("One or more sync API files are stale and should be removed:")
         for stale_file in should_be_cleaned_up:
@@ -366,7 +383,7 @@ def _run_files(
             api_write_file = _maybe_regenerate_file(read_file, dot_path_lookup, args, verify)
             if api_write_file is not None:
                 all_expected_files.append(api_write_file.filepath)
-                if api_write_file.new_source:
+                if api_write_file.new_source is not None:
                     files_to_update.add(api_write_file)
         except Exception as e:
             print(f"- Failed to generate sync client code for: '{read_file}' ❌ {e}")
@@ -378,11 +395,12 @@ def _run_files(
     client_has_changed = not verify_cognite_client_is_up_to_date(new_client_source_code)
 
     if verify:
+        _remove_up_to_date_files(files_to_update)
         return _report_after_verification(all_expected_files, files_to_update, something_failed, client_has_changed)
 
     # Before we overwrite existing files, we want to compare if the changes are functionally
     # identical (including docstrings, excluding comments and the stored file hash):
-    _compare_normalized_files_and_maybe_update_hash_only(files_to_update, args)
+    _update_hash_only_for_identical_files(files_to_update, args)
     to_be_linted = [f.filepath for f in files_to_update]
 
     if client_has_changed:
