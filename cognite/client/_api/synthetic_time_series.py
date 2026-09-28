@@ -185,7 +185,9 @@ class SyntheticDatapointsAPI(APIClient):
             tasks.append(AsyncSDKTask(self._fetch_datapoints, query, limit, short_expression))
 
         datapoints_summary = await execute_async_tasks(tasks, fail_fast=True)
-        datapoints_summary.raise_compound_exception_if_failed_tasks()
+        datapoints_summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task[0],
+        )
         return SyntheticDatapointsList(datapoints_summary.results) if not single_expr else datapoints_summary.results[0]
 
     async def _fetch_datapoints(self, query: dict[str, Any], limit: int, short_expression: str) -> SyntheticDatapoints:

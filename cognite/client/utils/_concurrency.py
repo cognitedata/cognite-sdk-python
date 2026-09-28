@@ -593,6 +593,9 @@ class TasksSummary:
     def raise_compound_exception_if_failed_tasks(
         self, task_unwrap_fn: Callable = no_op, task_list_element_unwrap_fn: Callable | None = None
     ) -> None:
+        # TODO: replace task_unwrap_fn + task_list_element_unwrap_fn with an `ids` field on AsyncSDKTask itself,
+        # set at construction time (e.g. AsyncSDKTask(fn, arg, ids=[id_])). Call sites then always call
+        # raise_compound_exception_if_failed_tasks() with no args, and the two-lambda unwrap pattern goes away.
         if not (self.unknown_error or self.not_found_error or self.duplicated_error):
             return None
 

@@ -1221,7 +1221,10 @@ class FilesAPI(APIClient):
             for batch in identifiers.chunked(100)
         ]
         tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
-        tasks_summary.raise_compound_exception_if_failed_tasks()
+        tasks_summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task["json"]["items"],
+            task_list_element_unwrap_fn=lambda item: item,
+        )
         results = tasks_summary.joined_results(unpack_items)
         return {
             result.get("id") or result.get("externalId") or NodeId.load(result["instanceId"]): result["downloadUrl"]
