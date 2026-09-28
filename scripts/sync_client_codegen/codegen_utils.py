@@ -73,15 +73,6 @@ def read_hash_from_file(path: Path) -> tuple[bool, str]:
     return is_md5_hash(maybe_hash), maybe_hash
 
 
-def file_has_changed(write_file: Path, read_file_hash: str) -> bool:
-    # Skip a file if it exists and the stored hash matches:
-    if write_file.exists():
-        is_valid, existing_hash = read_hash_from_file(write_file)
-        if is_valid and existing_hash == read_file_hash:
-            return False
-    return True
-
-
 def get_module_level_imports(tree: ast.Module):
     import_nodes = [node for node in tree.body if isinstance(node, (ast.Import, ast.ImportFrom))]
     return "\n".join(ast.unparse(node) for node in import_nodes)

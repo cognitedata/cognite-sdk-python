@@ -9,7 +9,6 @@ from pathlib import Path
 from scripts.sync_client_codegen.codegen_utils import (
     clean_up_files,
     ensure_parent_dir,
-    file_has_changed,
     find_api_class_name,
     find_class_node,
     find_self_assignments,
@@ -231,12 +230,9 @@ def _maybe_regenerate_file(
                 print(f"- Skipping codegen for '{read_file}': empty __init__.py file ⏭️")
         return SingleAPIFile(write_file, read_file)
 
+    # Note: We always regenerate and never trust a matching hash, as the sync file may have been edited manually.
+    # Whether it is up to date is determined later by comparing it with the newly generated code:
     read_file_hash = hash_file(read_file)
-    if not file_has_changed(write_file, read_file_hash):
-        if args.verbose and not verify:
-            print(f"- Skipping codegen for '{read_file}': no changes detected ⏭️")
-        return SingleAPIFile(write_file, read_file)
-
     generated_code = _generate_code_for_single_sync_api(
         class_name, source_code, read_file, dot_path_lookup, read_file_hash
     )
