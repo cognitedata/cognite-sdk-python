@@ -6,8 +6,6 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.iam import ComparableCapability
 from cognite.client._sync_api.iam.groups import SyncGroupsAPI
@@ -21,9 +19,6 @@ from cognite.client.data_classes.capabilities import (
     Capability,
 )
 from cognite.client.utils._async_helpers import run_sync
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncIAMAPI(SyncAPIClient):

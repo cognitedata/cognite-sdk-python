@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import typing
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.sequences import SortSpec
@@ -25,9 +25,6 @@ from cognite.client.data_classes.sequences import (
 from cognite.client.data_classes.shared import TimestampRange
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncSequencesAPI(SyncAPIClient):

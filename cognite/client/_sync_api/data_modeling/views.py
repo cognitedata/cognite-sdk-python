@@ -7,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
@@ -21,9 +21,6 @@ from cognite.client.data_classes.data_modeling.views import (
     ViewUsedFor,
 )
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncViewsAPI(SyncAPIClient):

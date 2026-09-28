@@ -6,7 +6,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Literal, overload
+from typing import Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api.unit_system import SyncUnitSystemAPI
@@ -14,9 +14,6 @@ from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.units import Unit, UnitList
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncUnitAPI(SyncAPIClient):

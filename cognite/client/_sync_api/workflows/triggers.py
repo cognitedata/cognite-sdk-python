@@ -21,7 +21,6 @@ from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes import ClientCredentials
 
 

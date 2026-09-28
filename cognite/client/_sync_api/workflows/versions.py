@@ -22,7 +22,6 @@ from cognite.client.data_classes.workflows import (
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 
 if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
     from cognite.client._api.workflows import WorkflowIdentifier, WorkflowVersionIdentifier
 
 

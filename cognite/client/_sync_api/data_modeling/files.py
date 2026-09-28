@@ -24,8 +24,6 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     from typing import BinaryIO
 
-    from cognite.client import AsyncCogniteClient
-
 
 class SyncDataModelingFilesAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""

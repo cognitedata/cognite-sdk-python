@@ -7,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, overload
+from typing import Any, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.data_modeling.time_series import COGNITE_TIME_SERIES_VIEW_ID
@@ -19,9 +19,6 @@ from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncDataModelingTimeSeriesAPI(SyncAPIClient):

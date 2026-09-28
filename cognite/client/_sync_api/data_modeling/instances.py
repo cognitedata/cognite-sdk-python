@@ -47,7 +47,6 @@ from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
     from cognite.client.data_classes.data_modeling.debug import DebugParameters
 
 
