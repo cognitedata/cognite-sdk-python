@@ -1,6 +1,6 @@
 """
 ===============================================================================
-b801f59197dc61bd02c5d3c7f498413b
+5900a7d980d59d529bed753ae83d8ff1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -47,7 +47,7 @@ class SyncIntegrationsAPI(SyncAPIClient):
         Fetches integrations as they are iterated over, so you keep a limited number of integrations in memory.
 
         Args:
-            chunk_size (int | None): Number of integrations to return in each chunk. Defaults to yielding one integration a time.
+            chunk_size (int | None): Number of integrations to return in each chunk. Defaults to yielding one integration at a time.
             limit (int | None): Maximum number of integrations to return. Defaults to return all items.
 
         Yields:

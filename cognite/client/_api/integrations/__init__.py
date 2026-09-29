@@ -26,6 +26,11 @@ class IntegrationsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Integrations")
+        self._CREATE_LIMIT = 20
+        self._UPDATE_LIMIT = 20
+        self._RETRIEVE_LIMIT = 100
+        self._DELETE_LIMIT = 100
+        self._LIST_LIMIT = 100
 
     @overload
     def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Integration]: ...
@@ -41,7 +46,7 @@ class IntegrationsAPI(APIClient):
         Fetches integrations as they are iterated over, so you keep a limited number of integrations in memory.
 
         Args:
-            chunk_size (int | None): Number of integrations to return in each chunk. Defaults to yielding one integration a time.
+            chunk_size (int | None): Number of integrations to return in each chunk. Defaults to yielding one integration at a time.
             limit (int | None): Maximum number of integrations to return. Defaults to return all items.
 
         Yields:

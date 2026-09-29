@@ -1955,6 +1955,37 @@ class TestRetryableEndpoints:
             validate_url_and_return_retryability(method, path)
 
 
+class TestMaturityVersionHeader:
+    @pytest.mark.parametrize(
+        "api_subversion, maturity, expected_header",
+        [
+            ("20230101", "alpha", "20230101-alpha"),
+            ("20230101", "beta", "20230101-beta"),
+            ("20230101-alpha", "alpha", "20230101-alpha"),
+            ("20230101-alpha", "beta", "beta"),
+            ("20230101-beta", "alpha", "alpha"),
+            ("20230101-beta", "beta", "20230101-beta"),
+            ("beta", "alpha", "alpha"),
+            ("beta", "beta", "beta"),
+        ],
+    )
+    def test_maturity_version_header(
+        self,
+        api_client_with_token: APIClient,
+        api_subversion: str,
+        maturity: Literal["alpha", "beta"],
+        expected_header: str,
+    ) -> None:
+        api_client_with_token._api_subversion = api_subversion
+        assert api_client_with_token._maturity_version_header(maturity) == {"cdf-version": expected_header}
+        assert api_client_with_token._alpha_version_header() == {
+            "cdf-version": api_client_with_token._maturity_version_header("alpha")["cdf-version"]
+        }
+        assert api_client_with_token._beta_version_header() == {
+            "cdf-version": api_client_with_token._maturity_version_header("beta")["cdf-version"]
+        }
+
+
 class TestHelpers:
     @pytest.mark.parametrize(
         "resource, update_obj, mode, expected_update_object",
