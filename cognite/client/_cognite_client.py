@@ -19,6 +19,7 @@ from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.hosted_extractors import HostedExtractorsAPI
 from cognite.client._api.iam import IAMAPI
+from cognite.client._api.integrations import IntegrationsAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.limits import LimitsAPI
 from cognite.client._api.metering import MeteringAPI
@@ -173,6 +174,7 @@ class AsyncCogniteClient:
         self.workflows = WorkflowAPI(self._config, self._API_VERSION, self)
         self.units = UnitAPI(self._config, self._API_VERSION, self)
         self.simulators = SimulatorsAPI(self._config, self._API_VERSION, self)
+        self.integrations = IntegrationsAPI(self._config, self._API_VERSION, self)
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 
@@ -478,6 +480,7 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.simulators.routines.revisions = SimulatorRoutineRevisionsAPI  # type: ignore
     AsyncCogniteClient.simulators.runs = SimulatorRunsAPI  # type: ignore
     AsyncCogniteClient.simulators.logs = SimulatorLogsAPI  # type: ignore
+    AsyncCogniteClient.integrations = IntegrationsAPI  # type: ignore
 
 
 if _should_build_docs:

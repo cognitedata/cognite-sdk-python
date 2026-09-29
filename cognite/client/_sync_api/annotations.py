@@ -1,6 +1,5 @@
 """
 ===============================================================================
-0393af121436eccd196921625498ee8b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal, overload
+from typing import Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -17,9 +16,6 @@ from cognite.client.data_classes import Annotation, AnnotationFilter, Annotation
 from cognite.client.data_classes.annotations import AnnotationReverseLookupFilter, AnnotationWrite
 from cognite.client.data_classes.contextualization import ResourceReferenceList
 from cognite.client.utils._async_helpers import run_sync
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncAnnotationsAPI(SyncAPIClient):

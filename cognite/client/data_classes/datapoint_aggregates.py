@@ -33,12 +33,12 @@ OBJECT_AGGREGATES: frozenset[Literal["max_datapoint", "min_datapoint"]] = frozen
 _UNSUPPORTED_STATE_AGGS_CAMEL: frozenset[Literal["interpolation", "stepInterpolation"]] = frozenset(
     {"interpolation", "stepInterpolation"}
 )
-_NOT_YET_IMPLEMENTED_TO_PANDAS_STATE_AGGS_SNAKE: frozenset[
-    Literal["state_count", "state_transitions", "state_duration"]
-] = frozenset({"state_count", "state_transitions", "state_duration"})
 # These are per-distinct-state breakdown aggregates (one entry per state, per interval):
 _STATE_AGGS_CAMEL: frozenset[Literal["stateCount", "stateTransitions", "stateDuration"]] = frozenset(
     {"stateCount", "stateTransitions", "stateDuration"}
+)
+_STATE_AGGS_SNAKE: frozenset[Literal["state_count", "state_transitions", "state_duration"]] = frozenset(
+    {"state_count", "state_transitions", "state_duration"}
 )
 
 # Assumption: All INT aggregates should adhere to the following logic: Missing values can be replace with 0.

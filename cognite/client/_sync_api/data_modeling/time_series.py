@@ -1,6 +1,5 @@
 """
 ===============================================================================
-91be1213d9914f806b6472e0a49cf59b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,23 +7,18 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, overload
+from typing import Any, overload
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._api.data_modeling.time_series import COGNITE_TIME_SERIES_VIEW_ID
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeries
 from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeList
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
-COGNITE_TIME_SERIES_VIEW_ID = CogniteTimeSeries.get_source()
 
 
 class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
