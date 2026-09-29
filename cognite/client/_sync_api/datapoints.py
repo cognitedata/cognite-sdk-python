@@ -899,6 +899,9 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_unit: bool = True,
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_numeric_states: bool = True,
+        include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pd.DataFrame:
         """
         Get datapoints directly in a pandas dataframe.
@@ -930,6 +933,9 @@ class SyncDatapointsAPI(SyncAPIClient):
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
             include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
+            include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids, and lastly instance_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
@@ -1017,6 +1023,9 @@ class SyncDatapointsAPI(SyncAPIClient):
                 include_unit=include_unit,
                 include_aggregate_name=include_aggregate_name,
                 include_granularity_name=include_granularity_name,
+                include_numeric_states=include_numeric_states,
+                include_string_states=include_string_states,
+                expand_state_aggregates=expand_state_aggregates,
             )
         )
 
