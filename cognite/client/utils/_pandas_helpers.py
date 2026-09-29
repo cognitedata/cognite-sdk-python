@@ -524,7 +524,9 @@ def _extract_column_info_from_dps_for_dataframe(
     dps: Datapoints | DatapointsArray, include_status: bool, include_numeric_states: bool, include_string_states: bool
 ) -> list[_DpsColumnInfo]:
     from cognite.client.data_classes import DatapointsArray
+    from cognite.client.data_classes.datapoints import _raise_on_state_only_aggregate
 
+    _raise_on_state_only_aggregate(dps)
     identifier = _resolve_ts_identifier_as_df_column_name(dps)
     is_array = isinstance(dps, DatapointsArray)
     if dps.type == "state":

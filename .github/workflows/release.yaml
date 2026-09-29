@@ -24,7 +24,7 @@ jobs:
         run: twine upload --skip-existing --disable-progress-bar --verbose dist/*
 
       # TODO: Make this work again
-      # - name: Push code snippets to service-contracts
+      # - name: Push code snippets to infrastructure
       #   env:
       #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       #   run: sh ./scripts/deploy_code_snippets.sh || echo 'PR failed. There is probably

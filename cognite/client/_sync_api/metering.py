@@ -1,6 +1,5 @@
 """
 ===============================================================================
-1caf230ab4e426e1c90aa06eab8a5ec4
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -18,8 +17,7 @@ from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-from cognite.client.data_classes import filters
+    from cognite.client.data_classes import filters
 
 
 class SyncMeteringAPI(SyncAPIClient):

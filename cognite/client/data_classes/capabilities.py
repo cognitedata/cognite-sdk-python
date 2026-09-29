@@ -555,6 +555,18 @@ class AppExternalIdScope(Capability.Scope):
 
 
 @dataclass(frozen=True)
+class DataProductScope(Capability.Scope):
+    _scope_name = "dataProductScope"
+    external_ids: list[str]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "external_ids", [str(i) for i in self.external_ids])
+
+    def as_tuples(self) -> set[tuple[str, str]]:
+        return {(self._scope_name, s) for s in self.external_ids}
+
+
+@dataclass(frozen=True)
 class UnknownScope(Capability.Scope):
     """
     This class is used for scopes that are not implemented in this version of the SDK.
@@ -1286,6 +1298,24 @@ class DataModelsAcl(Capability):
         All = AllScope
         SpaceID = SpaceIDScope
         LegacyDataModel = LegacyDataModelScope
+
+
+@dataclass
+class DataProductsAcl(Capability):
+    _capability_name = "dataProductsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataProductScope
+
+    class Action(Capability.Action):
+        Create = "CREATE"
+        Read = "READ"
+        Update = "UPDATE"
+        Delete = "DELETE"
+        Use = "USE"
+
+    class Scope:
+        All = AllScope
+        DataProduct = DataProductScope
 
 
 @dataclass
