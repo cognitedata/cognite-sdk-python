@@ -2092,12 +2092,12 @@ class LatestDatapoint(CogniteResource):
         if self.timestamp is None:
             dumped["datapoints"] = []
         else:
-            dp: dict[str, Any] = {"timestamp": datetime_to_ms(self.timestamp), "value": self.value}
-            # We follow the API response format (also to allow load(dump()) round-trips):
-            if self.numeric_state is not None:
-                dp["numericValue" if camel_case else "numeric_value"] = self.numeric_state
-            if self.string_state is not None:
-                dp["stringValue" if camel_case else "string_value"] = self.string_state
+            dp: dict[str, Any] = {"timestamp": datetime_to_ms(self.timestamp), "value": self._value}
+            # Use the private fields directly to avoid raising for non-state time series:
+            if self._numeric_state is not None:
+                dp["numericValue" if camel_case else "numeric_value"] = self._numeric_state
+            if self._string_state is not None:
+                dp["stringValue" if camel_case else "string_value"] = self._string_state
             if self.status_code is not None:
                 dp["status"] = {"code": self.status_code, "symbol": self.status_symbol}
             dumped["datapoints"] = [dp]
@@ -2234,8 +2234,7 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
             include_status (bool): Include status_code and status_symbol columns if available. Default: True
 
         Returns:
-            pandas.DataFrame: A DataFrame with columns 'timestamp', 'value' (and optionally
-                'status_code', 'status_symbol') with time series identifiers as the index.
+            pandas.DataFrame: A DataFrame with time series identifiers as the index.
 
         Examples:
 
@@ -2261,7 +2260,7 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
                 index_values.append(item.id)
 
             row: dict[str, Any] = {
-                "value": item.value,
+                "value": item._value,
                 "timestamp": item.timestamp if item.timestamp is not None else pd.NaT,
                 "before": item.before,
             }
@@ -2277,6 +2276,11 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
 
         df = pd.DataFrame(rows, index=index_values)
         df.index.name = "identifier"
+
+        if "numeric_state" in df.columns:
+            df["numeric_state"] = df["numeric_state"].astype("Int32")
+        if "string_state" in df.columns:
+            df["string_state"] = pd.Categorical(df["string_state"], ordered=False)
 
         # Drop status columns if they are all null (empty lists have no such columns)
         if include_status and "status_code" in df.columns:
