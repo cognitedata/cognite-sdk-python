@@ -1855,6 +1855,11 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/runs/list", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/config", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/extpipes/config/revert", False),
+                # Integrations
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/integrations", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/integrations/byids", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/integrations/delete", False),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/integrations/update", True),
                 # Transformations
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations", False),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/transformations/filter", True),
@@ -1991,6 +1996,37 @@ class TestRetryableEndpoints:
     async def test_is_retryable_should_fail(self, method: str, path: str, expected_error: str) -> None:
         with pytest.raises(ValueError, match=expected_error):
             validate_url_and_return_retryability(method, path)
+
+
+class TestMaturityVersionHeader:
+    @pytest.mark.parametrize(
+        "api_subversion, maturity, expected_header",
+        [
+            ("20230101", "alpha", "20230101-alpha"),
+            ("20230101", "beta", "20230101-beta"),
+            ("20230101-alpha", "alpha", "20230101-alpha"),
+            ("20230101-alpha", "beta", "beta"),
+            ("20230101-beta", "alpha", "alpha"),
+            ("20230101-beta", "beta", "20230101-beta"),
+            ("beta", "alpha", "alpha"),
+            ("beta", "beta", "beta"),
+        ],
+    )
+    def test_maturity_version_header(
+        self,
+        api_client_with_token: APIClient,
+        api_subversion: str,
+        maturity: Literal["alpha", "beta"],
+        expected_header: str,
+    ) -> None:
+        api_client_with_token._api_subversion = api_subversion
+        assert api_client_with_token._maturity_version_header(maturity) == {"cdf-version": expected_header}
+        assert api_client_with_token._alpha_version_header() == {
+            "cdf-version": api_client_with_token._maturity_version_header("alpha")["cdf-version"]
+        }
+        assert api_client_with_token._beta_version_header() == {
+            "cdf-version": api_client_with_token._maturity_version_header("beta")["cdf-version"]
+        }
 
 
 class TestHelpers:
