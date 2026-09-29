@@ -2013,6 +2013,11 @@ class LatestDatapoint(CogniteResource):
         return bool(self)
 
     @property
+    def is_state(self) -> bool:
+        """Whether this datapoint comes from a state time series."""
+        return self.type == "state"
+
+    @property
     def timestamp_ms(self) -> int:
         """The data timestamp in milliseconds since the epoch (Jan 1, 1970).
 
@@ -2074,8 +2079,8 @@ class LatestDatapoint(CogniteResource):
         """
         pd = local_import("pandas")
         # Some of these may be None (and dump will remove them), but we want them always present:
-        dumped = {"value": self.value, "timestamp": self.timestamp, "before": self.before}
-        if self.type == "state":
+        dumped = {"value": self._value, "timestamp": self.timestamp, "before": self.before}
+        if self.is_state:
             dumped["numericState" if camel_case else "numeric_state"] = self.numeric_state
             dumped["stringState" if camel_case else "string_state"] = self.string_state
         for k, v in self.dump(camel_case=camel_case).items():
@@ -2222,7 +2227,7 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
                 "timestamp": item.timestamp if item.timestamp is not None else pd.NaT,
                 "before": item.before,
             }
-            if item.type == "state":
+            if item.is_state:
                 row["numeric_state"] = item.numeric_state
                 row["string_state"] = item.string_state
             if item.unit_external_id is not None:
