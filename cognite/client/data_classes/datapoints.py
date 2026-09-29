@@ -1943,6 +1943,7 @@ class LatestDatapoint(CogniteResource):
         id (int): Id of the time series the datapoint belongs to
         timestamp (datetime.datetime | None): The data timestamp. None if no datapoint exists.
         value (str | float | None): The data value. Can be string or numeric, or None if no datapoint exists or value is missing.
+            Raises a ``ValueError`` when accessed on a state time series, use ``numeric_state``/``string_state`` instead.
         is_string (bool): Whether the time series contains numerical or string data.
         type (Literal['numeric', 'string', 'state']): The type of the time series.
         before (datetime.datetime | None): The timestamp used as the 'before' parameter in the query that retrieved this datapoint.
@@ -1953,8 +1954,10 @@ class LatestDatapoint(CogniteResource):
         unit_external_id (str | None): The unit_external_id of the returned data points.
         status_code (int | None): The status code for the datapoint.
         status_symbol (str | None): The status symbol for the datapoint.
-        numeric_state (int | None): The numeric state value. Only returned for state time series.
-        string_state (str | None): The string state value. Only returned for state time series.
+        numeric_state (int | None): The numeric state value. Only returned for state time series. Raises a
+            ``ValueError`` when accessed on a non-state time series, use ``value`` instead.
+        string_state (str | None): The string state value. Only returned for state time series. Raises a
+            ``ValueError`` when accessed on a non-state time series, use ``value`` instead.
     """
 
     def __init__(
@@ -1985,11 +1988,46 @@ class LatestDatapoint(CogniteResource):
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.timestamp = timestamp
-        self.value = value
+        self._value = value
         self.status_code = status_code
         self.status_symbol = status_symbol
-        self.numeric_state = numeric_state
-        self.string_state = string_state
+        self._numeric_state = numeric_state
+        self._string_state = string_state
+
+    @property
+    def value(self) -> str | float | None:
+        """The datapoint value. Can be string or numeric.
+
+        Raises:
+            ValueError: If this datapoint belongs to a state time series.
+        """
+        if self.is_state:
+            raise ValueError(
+                "'value' is not populated for state time series, use 'numeric_state'/'string_state' instead"
+            )
+        return self._value
+
+    @property
+    def numeric_state(self) -> int | None:
+        """The numeric state value.
+
+        Raises:
+            ValueError: If this is not a state time series.
+        """
+        if not self.is_state:
+            raise ValueError("'numeric_state' is only populated for state time series, use 'value' instead")
+        return self._numeric_state
+
+    @property
+    def string_state(self) -> str | None:
+        """The string state value.
+
+        Raises:
+            ValueError: If this is not a state time series.
+        """
+        if not self.is_state:
+            raise ValueError("'string_state' is only populated for state time series, use 'value' instead")
+        return self._string_state
 
     def __str__(self) -> str:
         dumped = self.dump(camel_case=False)
