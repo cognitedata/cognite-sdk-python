@@ -40,10 +40,10 @@ for more information on the configuration options.
           token_url: "https://login.microsoftonline.com/${MY_TENANT_ID}/oauth2/v2.0/token"
           client_id: "${MY_CLIENT_ID}"
           client_secret: "${MY_CLIENT_SECRET}"
-          scopes: ["https://api.cognitedata.com/.default"]
+          scopes: ["https://${MY_CLUSTER}.cognitedata.com/.default"]
     global:
       max_retries: 10
-      max_retry_backoff: 10
+      max_retry_backoff: 60
 
 .. testsetup:: client_config_file
 
@@ -79,7 +79,7 @@ for more information on the configuration options.
     >>> global_config.max_retries
     10
     >>> global_config.max_retry_backoff
-    10
+    60
     >>> client.config.project
     'my-project'
     >>> client.config.client_name
@@ -192,15 +192,16 @@ This is recommended for web applications, concurrent operations, and Pyodide/bro
     from cognite.client.credentials import OAuthClientCredentials
 
     # Configuration is the same as for the sync client
+    cdf_cluster = "westeurope-1"  # ...or az-eastus-1, etc.
     creds = OAuthClientCredentials(
         token_url="https://login.microsoftonline.com/<tenant-id>/oauth2/v2.0/token",
         client_id="my-client-id",
         client_secret=os.environ["MY_CLIENT_SECRET"],
-        scopes=["https://api.cognitedata.com/.default"]
+        scopes=[f"https://{cdf_cluster}.cognitedata.com/.default"]
     )
     cnf = ClientConfig(
         client_name="my-async-client",
-        base_url="https://api.cognitedata.com",
+        base_url=f"https://{cdf_cluster}.cognitedata.com",
         project="my-project",
         credentials=creds
     )
