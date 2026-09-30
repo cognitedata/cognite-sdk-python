@@ -1,1 +1,14 @@
 * @cognitedata/starbase @cognitedata/python-sdk-maintainers
+
+*/extractionpipelines/* @cognitedata/python-sdk-maintainers @cognitedata/data-management
+*/hosted_extractors/* @cognitedata/python-sdk-maintainers @cognitedata/data-management
+*/integrations/* @cognitedata/python-sdk-maintainers @cognitedata/data-management
+*/postgres_gateway/* @cognitedata/python-sdk-maintainers @cognitedata/data-management
+*/simulators/* @cognitedata/python-sdk-maintainers @cognitedata/data-management
+*/test_hosted_extractors/* @cognitedata/python-sdk-maintainers @cognitedata/data-management
+*/test_integrations.py @cognitedata/python-sdk-maintainers @cognitedata/data-management
+*/test_postgres_gateway/* @cognitedata/python-sdk-maintainers @cognitedata/data-management
+*/test_simulators/* @cognitedata/python-sdk-maintainers @cognitedata/data-management
+/tests/tests_integration/test_api/test_extraction_pipelines.py @cognitedata/python-sdk-maintainers @cognitedata/data-management
+/tests/tests_unit/test_api/test_extractionpipelines.py @cognitedata/python-sdk-maintainers @cognitedata/data-management
+/tests/tests_unit/test_data_classes/test_extraction_pipipelines.py @cognitedata/python-sdk-maintainers @cognitedata/data-management
