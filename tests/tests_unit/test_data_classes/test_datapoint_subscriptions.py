@@ -127,7 +127,9 @@ class TestSubscriptionDatapoints:
         update = DatapointsUpdate.load(state_update, include_status=include_status, ignore_bad_datapoints=False)
         dps = update.upserts
         assert dps.type == "state"
-        assert dps.value is None
+        assert dps.is_state is True
+        with pytest.raises(ValueError, match=r"numeric_states.*string_states"):
+            dps.value
         assert dps.timestamp == [1000, 2000, 3000]
         assert dps.numeric_states == [1, 0, None]
         assert dps.string_states == ["ON", None, None]
@@ -153,9 +155,14 @@ class TestSubscriptionDatapoints:
             }
         )
         dps = update.upserts
+        assert dps.is_state is False
         assert dps.value == [1.5]
-        assert dps.numeric_states is None and dps.string_states is None
-        (dp,) = list(dps)
+        # numeric_states/string_states are never populated for regular time series, accessing them should raise:
+        with pytest.raises(ValueError, match="use 'value' instead"):
+            dps.numeric_states
+        with pytest.raises(ValueError, match="use 'value' instead"):
+            dps.string_states
+        dp = list(dps)[0]  # dunder iter is implemented but not getitem
         assert (dp.timestamp, dp.value, dp.numeric_state) == (1000, 1.5, None)
 
     @pytest.mark.dsl
@@ -166,3 +173,22 @@ class TestSubscriptionDatapoints:
         assert list(df.columns) == [(node_id, "numeric"), (node_id, "string")]
         assert df[(node_id, "numeric")].tolist()[:2] == [1, 0]
         assert df[(node_id, "string")].tolist()[0] == "ON"
+
+    def test_load_numeric_datapoints_with_missing_value(self) -> None:
+        # A None entry *within* value is a legitimate missing/bad datapoint and should not raise:
+        update = DatapointsUpdate.load(
+            {
+                "timeSeries": {"id": 1, "externalId": "xid", "type": "numeric", "isString": False},
+                "upserts": [
+                    {"timestamp": 1000, "value": 1.5},
+                    {"timestamp": 2000, "status": {"code": 0x80000000, "symbol": "Bad"}},
+                ],
+                "deletes": [],
+            },
+            ignore_bad_datapoints=False,
+        )
+        dps = update.upserts
+        assert dps.value == [1.5, None]
+        first, last = dps
+        assert (first.timestamp, first.value) == (1000, 1.5)
+        assert (last.timestamp, last.value) == (2000, None)
