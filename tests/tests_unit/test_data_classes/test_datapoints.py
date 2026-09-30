@@ -15,6 +15,8 @@ from cognite.client.data_classes.datapoints import (
     Datapoints,
     DatapointsArrayList,
     DatapointsList,
+    LatestDatapoint,
+    LatestDatapointList,
     StateCount,
     StateDuration,
     StateTransition,
@@ -891,3 +893,143 @@ class TestStateDatapointsInsert:
     def test_non_sequence_datapoints_raises(self) -> None:
         with pytest.raises(TypeError, match="sequence"):
             StateDatapointsInsert(instance_id=NodeId("sp", "xid"), datapoints="bad")  # type: ignore[arg-type]
+
+
+class TestLatestDatapointStateTimeSeries:
+    @pytest.fixture
+    def state_resource(self) -> dict[str, Any]:
+        return {
+            "id": 123,
+            "instanceId": {"space": "sp", "externalId": "xid"},
+            "type": "state",
+            "isString": False,
+            "isStep": True,
+            "datapoints": [
+                {
+                    "timestamp": 1700000000000,
+                    "numericValue": 1,
+                    "stringValue": "ON",
+                    "status": {"code": 0, "symbol": "Good"},
+                }
+            ],
+        }
+
+    def test_load_state_values(self, state_resource: dict[str, Any]) -> None:
+        dp = LatestDatapoint._load(state_resource)
+        assert dp.has_datapoint
+        assert dp.numeric_state == 1
+        assert dp.string_state == "ON"
+        assert dp.status_symbol == "Good"
+
+    def test_value_raises_for_state_time_series(self, state_resource: dict[str, Any]) -> None:
+        dp = LatestDatapoint._load(state_resource)
+        with pytest.raises(ValueError, match=r"numeric_state.*string_state"):
+            dp.value
+
+    @pytest.mark.parametrize("has_datapoint", [True, False])
+    def test_has_datapoint_and_bool_are_unaffected_by_value_raising(
+        self, state_resource: dict[str, Any], has_datapoint: bool
+    ) -> None:
+        if not has_datapoint:
+            state_resource["datapoints"] = []
+        dp = LatestDatapoint._load(state_resource)
+
+        assert dp.has_datapoint is has_datapoint
+        assert bool(dp) is has_datapoint
+        with pytest.raises(ValueError):
+            dp.value
+
+    def test_is_state_property(self, state_resource: dict[str, Any]) -> None:
+        assert LatestDatapoint._load(state_resource).is_state is True
+
+        state_resource["type"] = "numeric"
+        assert LatestDatapoint._load(state_resource).is_state is False
+
+    def test_dump_state_values(self, state_resource: dict[str, Any]) -> None:
+        dp = LatestDatapoint._load(state_resource)
+        # The dump follows the API response format (numericValue/stringValue), so it round-trips through load:
+        assert dp.dump()["datapoints"] == [
+            {
+                "timestamp": 1700000000000,
+                "value": None,
+                "numericValue": 1,
+                "stringValue": "ON",
+                "status": {"code": 0, "symbol": "Good"},
+            }
+        ]
+        (dumped_dp,) = dp.dump(camel_case=False)["datapoints"]
+        assert dumped_dp["numeric_value"] == 1 and dumped_dp["string_value"] == "ON"
+
+        reloaded = LatestDatapoint._load(dp.dump())
+        assert reloaded.numeric_state == 1 and reloaded.string_state == "ON"
+        assert reloaded.dump() == dp.dump()
+
+    def test_load_bad_status_without_state_values(self, state_resource: dict[str, Any]) -> None:
+        state_resource["datapoints"] = [{"timestamp": 1, "status": {"code": 0x80000000, "symbol": "Bad"}}]
+        dp = LatestDatapoint._load(state_resource)
+        assert dp.numeric_state is None and dp.string_state is None
+        assert dp.status_symbol == "Bad"
+
+    def test_numeric_time_series_has_no_state_keys(self) -> None:
+        dp = LatestDatapoint._load(
+            {
+                "id": 1,
+                "type": "numeric",
+                "isString": False,
+                "isStep": False,
+                "datapoints": [{"timestamp": 1, "value": 2.0}],
+            }
+        )
+        with pytest.raises(ValueError, match="use 'value' instead"):
+            dp.numeric_state
+        with pytest.raises(ValueError, match="use 'value' instead"):
+            dp.string_state
+        assert dp.dump()["datapoints"] == [{"timestamp": 1, "value": 2.0}]
+
+    @pytest.mark.dsl
+    def test_to_pandas(self, state_resource: dict[str, Any]) -> None:
+        dp = LatestDatapoint._load(state_resource)
+        df = dp.to_pandas()
+        assert df.loc["numeric_state", "value"] == 1
+        assert df.loc["string_state", "value"] == "ON"
+
+        df_lst = LatestDatapointList([dp]).to_pandas()
+        assert df_lst["numeric_state"].tolist() == [1]
+        assert df_lst["string_state"].tolist() == ["ON"]
+        assert df_lst["value"].tolist() == [None]
+        assert df_lst["numeric_state"].dtype == "Int32"
+        assert df_lst["string_state"].dtype == "category"
+
+    @pytest.mark.dsl
+    def test_to_pandas_list_numeric_state_stays_int32_when_mixed_with_non_state(
+        self, state_resource: dict[str, Any]
+    ) -> None:
+        import pandas as pd
+
+        state_dp = LatestDatapoint._load(state_resource)
+        numeric_dp = LatestDatapoint._load(
+            {
+                "id": 1,
+                "type": "numeric",
+                "isString": False,
+                "isStep": False,
+                "datapoints": [{"timestamp": 1, "value": 2.0}],
+            }
+        )
+        no_dp = LatestDatapoint._load(
+            {"id": 2, "type": "numeric", "isString": False, "isStep": False, "datapoints": []}
+        )
+
+        df = LatestDatapointList([state_dp, numeric_dp, no_dp]).to_pandas()
+        assert df["numeric_state"].dtype == "Int32"
+        assert df["numeric_state"].tolist()[0] == 1
+        assert pd.isna(df["numeric_state"].tolist()[1]) and pd.isna(df["numeric_state"].tolist()[2])
+
+        assert df["string_state"].dtype == "category"
+        assert df["string_state"].tolist()[0] == "ON"
+        assert pd.isna(df["string_state"].tolist()[1]) and pd.isna(df["string_state"].tolist()[2])
+
+        # No state items at all -> neither column should even exist:
+        df_no_state = LatestDatapointList([numeric_dp, no_dp]).to_pandas()
+        assert "numeric_state" not in df_no_state.columns
+        assert "string_state" not in df_no_state.columns

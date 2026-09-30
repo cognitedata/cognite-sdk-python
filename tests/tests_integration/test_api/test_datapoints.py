@@ -3767,6 +3767,56 @@ class TestRetrieveLatestDatapointsAPI:
         with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"):
             cognite_client.time_series.data.retrieve_latest(instance_id=missing, ignore_unknown_ids=False)
 
+    @pytest.mark.usefixtures("use_beta_header_for_dps_client")
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    def test_retrieve_latest_state_time_series(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        space_for_time_series: Space,
+        state_set: NodeApplyResult,
+        request: pytest.FixtureRequest,
+    ) -> None:
+        xid = f"dms-state-retrieve-latest-{random_string(10)}"
+        node_id = NodeId(space_for_time_series.space, xid)
+        request.addfinalizer(lambda: cognite_client.data_modeling.instances.delete(node_id))
+        _create_state_time_series(
+            external_id=xid,
+            cognite_client=cognite_client,
+            async_client=async_client,
+            space_for_time_series=space_for_time_series,
+            state_set=state_set,
+        )
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=node_id,
+                datapoints=[
+                    StateDatapointWrite(1000, numeric_value=0),  # "idle"
+                    StateDatapointWrite(2000, numeric_value=1),  # "on"
+                ],
+            )
+        )
+        res = cognite_client.time_series.data.retrieve_latest(instance_id=node_id)
+        assert res is not None and res.has_datapoint
+        assert res.type == "state"
+        assert res.is_state is True
+        assert res.numeric_state == 1
+        assert res.string_state == "on"
+        # 'value' is never populated for state time series. Accessing it must raise rather than silently
+        # returning None (which would look identical to "no datapoint"/"missing value"):
+        with pytest.raises(ValueError, match=r"numeric_state.*string_state"):
+            res.value
+
+        # Same, but through the list-returning overload:
+        res_lst = cognite_client.time_series.data.retrieve_latest(instance_id=[node_id])
+        assert isinstance(res_lst, LatestDatapointList)
+        (res,) = res_lst
+        assert res.numeric_state == 1
+        assert res.string_state == "on"
+
 
 @pytest.mark.allow_no_semaphore(
     "Insert paths go through DatapointsAPI._insert_datapoints, which holds the semaphore via "

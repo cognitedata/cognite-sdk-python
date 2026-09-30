@@ -1943,6 +1943,7 @@ class LatestDatapoint(CogniteResource):
         id (int): Id of the time series the datapoint belongs to
         timestamp (datetime.datetime | None): The data timestamp. None if no datapoint exists.
         value (str | float | None): The data value. Can be string or numeric, or None if no datapoint exists or value is missing.
+            Raises a ``ValueError`` when accessed on a state time series, use ``numeric_state``/``string_state`` instead.
         is_string (bool): Whether the time series contains numerical or string data.
         type (Literal['numeric', 'string', 'state']): The type of the time series.
         before (datetime.datetime | None): The timestamp used as the 'before' parameter in the query that retrieved this datapoint.
@@ -1953,6 +1954,10 @@ class LatestDatapoint(CogniteResource):
         unit_external_id (str | None): The unit_external_id of the returned data points.
         status_code (int | None): The status code for the datapoint.
         status_symbol (str | None): The status symbol for the datapoint.
+        numeric_state (int | None): The numeric state value. Only returned for state time series. Raises a
+            ``ValueError`` when accessed on a non-state time series, use ``value`` instead.
+        string_state (str | None): The string state value. Only returned for state time series. Raises a
+            ``ValueError`` when accessed on a non-state time series, use ``value`` instead.
     """
 
     def __init__(
@@ -1970,6 +1975,8 @@ class LatestDatapoint(CogniteResource):
         unit_external_id: str | None = None,
         status_code: int | None = None,
         status_symbol: str | None = None,
+        numeric_state: int | None = None,
+        string_state: str | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -1981,9 +1988,46 @@ class LatestDatapoint(CogniteResource):
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.timestamp = timestamp
-        self.value = value
+        self._value = value
         self.status_code = status_code
         self.status_symbol = status_symbol
+        self._numeric_state = numeric_state
+        self._string_state = string_state
+
+    @property
+    def value(self) -> str | float | None:
+        """The datapoint value. Can be string or numeric.
+
+        Raises:
+            ValueError: If this datapoint belongs to a state time series.
+        """
+        if self.is_state:
+            raise ValueError(
+                "'value' is not populated for state time series, use 'numeric_state'/'string_state' instead"
+            )
+        return self._value
+
+    @property
+    def numeric_state(self) -> int | None:
+        """The numeric state value.
+
+        Raises:
+            ValueError: If this is not a state time series.
+        """
+        if not self.is_state:
+            raise ValueError("'numeric_state' is only populated for state time series, use 'value' instead")
+        return self._numeric_state
+
+    @property
+    def string_state(self) -> str | None:
+        """The string state value.
+
+        Raises:
+            ValueError: If this is not a state time series.
+        """
+        if not self.is_state:
+            raise ValueError("'string_state' is only populated for state time series, use 'value' instead")
+        return self._string_state
 
     def __str__(self) -> str:
         dumped = self.dump(camel_case=False)
@@ -2005,6 +2049,11 @@ class LatestDatapoint(CogniteResource):
     def has_datapoint(self) -> bool:
         """Whether a datapoint exists for this time series."""
         return bool(self)
+
+    @property
+    def is_state(self) -> bool:
+        """Whether this datapoint comes from a state time series."""
+        return self.type == "state"
 
     @property
     def timestamp_ms(self) -> int:
@@ -2043,7 +2092,12 @@ class LatestDatapoint(CogniteResource):
         if self.timestamp is None:
             dumped["datapoints"] = []
         else:
-            dp: dict[str, Any] = {"timestamp": datetime_to_ms(self.timestamp), "value": self.value}
+            dp: dict[str, Any] = {"timestamp": datetime_to_ms(self.timestamp), "value": self._value}
+            # Use the private fields directly to avoid raising for non-state time series:
+            if self._numeric_state is not None:
+                dp["numericValue" if camel_case else "numeric_value"] = self._numeric_state
+            if self._string_state is not None:
+                dp["stringValue" if camel_case else "string_value"] = self._string_state
             if self.status_code is not None:
                 dp["status"] = {"code": self.status_code, "symbol": self.status_symbol}
             dumped["datapoints"] = [dp]
@@ -2063,7 +2117,10 @@ class LatestDatapoint(CogniteResource):
         """
         pd = local_import("pandas")
         # Some of these may be None (and dump will remove them), but we want them always present:
-        dumped = {"value": self.value, "timestamp": self.timestamp, "before": self.before}
+        dumped = {"value": self._value, "timestamp": self.timestamp, "before": self.before}
+        if self.is_state:
+            dumped["numericState" if camel_case else "numeric_state"] = self.numeric_state
+            dumped["stringState" if camel_case else "string_state"] = self.string_state
         for k, v in self.dump(camel_case=camel_case).items():
             if k not in dumped:
                 dumped[k] = v
@@ -2073,6 +2130,7 @@ class LatestDatapoint(CogniteResource):
     def _load(cls, resource: dict[str, Any]) -> Self:
         status_code = None
         status_symbol = None
+        numeric_state = string_state = None
 
         match resource["datapoints"]:
             case []:
@@ -2081,6 +2139,9 @@ class LatestDatapoint(CogniteResource):
             case [dict() as dp]:
                 timestamp = ms_to_datetime(dp["timestamp"])
                 value = dp.get("value")
+                # State time series return the state instead of a value:
+                numeric_state = dp.get("numericValue")
+                string_state = dp.get("stringValue")
                 if status := dp.get("status"):
                     status_code = status.get("code")
                     status_symbol = status.get("symbol")
@@ -2103,6 +2164,8 @@ class LatestDatapoint(CogniteResource):
             unit_external_id=resource.get("unitExternalId"),
             status_code=status_code,
             status_symbol=status_symbol,
+            numeric_state=numeric_state,
+            string_state=string_state,
             before=before,
         )
 
@@ -2171,8 +2234,7 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
             include_status (bool): Include status_code and status_symbol columns if available. Default: True
 
         Returns:
-            pandas.DataFrame: A DataFrame with columns 'timestamp', 'value' (and optionally
-                'status_code', 'status_symbol') with time series identifiers as the index.
+            pandas.DataFrame: A DataFrame with time series identifiers as the index.
 
         Examples:
 
@@ -2198,10 +2260,13 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
                 index_values.append(item.id)
 
             row: dict[str, Any] = {
-                "value": item.value,
+                "value": item._value,
                 "timestamp": item.timestamp if item.timestamp is not None else pd.NaT,
                 "before": item.before,
             }
+            if item.is_state:
+                row["numeric_state"] = item.numeric_state
+                row["string_state"] = item.string_state
             if item.unit_external_id is not None:
                 row["unit_external_id"] = item.unit_external_id
             if include_status:
@@ -2211,6 +2276,11 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
 
         df = pd.DataFrame(rows, index=index_values)
         df.index.name = "identifier"
+
+        if "numeric_state" in df.columns:
+            df["numeric_state"] = df["numeric_state"].astype("Int32")
+        if "string_state" in df.columns:
+            df["string_state"] = pd.Categorical(df["string_state"], ordered=False)
 
         # Drop status columns if they are all null (empty lists have no such columns)
         if include_status and "status_code" in df.columns:

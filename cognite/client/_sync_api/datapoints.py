@@ -1237,6 +1237,11 @@ class SyncDatapointsAPI(SyncAPIClient):
         Returns:
             LatestDatapoint | LatestDatapointList | None: A LatestDatapoint object containing the latest datapoint (if it exists), or a LatestDatapointList if multiple time series were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
+        Note:
+            For state time series, the datapoint's value is given by ``numeric_state``/``string_state`` instead of
+            ``value``. Accessing ``value`` for a state time series will raise a ``ValueError`` (and oppositely for
+            regular time series). The ``is_state`` attribute can be used to easily distinguish time series types.
+
         Examples:
 
             Getting the latest datapoint in a time series:
@@ -1250,6 +1255,14 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ... )
                 >>> if res:  # Check if the datapoint exists
                 ...     print(res.timestamp, res.value)
+
+            For a state time series, read ``numeric_state``/``string_state`` instead of ``value``:
+
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     instance_id=NodeId("ts-space", "state-ts")
+                ... )
+                >>> if res.has_datapoint:
+                ...     print(res.timestamp, res.numeric_state, res.string_state)
 
             The timestamp is a timezone-aware ``datetime`` object (UTZ). If you instead prefer the timestamp in
             milliseconds since the epoch, you can use the ``timestamp_ms`` property:
@@ -1271,6 +1284,17 @@ class SyncDatapointsAPI(SyncAPIClient):
             You can also get the latest datapoint before a specific time in the future e.g. forecast data:
 
                 >>> res = client.time_series.data.retrieve_latest(external_id="foo", before="2d-ahead")
+
+            If you're querying a mix of regular and state time series, use ``is_state`` to know which field(s) to read:
+
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     instance_id=[NodeId("ts-space", "state-ts"), NodeId("ts-space", "regular-ts")],
+                ... )
+                >>> for dp in res:
+                ...     if dp.is_state:
+                ...         print(dp.numeric_state)
+                ...     else:
+                ...         print(dp.value)
 
             You can also retrieve the datapoint in a different unit or unit system:
 
