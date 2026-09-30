@@ -162,7 +162,7 @@ class TestSubscriptionDatapoints:
             dps.numeric_states
         with pytest.raises(ValueError, match="use 'value' instead"):
             dps.string_states
-        dp = list(dps)[0]  # dunder iter is implemented but not getitem
+        dp = next(iter(dps))  # dunder iter is implemented but not getitem
         assert (dp.timestamp, dp.value, dp.numeric_state) == (1000, 1.5, None)
 
     @pytest.mark.dsl

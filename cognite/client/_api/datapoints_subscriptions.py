@@ -324,9 +324,9 @@ class DatapointsSubscriptionAPI(APIClient):
                 ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
                 ...     # Changes to datapoints for time series in the subscription:
                 ...     for update in batch.updates:
-                ...         upserts.time_series  # The time series the update belongs to
-                ...         upserts.upserts  # The upserted datapoints, if any
-                ...         upserts.deletes  # Ranges of deleted periods, if any
+                ...         update.time_series  # The time series the update belongs to
+                ...         update.upserts  # The upserted datapoints, if any
+                ...         update.deletes  # Ranges of deleted periods, if any
                 ...     if not batch.has_next:
                 ...         break
 
@@ -340,7 +340,7 @@ class DatapointsSubscriptionAPI(APIClient):
             If the subscription covers a mix of regular and state time series, use ``is_state`` to know which
             field(s) to read:
 
-                >>> for update in batch.updates:
+                >>> for update in batch.updates:  # doctest: +SKIP
                 ...     upserts = update.upserts
                 ...     if upserts.is_state:
                 ...         dps = upserts.numeric_states  # or 'upserts.string_states'
