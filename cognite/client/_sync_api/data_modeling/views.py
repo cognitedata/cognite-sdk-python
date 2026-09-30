@@ -1,6 +1,5 @@
 """
 ===============================================================================
-3bc9158207c9de76263d0b73ec5bb228
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
@@ -22,9 +21,6 @@ from cognite.client.data_classes.data_modeling.views import (
     ViewUsedFor,
 )
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncViewsAPI(SyncAPIClient):
@@ -79,9 +75,7 @@ class SyncViewsAPI(SyncAPIClient):
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
-            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given
-                type(s). Passing "record" is an alpha feature, subject to breaking
-                changes without prior notice.
+            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given type(s).
 
         Yields:
             View | ViewList: yields View one by one if chunk_size is not specified, else ViewList objects.
@@ -168,9 +162,7 @@ class SyncViewsAPI(SyncAPIClient):
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
-            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given
-                type(s). Passing "record" is an alpha feature, subject to breaking
-                changes without prior notice.
+            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given type(s).
 
         Returns:
             ViewList: List of requested views
@@ -301,7 +293,7 @@ class SyncViewsAPI(SyncAPIClient):
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
 
-            Create a record-backed view (the stream must already exist). This is an `alpha feature <https://api-docs.cognite.com/20230101-alpha/tag/Views/operation/ApplyViews>`_, subject to breaking changes without prior notice:
+            Create a record-backed view (the stream must already exist).
 
                 >>> from cognite.client.data_classes.data_modeling import (
                 ...     ContainerId,

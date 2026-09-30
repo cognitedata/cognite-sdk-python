@@ -335,7 +335,7 @@ class RelationshipsAPI(APIClient):
             )
             for flt in filters
         ]
-        tasks_summary = await execute_async_tasks(tasks)
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks()
         return RelationshipList(tasks_summary.joined_results())
 

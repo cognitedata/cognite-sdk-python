@@ -45,12 +45,11 @@ class ViewsAPI(APIClient):
         self._RETRIEVE_LIMIT = 100
         self._CREATE_LIMIT = 100
         self._warn_on_record_views = FeaturePreviewWarning(
-            api_maturity="alpha", sdk_maturity="alpha", feature_name="Views for Records"
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Views for Records"
         )
 
-    def _record_views_alpha_headers(self) -> dict[str, str]:
+    def _record_views_alpha_warn(self) -> None:
         self._warn_on_record_views.warn()
-        return self._alpha_version_header()
 
     def _get_semaphore(self, operation: Literal["read_schema", "write_schema"]) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
@@ -105,15 +104,14 @@ class ViewsAPI(APIClient):
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
-            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given
-                type(s). Passing "record" is an alpha feature, subject to breaking
-                changes without prior notice.
+            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given type(s).
 
         Yields:
             View | ViewList: yields View one by one if chunk_size is not specified, else ViewList objects.
         """  # noqa: DOC404
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global, used_for)
-        headers = self._record_views_alpha_headers() if filter_.used_for and "record" in filter_.used_for else None
+        if filter_.used_for and "record" in filter_.used_for:
+            self._record_views_alpha_warn()
         async for item in self._list_generator(
             list_cls=ViewList,
             resource_cls=View,
@@ -121,7 +119,6 @@ class ViewsAPI(APIClient):
             chunk_size=chunk_size,
             limit=limit,
             filter=filter_.dump(camel_case=True),
-            headers=headers,
             semaphore=self._get_semaphore("read_schema"),
         ):
             yield item
@@ -216,9 +213,7 @@ class ViewsAPI(APIClient):
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
-            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given
-                type(s). Passing "record" is an alpha feature, subject to breaking
-                changes without prior notice.
+            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given type(s).
 
         Returns:
             ViewList: List of requested views
@@ -243,7 +238,8 @@ class ViewsAPI(APIClient):
                 ...     view_list  # do something with the views
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global, used_for)
-        headers = self._record_views_alpha_headers() if filter_.used_for and "record" in filter_.used_for else None
+        if filter_.used_for and "record" in filter_.used_for:
+            self._record_views_alpha_warn()
 
         return await self._list(
             list_cls=ViewList,
@@ -251,7 +247,6 @@ class ViewsAPI(APIClient):
             method="GET",
             limit=limit,
             filter=filter_.dump(camel_case=True),
-            headers=headers,
             override_semaphore=self._get_semaphore("read_schema"),
         )
 
@@ -350,7 +345,7 @@ class ViewsAPI(APIClient):
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
 
-            Create a record-backed view (the stream must already exist). This is an `alpha feature <https://api-docs.cognite.com/20230101-alpha/tag/Views/operation/ApplyViews>`_, subject to breaking changes without prior notice:
+            Create a record-backed view (the stream must already exist).
 
                 >>> from cognite.client.data_classes.data_modeling import (
                 ...     ContainerId,
@@ -372,12 +367,12 @@ class ViewsAPI(APIClient):
                 >>> res = client.data_modeling.views.apply(record_view)
         """
         views = [view] if isinstance(view, (ViewApply, RecordViewApply)) else list(view)
-        headers = self._record_views_alpha_headers() if any(isinstance(v, RecordViewApply) for v in views) else None
+        if any(isinstance(v, RecordViewApply) for v in views):
+            self._record_views_alpha_warn()
         return await self._create_multiple(
             list_cls=ViewList,
             resource_cls=View,
             items=view,
             input_resource_cls=_ViewOrRecordViewApplyAdapter,
-            headers=headers,
             override_semaphore=self._get_semaphore("write_schema"),
         )

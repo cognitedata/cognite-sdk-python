@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NoReturn, cast
 
-import httpx
+import httpx2
 from typing_extensions import Self
 
 from cognite.client._http_client import AsyncHTTPClientWithRetry, AsyncHTTPClientWithRetryConfig
@@ -24,7 +24,7 @@ from cognite.client.exceptions import (
 )
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import append_url_path, drop_none_values
-from cognite.client.utils._text import shorten
+from cognite.client.utils._redaction import redact, redact_headers, redact_response_body
 from cognite.client.utils._url import resolve_url
 
 if TYPE_CHECKING:
@@ -43,15 +43,15 @@ class FailedRequestHandler:
     missing: list[str] | None
     duplicated: list[str] | None
     x_request_id: str | None
-    headers: dict[str, str] | httpx.Headers
-    response_headers: dict[str, str] | httpx.Headers
+    headers: dict[str, str] | httpx2.Headers
+    response_headers: dict[str, str] | httpx2.Headers
     extra: dict[str, Any]
     cause: CogniteHTTPStatusError
     stream: bool
 
     def __post_init__(self) -> None:
-        self.headers = BasicAsyncAPIClient._sanitize_headers(self.headers)
-        self.response_headers = BasicAsyncAPIClient._sanitize_headers(self.response_headers)
+        self.headers = redact_headers(self.headers)
+        self.response_headers = redact_headers(self.response_headers)
 
     @classmethod
     async def from_status_error(cls, err: CogniteHTTPStatusError, stream: bool) -> Self:
@@ -90,22 +90,25 @@ class FailedRequestHandler:
         )
 
     def log_failed_request(self, payload: dict | None = None) -> None:
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
+
         response, request = self.cause.response, self.cause.request
         extra: dict[str, Any] = {
-            "payload": payload,
+            "payload": redact(payload),
             "missing": self.missing,
             "duplicated": self.duplicated,
             "headers": self.headers,
             "response-headers": self.response_headers,
         }
         if not self.stream:
-            extra["response-payload"] = shorten(response.text, 1_000)
+            extra["response-payload"] = redact_response_body(response.text, 1_000)
 
         if response.history:
             for res_hist in response.history:
                 logger.debug(
                     f"REDIRECT AFTER HTTP Error {res_hist.status_code} {res_hist.request.method} "
-                    f"{res_hist.request.url}: {res_hist.text}"
+                    f"{res_hist.request.url}: {redact_response_body(res_hist.text)}"
                 )
         logger.debug(
             f"HTTP Error {self.status_code} {request.method} {request.url}: {self.message}",
@@ -113,7 +116,7 @@ class FailedRequestHandler:
         )
 
     async def raise_api_error(self, cognite_client: AsyncCogniteClient) -> NoReturn:
-        cluster = cognite_client._config.cdf_cluster
+        cluster = cognite_client._config._attempt_to_get_cdf_cluster()
         project = cognite_client._config.project
 
         match self.status_code, self.duplicated, self.missing:
@@ -164,9 +167,9 @@ def get_user_agent() -> str:
     from cognite.client import __version__
 
     try:
-        from httpx._client import USER_AGENT
+        from httpx2._client import USER_AGENT
     except ImportError:
-        USER_AGENT = "python-httpx/<unknown>"
+        USER_AGENT = "python-httpx2/<unknown>"
 
     sdk_version = f"CognitePythonSDK/{__version__}"
     python_version = (
@@ -187,7 +190,7 @@ class BasicAsyncAPIClient:
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         self._config = config
         self._api_version = api_version
-        self._api_subversion = config.api_subversion
+        self.__api_subversion_override: str | None = None
         self._cognite_client = cognite_client
         self._init_async_http_clients()
 
@@ -207,6 +210,21 @@ class BasicAsyncAPIClient:
             refresh_auth_header=self._refresh_auth_header,
         )
 
+    @property
+    def _api_subversion(self) -> str:
+        """Get the API subversion to use for this API class.
+
+        Uses the API subversion from the ClientConfig, unless specifically overridden. To reset the override,
+        simply set `_api_subversion` to None.
+        """
+        if self.__api_subversion_override is None:
+            return self._config.api_subversion
+        return self.__api_subversion_override
+
+    @_api_subversion.setter
+    def _api_subversion(self, value: str | None) -> None:
+        self.__api_subversion_override = value
+
     def __getstate__(self) -> dict[str, Any]:
         """Prepare object for pickling by removing unpicklable async clients."""
         state = self.__dict__.copy()
@@ -222,10 +240,21 @@ class BasicAsyncAPIClient:
     def _select_async_http_client(self, is_retryable: bool) -> AsyncHTTPClientWithRetry:
         return self._http_client_with_retry if is_retryable else self._http_client
 
+    def _maturity_version_header(self, maturity: Literal["alpha", "beta"]) -> dict[str, str]:
+        sub = self._api_subversion
+        if maturity in sub:
+            return {"cdf-version": sub}
+        elif sub.isdecimal():  # default is something like "20230101" (see __api_subversion__ in _version.py)
+            return {"cdf-version": f"{sub}-{maturity}"}
+        else:
+            # Maybe the user has set a different maturity or something else, whatever the case, we just return `maturity`:
+            return {"cdf-version": maturity}
+
     def _alpha_version_header(self) -> dict[str, str]:
-        subversion = self._config.api_subversion
-        version = subversion if "alpha" in subversion else subversion + "-alpha"
-        return {"cdf-version": version}
+        return self._maturity_version_header("alpha")
+
+    def _beta_version_header(self) -> dict[str, str]:
+        return self._maturity_version_header("beta")
 
     @property
     def _base_url_with_base_path(self) -> str:
@@ -369,7 +398,7 @@ class BasicAsyncAPIClient:
         is_retryable, full_url = resolve_url(self, "POST", url_path)
         full_headers = self._configure_headers(additional_headers=headers, api_subversion=api_subversion)
         if content is None:
-            # We want to control json dumping, so we pass it along to httpx.Client.post as 'content'
+            # We want to control json dumping, so we pass it along to httpx2.Client.post as 'content'
             content = self._handle_json_dump(json, full_headers)
 
         http_client = self._select_async_http_client(is_retryable)
@@ -432,7 +461,7 @@ class BasicAsyncAPIClient:
     ) -> dict[str, str]:
         from cognite.client import __version__
 
-        # We use latin-1 to mimic requests' behavior and avoid UnicodeEncodeError; httpx flat out
+        # We use latin-1 to mimic requests' behavior and avoid UnicodeEncodeError; httpx2 flat out
         # refuses non-ascii (which is correct per RFC 7230). We cast because the rest of the code
         # base expects str, not bytes, but bytes is perfectly fine
         client_name = cast(str, self._config.client_name.encode("latin-1"))
@@ -464,13 +493,16 @@ class BasicAsyncAPIClient:
     def _log_successful_request(
         self, res: CogniteHTTPResponse, payload: dict[str, Any] | None = None, stream: bool = False
     ) -> None:
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
+
         extra: dict[str, Any] = {
-            "headers": self._sanitize_headers(res.request.headers),
-            "payload": payload,
-            "response-headers": dict(res.headers),
+            "headers": redact_headers(res.request.headers),
+            "payload": redact(payload),
+            "response-headers": redact_headers(res.headers),
         }
         if not stream and self._config.debug:
-            extra["response-payload"] = shorten(res.text, 1_000)
+            extra["response-payload"] = redact_response_body(res.text, 1_000)
 
         logger.debug(
             f"{res.http_version} {res.request.method} {res.url} {res.status_code}",
@@ -488,11 +520,3 @@ class BasicAsyncAPIClient:
 
         full_headers["Content-Encoding"] = "gzip"
         return gzip.compress(content.encode())
-
-    @staticmethod
-    def _sanitize_headers(headers: httpx.Headers | dict[str, str]) -> dict[str, str]:
-        sanitized = dict(headers)
-        for k in sanitized.keys():
-            if k.lower() in {"authorization", "proxy-authorization"}:
-                sanitized[k] = "***"
-        return sanitized

@@ -1,6 +1,5 @@
 """
 ===============================================================================
-372c2b6a9ad523f8aa3ad87a5c9a49a7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
@@ -27,11 +26,6 @@ from cognite.client.data_classes.data_modeling.records import (
 )
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
-_FILTER_MAX_LIMIT = 1000
 
 
 class SyncRecordsAPI(SyncAPIClient):

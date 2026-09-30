@@ -3,6 +3,7 @@ from __future__ import annotations
 import contextlib
 import datetime
 import json
+import math
 from abc import abstractmethod
 from collections import ChainMap, defaultdict
 from collections.abc import Iterator, MutableSequence, Sequence
@@ -68,6 +69,7 @@ if TYPE_CHECKING:
 
     NumpyDatetime64NSArray: TypeAlias = npt.NDArray[np.datetime64]
     NumpyUInt32Array: TypeAlias = npt.NDArray[np.uint32]
+    NumpyInt32Array: TypeAlias = npt.NDArray[np.int32]
     NumpyInt64Array: TypeAlias = npt.NDArray[np.int64]
     NumpyFloat64Array: TypeAlias = npt.NDArray[np.float64]
     NumpyObjArray: TypeAlias = npt.NDArray[np.object_]
@@ -77,8 +79,9 @@ _T_DPS = TypeVar("_T_DPS", "Datapoints", "DatapointsArray")
 
 
 def numpy_dtype_fix(
-    element: np.float64 | str | MaxOrMinDatapoint, camel_case: bool = False
-) -> float | str | dict[str, int | float | str]:
+    element: np.float64 | str | MaxOrMinDatapoint | list[_BaseStateOnlyAggregate] | None,
+    camel_case: bool = False,
+) -> float | str | dict[str, int | float | str] | list[dict[str, Any]] | None:
     try:
         # Using .item() on numpy scalars gives us vanilla python types:
         return element.item()  # type: ignore [union-attr]
@@ -88,6 +91,13 @@ def numpy_dtype_fix(
             return element
         elif isinstance(element, MaxOrMinDatapoint):
             return element.dump(camel_case=camel_case)
+        elif isinstance(element, list):
+            # State-only aggregates holds a list of objs -per- row:
+            return [val.dump(camel_case=camel_case) for val in element]
+        elif element is None:
+            # State dps (string version) holds None whenever the state no longer exists in the StateSet
+            # mapping (ie. this is expected also outside of the "missing-due-to-bad-status" scenario):
+            return None
         raise
 
 
@@ -339,6 +349,97 @@ def _max_dp_class(dct: dict[str, Any]) -> type[MaxDatapoint | MaxDatapointWithSt
     return MaxDatapointWithStatus if "statusCode" in dct else MaxDatapoint
 
 
+@dataclass(slots=True, frozen=True)
+class _BaseStateOnlyAggregate:
+    numeric_value: int
+    string_value: str | None
+
+    _agg_name: ClassVar[Literal["state_count", "state_transitions", "state_duration"]]
+    _agg_name_camel_case: ClassVar[Literal["stateCount", "stateTransitions", "stateDuration"]]
+
+    @classmethod
+    def _load(cls, dct: dict[str, Any]) -> Self:
+        return cls(
+            numeric_value=dct["numericValue"],
+            string_value=dct.get("stringValue"),
+            **{cls._agg_name: dct[cls._agg_name_camel_case]},
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        dumped: dict[str, Any] = {
+            "numericValue" if camel_case else "numeric_value": self.numeric_value,
+            self._agg_name_camel_case if camel_case else self._agg_name: getattr(self, self._agg_name),
+        }
+        if self.string_value is not None:
+            dumped["stringValue" if camel_case else "string_value"] = self.string_value
+        return dumped
+
+
+@dataclass(slots=True, frozen=True)
+class StateCount(_BaseStateOnlyAggregate):
+    """One distinct state's raw datapoint count within a single aggregate interval, for a state time series.
+
+    Args:
+        numeric_value (int): The numeric value identifying the state.
+        string_value (str | None): The string value identifying the state, may be None if the state set no longer contains it.
+        state_count (int): The number of raw datapoints with this state, in the aggregate interval.
+    """
+
+    state_count: int
+
+    _agg_name = "state_count"
+    _agg_name_camel_case = "stateCount"
+
+
+@dataclass(slots=True, frozen=True)
+class StateTransition(_BaseStateOnlyAggregate):
+    """One distinct state's transition count within a single aggregate interval, for a state time series.
+
+    Args:
+        numeric_value (int): The numeric value identifying the state.
+        string_value (str | None): The string value identifying the state, may be None if the state set no longer contains it.
+        state_transitions (int): The number of times a raw datapoint transitioned into this state, in the aggregate interval.
+    """
+
+    state_transitions: int
+
+    _agg_name = "state_transitions"
+    _agg_name_camel_case = "stateTransitions"
+
+
+@dataclass(slots=True, frozen=True)
+class StateDuration(_BaseStateOnlyAggregate):
+    """One distinct state's active duration within a single aggregate interval, for a state time series.
+
+    Args:
+        numeric_value (int): The numeric value identifying the state.
+        string_value (str | None): The string value identifying the state, may be None if the state set no longer contains it.
+        state_duration (int): The duration this state was active, in the aggregate interval, measured in milliseconds.
+    """
+
+    state_duration: int
+
+    _agg_name = "state_duration"
+    _agg_name_camel_case = "stateDuration"
+
+
+_STATE_ONLY_AGG_CLS_LOOKUP: dict[str, type[StateCount] | type[StateTransition] | type[StateDuration]] = {
+    "stateCount": StateCount,
+    "stateTransitions": StateTransition,
+    "stateDuration": StateDuration,
+}
+
+_T_StateOnlyAggregate = TypeVar("_T_StateOnlyAggregate", bound=_BaseStateOnlyAggregate)
+
+
+def _load_state_only_aggregate_entries(
+    state_cls: type[_T_StateOnlyAggregate], values: list[dict[str, Any] | _T_StateOnlyAggregate] | None
+) -> list[_T_StateOnlyAggregate] | None:
+    if values is None:
+        return None
+    return [val if isinstance(val, state_cls) else state_cls._load(val) for val in values]  # type: ignore [arg-type]
+
+
 @dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
@@ -562,12 +663,17 @@ class LatestDatapointQuery:
         return self._identifier  # type: ignore [attr-defined]
 
 
+# TODO: Absolutely need a refactor/split in v9. Now represent a simple raw datapoint, state datapoint
+#       and aggregate datapoints (yes multiple)
+#       Should probably just be removed. Iterating over Datapoints should not be a thing.
 class Datapoint(CogniteResource):
     """An object representing a datapoint.
 
     Args:
         timestamp (int): The data timestamp in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
         value (str | float | None): The raw data value. Can be string or numeric.
+        numeric_state (int | None): The numeric state value. Only returned for state time series.
+        string_state (str | None): The string state value. Only returned for state time series.
         average (float | None): The time-weighted average value in the aggregate interval.
         max (float | None): The maximum value in the aggregate interval.
         max_datapoint (MaxDatapoint | MaxDatapointWithStatus | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
@@ -586,6 +692,9 @@ class Datapoint(CogniteResource):
         duration_bad (int | None): The duration the aggregate is defined and marked as bad (measured in milliseconds).
         duration_good (int | None): The duration the aggregate is defined and marked as good (measured in milliseconds).
         duration_uncertain (int | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
+        state_count (list[StateCount] | None): Per-distinct-state breakdown of the number of raw datapoints with that state, in the aggregate interval. Only returned for state time series.
+        state_transitions (list[StateTransition] | None): Per-distinct-state breakdown of the number of times a raw datapoint transitioned into that state, in the aggregate interval. Only returned for state time series.
+        state_duration (list[StateDuration] | None): Per-distinct-state breakdown of the duration that state was active, in the aggregate interval. Only returned for state time series.
         status_code (int | None): The status code for the raw datapoint.
         status_symbol (str | None): The status symbol for the raw datapoint.
         timezone (datetime.timezone | ZoneInfo | None): The timezone to use when displaying the datapoint.
@@ -595,6 +704,8 @@ class Datapoint(CogniteResource):
         self,
         timestamp: int,
         value: str | float | None = None,
+        numeric_state: int | None = None,
+        string_state: str | None = None,
         average: float | None = None,
         max: float | None = None,
         max_datapoint: MaxDatapoint | MaxDatapointWithStatus | None = None,
@@ -613,12 +724,17 @@ class Datapoint(CogniteResource):
         duration_bad: int | None = None,
         duration_good: int | None = None,
         duration_uncertain: int | None = None,
+        state_count: list[StateCount] | None = None,
+        state_transitions: list[StateTransition] | None = None,
+        state_duration: list[StateDuration] | None = None,
         status_code: int | None = None,
         status_symbol: str | None = None,
         timezone: datetime.timezone | ZoneInfo | None = None,
     ) -> None:
         self.timestamp = timestamp
         self.value = value
+        self.numeric_state = numeric_state
+        self.string_state = string_state
         self.average = average
         self.max = max
         self.max_datapoint = max_datapoint
@@ -637,6 +753,9 @@ class Datapoint(CogniteResource):
         self.duration_bad = duration_bad
         self.duration_good = duration_good
         self.duration_uncertain = duration_uncertain
+        self.state_count = state_count
+        self.state_transitions = state_transitions
+        self.state_duration = state_duration
         self.status_code = status_code
         self.status_symbol = status_symbol
         self.timezone = timezone
@@ -646,11 +765,17 @@ class Datapoint(CogniteResource):
         item["timestamp"] = convert_and_isoformat_timestamp(self.timestamp, self.timezone)
         return _json.dumps(item, indent=4)
 
-    def to_pandas(self, camel_case: bool = False) -> pandas.DataFrame:  # type: ignore[override]
+    def to_pandas(  # type: ignore[override]
+        self, camel_case: bool = False, expand_state_aggregates: bool = True
+    ) -> pandas.DataFrame:
         """Convert the datapoint into a pandas DataFrame.
 
         Args:
             camel_case (bool): Convert column names to camel case (e.g. `stepInterpolation` instead of `step_interpolation`)
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate
+                DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/
+                ``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct
+                state present per granularity interval. Defaults to True.
 
         Returns:
             pandas.DataFrame: The DataFrame representation of the datapoint.
@@ -661,6 +786,18 @@ class Datapoint(CogniteResource):
         for key in iterable_to_case(["min_datapoint", "max_datapoint"], camel_case):
             if dp := dumped.get(key):
                 dumped[key] = [dp]  # make pandas treat this dict as a scalar value
+
+        for attr in ("state_count", "state_transitions", "state_duration"):
+            key = to_camel_case(attr) if camel_case else attr
+            if not (entries := getattr(self, attr)):
+                continue
+            dumped.pop(key, None)
+            if expand_state_aggregates:
+                for entry in sorted(entries, key=lambda e: e.numeric_value):
+                    state_key = (key, entry.numeric_value, entry.string_value or "")
+                    dumped[state_key] = getattr(entry, entry._agg_name)  # type: ignore [index]
+            else:
+                dumped[key] = [entries]  # make pandas treat this list as a scalar value
 
         timestamp = dumped.pop("timestamp")
         tz = convert_tz_for_pandas(self.timezone)
@@ -695,6 +832,8 @@ class Datapoint(CogniteResource):
         return cls(
             timestamp=resource["timestamp"],
             value=resource.get("value"),
+            numeric_state=resource.get("numericState"),
+            string_state=resource.get("stringState"),
             average=resource.get("average"),
             max=resource.get("max"),
             max_datapoint=max_datapoint,
@@ -713,6 +852,9 @@ class Datapoint(CogniteResource):
             duration_bad=resource.get("durationBad"),
             duration_good=resource.get("durationGood"),
             duration_uncertain=resource.get("durationUncertain"),
+            state_count=_load_state_only_aggregate_entries(StateCount, resource.get("stateCount")),
+            state_transitions=_load_state_only_aggregate_entries(StateTransition, resource.get("stateTransitions")),
+            state_duration=_load_state_only_aggregate_entries(StateDuration, resource.get("stateDuration")),
             status_code=resource.get("statusCode"),
             status_symbol=resource.get("statusSymbol"),
             timezone=timezone,
@@ -726,6 +868,12 @@ class Datapoint(CogniteResource):
             dumped["maxDatapoint" if camel_case else "max_datapoint"] = self.max_datapoint.dump(camel_case)
         if self.min_datapoint:
             dumped["minDatapoint" if camel_case else "min_datapoint"] = self.min_datapoint.dump(camel_case)
+        for attr, key in zip(
+            ("state_count", "state_transitions", "state_duration"),
+            ("stateCount", "stateTransitions", "stateDuration"),
+        ):
+            if values := getattr(self, attr):
+                dumped[key if camel_case else attr] = [e.dump(camel_case) for e in values]
         if include_timezone:
             if self.timezone is not None:
                 dumped["timezone"] = convert_timezone_to_str(self.timezone)
@@ -750,6 +898,8 @@ class DatapointsArray(CogniteResource):
         granularity: str | None = None,
         timestamp: NumpyDatetime64NSArray | None = None,
         value: NumpyFloat64Array | NumpyObjArray | None = None,
+        numeric_states: NumpyInt32Array | NumpyFloat64Array | None = None,
+        string_states: NumpyObjArray | None = None,
         average: NumpyFloat64Array | None = None,
         max: NumpyFloat64Array | None = None,
         max_datapoint: NumpyObjArray | None = None,
@@ -768,6 +918,9 @@ class DatapointsArray(CogniteResource):
         duration_bad: NumpyInt64Array | None = None,
         duration_good: NumpyInt64Array | None = None,
         duration_uncertain: NumpyInt64Array | None = None,
+        state_count: NumpyObjArray | None = None,
+        state_transitions: NumpyObjArray | None = None,
+        state_duration: NumpyObjArray | None = None,
         status_code: NumpyUInt32Array | None = None,
         status_symbol: NumpyObjArray | None = None,
         null_timestamps: set[int] | None = None,
@@ -786,6 +939,8 @@ class DatapointsArray(CogniteResource):
             timestamp if timestamp is not None else np.array([], dtype="datetime64[ns]")
         )
         self.value = value
+        self.numeric_states = numeric_states
+        self.string_states = string_states
         self.average = average
         self.max = max
         self.max_datapoint = max_datapoint
@@ -804,6 +959,9 @@ class DatapointsArray(CogniteResource):
         self.duration_bad = duration_bad
         self.duration_good = duration_good
         self.duration_uncertain = duration_uncertain
+        self.state_count = state_count
+        self.state_transitions = state_transitions
+        self.state_duration = state_duration
         self.status_code = status_code
         self.status_symbol = status_symbol
         self.null_timestamps = null_timestamps
@@ -845,7 +1003,12 @@ class DatapointsArray(CogniteResource):
             for row in dps_dct["datapoints"]:
                 for attr, value in row.items():
                     datapoints_by_attr[attr].append(value)
+
+            # Pop away special attributes that need separate handling:
             status = datapoints_by_attr.pop("status", None)
+            numeric_state = datapoints_by_attr.pop("numericState", None)
+            string_state = datapoints_by_attr.pop("stringState", None)
+
             for attr, values in datapoints_by_attr.items():
                 if attr == "timestamp":
                     array_by_attr[attr] = np.array(values, dtype="datetime64[ms]").astype("datetime64[ns]")
@@ -856,9 +1019,18 @@ class DatapointsArray(CogniteResource):
                         array_by_attr[attr] = np.array(values, dtype=np.float64)
                     except ValueError:
                         array_by_attr[attr] = np.array(values, dtype=np.object_)
+
             if status is not None:
                 array_by_attr["statusCode"] = np.array([s["code"] for s in status], dtype=np.uint32)
                 array_by_attr["statusSymbol"] = np.array([s["symbol"] for s in status], dtype=np.object_)
+
+            if numeric_state is not None:
+                num_arr = np.array(numeric_state, dtype=np.float64)
+                if not np.isnan(num_arr).any():
+                    array_by_attr["numericStates"] = num_arr.astype(np.int32)
+
+            if string_state is not None:
+                array_by_attr["stringStates"] = np.array(string_state, dtype=np.object_)
 
         timezone = dps_dct.get("timezone")
         if isinstance(timezone, str):
@@ -876,6 +1048,8 @@ class DatapointsArray(CogniteResource):
             unit_external_id=dps_dct.get("unitExternalId"),
             timestamp=array_by_attr.get("timestamp"),
             value=array_by_attr.get("value"),
+            numeric_states=array_by_attr.get("numericStates"),
+            string_states=array_by_attr.get("stringStates"),
             average=array_by_attr.get("average"),
             max=array_by_attr.get("max"),
             min=array_by_attr.get("min"),
@@ -892,6 +1066,9 @@ class DatapointsArray(CogniteResource):
             duration_bad=array_by_attr.get("durationBad"),
             duration_good=array_by_attr.get("durationGood"),
             duration_uncertain=array_by_attr.get("durationUncertain"),
+            state_count=array_by_attr.get("stateCount"),
+            state_transitions=array_by_attr.get("stateTransitions"),
+            state_duration=array_by_attr.get("stateDuration"),
             status_code=array_by_attr.get("statusCode"),
             status_symbol=array_by_attr.get("statusSymbol"),
             null_timestamps=set(dps_dct["nullTimestamps"]) if "nullTimestamps" in dps_dct else None,
@@ -918,16 +1095,25 @@ class DatapointsArray(CogniteResource):
     def __getitem__(self, item: int | slice) -> Datapoint | DatapointsArray:
         if isinstance(item, slice):
             return self._slice(item)
+
         attrs, arrays = self._data_fields()
         timestamp = arrays[0][item].item() // 1_000_000
-        data: dict[str, float | str | dict | None] = {
+        data: dict[str, float | str | dict | list | None] = {
             attr: numpy_dtype_fix(arr[item]) for attr, arr in zip(attrs[1:], arrays[1:])
         }
-        for key in ("min_datapoint", "max_datapoint"):
+        for key in ("min_datapoint", "max_datapoint", "state_count", "state_transitions", "state_duration"):
             if key in data:
                 data[key] = getattr(self, key)[item]
+        for key in ("numeric_states", "string_states"):
+            if key in data:
+                data[key[:-1]] = data.pop(key)  # quick way to get non-plural version of the key
+        if isinstance(val := data.get("numeric_state"), float):
+            # Map floats back to int, but convert NaN to None:
+            data["numeric_state"] = None if math.isnan(val) else int(val)
+
         if self.status_code is not None:
             data.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
+
         if self.null_timestamps and timestamp in self.null_timestamps:
             data["value"] = None
         return Datapoint(timestamp=timestamp, **data, timezone=self.timezone)  # type: ignore [arg-type]
@@ -951,12 +1137,18 @@ class DatapointsArray(CogniteResource):
         )
 
     def _data_fields(self) -> tuple[list[str], list[npt.NDArray]]:
-        # Note: Does not return status-related fields
-        data_field_tuples = [
-            (attr, arr)
-            for attr in ("timestamp", "value", *ALL_SORTED_DP_AGGS)  # ts must be first
-            if (arr := getattr(self, attr)) is not None
-        ]
+        # Note: Does not return status-related fields. ts must be first:
+        fields = (
+            "timestamp",
+            "value",
+            "numeric_states",
+            "string_states",
+            *ALL_SORTED_DP_AGGS,
+            "state_count",
+            "state_transitions",
+            "state_duration",
+        )
+        data_field_tuples = [(attr, arr) for attr in fields if (arr := getattr(self, attr)) is not None]
         attrs, arrays = map(list, zip(*data_field_tuples))
         return attrs, arrays
 
@@ -999,6 +1191,25 @@ class DatapointsArray(CogniteResource):
         convert_fn = partial(numpy_dtype_fix, camel_case=camel_case)
         datapoints = [dict(zip(attrs, map(convert_fn, row))) for row in zip(*arrays)]
 
+        if self.numeric_states is not None:
+            num_key = "numericState" if camel_case else "numeric_state"
+            plural_num_key = f"{num_key}s"
+            if self.numeric_states.dtype == np.float64:
+                # As numpy int arrays can't represent NaN, float64 is used when we need to accommodate for missing
+                # values. Thus, we need to convert both back to int and convert NaN to None:
+                for dp in datapoints:
+                    val = dp.pop(plural_num_key)
+                    dp[num_key] = None if math.isnan(val) else int(val)  # type: ignore [arg-type]
+            else:
+                for dp in datapoints:
+                    dp[num_key] = dp.pop(plural_num_key)
+
+        if self.string_states is not None:
+            str_key = "stringState" if camel_case else "string_state"
+            plural_str_key = f"{str_key}s"
+            for dp in datapoints:
+                dp[str_key] = dp.pop(plural_str_key)
+
         if self.status_code is not None or self.status_symbol is not None:
             if (
                 self.status_code is None
@@ -1014,7 +1225,7 @@ class DatapointsArray(CogniteResource):
         if self.null_timestamps:
             for dp in datapoints:
                 if dp["timestamp"] in self.null_timestamps:  # ...luckily, we know :3
-                    dp["value"] = None  # type: ignore [assignment]
+                    dp["value"] = None
         dumped["datapoints"] = datapoints
 
         if camel_case:
@@ -1027,6 +1238,9 @@ class DatapointsArray(CogniteResource):
         include_granularity_name: bool = False,
         include_unit: bool = True,
         include_status: bool = True,
+        include_numeric_states: bool = True,
+        include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArray into a pandas DataFrame.
 
@@ -1036,6 +1250,9 @@ class DatapointsArray(CogniteResource):
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
                 as a separate level in the columns (MultiIndex).
+            include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
+            include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
@@ -1048,6 +1265,9 @@ class DatapointsArray(CogniteResource):
             include_granularity_name=include_granularity_name,
             include_status=include_status,
             include_unit=include_unit,
+            include_numeric_states=include_numeric_states,
+            include_string_states=include_string_states,
+            expand_state_aggregates=expand_state_aggregates,
         )
 
 
@@ -1066,6 +1286,8 @@ class Datapoints(CogniteResource):
         granularity (str | None): The granularity of the aggregate datapoints (does not apply to raw data)
         timestamp (list[int] | None): The data timestamps in milliseconds since the epoch (Jan 1, 1970). Can be negative to define a date before 1970. Minimum timestamp is 1900.01.01 00:00:00 UTC
         value (list[str] | list[float] | None): The raw data values. Can be string or numeric.
+        numeric_states (list[int] | None): The numeric state values. Only returned for state time series.
+        string_states (list[str | None] | None): The string state values. Only returned for state time series.
         average (list[float] | None): The time-weighted average values per aggregate interval.
         max (list[float] | None): The maximum values per aggregate interval.
         max_datapoint (list[MaxDatapoint] | list[MaxDatapointWithStatus] | None): Objects with the maximum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
@@ -1084,6 +1306,9 @@ class Datapoints(CogniteResource):
         duration_bad (list[int] | None): The duration the aggregate is defined and marked as bad (measured in milliseconds).
         duration_good (list[int] | None): The duration the aggregate is defined and marked as good (measured in milliseconds).
         duration_uncertain (list[int] | None): The duration the aggregate is defined and marked as uncertain (measured in milliseconds).
+        state_count (list[list[StateCount]] | None): Per-distinct-state breakdown of the number of raw datapoints with that state, per aggregate interval. Only returned for state time series.
+        state_transitions (list[list[StateTransition]] | None): Per-distinct-state breakdown of the number of times a raw datapoint transitioned into that state, per aggregate interval. Only returned for state time series.
+        state_duration (list[list[StateDuration]] | None): Per-distinct-state breakdown of the duration that state was active, per aggregate interval. Only returned for state time series.
         status_code (list[int] | None): The status codes for the raw datapoints.
         status_symbol (list[str] | None): The status symbols for the raw datapoints.
         timezone (datetime.timezone | ZoneInfo | None): The timezone to use when displaying the datapoints.
@@ -1102,6 +1327,8 @@ class Datapoints(CogniteResource):
         granularity: str | None = None,
         timestamp: list[int] | None = None,
         value: list[str] | list[float] | None = None,
+        numeric_states: list[int] | None = None,
+        string_states: list[str | None] | None = None,
         average: list[float] | None = None,
         max: list[float] | None = None,
         max_datapoint: list[MaxDatapoint] | list[MaxDatapointWithStatus] | None = None,
@@ -1120,6 +1347,9 @@ class Datapoints(CogniteResource):
         duration_bad: list[int] | None = None,
         duration_good: list[int] | None = None,
         duration_uncertain: list[int] | None = None,
+        state_count: list[list[StateCount]] | None = None,
+        state_transitions: list[list[StateTransition]] | None = None,
+        state_duration: list[list[StateDuration]] | None = None,
         status_code: list[int] | None = None,
         status_symbol: list[str] | None = None,
         timezone: datetime.timezone | ZoneInfo | None = None,
@@ -1135,6 +1365,8 @@ class Datapoints(CogniteResource):
         self.granularity = granularity
         self.timestamp: list[int] = timestamp or []
         self.value = value
+        self.numeric_states = numeric_states
+        self.string_states = string_states
         self.average = average
         self.max = max
         self.max_datapoint = max_datapoint
@@ -1153,6 +1385,9 @@ class Datapoints(CogniteResource):
         self.duration_bad = duration_bad
         self.duration_good = duration_good
         self.duration_uncertain = duration_uncertain
+        self.state_count = state_count
+        self.state_transitions = state_transitions
+        self.state_duration = state_duration
         self.status_code = status_code
         self.status_symbol = status_symbol
         self.timezone = timezone
@@ -1188,6 +1423,9 @@ class Datapoints(CogniteResource):
         dp_args: dict[str, Any] = {"timezone": self.timezone}
         for attr, values in self._get_non_empty_data_fields():
             dp_args[attr] = values[item]
+        for key in ("numeric_states", "string_states"):
+            if key in dp_args:
+                dp_args[key[:-1]] = dp_args.pop(key)  # quick way to get non-plural version of the key
 
         if self.status_code is not None:
             dp_args.update(status_code=self.status_code[item], status_symbol=self.status_symbol[item])  # type: ignore [index]
@@ -1241,6 +1479,9 @@ class Datapoints(CogniteResource):
         include_granularity_name: bool = False,
         include_unit: bool = True,
         include_status: bool = True,
+        include_numeric_states: bool = True,
+        include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints into a pandas DataFrame.
 
@@ -1250,6 +1491,9 @@ class Datapoints(CogniteResource):
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
                 as a separate level in the columns (MultiIndex).
+            include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
+            include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pandas.DataFrame: The dataframe.
@@ -1262,6 +1506,9 @@ class Datapoints(CogniteResource):
             include_granularity_name=include_granularity_name,
             include_status=include_status,
             include_unit=include_unit,
+            include_numeric_states=include_numeric_states,
+            include_string_states=include_string_states,
+            expand_state_aggregates=expand_state_aggregates,
         )
 
     @classmethod
@@ -1297,6 +1544,9 @@ class Datapoints(CogniteResource):
             data_lists["minDatapoint"] = list(map(_min_dp_class(min_dp[0])._load, min_dp))
         if max_dp := data_lists.get("maxDatapoint"):
             data_lists["maxDatapoint"] = list(map(_max_dp_class(max_dp[0])._load, max_dp))
+        for key, state_cls in _STATE_ONLY_AGG_CLS_LOOKUP.items():
+            if raw_state_entries := data_lists.get(key):
+                data_lists[key] = [[state_cls._load(e) for e in values] for values in raw_state_entries]
 
         for key, data in data_lists.items():
             snake_key = to_snake_case(key)
@@ -1338,6 +1588,9 @@ class Datapoints(CogniteResource):
             dp_args: dict[str, Any] = {"timezone": self.timezone}
             for attr, value in fields:
                 dp_args[to_camel_case(attr)] = value[i]
+            for key in ("numericStates", "stringStates"):
+                if key in dp_args:
+                    dp_args[key[:-1]] = dp_args.pop(key)  # get non-plural version of the key
             if self.status_code is not None:
                 dp_args.update(
                     statusCode=self.status_code[i],
@@ -1556,6 +1809,9 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
         include_granularity_name: bool = False,
         include_unit: bool = True,
         include_status: bool = True,
+        include_numeric_states: bool = True,
+        include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pandas.DataFrame:
         """Convert the DatapointsArrayList into a pandas DataFrame.
 
@@ -1565,6 +1821,9 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
                 as a separate level in the columns (MultiIndex).
+            include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
+            include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pandas.DataFrame: The datapoints as a pandas DataFrame.
@@ -1575,6 +1834,9 @@ class DatapointsArrayList(CogniteResourceListWithClientRef[DatapointsArray]):
             include_granularity_name=include_granularity_name,
             include_status=include_status,
             include_unit=include_unit,
+            include_numeric_states=include_numeric_states,
+            include_string_states=include_string_states,
+            expand_state_aggregates=expand_state_aggregates,
         )
 
     def dump(self, camel_case: bool = True, convert_timestamps: bool = False) -> list[dict[str, Any]]:
@@ -1640,6 +1902,9 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
         include_granularity_name: bool = False,
         include_unit: bool = True,
         include_status: bool = True,
+        include_numeric_states: bool = True,
+        include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pandas.DataFrame:
         """Convert the datapoints list into a pandas DataFrame.
 
@@ -1649,6 +1914,9 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_status (bool): Include status code and status symbol as separate columns, if available. Also adds the status info
                 as a separate level in the columns (MultiIndex).
+            include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
+            include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pandas.DataFrame: The datapoints list as a pandas DataFrame.
@@ -1659,6 +1927,9 @@ class DatapointsList(CogniteResourceListWithClientRef[Datapoints]):
             include_granularity_name=include_granularity_name,
             include_status=include_status,
             include_unit=include_unit,
+            include_numeric_states=include_numeric_states,
+            include_string_states=include_string_states,
+            expand_state_aggregates=expand_state_aggregates,
         )
 
 
@@ -1672,6 +1943,7 @@ class LatestDatapoint(CogniteResource):
         id (int): Id of the time series the datapoint belongs to
         timestamp (datetime.datetime | None): The data timestamp. None if no datapoint exists.
         value (str | float | None): The data value. Can be string or numeric, or None if no datapoint exists or value is missing.
+            Raises a ``ValueError`` when accessed on a state time series, use ``numeric_state``/``string_state`` instead.
         is_string (bool): Whether the time series contains numerical or string data.
         type (Literal['numeric', 'string', 'state']): The type of the time series.
         before (datetime.datetime | None): The timestamp used as the 'before' parameter in the query that retrieved this datapoint.
@@ -1682,6 +1954,10 @@ class LatestDatapoint(CogniteResource):
         unit_external_id (str | None): The unit_external_id of the returned data points.
         status_code (int | None): The status code for the datapoint.
         status_symbol (str | None): The status symbol for the datapoint.
+        numeric_state (int | None): The numeric state value. Only returned for state time series. Raises a
+            ``ValueError`` when accessed on a non-state time series, use ``value`` instead.
+        string_state (str | None): The string state value. Only returned for state time series. Raises a
+            ``ValueError`` when accessed on a non-state time series, use ``value`` instead.
     """
 
     def __init__(
@@ -1699,6 +1975,8 @@ class LatestDatapoint(CogniteResource):
         unit_external_id: str | None = None,
         status_code: int | None = None,
         status_symbol: str | None = None,
+        numeric_state: int | None = None,
+        string_state: str | None = None,
     ) -> None:
         self.id = id
         self.external_id = external_id
@@ -1710,9 +1988,46 @@ class LatestDatapoint(CogniteResource):
         self.unit = unit
         self.unit_external_id = unit_external_id
         self.timestamp = timestamp
-        self.value = value
+        self._value = value
         self.status_code = status_code
         self.status_symbol = status_symbol
+        self._numeric_state = numeric_state
+        self._string_state = string_state
+
+    @property
+    def value(self) -> str | float | None:
+        """The datapoint value. Can be string or numeric.
+
+        Raises:
+            ValueError: If this datapoint belongs to a state time series.
+        """
+        if self.is_state:
+            raise ValueError(
+                "'value' is not populated for state time series, use 'numeric_state'/'string_state' instead"
+            )
+        return self._value
+
+    @property
+    def numeric_state(self) -> int | None:
+        """The numeric state value.
+
+        Raises:
+            ValueError: If this is not a state time series.
+        """
+        if not self.is_state:
+            raise ValueError("'numeric_state' is only populated for state time series, use 'value' instead")
+        return self._numeric_state
+
+    @property
+    def string_state(self) -> str | None:
+        """The string state value.
+
+        Raises:
+            ValueError: If this is not a state time series.
+        """
+        if not self.is_state:
+            raise ValueError("'string_state' is only populated for state time series, use 'value' instead")
+        return self._string_state
 
     def __str__(self) -> str:
         dumped = self.dump(camel_case=False)
@@ -1734,6 +2049,22 @@ class LatestDatapoint(CogniteResource):
     def has_datapoint(self) -> bool:
         """Whether a datapoint exists for this time series."""
         return bool(self)
+
+    @property
+    def is_state(self) -> bool:
+        """Whether this datapoint comes from a state time series."""
+        return self.type == "state"
+
+    @property
+    def timestamp_ms(self) -> int:
+        """The data timestamp in milliseconds since the epoch (Jan 1, 1970).
+
+        Raises:
+            ValueError: If no datapoint exists, i.e. ``dp.has_datapoint`` is False.
+        """
+        if self.timestamp is None:
+            raise ValueError("No datapoint exists, so timestamp_ms is not available")
+        return datetime_to_ms(self.timestamp)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the latest datapoint into a json serializable Python data type.
@@ -1761,7 +2092,12 @@ class LatestDatapoint(CogniteResource):
         if self.timestamp is None:
             dumped["datapoints"] = []
         else:
-            dp: dict[str, Any] = {"timestamp": datetime_to_ms(self.timestamp), "value": self.value}
+            dp: dict[str, Any] = {"timestamp": datetime_to_ms(self.timestamp), "value": self._value}
+            # Use the private fields directly to avoid raising for non-state time series:
+            if self._numeric_state is not None:
+                dp["numericValue" if camel_case else "numeric_value"] = self._numeric_state
+            if self._string_state is not None:
+                dp["stringValue" if camel_case else "string_value"] = self._string_state
             if self.status_code is not None:
                 dp["status"] = {"code": self.status_code, "symbol": self.status_symbol}
             dumped["datapoints"] = [dp]
@@ -1781,7 +2117,10 @@ class LatestDatapoint(CogniteResource):
         """
         pd = local_import("pandas")
         # Some of these may be None (and dump will remove them), but we want them always present:
-        dumped = {"value": self.value, "timestamp": self.timestamp, "before": self.before}
+        dumped = {"value": self._value, "timestamp": self.timestamp, "before": self.before}
+        if self.is_state:
+            dumped["numericState" if camel_case else "numeric_state"] = self.numeric_state
+            dumped["stringState" if camel_case else "string_state"] = self.string_state
         for k, v in self.dump(camel_case=camel_case).items():
             if k not in dumped:
                 dumped[k] = v
@@ -1791,6 +2130,7 @@ class LatestDatapoint(CogniteResource):
     def _load(cls, resource: dict[str, Any]) -> Self:
         status_code = None
         status_symbol = None
+        numeric_state = string_state = None
 
         match resource["datapoints"]:
             case []:
@@ -1799,6 +2139,9 @@ class LatestDatapoint(CogniteResource):
             case [dict() as dp]:
                 timestamp = ms_to_datetime(dp["timestamp"])
                 value = dp.get("value")
+                # State time series return the state instead of a value:
+                numeric_state = dp.get("numericValue")
+                string_state = dp.get("stringValue")
                 if status := dp.get("status"):
                     status_code = status.get("code")
                     status_symbol = status.get("symbol")
@@ -1821,6 +2164,8 @@ class LatestDatapoint(CogniteResource):
             unit_external_id=resource.get("unitExternalId"),
             status_code=status_code,
             status_symbol=status_symbol,
+            numeric_state=numeric_state,
+            string_state=string_state,
             before=before,
         )
 
@@ -1889,8 +2234,7 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
             include_status (bool): Include status_code and status_symbol columns if available. Default: True
 
         Returns:
-            pandas.DataFrame: A DataFrame with columns 'timestamp', 'value' (and optionally
-                'status_code', 'status_symbol') with time series identifiers as the index.
+            pandas.DataFrame: A DataFrame with time series identifiers as the index.
 
         Examples:
 
@@ -1916,10 +2260,13 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
                 index_values.append(item.id)
 
             row: dict[str, Any] = {
-                "value": item.value,
+                "value": item._value,
                 "timestamp": item.timestamp if item.timestamp is not None else pd.NaT,
                 "before": item.before,
             }
+            if item.is_state:
+                row["numeric_state"] = item.numeric_state
+                row["string_state"] = item.string_state
             if item.unit_external_id is not None:
                 row["unit_external_id"] = item.unit_external_id
             if include_status:
@@ -1929,6 +2276,11 @@ class LatestDatapointList(CogniteResourceListWithClientRef[LatestDatapoint], IdT
 
         df = pd.DataFrame(rows, index=index_values)
         df.index.name = "identifier"
+
+        if "numeric_state" in df.columns:
+            df["numeric_state"] = df["numeric_state"].astype("Int32")
+        if "string_state" in df.columns:
+            df["string_state"] = pd.Categorical(df["string_state"], ordered=False)
 
         # Drop status columns if they are all null (empty lists have no such columns)
         if include_status and "status_code" in df.columns:

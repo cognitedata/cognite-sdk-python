@@ -931,8 +931,11 @@ class AssetsAPI(APIClient):
     async def _get_children(self, assets: list) -> list:
         ids = [a.id for a in assets]
         tasks = [AsyncSDKTask(self.list, parent_ids=chunk, limit=-1) for chunk in split_into_chunks(ids, 100)]
-        tasks_summary = await execute_async_tasks(tasks)
-        tasks_summary.raise_compound_exception_if_failed_tasks()
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
+        tasks_summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task["parent_ids"],
+            task_list_element_unwrap_fn=lambda id_: id_,
+        )
         return list(itertools.chain.from_iterable(tasks_summary.results))
 
     @staticmethod
@@ -1388,7 +1391,7 @@ class _AssetHierarchyCreator:
                 message=f"{err_message} {self.latest_exception.message}",
                 x_request_id=self.latest_exception.x_request_id,
                 code=self.latest_exception.code,
-                cluster=self.assets_api._config.cdf_cluster,
+                cluster=self.assets_api._config._attempt_to_get_cdf_cluster(),
                 project=self.assets_api._config.project,
                 extra=self.latest_exception.extra,
                 successful=successful,

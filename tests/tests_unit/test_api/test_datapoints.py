@@ -10,19 +10,26 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
-from random import randint, random, shuffle
+from random import choice, randint, random, shuffle
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from httpx import Response
-from pytest_httpx import HTTPXMock
+from httpx2 import Response
+from pytest_httpx2 import HTTPXMock
 
 import cognite.client._api.datapoints_io as dps_io  # for mocking
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.datapoints_io import _InsertDatapoint
-from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
+from cognite.client._api.datapoints_io import StateDatapointsPoster, _InsertDatapoint
+from cognite.client.data_classes import (
+    Datapoint,
+    Datapoints,
+    DatapointsList,
+    LatestDatapointQuery,
+    StateDatapointsInsert,
+    StateDatapointWrite,
+)
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import LatestDatapoint, LatestDatapointList
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
@@ -34,7 +41,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def mock_retrieve_latest(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> Iterator[HTTPXMock]:
+def mock_retrieve_latest(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> Iterator[HTTPXMock]:
     def request_callback(request: Any) -> Response:
         payload = jsgz_load(request.content)
 
@@ -55,18 +62,18 @@ def mock_retrieve_latest(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
             )
         return Response(200, headers={}, json={"items": items})
 
-    httpx_mock.add_callback(
+    httpx2_mock.add_callback(
         request_callback,
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         match_headers={"content-type": "application/json"},
     )
-    yield httpx_mock
+    yield httpx2_mock
 
 
 @pytest.fixture
-def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_retrieve_latest_empty(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=200,
@@ -77,12 +84,12 @@ def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, async_client: AsyncCognite
             ]
         },
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_retrieve_latest_with_failure(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=200,
@@ -93,13 +100,13 @@ def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, async_client: Async
             ]
         },
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=500,
         json={"error": {"code": 500, "message": "Internal Server Error"}},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class TestGetLatest:
@@ -121,6 +128,7 @@ class TestGetLatest:
         res = cognite_client.time_series.data.retrieve_latest(id=1, before=10)
         assert isinstance(res, LatestDatapoint)
         assert 9 == datetime_to_ms(get_or_raise(res.timestamp))
+        assert 9 == res.timestamp_ms
         assert isinstance(res.value, float)
 
     def test_retrieve_latest_multiple_ts_with_before(
@@ -136,6 +144,8 @@ class TestGetLatest:
         res = cognite_client.time_series.data.retrieve_latest(id=1)
         assert isinstance(res, LatestDatapoint)
         assert not res.has_datapoint
+        with pytest.raises(ValueError, match="No datapoint exists"):
+            res.timestamp_ms
 
     def test_retrieve_latest_multiple_ts_empty(
         self, cognite_client: CogniteClient, mock_retrieve_latest_empty: HTTPXMock
@@ -210,26 +220,26 @@ class TestGetLatest:
 
 
 @pytest.fixture
-def mock_post_datapoints(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_post_datapoints(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data"),
         status_code=200,
         json={},
         is_reusable=True,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_post_datapoints_400(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_post_datapoints_400(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data"),
         status_code=400,
         json={"error": {"message": "Ts not found", "missing": [{"externalId": "does_not_exist"}]}},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.mark.allow_no_semaphore(
@@ -489,15 +499,15 @@ class TestFetchAllDoesNotLeakTaskExceptions:
 
 @pytest.fixture
 def mock_delete_datapoints(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data) + "/timeseries/data/delete",
         status_code=200,
         json={},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class TestDeleteDatapoints:
@@ -1234,3 +1244,125 @@ class TestDatapointsPoster:
             assert 0 < n_dps <= dps_limit
             assert 0 < len(call) <= ts_limit
         assert expected_n_dps == tot_n_dps
+
+
+def create_state_dps_poster(dps_limit: int, ts_limit: int) -> StateDatapointsPoster:
+    # In these unit tests, we don't need the actual DatapointsAPI instance, we just need the
+    # two limit attributes to be set:
+    return StateDatapointsPoster(
+        dps_client=SimpleNamespace(_DPS_INSERT_LIMIT=dps_limit, _POST_DPS_OBJECTS_LIMIT=ts_limit),  # type: ignore [arg-type]
+    )
+
+
+def create_state_dps_insert_items(*args: tuple[Any, list[int]]) -> list[StateDatapointsInsert]:
+    def maybe_dict_maybe_dataclass(ts: int) -> dict[str, int] | StateDatapointWrite:
+        if choice((True, False)):
+            return {"timestamp": ts, "numeric_value": randint(-2, 2)}
+        return StateDatapointWrite(ts, numeric_value=randint(-2, 2))
+
+    return [
+        StateDatapointsInsert(
+            instance_id=instance_id,
+            datapoints=[maybe_dict_maybe_dataclass(ts) for ts in dps],
+        )
+        for instance_id, dps in args
+    ]
+
+
+class TestStateDatapointsPoster:
+    def test_chunks_single_ts_within_dps_limit(self) -> None:
+        poster = create_state_dps_poster(dps_limit=10, ts_limit=100)
+        items = create_state_dps_insert_items((NodeId("sp", "a"), list(range(5))))
+        chunks = tuple(poster._create_payload_chunks(items))  # consume entire iterator
+        assert len(chunks) == 1
+        assert len(chunks[0][0].datapoints) == 5
+
+    def test_chunks_single_ts_split_across_dps_limit(self) -> None:
+        poster = create_state_dps_poster(dps_limit=3, ts_limit=100)
+        items = create_state_dps_insert_items((NodeId("sp", "a"), list(range(7))))
+        chunks = tuple(poster._create_payload_chunks(items))
+        assert len(chunks) == 3
+        assert [len(c[0].datapoints) for c in chunks] == [3, 3, 1]
+
+    def test_chunks_respects_ts_limit(self) -> None:
+        poster = create_state_dps_poster(dps_limit=100, ts_limit=2)
+        items = create_state_dps_insert_items(
+            (NodeId("sp", "a"), [1]),
+            (NodeId("sp", "b"), [2]),
+            (NodeId("sp", "c"), [3]),
+        )
+        chunks = tuple(poster._create_payload_chunks(items))
+        assert len(chunks) == 2
+        assert len(chunks[0]) == 2
+        assert len(chunks[1]) == 1
+
+    def test_chunks_both_limits_interact(self) -> None:
+        poster = create_state_dps_poster(dps_limit=4, ts_limit=2)
+        items = create_state_dps_insert_items(
+            (NodeId("sp", "A"), [1]),
+            (NodeId("sp", "B"), [2, 3]),
+            (NodeId("sp", "C"), [4, 5, 6, 7, 8]),
+        )
+        chunks = tuple(poster._create_payload_chunks(items))
+        assert len(chunks) == 3
+        c1, c2, c3 = chunks
+        assert (len(c1), len(c2), len(c3)) == (2, 1, 1)
+
+        # We expect first chunk to be from A and B (hits ts-limit)
+        # Second chunk to be from C (hits dps-limit)
+        # Third chunk to be from C (last remaining dps)
+        timestamps = [
+            [
+                dp.timestamp if isinstance(dp, StateDatapointWrite) else dp["timestamp"]
+                for insert in chunk
+                for dp in insert.datapoints
+            ]
+            for chunk in chunks
+        ]
+        assert timestamps == [[1, 2, 3], [4, 5, 6, 7], [8]]
+
+        assert c1[0].instance_id == NodeId("sp", "A")
+        assert c1[1].instance_id == NodeId("sp", "B")
+        assert c2[0].instance_id == NodeId("sp", "C")
+        assert c3[0].instance_id == NodeId("sp", "C")
+
+    def test_chunks_empty_items_produce_no_chunks(self) -> None:
+        poster = create_state_dps_poster(dps_limit=10, ts_limit=10)
+        assert tuple(poster._create_payload_chunks([])) == ()
+
+    @pytest.mark.parametrize(
+        "id_a, id_b, exp_a, exp_b",
+        [
+            (NodeId("sp", "a"), NodeId("sp", "b"), 2, 1),
+            (("sp", "a"), ("sp", "b"), 2, 1),
+            (NodeId("sp", "a"), ("sp", "b"), 2, 1),  # mixed forms, distinct nodes
+            (("sp", "x"), NodeId("sp", "x"), 3, 3),  # same node expressed as tuple vs NodeId
+        ],
+    )
+    def test_insert_merges_duplicate_instance_ids(self, id_a: Any, id_b: Any, exp_a: int, exp_b: int) -> None:
+        items = [
+            StateDatapointsInsert(id_a, [StateDatapointWrite(1000, numeric_value=0)]),
+            StateDatapointsInsert(id_b, [StateDatapointWrite(2000, numeric_value=1)]),
+            StateDatapointsInsert(id_a, [StateDatapointWrite(3000, numeric_value=2)]),
+        ]
+        result_iter = StateDatapointsPoster._merge_duplicates(items)
+        assert result_iter is not None
+
+        result = tuple(result_iter)
+        assert all(isinstance(i.instance_id, NodeId) for i in result)
+
+        id_a_node, id_b_node = NodeId.load(id_a), NodeId.load(id_b)
+        a_items = [i for i in result if NodeId.load(i.instance_id) == id_a_node]
+        b_items = [i for i in result if NodeId.load(i.instance_id) == id_b_node]
+        assert sum(len(i.datapoints) for i in a_items) == exp_a
+        assert sum(len(i.datapoints) for i in b_items) == exp_b
+
+        # datapoints per node should keep insertion order:
+        a_ts = [dp.timestamp for i in a_items for dp in i.datapoints]  # type: ignore [union-attr]
+        b_ts = [dp.timestamp for i in b_items for dp in i.datapoints]  # type: ignore [union-attr]
+        assert a_ts == sorted(a_ts)
+        assert b_ts == sorted(b_ts)
+
+    def test_insert_all_empty_is_noop(self) -> None:
+        items = [StateDatapointsInsert(NodeId("sp", "ts"), [])]
+        assert StateDatapointsPoster._merge_duplicates(items) is None

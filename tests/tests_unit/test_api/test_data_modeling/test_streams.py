@@ -4,7 +4,7 @@ import re
 from collections.abc import Callable
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_modeling.streams import (
@@ -56,11 +56,11 @@ class TestStreamsAPI:
     def test_list_parses_items(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         streams_base_url: str,
         stream_list_response: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET", url=re.compile(re.escape(streams_base_url) + r"(?:\?.+)?$"), json=stream_list_response
         )
         out = cognite_client.data_modeling.streams.list()
@@ -70,28 +70,28 @@ class TestStreamsAPI:
     def test_retrieve_include_statistics_query(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         streams_base_url: str,
         stream_response: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=re.compile(re.escape(streams_base_url) + r"/st1(?:\?.+)?$"),
             json=stream_response,
         )
         cognite_client.data_modeling.streams.retrieve("st1", include_statistics=True)
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 1
         assert requests[0].url.params["includeStatistics"].lower() == "true"
 
     def test_create_posts_single_item(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         streams_base_url: str,
         stream_list_response: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=re.compile(re.escape(streams_base_url) + r"$"), json=stream_list_response
         )
         w = StreamWrite(
@@ -99,7 +99,7 @@ class TestStreamsAPI:
             StreamWriteSettings(StreamTemplate("ImmutableTestStream")),
         )
         out = cognite_client.data_modeling.streams.create(w)
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert isinstance(out, Stream)
         assert len(requests) == 1
         assert requests[0].url.path.endswith("/streams")
@@ -110,18 +110,18 @@ class TestStreamsAPI:
     def test_create_chunks_multiple_items(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         streams_base_url: str,
         make_stream_response: Callable[..., dict],
     ) -> None:
         url_pattern = re.compile(re.escape(streams_base_url) + r"$")
-        httpx_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("a", 1)]})
-        httpx_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("b", 2)]})
+        httpx2_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("a", 1)]})
+        httpx2_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("b", 2)]})
         tpl = StreamWriteSettings(StreamTemplate("ImmutableTestStream"))
         a = StreamWrite("a", tpl)
         b = StreamWrite("b", tpl)
         out = cognite_client.data_modeling.streams.create([a, b])
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert isinstance(out, StreamList)
         assert [stream.external_id for stream in out] == ["a", "b"]
         assert len(requests) == 2
@@ -133,14 +133,14 @@ class TestStreamsAPI:
     def test_delete_chunks_multiple_items(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         streams_base_url: str,
     ) -> None:
         url_pattern = re.compile(re.escape(streams_base_url) + r"/delete$")
-        httpx_mock.add_response(method="POST", url=url_pattern, json={})
-        httpx_mock.add_response(method="POST", url=url_pattern, json={})
+        httpx2_mock.add_response(method="POST", url=url_pattern, json={})
+        httpx2_mock.add_response(method="POST", url=url_pattern, json={})
         cognite_client.data_modeling.streams.delete(["a", "b"])
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 2
         assert [jsgz_load(request.content) for request in requests] == [
             {"items": [{"externalId": "a"}]},

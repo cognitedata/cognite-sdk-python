@@ -1,6 +1,5 @@
 """
 ===============================================================================
-23e1e7b4a53a2cb0c687b3069a3683c7
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Literal, overload
+from typing import Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -23,9 +22,6 @@ from cognite.client.data_classes.hosted_extractors.jobs import (
 )
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncJobsAPI(SyncAPIClient):

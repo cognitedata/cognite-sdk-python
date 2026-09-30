@@ -1,6 +1,5 @@
 """
 ===============================================================================
-499679e86fb6bf2bf4d45ca784b2a86c
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -9,11 +8,10 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 from zoneinfo import ZoneInfo
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.datapoint_tasks import BaseDpsFetchSubtask
 from cognite.client._constants import DEFAULT_DATAPOINTS_CHUNK_SIZE
 from cognite.client._sync_api.synthetic_time_series import SyncSyntheticDatapointsAPI
 from cognite.client._sync_api_client import SyncAPIClient
@@ -26,6 +24,7 @@ from cognite.client.data_classes import (
     LatestDatapoint,
     LatestDatapointList,
     LatestDatapointQuery,
+    StateDatapointsInsert,
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import Aggregate
@@ -34,9 +33,6 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import pandas as pd
-
-PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
-_T = TypeVar("_T")
 
 
 class SyncDatapointsAPI(SyncAPIClient):
@@ -903,6 +899,9 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_unit: bool = True,
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_numeric_states: bool = True,
+        include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pd.DataFrame:
         """
         Get datapoints directly in a pandas dataframe.
@@ -934,6 +933,9 @@ class SyncDatapointsAPI(SyncAPIClient):
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
             include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
+            include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids, and lastly instance_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
@@ -1021,6 +1023,9 @@ class SyncDatapointsAPI(SyncAPIClient):
                 include_unit=include_unit,
                 include_aggregate_name=include_aggregate_name,
                 include_granularity_name=include_granularity_name,
+                include_numeric_states=include_numeric_states,
+                include_string_states=include_string_states,
+                expand_state_aggregates=expand_state_aggregates,
             )
         )
 
@@ -1232,6 +1237,11 @@ class SyncDatapointsAPI(SyncAPIClient):
         Returns:
             LatestDatapoint | LatestDatapointList | None: A LatestDatapoint object containing the latest datapoint (if it exists), or a LatestDatapointList if multiple time series were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
+        Note:
+            For state time series, the datapoint's value is given by ``numeric_state``/``string_state`` instead of
+            ``value``. Accessing ``value`` for a state time series will raise a ``ValueError`` (and oppositely for
+            regular time series). The ``is_state`` attribute can be used to easily distinguish time series types.
+
         Examples:
 
             Getting the latest datapoint in a time series:
@@ -1243,31 +1253,63 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> res = client.time_series.data.retrieve_latest(
                 ...     instance_id=NodeId("my-space", "my-ts-xid")
                 ... )
-                >>> if res:  # Check if datapoint exists
+                >>> if res:  # Check if the datapoint exists
                 ...     print(res.timestamp, res.value)
 
-            You can also use id or external_id; single identifier or list of identifiers:
+            For a state time series, read ``numeric_state``/``string_state`` instead of ``value``:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, external_id=["foo", "bar"])
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     instance_id=NodeId("ts-space", "state-ts")
+                ... )
+                >>> if res.has_datapoint:
+                ...     print(res.timestamp, res.numeric_state, res.string_state)
+
+            The timestamp is a timezone-aware ``datetime`` object (UTZ). If you instead prefer the timestamp in
+            milliseconds since the epoch, you can use the ``timestamp_ms`` property:
+
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo")
+                >>> if res.has_datapoint:
+                ...     print(res.timestamp_ms, res.value)
+
+            You can also use id, external_id or instance_id; single identifier or list of identifiers:
+
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     id=1, external_id=["foo", "bar"], instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
 
             You can also get the latest datapoint before a specific time:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo", before="2d-ago")
 
             You can also get the latest datapoint before a specific time in the future e.g. forecast data:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ahead")
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo", before="2d-ahead")
+
+            If you're querying a mix of regular and state time series, use ``is_state`` to know which field(s) to read:
+
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     instance_id=[NodeId("ts-space", "state-ts"), NodeId("ts-space", "regular-ts")],
+                ... )
+                >>> for dp in res:
+                ...     if dp.is_state:
+                ...         print(dp.numeric_state)
+                ...     else:
+                ...         print(dp.value)
 
             You can also retrieve the datapoint in a different unit or unit system:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     external_id="foo", target_unit="temperature:deg_f"
+                ... )
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     external_id="foo", target_unit_system="Imperial"
+                ... )
 
             You may also pass an instance of LatestDatapointQuery:
 
                 >>> from cognite.client.data_classes import LatestDatapointQuery
                 >>> res = client.time_series.data.retrieve_latest(
-                ...     id=LatestDatapointQuery(id=1, before=60_000)
+                ...     id=LatestDatapointQuery(external_id="foo", before=60_000)
                 ... )
 
             If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are
@@ -1354,6 +1396,8 @@ class SyncDatapointsAPI(SyncAPIClient):
 
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
+
+            State time series are not supported by this method; use :meth:`insert_states` instead.
 
         Examples:
 
@@ -1447,6 +1491,8 @@ class SyncDatapointsAPI(SyncAPIClient):
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
 
+            State time series are not supported by this method; use :meth:`insert_states` instead.
+
         Examples:
 
             Your datapoints can be a list of dictionaries, each containing datapoints for a different (presumably) time series. These dictionaries
@@ -1522,6 +1568,100 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> client.time_series.data.insert_multiple(to_insert)
         """
         return run_sync(self.__async_client.time_series.data.insert_multiple(datapoints=datapoints))
+
+    def insert_states(self, items: StateDatapointsInsert | Sequence[StateDatapointsInsert]) -> None:
+        """
+        Insert datapoints into one or more state time series.
+
+        State time series are a specialized time series type designed for tracking discrete operational
+        states of industrial equipment. Unlike numeric or string time series, they have a predefined set
+        of valid states and support specialized aggregations optimized for analyzing state changes over
+        time. Each state is a ``(numericValue, stringValue)`` pair, e.g. ``(1, "on")`` or ``(0, "off")``,
+        and the set of valid pairs for a given time series is defined by its associated state set.
+
+        Each datapoint may carry a numeric value, a string value, or both (they must be consistent
+        with the time series' state set). It may also carry only a status code/symbol, e.g. to mark a
+        period as ``Bad``.
+
+        Warning:
+            State time series are in `public preview <https://docs.cognite.com/cdf/product_feature_status#public-preview>`_.
+
+        Args:
+            items (StateDatapointsInsert | Sequence[StateDatapointsInsert]): One ``StateDatapointsInsert`` per target state time series. Each carries the ``instance_id`` and the datapoints to write.
+
+        Examples:
+
+            Insert state datapoints into a state time series, by using the numeric state values:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes import (
+                ...     StateDatapointsInsert,
+                ...     StateDatapointWrite,
+                ...     StatusCode,
+                ... )
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> from datetime import datetime
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>>
+                >>> to_insert = StateDatapointsInsert(
+                ...     instance_id=NodeId("my-space", "first-state-ts"),
+                ...     datapoints=[
+                ...         StateDatapointWrite(1700000000000, -1),
+                ...         StateDatapointWrite(1700000001000, 13),
+                ...     ],
+                ... )
+                >>> client.time_series.data.insert_states(to_insert)
+
+            To insert into multiple state time series, simply pass a list of ``StateDatapointsInsert`` objects:
+
+                >>> second_insert = StateDatapointsInsert(
+                ...     instance_id=("my-space", "second-state-ts"),  # tuple form is accepted
+                ...     datapoints=[
+                ...         StateDatapointWrite(datetime(2018, 7, 2), 42),
+                ...         StateDatapointWrite(datetime(2018, 7, 8), 0),
+                ...     ],
+                ... )
+                >>> client.time_series.data.insert_states([to_insert, second_insert])
+
+            The datapoints to insert can also be given by the string state value (or a matching combination).
+            Status codes can also be specified:
+
+                >>> datapoints = [
+                ...     StateDatapointWrite(11, numeric_value=0),
+                ...     StateDatapointWrite(12, string_value="OFF"),
+                ...     StateDatapointWrite(13, numeric_value=0, string_value="OFF"),
+                ...     StateDatapointWrite(14, 1, status_code=StatusCode.Good),
+                ...     StateDatapointWrite(15, string_value="OFF", status_symbol=StatusCode.Uncertain),
+                ...     # Datapoints marked bad can have no numeric/string value:
+                ...     StateDatapointWrite(16, status_code=StatusCode.Bad),
+                ... ]
+
+            Datapoints can also be given as dicts, matching the API's JSON shape (both snake_case and camelCase
+            accepted). Note that status codes/symbols must be given as a nested ``status`` sub-dict:
+
+                >>> client.time_series.data.insert_states(
+                ...     [
+                ...         StateDatapointsInsert(
+                ...             instance_id=NodeId("my-space", "my-state-ts"),
+                ...             datapoints=[
+                ...                 {
+                ...                     "timestamp": 1700000000000,
+                ...                     "numeric_value": 0,
+                ...                     "string_value": "off",
+                ...                 },
+                ...                 {
+                ...                     "timestamp": 1700000001000,
+                ...                     "numeric_value": 1,
+                ...                     "string_value": "on",
+                ...                 },
+                ...                 {"timestamp": 1700000002000, "status": {"symbol": "Bad"}},
+                ...             ],
+                ...         )
+                ...     ]
+                ... )
+        """
+        return run_sync(self.__async_client.time_series.data.insert_states(items=items))
 
     def delete_range(
         self,

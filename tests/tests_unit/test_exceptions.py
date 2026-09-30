@@ -3,21 +3,21 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import get_url
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
-def mock_get_400_error(httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> None:
-    httpx_mock.add_response(
+def mock_get_400_error(httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient) -> None:
+    httpx2_mock.add_response(
         method="GET",
         url=get_url(async_client.assets, "/any"),
         status_code=400,

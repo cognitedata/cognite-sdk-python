@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from httpx import Request as HttpxRequest
+from httpx2 import Request as HttpxRequest
 
 from cognite.client._constants import _RUNNING_IN_PYODIDE
 from cognite.client.utils import _json_extended as _json
@@ -117,7 +117,7 @@ class CogniteHTTPStatusError(CogniteRequestError):
 
     @staticmethod
     def get_error_type(status_code: int) -> str:
-        # Shamelessly stolen from httpx (we don't use their message directly as it is way too long)
+        # Shamelessly stolen from httpx2 (we don't use their message directly as it is way too long)
         return {
             1: "Informational response",
             3: "Redirect response",

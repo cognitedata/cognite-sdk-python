@@ -35,6 +35,7 @@ from cognite.client.utils._pandas_helpers import (
     base_resource_to_pandas_fallback,
     squeeze_single_row_list_df,
 )
+from cognite.client.utils._redaction import redact
 from cognite.client.utils._text import convert_all_keys_recursive, convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils._time import convert_and_isoformat_time_attrs
 from cognite.client.utils.useful_types import is_sequence_not_str
@@ -89,12 +90,16 @@ class CogniteResource(ABC):
     # _LIST_CLASS is populated dynamically (__init_subclass__) when a CogniteResourceList subclass defines _RESOURCE.
     _LIST_CLASS: ClassVar[type[CogniteResourceList] | None] = None
 
+    # To properly redact secrets from e.g. log or other output, each subclass should declare which of their own fields are sensitive:
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset()
+    _SENSITIVE_TYPES: ClassVar[frozenset[str]] = frozenset()
+
     def __eq__(self, other: Any) -> bool:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
         item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
-        return _json.dumps(item, indent=4)
+        return _json.dumps(redact(item), indent=4)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         """Dump the instance into a json serializable Python data type.
@@ -321,7 +326,7 @@ class CogniteResourceList(UserList, Generic[T_CogniteResource]):
 
     def __str__(self) -> str:
         item = convert_and_isoformat_time_attrs(self.dump(camel_case=False))
-        return _json.dumps(item, indent=4)
+        return _json.dumps(redact(item), indent=4)
 
     # TODO: We inherit a lot from UserList that we don't actually support...
     def extend(self, other: Iterable[Any]) -> None:
@@ -570,7 +575,7 @@ class CogniteUpdate:
         return type(self) is type(other) and self.dump() == other.dump()
 
     def __str__(self) -> str:
-        return _json.dumps(self.dump(), indent=4)
+        return _json.dumps(redact(self.dump()), indent=4)
 
     def __repr__(self) -> str:
         return str(self)

@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias
 
 from typing_extensions import Self
 
@@ -438,6 +438,8 @@ class CreatedSession(CogniteResource):
         client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
     """
 
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"nonce"})
+
     def __init__(
         self,
         id: int,
@@ -562,6 +564,8 @@ class ClientCredentials(CogniteResource):
         client_id (str): Client ID from identity provider.
         client_secret (str): Client secret from identity provider.
     """
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"client_secret"})
 
     def __init__(self, client_id: str, client_secret: str) -> None:
         self.client_id = client_id
