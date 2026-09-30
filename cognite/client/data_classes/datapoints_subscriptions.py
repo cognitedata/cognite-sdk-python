@@ -354,6 +354,22 @@ class SubscriptionDatapoints(CogniteResource):
 
     The API returns time series metadata (id, isString, type, etc.) separately from the datapoints array.
     This class combines them into a single object for easier consumption.
+
+    Args:
+        id (int): Id of the time series the datapoints belong to.
+        is_string (bool): Whether the time series contains numerical or string data.
+        type (Literal['numeric', 'string', 'state']): The type of the time series.
+        timestamp (list[int]): The data timestamps in milliseconds since the epoch (Jan 1, 1970).
+        value (list[str] | list[float] | None): The data values. Only populated for non-state time series. Raises a
+            ``ValueError`` when accessed on a state time series, use ``numeric_states``/``string_states`` instead.
+        external_id (str | None): External id of the time series the datapoints belong to.
+        instance_id (NodeId | None): The instance id of the time series the datapoints belong to.
+        status_code (list[int] | None): The status codes for the datapoints, if requested.
+        status_symbol (list[str] | None): The status symbols for the datapoints, if requested.
+        numeric_states (list[int] | None): The numeric state values. Only populated for state time series. Raises a
+            ``ValueError`` when accessed on a non-state time series, use ``value`` instead.
+        string_states (list[str | None] | None): The string state values. Only populated for state time series. Raises a
+            ``ValueError`` when accessed on a non-state time series, use ``value`` instead.
     """
 
     def __init__(
@@ -374,13 +390,53 @@ class SubscriptionDatapoints(CogniteResource):
         self.is_string = is_string
         self.type = type
         self.timestamp = timestamp
-        self.value = value
+        self._value = value
         self.external_id = external_id
         self.instance_id = instance_id
         self.status_code = status_code
         self.status_symbol = status_symbol
-        self.numeric_states = numeric_states
-        self.string_states = string_states
+        self._numeric_states = numeric_states
+        self._string_states = string_states
+
+    @property
+    def is_state(self) -> bool:
+        """Whether this is a state time series."""
+        return self.type == "state"
+
+    @property
+    def value(self) -> list[str] | list[float] | None:
+        """The data values. Can be strings or numeric.
+
+        Raises:
+            ValueError: If this is a state time series.
+        """
+        if self.is_state:
+            raise ValueError(
+                "'value' is not populated for state time series, use 'numeric_states'/'string_states' instead"
+            )
+        return self._value
+
+    @property
+    def numeric_states(self) -> list[int] | None:
+        """The numeric state values.
+
+        Raises:
+            ValueError: If this is not a state time series.
+        """
+        if not self.is_state:
+            raise ValueError("'numeric_states' is only populated for state time series, use 'value' instead")
+        return self._numeric_states
+
+    @property
+    def string_states(self) -> list[str | None] | None:
+        """The string state values.
+
+        Raises:
+            ValueError: If this is not a state time series.
+        """
+        if not self.is_state:
+            raise ValueError("'string_states' is only populated for state time series, use 'value' instead")
+        return self._string_states
 
     @classmethod
     def _load(  # type: ignore [override]
@@ -436,12 +492,13 @@ class SubscriptionDatapoints(CogniteResource):
     def __iter__(self) -> Iterator[Datapoint]:
         for i, ts in enumerate(self.timestamp):
             dp_args: dict[str, Any] = {"timestamp": ts}
-            if self.value is not None:
-                dp_args["value"] = self.value[i]
-            if self.numeric_states is not None:
-                dp_args["numeric_state"] = self.numeric_states[i]
-            if self.string_states is not None:
-                dp_args["string_state"] = self.string_states[i]
+            # We use the private fields directly to avoid raising:
+            if self._value is not None:
+                dp_args["value"] = self._value[i]
+            if self._numeric_states is not None:
+                dp_args["numeric_state"] = self._numeric_states[i]
+            if self._string_states is not None:
+                dp_args["string_state"] = self._string_states[i]
             if self.status_code and self.status_symbol:
                 dp_args.update(status_code=self.status_code[i], status_symbol=self.status_symbol[i])
             yield Datapoint(**dp_args)
@@ -475,9 +532,9 @@ class SubscriptionDatapoints(CogniteResource):
             external_id=self.external_id,
             instance_id=self.instance_id,
             timestamp=self.timestamp,
-            value=self.value,
-            numeric_states=self.numeric_states,
-            string_states=self.string_states,
+            value=self._value,
+            numeric_states=self._numeric_states,
+            string_states=self._string_states,
             status_code=self.status_code,
             status_symbol=self.status_symbol,
             # "Is step" is not returned from Dps. Subscriptions API. After conversion to pandas, it vanishies anyway:
