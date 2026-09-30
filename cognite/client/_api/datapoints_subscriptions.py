@@ -305,6 +305,11 @@ class DatapointsSubscriptionAPI(APIClient):
         Yields:
             DatapointSubscriptionBatch: Changes to the subscription and data in the subscribed time series.
 
+        Note:
+            For state time series, the datapoint values are given by ``numeric_states``/``string_states`` instead of ``value``
+            (which is not populated). Conversely, ``numeric_states``/``string_states`` are not populated for regular time series.
+            Accessing whichever pair doesn't apply raises a ``ValueError``. Use ``is_state`` to easily distinguish between types.
+
         Examples:
 
             Iterate over changes to subscription timeseries since the beginning until there is no more data:
@@ -328,9 +333,19 @@ class DatapointsSubscriptionAPI(APIClient):
             Iterate continuously over all changes to the subscription newer than 3 days:
 
                 >>> for batch in client.time_series.subscriptions.iterate_data(
-                ...     "my_subscription", "3d-ago"
+                ...     "my_subscription", start="3d-ago"
                 ... ):
                 ...     pass  # do something
+
+            If the subscription covers a mix of regular and state time series, use ``is_state`` to know which
+            field(s) to read:
+
+                >>> for update in batch.updates:
+                ...     upserts = update.upserts
+                ...     if upserts.is_state:
+                ...         dps = upserts.numeric_states  # or 'upserts.string_states'
+                ...     else:
+                ...         dps = upserts.value
         """
         current_partitions = [DatapointSubscriptionPartition(partition, cursor)]
         semaphore = self._get_semaphore("read")
