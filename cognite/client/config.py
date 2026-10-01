@@ -417,8 +417,6 @@ class ClientConfig:
 
         # Strip the 'restricted-api.' subdomain (used for network-restricted projects) before matching:
         base_url = re.sub(r"^(https?://)restricted-api\.", r"\1", self.base_url)
-        if match := re.match(
-            r"https?://([^/\.\s]*\.plink\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)", base_url
-        ):
+        if match := re.match(r"https?://([^/\.\s]*\.plink\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)", base_url):
             return match.group(2)
         return None
