@@ -33,11 +33,12 @@ OBJECT_AGGREGATES: frozenset[Literal["max_datapoint", "min_datapoint"]] = frozen
 _UNSUPPORTED_STATE_AGGS_CAMEL: frozenset[Literal["interpolation", "stepInterpolation"]] = frozenset(
     {"interpolation", "stepInterpolation"}
 )
-
-# These are per-distinct-state breakdown aggregates (one entry per state, per interval) returned in a nested/repeated
-# shape that none of our data classes can represent yet. Not started on, but planned:
-_NOT_YET_IMPLEMENTED_STATE_AGGS_CAMEL: frozenset[Literal["stateCount", "stateTransitions", "stateDuration"]] = (
-    frozenset({"stateCount", "stateTransitions", "stateDuration"})
+# These are per-distinct-state breakdown aggregates (one entry per state, per interval):
+_STATE_AGGS_CAMEL: frozenset[Literal["stateCount", "stateTransitions", "stateDuration"]] = frozenset(
+    {"stateCount", "stateTransitions", "stateDuration"}
+)
+_STATE_AGGS_SNAKE: frozenset[Literal["state_count", "state_transitions", "state_duration"]] = frozenset(
+    {"state_count", "state_transitions", "state_duration"}
 )
 
 # Assumption: All INT aggregates should adhere to the following logic: Missing values can be replace with 0.

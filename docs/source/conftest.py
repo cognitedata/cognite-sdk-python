@@ -39,13 +39,13 @@ def client_data() -> dict[str, Any]:
                     "token_url": "https://login.microsoftonline.com/${MY_TENANT_ID}/oauth2/v2.0/token",
                     "client_id": "${MY_CLIENT_ID}",
                     "client_secret": "${MY_CLIENT_SECRET}",
-                    "scopes": ["https://api.cognitedata.com/.default"],
+                    "scopes": ["https://${MY_CLUSTER}.cognitedata.com/.default"],
                 },
             },
         },
         "global": {
             "max_retries": 10,
-            "max_retry_backoff": 10,
+            "max_retry_backoff": 60,
         },
     }
 

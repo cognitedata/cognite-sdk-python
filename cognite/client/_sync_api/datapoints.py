@@ -1,6 +1,5 @@
 """
 ===============================================================================
-a5572acd9445d7262dd9014faaf228ff
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -9,11 +8,10 @@ from __future__ import annotations
 
 import datetime
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 from zoneinfo import ZoneInfo
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.datapoint_tasks import BaseDpsFetchSubtask
 from cognite.client._constants import DEFAULT_DATAPOINTS_CHUNK_SIZE
 from cognite.client._sync_api.synthetic_time_series import SyncSyntheticDatapointsAPI
 from cognite.client._sync_api_client import SyncAPIClient
@@ -35,9 +33,6 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
     import pandas as pd
-
-PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
-_T = TypeVar("_T")
 
 
 class SyncDatapointsAPI(SyncAPIClient):
@@ -904,6 +899,9 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_unit: bool = True,
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_numeric_states: bool = True,
+        include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pd.DataFrame:
         """
         Get datapoints directly in a pandas dataframe.
@@ -935,6 +933,9 @@ class SyncDatapointsAPI(SyncAPIClient):
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
             include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
+            include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids, and lastly instance_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
@@ -1022,6 +1023,9 @@ class SyncDatapointsAPI(SyncAPIClient):
                 include_unit=include_unit,
                 include_aggregate_name=include_aggregate_name,
                 include_granularity_name=include_granularity_name,
+                include_numeric_states=include_numeric_states,
+                include_string_states=include_string_states,
+                expand_state_aggregates=expand_state_aggregates,
             )
         )
 
@@ -1233,6 +1237,11 @@ class SyncDatapointsAPI(SyncAPIClient):
         Returns:
             LatestDatapoint | LatestDatapointList | None: A LatestDatapoint object containing the latest datapoint (if it exists), or a LatestDatapointList if multiple time series were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
+        Note:
+            For state time series, the datapoint's value is given by ``numeric_state``/``string_state`` instead of
+            ``value``. Accessing ``value`` for a state time series will raise a ``ValueError`` (and oppositely for
+            regular time series). The ``is_state`` attribute can be used to easily distinguish time series types.
+
         Examples:
 
             Getting the latest datapoint in a time series:
@@ -1244,31 +1253,63 @@ class SyncDatapointsAPI(SyncAPIClient):
                 >>> res = client.time_series.data.retrieve_latest(
                 ...     instance_id=NodeId("my-space", "my-ts-xid")
                 ... )
-                >>> if res:  # Check if datapoint exists
+                >>> if res:  # Check if the datapoint exists
                 ...     print(res.timestamp, res.value)
 
-            You can also use id or external_id; single identifier or list of identifiers:
+            For a state time series, read ``numeric_state``/``string_state`` instead of ``value``:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, external_id=["foo", "bar"])
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     instance_id=NodeId("ts-space", "state-ts")
+                ... )
+                >>> if res.has_datapoint:
+                ...     print(res.timestamp, res.numeric_state, res.string_state)
+
+            The timestamp is a timezone-aware ``datetime`` object (UTZ). If you instead prefer the timestamp in
+            milliseconds since the epoch, you can use the ``timestamp_ms`` property:
+
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo")
+                >>> if res.has_datapoint:
+                ...     print(res.timestamp_ms, res.value)
+
+            You can also use id, external_id or instance_id; single identifier or list of identifiers:
+
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     id=1, external_id=["foo", "bar"], instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
 
             You can also get the latest datapoint before a specific time:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo", before="2d-ago")
 
             You can also get the latest datapoint before a specific time in the future e.g. forecast data:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ahead")
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo", before="2d-ahead")
+
+            If you're querying a mix of regular and state time series, use ``is_state`` to know which field(s) to read:
+
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     instance_id=[NodeId("ts-space", "state-ts"), NodeId("ts-space", "regular-ts")],
+                ... )
+                >>> for dp in res:
+                ...     if dp.is_state:
+                ...         print(dp.numeric_state)
+                ...     else:
+                ...         print(dp.value)
 
             You can also retrieve the datapoint in a different unit or unit system:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     external_id="foo", target_unit="temperature:deg_f"
+                ... )
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     external_id="foo", target_unit_system="Imperial"
+                ... )
 
             You may also pass an instance of LatestDatapointQuery:
 
                 >>> from cognite.client.data_classes import LatestDatapointQuery
                 >>> res = client.time_series.data.retrieve_latest(
-                ...     id=LatestDatapointQuery(id=1, before=60_000)
+                ...     id=LatestDatapointQuery(external_id="foo", before=60_000)
                 ... )
 
             If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are

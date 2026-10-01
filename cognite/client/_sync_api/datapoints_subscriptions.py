@@ -1,6 +1,5 @@
 """
 ===============================================================================
-175dd6dcb2b25e5980d8828619fc7db6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Literal, overload
+from typing import Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -23,9 +22,6 @@ from cognite.client.data_classes.datapoints_subscriptions import (
 )
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncDatapointsSubscriptionAPI(SyncAPIClient):
@@ -270,6 +266,11 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         Yields:
             DatapointSubscriptionBatch: Changes to the subscription and data in the subscribed time series.
 
+        Note:
+            For state time series, the datapoint values are given by ``numeric_states``/``string_states`` instead of ``value``
+            (which is not populated). Conversely, ``numeric_states``/``string_states`` are not populated for regular time series.
+            Accessing whichever pair doesn't apply raises a ``ValueError``. Use ``is_state`` to easily distinguish between types.
+
         Examples:
 
             Iterate over changes to subscription timeseries since the beginning until there is no more data:
@@ -284,18 +285,28 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
                 ...     print(f"Changed timeseries data in {len(batch.updates)} updates")
                 ...     # Changes to datapoints for time series in the subscription:
                 ...     for update in batch.updates:
-                ...         upserts.time_series  # The time series the update belongs to
-                ...         upserts.upserts  # The upserted datapoints, if any
-                ...         upserts.deletes  # Ranges of deleted periods, if any
+                ...         update.time_series  # The time series the update belongs to
+                ...         update.upserts  # The upserted datapoints, if any
+                ...         update.deletes  # Ranges of deleted periods, if any
                 ...     if not batch.has_next:
                 ...         break
 
             Iterate continuously over all changes to the subscription newer than 3 days:
 
                 >>> for batch in client.time_series.subscriptions.iterate_data(
-                ...     "my_subscription", "3d-ago"
+                ...     "my_subscription", start="3d-ago"
                 ... ):
                 ...     pass  # do something
+
+            If the subscription covers a mix of regular and state time series, use ``is_state`` to know which
+            field(s) to read:
+
+                >>> for update in batch.updates:  # doctest: +SKIP
+                ...     upserts = update.upserts
+                ...     if upserts.is_state:
+                ...         dps = upserts.numeric_states  # or 'upserts.string_states'
+                ...     else:
+                ...         dps = upserts.value
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.time_series.subscriptions.iterate_data(

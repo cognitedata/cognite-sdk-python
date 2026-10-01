@@ -895,6 +895,47 @@ def use_beta_header_for_dps_client(async_client: AsyncCogniteClient) -> Iterator
         yield
 
 
+@pytest.fixture(scope="session")
+def state_ts_with_aggregate_data(
+    cognite_client: CogniteClient,
+    async_client: AsyncCogniteClient,
+    space_for_time_series: Space,
+    state_set: NodeApplyResult,
+    request: pytest.FixtureRequest,
+) -> tuple[NodeId, int]:
+    xid = f"dms-state-aggregates-{random_string(10)}"
+    node_id = NodeId(space_for_time_series.space, xid)
+    request.addfinalizer(lambda: cognite_client.data_modeling.instances.delete(node_id))
+    _create_state_time_series(
+        external_id=xid,
+        cognite_client=cognite_client,
+        async_client=async_client,
+        space_for_time_series=space_for_time_series,
+        state_set=state_set,
+    )
+    base = 1_700_000_000_000
+    base -= base % HOUR_MS  # align to an hour boundary so our buckets are exact
+    cognite_client.time_series.data.insert_states(
+        StateDatapointsInsert(
+            instance_id=node_id,
+            datapoints=[
+                # Bucket 0, [base, base+1h): three good datapoints
+                StateDatapointWrite(base, numeric_value=0),
+                StateDatapointWrite(base + 10 * MINUTE_MS, numeric_value=1),
+                StateDatapointWrite(base + 20 * MINUTE_MS, numeric_value=0),
+                # Bucket 1, [base+1h, base+2h): one good, then one bad
+                StateDatapointWrite(base + HOUR_MS, numeric_value=1),
+                StateDatapointWrite(base + HOUR_MS + 10 * MINUTE_MS, status_symbol="Bad"),
+                # Bucket 2, [base+2h, base+3h): an uncertain datapoint, closed off by a later good one.
+                # (A status with no datapoint after it gets duration 0)
+                StateDatapointWrite(base + 2 * HOUR_MS, numeric_value=0, status_symbol="Uncertain"),
+                StateDatapointWrite(base + 2 * HOUR_MS + 40 * MINUTE_MS, numeric_value=1),
+            ],
+        )
+    )
+    return node_id, base
+
+
 @pytest.mark.dsl
 @pytest.mark.usefixtures("use_beta_header_for_dps_client")
 class TestRetrieveStateDatapoints:
@@ -957,7 +998,116 @@ class TestRetrieveStateDatapoints:
             assert arr.string_states is not None
             assert len(arr.string_states) == 0
 
-            # TODO: awaiting implementation: `df = dps.to_pandas() & assert df.empty`
+            df = arr.to_pandas()
+            assert df.empty
+            assert list(df.columns) == [(ts_id, "numeric"), (ts_id, "string")]
+
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    def test_retrieve_arrays_state_datapoints_and_pandas_conversion(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        space_for_time_series: Space,
+        state_set: NodeApplyResult,
+        request: pytest.FixtureRequest,
+    ) -> None:
+        xid = f"dms-state-to-pandas-{random_string(10)}"
+        node_id = NodeId(space_for_time_series.space, xid)
+        request.addfinalizer(lambda: cognite_client.data_modeling.instances.delete(node_id))
+        _create_state_time_series(
+            external_id=xid,
+            cognite_client=cognite_client,
+            async_client=async_client,
+            space_for_time_series=space_for_time_series,
+            state_set=state_set,
+        )
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=node_id,
+                datapoints=[
+                    StateDatapointWrite(1_700_000_000, numeric_value=0),
+                    StateDatapointWrite(1_700_001_000, numeric_value=1),
+                    StateDatapointWrite(1_700_002_000, status_symbol="Bad"),
+                ],
+            )
+        )
+        arr_bad, arr_good = arr_lst = cognite_client.time_series.data.retrieve_arrays(
+            instance_id=[
+                DatapointsQuery(instance_id=node_id, ignore_bad_datapoints=False),
+                DatapointsQuery(instance_id=node_id, ignore_bad_datapoints=True),
+            ],
+            limit=10,
+        )
+        assert isinstance(arr_lst, DatapointsArrayList)
+        assert isinstance(arr_bad, DatapointsArray) and isinstance(arr_good, DatapointsArray)
+        assert arr_bad.type == arr_good.type == "state"
+
+        assert arr_good.numeric_states is not None and arr_good.string_states is not None
+        assert arr_good.numeric_states.dtype == np.int32
+        np.testing.assert_array_equal(arr_good.numeric_states, [0, 1])
+        assert arr_good.string_states.dtype == np.object_
+        np.testing.assert_array_equal(arr_good.string_states, np.array(["idle", "on"], dtype=np.object_))
+
+        assert arr_bad.numeric_states is not None and arr_bad.string_states is not None
+        assert arr_bad.numeric_states.dtype == np.float64  # upcast from int32 to hold the missing (bad) dp as NaN
+        np.testing.assert_array_equal(arr_bad.numeric_states, [0.0, 1.0, np.nan])
+        assert arr_bad.string_states.dtype == np.object_
+        np.testing.assert_array_equal(arr_bad.string_states, np.array(["idle", "on", None], dtype=np.object_))
+
+        df_bad = arr_bad.to_pandas()
+        assert len(df_bad) == 3
+        assert list(df_bad.columns) == [(node_id, "numeric"), (node_id, "string")]
+        np.testing.assert_array_equal(
+            df_bad[(node_id, "numeric")].to_numpy(dtype=np.float64, na_value=np.nan), [0.0, 1.0, np.nan]
+        )
+        # String states use the pandas 'category' dtype which represents missing as NaN regardless of pandas v2/v3:
+        assert df_bad[(node_id, "string")].dtype == "category"
+        string_values = df_bad[(node_id, "string")].tolist()
+        assert string_values[:2] == ["idle", "on"]
+        assert pd.isna(string_values[2])
+
+        df_good = arr_good.to_pandas()
+        assert len(df_good) == 2
+        np.testing.assert_array_equal(df_good[(node_id, "numeric")].to_numpy(dtype=np.float64), [0, 1])
+        assert df_good[(node_id, "string")].tolist() == ["idle", "on"]
+
+        # DatapointsArrayList.to_pandas() concatenates both to a shared index, thus necessarily adding a missing
+        # row for the "good" array:
+        df_from_arr_lst = arr_lst.to_pandas()
+        idx_expected = pd.to_datetime([1_700_000_000, 1_700_001_000, 1_700_002_000], unit="ms")
+        idx_expected.freq = pd.infer_freq(idx_expected)
+        df_expected = pd.DataFrame(
+            {
+                0: pd.array([0, 1, None], dtype="Int32"),
+                1: pd.Categorical(["idle", "on", None]),
+                2: pd.array([0, 1, None], dtype="Int32"),
+                3: pd.Categorical(["idle", "on", None]),
+            },
+            index=idx_expected,
+        )
+        df_expected.columns = pd.MultiIndex.from_tuples(
+            [(node_id, "numeric"), (node_id, "string"), (node_id, "numeric"), (node_id, "string")],
+            names=["identifier", "state"],
+        )
+        pd.testing.assert_frame_equal(df_from_arr_lst, df_expected)
+
+        # Last check, ensure we produce -identical- DataFrames when compared to the non-array version:
+        dps_bad, dps_good = dps_lst = cognite_client.time_series.data.retrieve(
+            instance_id=[
+                DatapointsQuery(instance_id=node_id, ignore_bad_datapoints=False),
+                DatapointsQuery(instance_id=node_id, ignore_bad_datapoints=True),
+            ],
+            limit=10,
+        )
+        assert isinstance(dps_lst, DatapointsList)
+        assert isinstance(dps_bad, Datapoints) and isinstance(dps_good, Datapoints)
+
+        pd.testing.assert_frame_equal(dps_bad.to_pandas(), df_bad)
+        pd.testing.assert_frame_equal(dps_good.to_pandas(), df_good)
+        pd.testing.assert_frame_equal(dps_lst.to_pandas(), df_from_arr_lst)
 
     @pytest.mark.parametrize(
         "retrieve_call",
@@ -970,19 +1120,15 @@ class TestRetrieveStateDatapoints:
             ),
             pytest.param(
                 lambda client, ts_id: client.time_series.data.retrieve_arrays(
-                    instance_id=ts_id, aggregates="count", granularity="1h", limit=1
+                    instance_id=ts_id, aggregates="interpolation", granularity="1h", limit=1
                 ),
-                id="aggregate states retrieve_arrays",
-            ),
-            pytest.param(
-                lambda client, ts_id: client.time_series.data.retrieve_dataframe(instance_id=ts_id, limit=1),
-                id="raw states retrieve_dataframe",
+                id="interpolation aggregate states retrieve_arrays",
             ),
             pytest.param(
                 lambda client, ts_id: client.time_series.data.retrieve_dataframe(
-                    instance_id=ts_id, aggregates="count", granularity="1h", limit=1
+                    instance_id=ts_id, aggregates="interpolation", granularity="1h", limit=1
                 ),
-                id="aggregate states retrieve_dataframe",
+                id="interpolation aggregate states retrieve_dataframe",
             ),
         ],
     )
@@ -1000,14 +1146,18 @@ class TestRetrieveStateDatapoints:
         "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
         "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
     )
+    @pytest.mark.parametrize("retrieve_method_name", ["retrieve", "retrieve_arrays"])
     def test_retrieve_state_aggregate_datapoints(
         self,
         cognite_client: CogniteClient,
-        async_client: AsyncCogniteClient,
-        space_for_time_series: Space,
-        state_set: NodeApplyResult,
-        request: pytest.FixtureRequest,
+        state_ts_with_aggregate_data: tuple[NodeId, int],
+        retrieve_method_name: str,
     ) -> None:
+        # Both 'retrieve' and 'retrieve_arrays' support these aggregates for state time series, and must give
+        # identical results (just as lists vs. numpy arrays):
+        node_id, base = state_ts_with_aggregate_data
+        retrieve_fn = getattr(cognite_client.time_series.data, retrieve_method_name)
+
         # These are (currently) the only aggregates the API supports for state time series:
         aggs = [
             "count",
@@ -1018,39 +1168,7 @@ class TestRetrieveStateDatapoints:
             "duration_uncertain",
             "duration_bad",
         ]
-        xid = f"dms-state-aggregates-{random_string(10)}"
-        node_id = NodeId(space_for_time_series.space, xid)
-        request.addfinalizer(lambda: cognite_client.data_modeling.instances.delete(node_id))
-        _create_state_time_series(
-            external_id=xid,
-            cognite_client=cognite_client,
-            async_client=async_client,
-            space_for_time_series=space_for_time_series,
-            state_set=state_set,
-        )
-
-        base = 1_700_000_000_000
-        base -= base % HOUR_MS  # align to an hour boundary so our buckets are exact
-        cognite_client.time_series.data.insert_states(
-            StateDatapointsInsert(
-                instance_id=node_id,
-                datapoints=[
-                    # Bucket 0, [base, base+1h): three good datapoints
-                    StateDatapointWrite(base, numeric_value=0),
-                    StateDatapointWrite(base + 10 * MINUTE_MS, numeric_value=1),
-                    StateDatapointWrite(base + 20 * MINUTE_MS, numeric_value=0),
-                    # Bucket 1, [base+1h, base+2h): one good, then one bad
-                    StateDatapointWrite(base + HOUR_MS, numeric_value=1),
-                    StateDatapointWrite(base + HOUR_MS + 10 * MINUTE_MS, status_symbol="Bad"),
-                    # Bucket 2, [base+2h, base+3h): an uncertain datapoint, closed off by a later good one. A status
-                    # with no datapoint after it *anywhere* in the retrieved data gets duration 0, since the API has
-                    # no way of knowing how long it persisted.
-                    StateDatapointWrite(base + 2 * HOUR_MS, numeric_value=0, status_symbol="Uncertain"),
-                    StateDatapointWrite(base + 2 * HOUR_MS + 40 * MINUTE_MS, numeric_value=1),
-                ],
-            )
-        )
-        dps = cognite_client.time_series.data.retrieve(
+        dps = retrieve_fn(
             instance_id=node_id,
             start=base,
             end=base + 3 * HOUR_MS,
@@ -1060,10 +1178,10 @@ class TestRetrieveStateDatapoints:
         assert dps is not None
         assert dps.type == "state"
         assert len(dps) == 3
-        assert dps.count == [3, 1, 1]
-        assert dps.count_good == [3, 1, 1]
-        assert dps.count_uncertain == [0, 0, 1]
-        assert dps.count_bad == [0, 1, 0]
+        assert list(dps.count) == [3, 1, 1]
+        assert list(dps.count_good) == [3, 1, 1]
+        assert list(dps.count_uncertain) == [0, 0, 1]
+        assert list(dps.count_bad) == [0, 1, 0]
 
         assert dps.duration_good is not None
         assert dps.duration_uncertain is not None
@@ -1082,24 +1200,239 @@ class TestRetrieveStateDatapoints:
     @pytest.mark.parametrize("aggregate", ["interpolation", "step_interpolation"])
     def test_retrieve_state_aggregate_datapoints_interpolation_raises(
         self,
-        cognite_client: CogniteClient,
         empty_state_ts: NodeApplyResult,
         aggregate: str,
+        retrieve_endpoints: list[Callable],
     ) -> None:
         ts_id = empty_state_ts.as_id()
-        with pytest.raises(NotImplementedError, match="not yet supported"):
-            cognite_client.time_series.data.retrieve(instance_id=ts_id, aggregates=aggregate, granularity="1h")
+        for endpoint in retrieve_endpoints:
+            with pytest.raises(NotImplementedError, match="not yet supported"):
+                endpoint(instance_id=ts_id, aggregates=aggregate, granularity="1h")
 
-    @pytest.mark.parametrize("aggregate", ["state_count", "state_transitions", "state_duration"])
-    def test_retrieve_state_aggregate_datapoints_not_yet_implemented_raises(
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    @pytest.mark.parametrize("retrieve_method_name", ["retrieve", "retrieve_arrays"])
+    def test_retrieve_state_only_aggregate_datapoints(
         self,
         cognite_client: CogniteClient,
-        empty_state_ts: NodeApplyResult,
-        aggregate: str,
+        state_ts_with_aggregate_data: tuple[NodeId, int],
+        retrieve_method_name: str,
     ) -> None:
-        ts_id = empty_state_ts.as_id()
-        with pytest.raises(NotImplementedError, match="coming soon"):
-            cognite_client.time_series.data.retrieve(instance_id=ts_id, aggregates=aggregate, granularity="1h")
+        # state_count/state_transitions/state_duration are per-distinct-state breakdown aggregates: a single interval
+        # may contain several distinct states, so each yields a *list* of entries per interval rather than a single value
+        # like every other aggregate does.
+        node_id, base = state_ts_with_aggregate_data
+        retrieve_fn = getattr(cognite_client.time_series.data, retrieve_method_name)
+
+        aggs = random.choice(
+            (
+                ["state_count", "state_transitions", "state_duration"],  # All snake case
+                ["stateCount", "stateTransitions", "stateDuration"],  # All camelCase
+                ["state_count", "stateTransitions", "state_duration"],  # Mix
+            )
+        )
+        dps = retrieve_fn(
+            instance_id=node_id,
+            start=base,
+            end=base + 3 * HOUR_MS,
+            aggregates=aggs,
+            granularity="1h",
+        )
+        assert dps is not None
+        assert dps.type == "state"
+        assert len(dps) == 3
+        assert dps.state_count is not None
+        assert dps.state_transitions is not None
+        assert dps.state_duration is not None
+        assert len(dps.state_count) == len(dps.state_transitions) == len(dps.state_duration) == 3
+
+        # Bucket 0, [base, base+1h): three good datapoints, states 0, 1, 0 -> two distinct states:
+        count_bucket_0, transitions_bucket_0, duration_bucket_0 = (
+            dps.state_count[0],
+            dps.state_transitions[0],
+            dps.state_duration[0],
+        )
+        assert {e.numeric_value for e in count_bucket_0} == {0, 1}
+        assert sum(e.state_count for e in count_bucket_0) == 3  # matches the simple 'count' aggregate
+        assert sum(e.state_duration for e in duration_bucket_0) == HOUR_MS  # bucket is 100% covered by good data
+        assert all(e.state_transitions >= 1 for e in transitions_bucket_0)
+
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    @pytest.mark.parametrize("retrieve_method_name", ["retrieve", "retrieve_arrays"])
+    def test_state_only_aggregate_datapoints_to_pandas(
+        self,
+        cognite_client: CogniteClient,
+        state_ts_with_aggregate_data: tuple[NodeId, int],
+        retrieve_method_name: str,
+    ) -> None:
+        # state_count/state_transitions/state_duration each get one column per distinct state (numeric_value),
+        # in a separate 'state_value' MultiIndex level:
+        node_id, base = state_ts_with_aggregate_data
+        retrieve_fn = getattr(cognite_client.time_series.data, retrieve_method_name)
+
+        dps = retrieve_fn(
+            instance_id=node_id,
+            start=base,
+            end=base + 3 * HOUR_MS,
+            aggregates=["state_count", "state_transitions", "state_duration"],
+            granularity="1h",
+        )
+        assert dps is not None
+        df = dps.to_pandas(include_aggregate_name=True)
+        assert len(df) == 3
+        assert set(df.columns.get_level_values("aggregate")) == {"state_count", "state_transitions", "state_duration"}
+        assert set(df.columns.get_level_values("state_value")) == {0, 1}
+
+        # Bucket 0 has three good datapoints across states 0 and 1: state_count sums back up to the simple 'count':
+        state_count_cols = [col for col in df.columns if col[1] == "state_count"]
+        assert df.loc[:, state_count_cols].iloc[0].sum() == 3
+
+        # When expand_state_aggregates=False we expect one column per aggregate holding the raw lists:
+        df_unexpanded = dps.to_pandas(include_aggregate_name=True, expand_state_aggregates=False)
+        assert "state_value" not in df_unexpanded.columns.names
+        assert set(df_unexpanded.columns.get_level_values("aggregate")) == {
+            "state_count",
+            "state_transitions",
+            "state_duration",
+        }
+        state_count_col = next(col for col in df_unexpanded.columns if col[1] == "state_count")
+        assert {e.numeric_value for e in df_unexpanded[state_count_col].iloc[0]} == {0, 1}
+
+    def test_state_only_aggregate_datapoints_retrieve_dataframe(
+        self,
+        cognite_client: CogniteClient,
+        state_ts_with_aggregate_data: tuple[NodeId, int],
+    ) -> None:
+        # retrieve_dataframe() fetches via retrieve_arrays(), so it must produce the exact same columns:
+        node_id, base = state_ts_with_aggregate_data
+        aggs = ["state_count", "state_transitions", "state_duration"]
+
+        df = cognite_client.time_series.data.retrieve_dataframe(
+            instance_id=node_id,
+            start=base,
+            end=base + 3 * HOUR_MS,
+            aggregates=aggs,
+            granularity="1h",
+            include_aggregate_name=True,
+        )
+        arr = cognite_client.time_series.data.retrieve_arrays(
+            instance_id=node_id, start=base, end=base + 3 * HOUR_MS, aggregates=aggs, granularity="1h"
+        )
+        assert arr is not None
+        # We compare using DatapointsArrayList here as retrieve_dataframe() always fetches via fetch_all_datapoints_numpy(),
+        # which always returns a DatapointsArrayList (even for a single time series):
+        pd.testing.assert_frame_equal(df, DatapointsArrayList([arr]).to_pandas(include_aggregate_name=True))
+
+        # expand_state_aggregates=False must also match between retrieve_dataframe() and to_pandas():
+        df_unexpanded = cognite_client.time_series.data.retrieve_dataframe(
+            instance_id=node_id,
+            limit=1,
+            aggregates="state_count",
+            granularity="1h",
+            expand_state_aggregates=False,
+        )
+        arr_single = cognite_client.time_series.data.retrieve_arrays(
+            instance_id=node_id, limit=1, aggregates="state_count", granularity="1h"
+        )
+        assert arr_single is not None
+        pd.testing.assert_frame_equal(
+            df_unexpanded,
+            DatapointsArrayList([arr_single]).to_pandas(include_aggregate_name=True, expand_state_aggregates=False),
+        )
+
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    def test_state_only_aggregates_after_states_dropped_from_state_set(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        space_for_time_series: Space,
+        request: pytest.FixtureRequest,
+    ) -> None:
+        # States no longer part of the state set are returned without a string value by the API. When more than
+        # one such state is present, they must still end up as separate (unique) columns when converting to pandas.
+        xid = f"dms-state-set-agg-dropped-{random_string(10)}"
+        node_id = NodeId(space_for_time_series.space, xid)
+        apply_ss_fn = functools.partial(
+            _create_state_set,
+            cognite_client=cognite_client,
+            async_client=async_client,
+            space=space_for_time_series,
+            external_id=xid,
+            name="PySDK integration test state set for state-only aggregates with dropped states",
+        )
+        ss = apply_ss_fn(states=[StateSetEntry(10, "ten"), StateSetEntry(20, "twenty"), StateSetEntry(30, "thirty")])
+        request.addfinalizer(lambda: cognite_client.data_modeling.instances.delete(node_id))
+        _create_state_time_series(
+            external_id=xid,
+            cognite_client=cognite_client,
+            async_client=async_client,
+            space_for_time_series=space_for_time_series,
+            state_set=ss,
+        )
+        base = 1_700_000_000_000
+        base -= base % HOUR_MS
+        # Bucket 0 (before the state set change): all three states present
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=node_id,
+                datapoints=[
+                    StateDatapointWrite(base, numeric_value=10),
+                    StateDatapointWrite(base + 10 * MINUTE_MS, numeric_value=20),
+                    StateDatapointWrite(base + 20 * MINUTE_MS, numeric_value=30),
+                ],
+            )
+        )
+        # Drop BOTH 20 and 30 (to check for duplicate labels), and add a new state 40:
+        apply_ss_fn(states=[StateSetEntry(10, "ten"), StateSetEntry(40, "forty")])
+
+        # Bucket 1 (after the change): known states only
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=node_id,
+                datapoints=[
+                    StateDatapointWrite(base + HOUR_MS, numeric_value=10),
+                    StateDatapointWrite(base + HOUR_MS + 10 * MINUTE_MS, numeric_value=40),
+                ],
+            )
+        )
+        # A numeric value that was dropped from the state set can no longer be inserted:
+        with pytest.raises(CogniteAPIError):
+            cognite_client.time_series.data.insert_states(
+                StateDatapointsInsert(
+                    instance_id=node_id,
+                    datapoints=[StateDatapointWrite(base + HOUR_MS + 20 * MINUTE_MS, numeric_value=20)],
+                )
+            )
+
+        aggs = ["state_count", "state_transitions", "state_duration"]
+        for retrieve_fn in (cognite_client.time_series.data.retrieve, cognite_client.time_series.data.retrieve_arrays):
+            dps = retrieve_fn(
+                instance_id=node_id, start=base, end=base + 2 * HOUR_MS, aggregates=aggs, granularity="1h"
+            )
+            assert dps is not None and dps.state_count is not None
+            bucket_0, bucket_1 = dps.state_count
+            # String values are resolved against the current state set, so the dropped states have none:
+            assert [(e.numeric_value, e.string_value) for e in bucket_0] == [(10, "ten"), (20, None), (30, None)]
+            assert [(e.numeric_value, e.string_value) for e in bucket_1] == [(10, "ten"), (40, "forty")]
+
+            df = dps.to_pandas(include_aggregate_name=True)
+            assert df.columns.is_unique
+            assert df.columns.names == ["identifier", "aggregate", "state_value", "state_string"]
+            assert list(df.columns) == [
+                (node_id, agg, value, label)
+                for agg in aggs
+                for value, label in [(10, "ten"), (20, ""), (30, ""), (40, "forty")]
+            ]
+            assert df[node_id, "state_count", 20, ""].tolist() == [1, 0]
+            assert df[node_id, "state_count", 30, ""].tolist() == [1, 0]
 
 
 @pytest.fixture
@@ -3433,6 +3766,56 @@ class TestRetrieveLatestDatapointsAPI:
             cognite_client.time_series.data.retrieve_latest(id=1, ignore_unknown_ids=False)
         with pytest.raises(CogniteNotFoundError, match=r"^Time series not found, missing: \[{'"):
             cognite_client.time_series.data.retrieve_latest(instance_id=missing, ignore_unknown_ids=False)
+
+    @pytest.mark.usefixtures("use_beta_header_for_dps_client")
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    def test_retrieve_latest_state_time_series(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        space_for_time_series: Space,
+        state_set: NodeApplyResult,
+        request: pytest.FixtureRequest,
+    ) -> None:
+        xid = f"dms-state-retrieve-latest-{random_string(10)}"
+        node_id = NodeId(space_for_time_series.space, xid)
+        request.addfinalizer(lambda: cognite_client.data_modeling.instances.delete(node_id))
+        _create_state_time_series(
+            external_id=xid,
+            cognite_client=cognite_client,
+            async_client=async_client,
+            space_for_time_series=space_for_time_series,
+            state_set=state_set,
+        )
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=node_id,
+                datapoints=[
+                    StateDatapointWrite(1000, numeric_value=0),  # "idle"
+                    StateDatapointWrite(2000, numeric_value=1),  # "on"
+                ],
+            )
+        )
+        res = cognite_client.time_series.data.retrieve_latest(instance_id=node_id)
+        assert res is not None and res.has_datapoint
+        assert res.type == "state"
+        assert res.is_state is True
+        assert res.numeric_state == 1
+        assert res.string_state == "on"
+        # 'value' is never populated for state time series. Accessing it must raise rather than silently
+        # returning None (which would look identical to "no datapoint"/"missing value"):
+        with pytest.raises(ValueError, match=r"numeric_state.*string_state"):
+            res.value
+
+        # Same, but through the list-returning overload:
+        res_lst = cognite_client.time_series.data.retrieve_latest(instance_id=[node_id])
+        assert isinstance(res_lst, LatestDatapointList)
+        (res,) = res_lst
+        assert res.numeric_state == 1
+        assert res.string_state == "on"
 
 
 @pytest.mark.allow_no_semaphore(

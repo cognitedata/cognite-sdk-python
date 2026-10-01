@@ -1,6 +1,5 @@
 """
 ===============================================================================
-112abcec4f8e03fe14e65a2a57f0f848
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -16,8 +15,7 @@ from cognite.client.data_classes.limits import Limit, LimitList
 from cognite.client.utils._async_helpers import run_sync
 
 if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-from cognite.client.data_classes import filters
+    from cognite.client.data_classes import filters
 
 
 class SyncLimitsAPI(SyncAPIClient):

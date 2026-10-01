@@ -14,6 +14,40 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.19.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.18.0...v8.19.0) (2026-09-30)
+
+
+### Features
+
+* **ACL:** Add data products ACL ([#2857](https://github.com/cognitedata/cognite-sdk-python/issues/2857)) ([9ab774a](https://github.com/cognitedata/cognite-sdk-python/commit/9ab774a42fd5f1ee73ee7cee93d28b74eb2495c5))
+* **integrations:** Add Integrations core CRUD (list/create/retrieve/update/delete) ([#2827](https://github.com/cognitedata/cognite-sdk-python/issues/2827)) ([3c44e4d](https://github.com/cognitedata/cognite-sdk-python/commit/3c44e4d5dcd948397370de7516cffe4cd6f1b225))
+* **time series:** add state time series support to datapoint subscriptions (DM-4159) ([#2860](https://github.com/cognitedata/cognite-sdk-python/issues/2860)) ([006b670](https://github.com/cognitedata/cognite-sdk-python/commit/006b6706b43f411e2d689a889ca1de381c838b36))
+* **time series:** add to_pandas()/retrieve_dataframe() support for state-only aggregates ([#2858](https://github.com/cognitedata/cognite-sdk-python/issues/2858)) ([51b6886](https://github.com/cognitedata/cognite-sdk-python/commit/51b6886cd1c5f6d05b1a5cd7506edecf3fbd1459))
+* **time series:** Retrieve support for state-only aggregates `state_count`, `state_transitions`, `state_duration` (DM-4097) ([#2851](https://github.com/cognitedata/cognite-sdk-python/issues/2851)) ([d59a99e](https://github.com/cognitedata/cognite-sdk-python/commit/d59a99e19ba4ee468027ccd3688c29704b5977ae))
+* **time series:** support state time series in `retrieve_latest` (DM-4156) ([#2859](https://github.com/cognitedata/cognite-sdk-python/issues/2859)) ([84adc60](https://github.com/cognitedata/cognite-sdk-python/commit/84adc604edb1907da4b1bc178df145940733c254))
+* **workflows:** surface non-blocking function warnings on WorkflowVersion upsert ([#2863](https://github.com/cognitedata/cognite-sdk-python/issues/2863)) ([b9f08bf](https://github.com/cognitedata/cognite-sdk-python/commit/b9f08bffa69c39ec451d539de8cdc143e22d3b1a))
+
+
+### Bug Fixes
+
+* Ensure concurrent read operations use fail_fast mode ([#2861](https://github.com/cognitedata/cognite-sdk-python/issues/2861)) ([57ca30c](https://github.com/cognitedata/cognite-sdk-python/commit/57ca30c4707316ff028fa13d43daa68df7eadb86))
+
+## [8.18.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.17.0...v8.18.0) (2026-09-23)
+
+
+### Features
+
+* **datapoints:** add timestamp_ms property to LatestDatapoint ([#2843](https://github.com/cognitedata/cognite-sdk-python/issues/2843)) ([402d537](https://github.com/cognitedata/cognite-sdk-python/commit/402d537c8a657f1e114ac8a62513c0316c1072e3))
+* **state time series:** add retrieve_arrays and to_pandas support for state aggregate dps ([#2841](https://github.com/cognitedata/cognite-sdk-python/issues/2841)) ([2640f34](https://github.com/cognitedata/cognite-sdk-python/commit/2640f34c846d3adadac581f94d216221d4701d66))
+* **state time series:** add to_pandas support for raw state datapoints (DatapointsArray) (DM-4093) ([#2840](https://github.com/cognitedata/cognite-sdk-python/issues/2840)) ([3afc8a1](https://github.com/cognitedata/cognite-sdk-python/commit/3afc8a177ed985a367f141aabb4a207cb9a3ab7b))
+
+
+### Bug Fixes
+
+* **credentials:** Store OAuth token cache securely instead of a predictable shared temp path ([#2845](https://github.com/cognitedata/cognite-sdk-python/issues/2845)) ([174e529](https://github.com/cognitedata/cognite-sdk-python/commit/174e529fdfe5192c70fda2831eb53d007d2710b7))
+* **files:** prevent path traversal via file metadata directory in download() ([#2847](https://github.com/cognitedata/cognite-sdk-python/issues/2847)) ([011a4d4](https://github.com/cognitedata/cognite-sdk-python/commit/011a4d47222dc6311d1d015fa03c8600158cc921))
+* **logging:** Redact all credential-carrying headers from logs (DM-4117, VULN-113) ([#2848](https://github.com/cognitedata/cognite-sdk-python/issues/2848)) ([400d173](https://github.com/cognitedata/cognite-sdk-python/commit/400d173890ad90d11687a46b5eabecd68c341cdf))
+
 ## [8.17.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.16.1...v8.17.0) (2026-09-15)
 
 
