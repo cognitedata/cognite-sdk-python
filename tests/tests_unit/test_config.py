@@ -176,7 +176,7 @@ class TestClientConfig:
 
     @pytest.mark.parametrize("protocol", ("http", "https"))
     @pytest.mark.parametrize("end", ("", "/", ":8080", "/api/v1/", ":8080/api/v1/"))
-    @pytest.mark.parametrize("subdomain", ("", "p001.plink."))
+    @pytest.mark.parametrize("subdomain", ("", "p001.plink.", "restricted-api."))
     @pytest.mark.parametrize(
         "cluster", ("3D", "my_clus-ter", "jazz-testing-asia-northeast1-1", "trial-00ed82e12d9cbadfe28e4")
     )
@@ -188,7 +188,7 @@ class TestClientConfig:
 
     @pytest.mark.parametrize("protocol", ("http", "https"))
     @pytest.mark.parametrize("end", ("", "/", ":8080", "/api/v1/", ":8080/api/v1/"))
-    @pytest.mark.parametrize("subdomain", ("", "p001.plink."))
+    @pytest.mark.parametrize("subdomain", ("", "p001.plink.", "restricted-api."))
     @pytest.mark.parametrize("cluster", ("", ".", "..", "huh.my_cluster."))
     def test_extract_invalid_cdf_cluster(
         self, client_config: ClientConfig, protocol: str, end: str, subdomain: str, cluster: str

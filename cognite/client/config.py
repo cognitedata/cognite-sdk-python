@@ -416,7 +416,8 @@ class ClientConfig:
             return self._cluster
 
         if match := re.match(
-            r"https?://([^/\.\s]*\.plink\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)", self.base_url
+            r"https?://(?:[^/\.\s]*\.plink\.|restricted-api\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)",
+            self.base_url,
         ):
-            return match.group(2)
+            return match.group(1)
         return None
