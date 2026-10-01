@@ -256,16 +256,6 @@ class BasicAsyncAPIClient:
     def _beta_version_header(self) -> dict[str, str]:
         return self._maturity_version_header("beta")
 
-    def _beta_version_header(self) -> dict[str, str]:
-        sub = self._api_subversion
-        if "beta" in sub:
-            return {"cdf-version": sub}
-        elif sub.isdecimal():  # default is something like "20230101" (see __api_subversion__ in _version.py)
-            return {"cdf-version": f"{sub}-beta"}
-        else:
-            # Maybe the user has set "alpha" or something else, whatever the case, we just return "beta":
-            return {"cdf-version": "beta"}
-
     @property
     def _base_url_with_base_path(self) -> str:
         if self._api_version:

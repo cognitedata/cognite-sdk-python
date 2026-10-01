@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.integrations.errors import IntegrationErrorList
