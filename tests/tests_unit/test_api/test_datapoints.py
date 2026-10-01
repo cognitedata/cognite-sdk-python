@@ -1261,6 +1261,7 @@ class TestDatapointsPoster:
         with pytest.raises(ValueError, match=exp_msg):
             dps_io.DatapointsPoster._verify_dps_object_for_insertion(dps)
 
+    @pytest.mark.dsl
     @pytest.mark.parametrize("ts_type, expected", [("numeric", False), ("state", True)])
     def test_is_state(self, ts_type: str, expected: bool) -> None:
         dps = Datapoints(id=1, is_string=False, is_step=False, type=ts_type, timestamp=[1, 2])  # type: ignore [arg-type]
