@@ -415,9 +415,11 @@ class ClientConfig:
         if self._cluster is not None:
             return self._cluster
 
+        # Network-restricted projects are served from a 'restricted-api.' subdomain in front of the cluster,
+        # so we strip it before trying to extract the cluster name (to avoid conflating it with the cluster itself):
+        base_url = re.sub(r"^(https?://)restricted-api\.", r"\1", self.base_url)
         if match := re.match(
-            r"https?://(?:[^/\.\s]*\.plink\.|restricted-api\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)",
-            self.base_url,
+            r"https?://([^/\.\s]*\.plink\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)", base_url
         ):
-            return match.group(1)
+            return match.group(2)
         return None
