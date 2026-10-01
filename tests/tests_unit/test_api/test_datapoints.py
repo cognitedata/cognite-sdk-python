@@ -25,6 +25,7 @@ from cognite.client._api.datapoints_io import StateDatapointsPoster, _InsertData
 from cognite.client.data_classes import (
     Datapoint,
     Datapoints,
+    DatapointsArray,
     DatapointsList,
     LatestDatapointQuery,
     StateDatapointsInsert,
@@ -1244,6 +1245,27 @@ class TestDatapointsPoster:
             assert 0 < n_dps <= dps_limit
             assert 0 < len(call) <= ts_limit
         assert expected_n_dps == tot_n_dps
+
+    @pytest.mark.parametrize(
+        "ts_type, exp_msg",
+        [
+            ("numeric", r"^Only raw datapoints are supported when inserting data from ``Datapoints``$"),
+            (
+                "state",
+                r"^State time series are not supported by this method. Use ``insert_states`` instead when inserting data from ``Datapoints``$",
+            ),
+        ],
+    )
+    def test_insert_aggregate_or_state_datapoints_object_raises(self, ts_type: str, exp_msg: str) -> None:
+        dps = Datapoints(id=1, is_string=False, is_step=False, type=ts_type, timestamp=[1, 2])  # type: ignore [arg-type]
+        with pytest.raises(ValueError, match=exp_msg):
+            dps_io.DatapointsPoster._verify_dps_object_for_insertion(dps)
+
+    @pytest.mark.parametrize("ts_type, expected", [("numeric", False), ("state", True)])
+    def test_is_state(self, ts_type: str, expected: bool) -> None:
+        dps = Datapoints(id=1, is_string=False, is_step=False, type=ts_type, timestamp=[1, 2])  # type: ignore [arg-type]
+        assert dps.is_state is expected
+        assert DatapointsArray(id=1, is_string=False, is_step=False, type=ts_type).is_state is expected  # type: ignore [arg-type]
 
 
 def create_state_dps_poster(dps_limit: int, ts_limit: int) -> StateDatapointsPoster:

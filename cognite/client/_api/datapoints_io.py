@@ -693,11 +693,13 @@ class DatapointsPoster:
 
     @staticmethod
     def _verify_dps_object_for_insertion(dps: Datapoints | DatapointsArray) -> None:
+        if dps.is_state:
+            raise ValueError(
+                f"State time series are not supported by this method. Use ``insert_states`` instead "
+                f"when inserting data from ``{type(dps).__name__}``"
+            )
         if dps.value is None:
-            msg = f"Only raw datapoints are supported when inserting data from ``{type(dps).__name__}``"
-            if dps.type == "state":
-                msg += ", and state time series are not supported by this method. Use ``insert_states`` instead"
-            raise ValueError(msg)
+            raise ValueError(f"Only raw datapoints are supported when inserting data from ``{type(dps).__name__}``")
         if (n_ts := len(dps.timestamp)) != (n_dps := len(dps.value)):
             raise ValueError(f"Number of timestamps ({n_ts}) does not match number of datapoints ({n_dps}) to insert")
 
