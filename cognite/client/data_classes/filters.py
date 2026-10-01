@@ -18,7 +18,7 @@ from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._text import convert_all_keys_to_camel_case, to_camel_case
 from cognite.client.utils.useful_types import SequenceNotStr, is_sequence_not_str
 
-PropertyReference: TypeAlias = str | Sequence[str] | EnumProperty | tuple[ContainerId | ViewId, str] | PropertyId
+PropertyReference: TypeAlias = str | SequenceNotStr[str] | EnumProperty | tuple[ContainerId | ViewId, str] | PropertyId
 
 
 @dataclass
@@ -71,7 +71,7 @@ def _dump_property(property_: PropertyReference, camel_case: bool) -> list[str] 
             return property_.as_reference()
         case PropertyId():
             return list(property_.as_property_ref())
-        case tuple([ContainerId() | ViewId() as source, str() as prop_name]):
+        case [ContainerId() | ViewId() as source, str() as prop_name]:
             return list(source.as_property_ref(prop_name))
         case str():
             return [to_camel_case(property_) if camel_case else property_]
@@ -1033,7 +1033,7 @@ class IsNull(Not):
                 "The IsNull filter is a Data Modeling filter and expected a sequence of str to describe the property, "
                 f"like ['node', 'space'] or ['my-space', 'my-view/version', 'my-property'], got: {property}"
             )
-        super().__init__(Exists(cast(Sequence[str], property)))
+        super().__init__(Exists(property))
         self._filter_name = Not._filter_name
 
     @classmethod

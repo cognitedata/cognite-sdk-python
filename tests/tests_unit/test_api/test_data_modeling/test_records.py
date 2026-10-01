@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from types import MappingProxyType
 
 import pytest
 from pytest_httpx2 import HTTPXMock
@@ -1243,7 +1244,11 @@ class TestRecordPropertyPathValidation:
         with pytest.raises(TypeError, match="must have a string property"):
             RecordTargetUnit((ViewId("sp", "my_view", "v1"), 42), UnitReference("pressure:pa"))  # type: ignore[arg-type]
 
-    @pytest.mark.parametrize("property_", [[ViewId("sp", "v", "v1"), "temp"], [], ["sp", 42], b"temp"])
+    def test_target_unit_accepts_source_property_list(self) -> None:
+        target_unit = RecordTargetUnit([ViewId("sp", "v", "v1"), "temp"], UnitReference("temperature:deg_c"))
+        assert target_unit.dump()["property"] == ["sp", "v/v1", "temp"]
+
+    @pytest.mark.parametrize("property_", [[], ["sp", 42], b"temp"])
     def test_target_unit_rejects_invalid_path(self, property_: object) -> None:
         with pytest.raises((TypeError, ValueError), match="'property' must"):
             RecordTargetUnit(property_, UnitReference("pressure:pa"))  # type: ignore[arg-type]
@@ -1298,10 +1303,19 @@ class TestRecordSourceViews:
         assert loaded.source == expected
         assert loaded.properties == {"temp": 25.0}
 
-    @pytest.mark.parametrize("source", [["sp", "my_view", "v1"], "sp"])
-    def test_source_rejects_non_identifiers(self, source: object) -> None:
+    @pytest.mark.parametrize(
+        "source, expected",
+        [
+            (["sp", "my_view", "v1"], RecordViewId("sp", "my_view", "v1")),
+            (["sp", "my_container"], RecordContainerId("sp", "my_container")),
+        ],
+    )
+    def test_source_accepts_any_sequence(self, source: list[str], expected: RecordContainerId | RecordViewId) -> None:
+        assert RecordSource(source, {}).source == expected  # type: ignore[arg-type]
+
+    def test_source_rejects_non_identifiers(self) -> None:
         with pytest.raises(TypeError, match="Cannot load record source"):
-            RecordSource(source, {})  # type: ignore[arg-type]
+            RecordSource("sp", {})  # type: ignore[arg-type]
 
     @pytest.mark.parametrize(
         "source",
@@ -1315,13 +1329,17 @@ class TestRecordSourceViews:
         with pytest.raises(TypeError, match="requires an explicit 'version'"):
             RecordSource(source, {})  # type: ignore[arg-type]
 
+    def test_source_accepts_any_mapping_and_infers_type(self) -> None:
+        source = MappingProxyType({"space": "sp", "externalId": "v", "version": "v1"})
+        assert RecordSource(source, {}).source == RecordViewId("sp", "v", "v1")  # type: ignore[arg-type]
+
     def test_source_load_rejects_unknown_type(self) -> None:
         raw = {"source": {"space": "sp", "externalId": "x", "type": "node"}, "properties": {}}
         with pytest.raises(ValueError, match="must be 'container' or 'view', but was 'node'"):
             RecordSource._load(raw)
 
     def test_source_rejects_wrong_tuple_length(self) -> None:
-        with pytest.raises(ValueError, match="Invalid tuple length"):
+        with pytest.raises(ValueError, match="Invalid length for record source identifier"):
             RecordSource(source=("sp",), properties={})  # type: ignore[arg-type]
 
     def test_source_rejects_view_without_version(self) -> None:

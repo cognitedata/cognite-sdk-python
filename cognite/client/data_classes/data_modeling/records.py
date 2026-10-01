@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Literal, TypeAlias
@@ -60,7 +60,7 @@ class RecordViewId(ViewId):
             raise TypeError("RecordViewId requires an explicit 'version'.")
 
 
-def _load_record_source_id(data: RecordSourceIdentifier | dict[str, Any]) -> RecordContainerId | RecordViewId:
+def _load_record_source_id(data: RecordSourceIdentifier | Mapping[str, Any]) -> RecordContainerId | RecordViewId:
     match data:
         case RecordViewId() | RecordContainerId():
             return data
@@ -70,20 +70,21 @@ def _load_record_source_id(data: RecordSourceIdentifier | dict[str, Any]) -> Rec
             return RecordViewId(space=data.space, external_id=data.external_id, version=data.version)
         case ContainerId():
             return RecordContainerId(space=data.space, external_id=data.external_id)
-        case tuple([space, external_id, version]):
+        case [space, external_id, version]:
             return RecordViewId(space=space, external_id=external_id, version=version)
-        case tuple([space, external_id]):
+        case [space, external_id]:
             return RecordContainerId(space=space, external_id=external_id)
-        case tuple():
-            raise ValueError(f"Invalid tuple length for record source identifier: {len(data)}, expected 2 or 3.")
-        case dict({"type": "view"}):
-            return RecordViewId.load(data)
-        case dict({"type": "container"}):
-            return RecordContainerId.load(data)
-        case dict() if data.get("type") is None:
-            return RecordViewId.load(data) if "version" in data else RecordContainerId.load(data)
-        case dict():
-            raise ValueError(f"Record source 'type' must be 'container' or 'view', but was {data.get('type')!r}")
+        case [*items]:
+            raise ValueError(f"Invalid length for record source identifier: {len(items)}, expected 2 or 3.")
+        case {"type": "view"}:
+            return RecordViewId.load(dict(data))
+        case {"type": "container"}:
+            return RecordContainerId.load(dict(data))
+        case {"type": source_type}:
+            raise ValueError(f"Record source 'type' must be 'container' or 'view', but was {source_type!r}")
+        case Mapping():
+            # No 'type' given (e.g. a hand-written dict): infer it from the presence of 'version'
+            return RecordViewId.load(dict(data)) if "version" in data else RecordContainerId.load(dict(data))
         case _:
             raise TypeError(f"Cannot load record source from {type(data).__name__}")
 
@@ -100,7 +101,7 @@ class RecordSource(CogniteResource):
     """Container or view source with property values for a record write.
 
     Args:
-        source (RecordSourceIdentifier): Container or view ID or a (space, external_id[, version]) tuple.
+        source (RecordSourceIdentifier): Container ID, view ID, or a (space, external_id[, version]) tuple.
         properties (dict[str, Any]): The data to write to the source container or view.
     """
 

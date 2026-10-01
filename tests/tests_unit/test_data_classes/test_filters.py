@@ -84,8 +84,17 @@ def test_filter_is_hashable_and_uses_identity() -> None:
         ((RecordContainerId("sp", "container"), "temp"), ["sp", "container", "temp"]),
         (PropertyId(ViewId("sp", "view", "v1"), "temp"), ["sp", "view/v1", "temp"]),
         (PropertyId(ContainerId("sp", "container"), "temp"), ["sp", "container", "temp"]),
+        ([ViewId("sp", "view", "v1"), "temp"], ["sp", "view/v1", "temp"]),
     ],
-    ids=["view", "record-view", "container", "record-container", "view-property-id", "container-property-id"],
+    ids=[
+        "view",
+        "record-view",
+        "container",
+        "record-container",
+        "view-property-id",
+        "container-property-id",
+        "view-list",
+    ],
 )
 def test_filter_source_property_references(property_: PropertyReference, expected: list[str]) -> None:
     assert Equals(property_, 25.0).dump() == {"equals": {"property": expected, "value": 25.0}}

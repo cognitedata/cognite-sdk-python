@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, PropertyPath, ViewId
-from cognite.client.utils.useful_types import is_sequence_not_str
 
 RESERVED_EXTERNAL_IDS = frozenset(
     {
@@ -75,20 +74,16 @@ def validate_property_path(prop: PropertyPath, argument: str = "property", hint:
     match prop:
         case PropertyId():
             return list(prop.as_property_ref())
-        case tuple([ContainerId() | ViewId() as source, str(prop_name)]):
+        case [ContainerId() | ViewId() as source, str(prop_name)]:
             return list(source.as_property_ref(prop_name))
-        case tuple([ContainerId() | ViewId(), invalid_prop]):
+        case [ContainerId() | ViewId(), invalid_prop]:
             raise TypeError(
-                f"{argument!r} given as a (source, property) tuple must have a string property, "
+                f"{argument!r} given as a (source, property) pair must have a string property, "
                 f"but {invalid_prop!r} is of type {type(invalid_prop).__name__}. {hint}"
             )
-        case _ if not is_sequence_not_str(prop):
-            got = f"the string {prop!r}" if isinstance(prop, str) else type(prop).__name__
-            raise TypeError(f"{argument!r} must be a sequence of strings, not {got}. {hint}")
-        case _:
-            path = list(prop)
-            if not path:
-                raise ValueError(f"{argument!r} must not be empty. {hint}")
+        case []:
+            raise ValueError(f"{argument!r} must not be empty. {hint}")
+        case [*path]:
             for segment in path:
                 if not isinstance(segment, str):
                     raise TypeError(
@@ -96,3 +91,6 @@ def validate_property_path(prop: PropertyPath, argument: str = "property", hint:
                         f"{type(segment).__name__}. {hint}"
                     )
             return path
+        case _:
+            got = f"the string {prop!r}" if isinstance(prop, str) else type(prop).__name__
+            raise TypeError(f"{argument!r} must be a sequence of strings, not {got}. {hint}")
