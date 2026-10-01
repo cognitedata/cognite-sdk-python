@@ -4,14 +4,14 @@ import re
 from typing import TYPE_CHECKING
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.exceptions import CogniteAPIError
 from tests.utils import get_url
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
@@ -19,12 +19,12 @@ if TYPE_CHECKING:
 class TestSpaces:
     @pytest.fixture
     def mock_spaces_delete_raise_error(
-        self, httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+        self, httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
     ) -> HTTPXMock:
         response_body = {"error": "smth"}
         url_pattern = re.compile(re.escape(get_url(async_client.data_modeling.spaces)) + "/models/spaces/delete")
-        httpx_mock.add_response(method="POST", url=url_pattern, status_code=400, json=response_body)
-        return httpx_mock
+        httpx2_mock.add_response(method="POST", url=url_pattern, status_code=400, json=response_body)
+        return httpx2_mock
 
     def test_failed_delete_task(self, cognite_client: CogniteClient, mock_spaces_delete_raise_error: HTTPXMock) -> None:
         some_space = "i-dont-actually-exist"

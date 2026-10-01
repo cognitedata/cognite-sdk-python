@@ -4,7 +4,7 @@ import re
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import (
@@ -20,14 +20,14 @@ from cognite.client.data_classes import (
 from tests.utils import get_or_raise, get_url, jsgz_load
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
 def mock_seq_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> dict[str, Any]:
     response_body = {
         "items": [
@@ -62,43 +62,43 @@ def mock_seq_response(
     url_pattern = re.compile(
         re.escape(get_url(async_client.sequences)) + r"/sequences(?:/byids|/list|/update|/delete|/search|$|\?.+)"
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True, is_reusable=True
     )
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     return response_body
 
 
 @pytest.fixture
 def mock_sequences_empty(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     response_body: dict[str, list] = {"items": []}
     url_pattern = re.compile(
         re.escape(get_url(async_client.sequences)) + r"/sequences(?:/byids|/update|/list|/delete|/search|$|\?.+)"
     )
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_post_sequence_data(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.sequences) + "/sequences/data",
         status_code=200,
         json={},
         is_reusable=True,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_get_sequence_data(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> dict[str, Any]:
     payload = {
         "id": 0,
@@ -106,7 +106,7 @@ def mock_get_sequence_data(
         "columns": [{"externalId": "ceid", "createdTime": 123, "lastUpdatedTime": 123, "valueType": "DOUBLE"}],
         "rows": [{"rowNumber": 0, "values": [1]}],
     }
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
@@ -117,7 +117,7 @@ def mock_get_sequence_data(
 
 @pytest.fixture
 def mock_get_sequence_empty_data(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     json = {
         "id": 0,
@@ -128,18 +128,18 @@ def mock_get_sequence_empty_data(
         ],
         "rows": [],
     }
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
         json=json,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_get_sequence_data_many_columns(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     json = {
         "id": 0,
@@ -150,18 +150,18 @@ def mock_get_sequence_data_many_columns(
         ],
         "rows": [{"rowNumber": 0, "values": ["str"] * 200}],
     }
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
         json=json,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_get_sequence_data_two_col(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     json = {
         "id": 0,
@@ -172,19 +172,19 @@ def mock_get_sequence_data_two_col(
         ],
         "rows": [{"rowNumber": 0, "values": [1, 2]}],
     }
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
         json=json,
         is_reusable=True,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_get_sequence_data_two_col_with_zero(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     json = {
         "id": 0,
@@ -195,19 +195,19 @@ def mock_get_sequence_data_two_col_with_zero(
         ],
         "rows": [{"rowNumber": 12, "values": ["string-12", 0]}],
     }
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
         json=json,
         is_reusable=True,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_get_sequence_data_with_null(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     json = {
         "id": 0,
@@ -218,26 +218,26 @@ def mock_get_sequence_data_with_null(
         ],
         "rows": [{"rowNumber": 0, "values": [1, None]}, {"rowNumber": 1, "values": [None, "blah"]}],
     }
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.sequences) + "/sequences/data/list",
         status_code=200,
         json=json,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_delete_sequence_data(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.sequences) + "/sequences/data/delete",
         status_code=200,
         json={},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class TestSequences:
@@ -262,7 +262,7 @@ class TestSequences:
         assert mock_seq_response["items"] == res.dump(camel_case=True)
 
     def test_list_with_filters(
-        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.sequences.list(
             metadata={"a": "b"},
@@ -282,10 +282,10 @@ class TestSequences:
             "createdTime": {"max": 123},
             "lastUpdatedTime": {"min": 45},
             "dataSetIds": [{"id": 11}, {"externalId": "fml"}],
-        } == jsgz_load(httpx_mock.get_requests()[0].content)["filter"]
+        } == jsgz_load(httpx2_mock.get_requests()[0].content)["filter"]
 
     def test_create_single(
-        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.sequences.create(
             SequenceWrite(external_id="1", name="blabla", columns=[SequenceColumnWrite(external_id="column0")])
@@ -296,10 +296,10 @@ class TestSequences:
             "items": [
                 {"name": "blabla", "externalId": "1", "columns": [{"externalId": "column0", "valueType": "DOUBLE"}]}
             ]
-        } == jsgz_load(httpx_mock.get_requests()[0].content)
+        } == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     def test_create_single_multicol(
-        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.sequences.create(
             SequenceWrite(
@@ -324,10 +324,10 @@ class TestSequences:
                     ],
                 }
             ]
-        } == jsgz_load(httpx_mock.get_requests()[0].content)
+        } == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     def test_create_columnid_passed(
-        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.sequences.create(
             SequenceWrite(
@@ -337,7 +337,7 @@ class TestSequences:
         assert isinstance(res, Sequence)
         assert {
             "items": [{"name": "blabla", "externalId": "1", "columns": [{"valueType": "STRING", "externalId": "a"}]}]
-        } == jsgz_load(httpx_mock.get_requests()[0].content)
+        } == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     def test_create_multiple(self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any]) -> None:
         res = cognite_client.sequences.create(
@@ -351,17 +351,17 @@ class TestSequences:
             assert mock_seq_response["items"] == assets.dump(camel_case=True)
 
     def test_delete_single(
-        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.sequences.delete(id=1)
-        assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} == jsgz_load(httpx2_mock.get_requests()[0].content)
         assert res is None
 
     def test_delete_multiple(
-        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.sequences.delete(id=[1])
-        assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"ignoreUnknownIds": False, "items": [{"id": 1}]} == jsgz_load(httpx2_mock.get_requests()[0].content)
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any]) -> None:
@@ -380,7 +380,7 @@ class TestSequences:
         assert mock_seq_response["items"] == res.dump(camel_case=True)
 
     def test_search(
-        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.sequences.search(filter=SequenceFilter(external_id_prefix="e"))
         assert mock_seq_response["items"] == res.dump(camel_case=True)
@@ -388,11 +388,15 @@ class TestSequences:
             "search": {"name": None, "description": None, "query": None},
             "filter": {"externalIdPrefix": "e"},
             "limit": 25,
-        } == jsgz_load(httpx_mock.get_requests()[0].content)
+        } == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     @pytest.mark.parametrize("filter_field", ["is_string", "isString"])
     def test_search_dict_filter(
-        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], filter_field: str, httpx_mock: HTTPXMock
+        self,
+        cognite_client: CogniteClient,
+        mock_seq_response: dict[str, Any],
+        filter_field: str,
+        httpx2_mock: HTTPXMock,
     ) -> None:
         res = cognite_client.sequences.search(filter={filter_field: True})
         assert mock_seq_response["items"] == res.dump(camel_case=True)
@@ -400,16 +404,16 @@ class TestSequences:
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
             "limit": 25,
-        } == jsgz_load(httpx_mock.get_requests()[0].content)
+        } == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     def test_search_with_filter(
-        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_seq_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.sequences.search(
             name="n", description="d", query="q", filter=SequenceFilter(last_updated_time={"max": 42})
         )
         assert mock_seq_response["items"] == res.dump(camel_case=True)
-        req_body = jsgz_load(httpx_mock.get_requests()[0].content)
+        req_body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert 42 == req_body["filter"]["lastUpdatedTime"]["max"]
         assert {"name": "n", "description": "d", "query": "q"} == req_body["search"]
 
@@ -542,10 +546,10 @@ class TestSequences:
         cognite_client: CogniteClient,
         mock_seq_response: dict[str, Any],
         mock_get_sequence_data: dict[str, Any],
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
     ) -> None:
         cognite_client.sequences.data.retrieve(id=123, start=123, end=-1)
-        assert jsgz_load(httpx_mock.get_requests()[0].content)["end"] is None
+        assert jsgz_load(httpx2_mock.get_requests()[0].content)["end"] is None
 
     def test_delete_by_id(self, cognite_client: CogniteClient, mock_delete_sequence_data: HTTPXMock) -> None:
         res = cognite_client.sequences.data.delete(id=1, rows=[1, 2, 3])

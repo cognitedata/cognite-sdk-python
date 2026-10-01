@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass
-from typing import Any, NoReturn
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, NoReturn
 
 from typing_extensions import Self
 
@@ -20,7 +20,9 @@ from cognite.client.data_classes._base import (
 
 @dataclass
 class SessionWrite(CogniteResource):
-    nonce: str
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"nonce"})
+
+    nonce: str = field(repr=False)
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:

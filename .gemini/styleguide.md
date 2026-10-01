@@ -7,6 +7,8 @@
   structures instead of untyped dictionaries
 - **CogniteResource**: Use `CogniteResource` for DTO (Data Transfer Object) that are request or
   response objects to/from the Cognite API
+- **Credentials**: A new data class field holding a secret must be listed in `_SENSITIVE_FIELDS`
+  (see `cognite/client/utils/_redaction.py`)
 - **IO Safety**: Always use typed data structures for file operations and data parsing
 - **Readability**: Code should be immediately understandable
 - **Maintainability**: Write code that is easy to modify and extend

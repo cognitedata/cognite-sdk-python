@@ -3,7 +3,7 @@ name: build
 
 on:
   pull_request:
-    branches: [master, pysdk-release-v8]
+    branches: [master]
 
 jobs:
   build_and_test_jupyter_pyodide:
@@ -37,5 +37,5 @@ jobs:
           whl_file=$(find dist -name "*.whl" | sed 's|^dist/||') # Find the built wheel file, remove dist/ prefix
           echo "Found built wheel file: $whl_file"
           SDK_FILE_PATH=$whl_file \
-          PACKAGES="[\"anyio\", \"http://localhost:3000/dist/$whl_file\"]" \
+          PACKAGES="[\"http://localhost:3000/dist/$whl_file\"]" \
           node scripts/test-pyodide.js
