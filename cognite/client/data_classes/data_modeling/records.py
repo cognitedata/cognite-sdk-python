@@ -82,7 +82,7 @@ def _load_record_source_id(data: RecordSourceIdentifier | Mapping[str, Any]) -> 
             return RecordContainerId.load(dict(data))
         case {"type": source_type}:
             raise ValueError(f"Record source 'type' must be 'container' or 'view', but was {source_type!r}")
-        case Mapping():
+        case {}:
             # No 'type' given (e.g. a hand-written dict): infer it from the presence of 'version'
             return RecordViewId.load(dict(data)) if "version" in data else RecordContainerId.load(dict(data))
         case _:
