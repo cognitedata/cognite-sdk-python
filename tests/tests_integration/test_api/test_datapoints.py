@@ -665,11 +665,18 @@ class TestListStateTimeSeries:
 
         # ...but they can of course be listed from the data modeling time series API:
         ours = filters.InstanceReferences([numeric_id, state_id])
-        res = cognite_client.data_modeling.time_series.list(is_state=True, filter=ours, limit=None)
+        res = cognite_client.data_modeling.time_series.list(time_series_type="state", filter=ours, limit=None)
         assert res.as_ids() == [state_id]
 
-        res = cognite_client.data_modeling.time_series.list(is_state=False, filter=ours, limit=None)
+        res = cognite_client.data_modeling.time_series.list(
+            time_series_type=["numeric", "string"], filter=ours, limit=None
+        )
         assert res.as_ids() == [numeric_id]
+
+        res = cognite_client.data_modeling.time_series.list(
+            time_series_type=["numeric", "state"], filter=ours, limit=None
+        )
+        assert set(res.as_ids()) == {numeric_id, state_id}
 
         res = cognite_client.data_modeling.time_series.list(filter=ours, limit=None)
         assert set(res.as_ids()) == {numeric_id, state_id}
