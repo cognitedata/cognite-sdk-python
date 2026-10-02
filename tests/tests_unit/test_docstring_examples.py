@@ -180,6 +180,7 @@ class TestDocstringExamples:
         run_docstring_tests(ai)
         run_docstring_tests(ai.tools)
         run_docstring_tests(ai.tools.documents)
+        run_docstring_tests(ai.time_series)
 
     def test_simulators(self) -> None:
         run_docstring_tests(simulators)
