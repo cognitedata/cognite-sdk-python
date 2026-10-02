@@ -853,6 +853,54 @@ class TestInsertStateDatapoints:
             ]
         )
 
+    @pytest.mark.usefixtures("use_beta_header_for_dps_client")
+    @pytest.mark.parametrize("retrieve_method_name", ["retrieve", "retrieve_arrays"])
+    def test_insert_states_from_retrieved_datapoints_keeps_status_and_bad_datapoints(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        space_for_time_series: Space,
+        state_set: NodeApplyResult,
+        request: pytest.FixtureRequest,
+        retrieve_method_name: str,
+    ) -> None:
+        # Copy a state time series (incl. an uncertain and a bad datapoint, the latter has no state at all)
+        # into a new, empty one by passing the retrieved object as 'datapoints' to StateDatapointsInsert:
+        src_id, dst_id = (NodeId(space_for_time_series.space, f"dms-state-copy-{n}-{random_string(10)}") for n in "ab")
+        for node_id in (src_id, dst_id):
+            request.addfinalizer(functools.partial(cognite_client.data_modeling.instances.delete, node_id))
+            _create_state_time_series(
+                external_id=node_id.external_id,
+                cognite_client=cognite_client,
+                async_client=async_client,
+                space_for_time_series=space_for_time_series,
+                state_set=state_set,
+            )
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(
+                instance_id=src_id,
+                datapoints=[
+                    StateDatapointWrite(1000, numeric_value=0),
+                    StateDatapointWrite(2000, numeric_value=1, status_code=StatusCode.Uncertain),
+                    StateDatapointWrite(3000, status_symbol="Bad"),
+                    StateDatapointWrite(4000, numeric_value=-1),
+                ],
+            )
+        )
+        retrieve_kwargs: dict[str, Any] = dict(
+            include_status=True, ignore_bad_datapoints=False, treat_uncertain_as_bad=False
+        )
+        retrieve_fn = getattr(cognite_client.time_series.data, retrieve_method_name)
+        src = retrieve_fn(instance_id=src_id, **retrieve_kwargs)
+        cognite_client.time_series.data.insert_states(StateDatapointsInsert(instance_id=dst_id, datapoints=src))
+
+        dst = retrieve_fn(instance_id=dst_id, **retrieve_kwargs)
+        assert dst.instance_id == dst_id
+        assert list(dst.timestamp) == list(src.timestamp)
+        exp_states = [0, 1, None, -1]
+        assert [None if pd.isna(s) else int(s) for s in dst.numeric_states] == exp_states
+        assert list(dst.status_symbol) == ["Good", "Uncertain", "Bad", "Good"]
+
 
 @pytest.fixture(scope="session")
 def empty_state_set(
