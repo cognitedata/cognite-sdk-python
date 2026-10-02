@@ -1075,6 +1075,11 @@ class DatapointsArray(CogniteResource):
             timezone=timezone,  # type: ignore [arg-type]
         )
 
+    @property
+    def is_state(self) -> bool:
+        """Whether this object holds data from a state time series."""
+        return self.type == "state"
+
     def __len__(self) -> int:
         return len(self.timestamp)
 
@@ -1399,6 +1404,11 @@ class Datapoints(CogniteResource):
         for dct in dumped["datapoints"]:
             dct["timestamp"] = convert_and_isoformat_timestamp(dct["timestamp"], self.timezone)
         return _json.dumps(dumped, indent=4)
+
+    @property
+    def is_state(self) -> bool:
+        """Whether this object holds data from a state time series."""
+        return self.type == "state"
 
     def __len__(self) -> int:
         return len(self.timestamp)
