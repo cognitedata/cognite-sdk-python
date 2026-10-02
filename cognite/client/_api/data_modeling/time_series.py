@@ -9,7 +9,7 @@ from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeries
 from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeList
 from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Equals, Filter
 from cognite.client.utils._data_modeling import resolve_source, strip_canonical_source
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -19,6 +19,20 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 COGNITE_TIME_SERIES_VIEW_ID = CogniteTimeSeries.get_source()
+
+
+def _build_filter(filter: Filter | dict[str, Any] | None, is_state: bool | None = None) -> Filter | None:
+    if isinstance(filter, dict):
+        filter = Filter.load(filter)
+
+    if is_state is None:
+        return filter
+
+    is_state_flt: Filter = Equals(COGNITE_TIME_SERIES_VIEW_ID.as_property_ref("type"), value="state")
+    if not is_state:
+        is_state_flt = ~is_state_flt
+
+    return is_state_flt if filter is None else is_state_flt & filter
 
 
 class DataModelingTimeSeriesAPI(APIClient):
