@@ -1964,6 +1964,9 @@ class TestRetryableEndpoints:
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/ai/tools/documents/summarize", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/ai/tools/documents/ask", True),
                 ("POST", "https://api.cognitedata.com/api/v1/projects/bla/ai/tools/documents/task", False),
+                # "ai/timeseries/(forecast|impute)": stateless model calls, safe to retry
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/ai/timeseries/forecast", True),
+                ("POST", "https://api.cognitedata.com/api/v1/projects/bla/ai/timeseries/impute", True),
                 # Limits API
                 ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values", True),
                 ("GET", "https://api.cognitedata.com/api/v1/projects/bla/limits/values/streams.streams", True),
