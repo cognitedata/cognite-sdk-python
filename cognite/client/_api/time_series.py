@@ -151,6 +151,10 @@ class TimeSeriesAPI(APIClient):
 
         Yields:
             TimeSeries | TimeSeriesList: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            You can list these like any other Data Modeling instance, or through the dedicated helper :meth:`client.data_modeling.time_series.list <cognite.client.AsyncCogniteClient.data_modeling.time_series.list>` with ``time_series_type="state"``.
         """  # noqa: DOC404
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -784,11 +788,15 @@ class TimeSeriesAPI(APIClient):
         Returns:
             TimeSeriesList: The requested time series.
 
-        .. note::
+        Note:
             When using `partitions`, there are few considerations to keep in mind:
                 * `limit` has to be set to `None` (or `-1`).
                 * API may reject requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests result in a 400 Bad Request status.
                 * Partitions are done independently of sorting: there's no guarantee of the sort order between elements from different partitions. For this reason providing a `sort` parameter when using `partitions` is not allowed.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            You can list these like any other Data Modeling instance, or through the dedicated helper :meth:`client.data_modeling.time_series.list <cognite.client.AsyncCogniteClient.data_modeling.time_series.list>` with ``time_series_type="state"``.
 
         Examples:
 

@@ -45,6 +45,7 @@ from cognite.client.data_classes import (
     TimeSeries,
     TimeSeriesList,
     TimeSeriesWrite,
+    filters,
 )
 from cognite.client.data_classes.data_modeling import NodeApply, NodeOrEdgeData, Space
 from cognite.client.data_classes.data_modeling.cdm.v1 import (
@@ -494,6 +495,12 @@ def space_for_time_series(cognite_client: CogniteClient) -> Iterator[Space]:
     yield cognite_client.data_modeling.spaces.apply(space)
 
 
+def _dms_ts_listing_name(postfix: str) -> str:
+    # Shared by a numeric and a state time series, so that we can list both from the classic time series API by name
+    # (time series created in DM have no classic external ID):
+    return f"dms-ts-type-listing-long-name-unlikely-to-collide-{postfix}"
+
+
 @pytest.fixture(scope="session")
 def ts_create_in_dms(
     cognite_client: CogniteClient, space_for_time_series: Space, os_and_py_version: str
@@ -504,6 +511,7 @@ def ts_create_in_dms(
         external_id=f"dms-time-series-{os_and_py_version}",
         is_step=True,
         time_series_type="numeric",
+        name=_dms_ts_listing_name(os_and_py_version),
     )
     (dms_ts_node,) = cognite_client.data_modeling.instances.apply(dms_ts).nodes
     return dms_ts_node
@@ -567,6 +575,7 @@ def _create_state_time_series(
     async_client: AsyncCogniteClient,
     space_for_time_series: Space,
     state_set: NodeApplyResult,
+    name: str | None = None,
 ) -> NodeApplyResult:
     state_ts = CogniteTimeSeriesApply(
         space=space_for_time_series.space,
@@ -574,6 +583,7 @@ def _create_state_time_series(
         is_step=False,
         time_series_type="state",
         state_set=(state_set.space, state_set.external_id),
+        name=name,
     )
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(async_client.data_modeling.instances, "_api_subversion", "beta")
@@ -615,6 +625,7 @@ def state_ts(
         async_client=async_client,
         space_for_time_series=space_for_time_series,
         state_set=state_set,
+        name=_dms_ts_listing_name(os_and_py_version),
     )
 
 
@@ -633,6 +644,42 @@ def state_ts_b(
         space_for_time_series=space_for_time_series,
         state_set=state_set,
     )
+
+
+class TestListStateTimeSeries:
+    def test_state_time_series_only_listed_from_data_modeling(
+        self,
+        cognite_client: CogniteClient,
+        os_and_py_version: str,
+        ts_create_in_dms: NodeApplyResult,
+        state_ts: NodeApplyResult,
+    ) -> None:
+        # The classic time series API never returns state time series (unless 'includeAllTypes=true' is passed, which
+        # the SDK doesn't support - and will never tbh as it mixes legacy and DM-only features), -even- when filtering on type:
+        numeric_id, state_id = ts_create_in_dms.as_id(), state_ts.as_id()
+        classic = cognite_client.time_series.list(name=_dms_ts_listing_name(os_and_py_version), limit=None)
+        classic_instance_ids = [ts.instance_id for ts in classic]
+
+        assert numeric_id in classic_instance_ids  # positive control: the name filter works for DM time series
+        assert state_id not in classic_instance_ids
+
+        # ...but they can of course be listed from the data modeling time series API:
+        ours = filters.InstanceReferences([numeric_id, state_id])
+        res = cognite_client.data_modeling.time_series.list(time_series_type="state", filter=ours, limit=None)
+        assert res.as_ids() == [state_id]
+
+        res = cognite_client.data_modeling.time_series.list(
+            time_series_type=["numeric", "string"], filter=ours, limit=None
+        )
+        assert res.as_ids() == [numeric_id]
+
+        res = cognite_client.data_modeling.time_series.list(
+            time_series_type=["numeric", "state"], filter=ours, limit=None
+        )
+        assert set(res.as_ids()) == {numeric_id, state_id}
+
+        res = cognite_client.data_modeling.time_series.list(filter=ours, limit=None)
+        assert set(res.as_ids()) == {numeric_id, state_id}
 
 
 @pytest.mark.allow_no_semaphore(
