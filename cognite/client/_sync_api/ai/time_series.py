@@ -6,12 +6,16 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.ai import ForecastResultList, ImputeResultList, InputTimeSeries
 from cognite.client.utils._async_helpers import run_sync
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class SyncAITimeSeriesAPI(SyncAPIClient):
@@ -93,3 +97,73 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 ... )
         """
         return run_sync(self.__async_client.ai.time_series.impute(time_series=time_series))
+
+    def forecast_dataframe(self, df: pd.DataFrame, cohort: str | Mapping[str, str] | None = None) -> pd.DataFrame:
+        """
+        Forecast every column of a DataFrame 512 steps ahead.
+
+        Each column is one series, labelled by the column name. NaN values are sent as missing points.
+
+        Args:
+            df (pd.DataFrame): Evenly spaced history with a DatetimeIndex, one column per series.
+            cohort (str | Mapping[str, str] | None): One cohort for every column, or a `{column: cohort}` mapping.
+                Columns not in the mapping are forecast independently.
+
+        Returns:
+            pd.DataFrame: The forecasts, with a DatetimeIndex and `(column, quantile)` columns.
+
+        Examples:
+
+            Forecast two compressor pressures jointly, and a temperature independently:
+
+                >>> import pandas as pd
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> df = pd.DataFrame(
+                ...     {
+                ...         "23-PT-1101": [42.1, 42.4, 42.9],
+                ...         "23-PT-1201": [39.8, 40.1, 40.0],
+                ...         "24-TT-3001": [31.0, 31.2, 30.9],
+                ...     },
+                ...     index=pd.date_range("2026-10-01", periods=3, freq="1min"),
+                ... )
+                >>> forecast = client.ai.time_series.forecast_dataframe(
+                ...     df,
+                ...     cohort={
+                ...         "23-PT-1101": "compression-train-a",
+                ...         "23-PT-1201": "compression-train-a",
+                ...     },
+                ... )
+        """
+        return run_sync(self.__async_client.ai.time_series.forecast_dataframe(df=df, cohort=cohort))
+
+    def impute_dataframe(self, df: pd.DataFrame, cohort: str | Mapping[str, str] | None = None) -> pd.DataFrame:
+        """
+        Reconstruct the NaN values in every column of a DataFrame.
+
+        Each column is one series, labelled by the column name. NaN values are sent as missing points and
+        reconstructed.
+
+        Args:
+            df (pd.DataFrame): Evenly spaced history with a DatetimeIndex, one column per series.
+            cohort (str | Mapping[str, str] | None): One cohort for every column, or a `{column: cohort}` mapping.
+                Columns not in the mapping are imputed independently.
+
+        Returns:
+            pd.DataFrame: The reconstructed points, with a DatetimeIndex and `(column, quantile)` columns.
+
+        Examples:
+
+            Reconstruct a gap in a pressure measurement:
+
+                >>> import numpy as np
+                >>> import pandas as pd
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> df = pd.DataFrame(
+                ...     {"21-PT-1019": [42.1, np.nan, 42.9]},
+                ...     index=pd.date_range("2026-10-01", periods=3, freq="1min"),
+                ... )
+                >>> imputed = client.ai.time_series.impute_dataframe(df)
+        """
+        return run_sync(self.__async_client.ai.time_series.impute_dataframe(df=df, cohort=cohort))
