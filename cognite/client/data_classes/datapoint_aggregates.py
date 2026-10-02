@@ -3,7 +3,7 @@ from typing import Literal
 
 from cognite.client.utils._text import to_snake_case
 
-Aggregate = Literal[
+_NonStateAggregate = Literal[
     "average",
     "continuous_variance",
     "count",
@@ -23,6 +23,9 @@ Aggregate = Literal[
     "sum",
     "total_variation",
 ]
+_StateAggregate = Literal["state_count", "state_transitions", "state_duration"]
+Aggregate = _NonStateAggregate | _StateAggregate
+
 _OBJECT_AGGREGATES_CAMEL: frozenset[Literal["maxDatapoint", "minDatapoint"]] = frozenset(
     {"maxDatapoint", "minDatapoint"}
 )
@@ -55,7 +58,7 @@ _INT_AGGREGATES_CAMEL = frozenset(
     }
 )
 INT_AGGREGATES = frozenset(map(to_snake_case, _INT_AGGREGATES_CAMEL))
-ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
+ALL_SORTED_DP_AGGS = sorted(typing.get_args(_NonStateAggregate))
 _ALL_AGGREGATES = frozenset(ALL_SORTED_DP_AGGS)
 ALL_SORTED_NUMERIC_DP_AGGS = [agg for agg in ALL_SORTED_DP_AGGS if agg not in ("min_datapoint", "max_datapoint")]
 
