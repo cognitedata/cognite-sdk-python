@@ -98,6 +98,7 @@ class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        is_state: bool | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
         """
@@ -110,6 +111,7 @@ class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
             space (str | SequenceNotStr[str] | None): Restrict results to this space (or list of spaces).
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): Sort order for the results.
             filter (Filter | dict[str, Any] | None): Advanced filter to apply. See :class:`~cognite.client.data_classes.filters`.
+            is_state (bool | None): If True, only return state time series. If False, only return non-state (numeric and string) time series. Default: None (all types). Combined with ``filter`` (if given) using AND.
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -127,6 +129,10 @@ class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
 
                 >>> res = client.data_modeling.time_series.list(space="my-space", limit=None)
 
+            List only state time series:
+
+                >>> res = client.data_modeling.time_series.list(is_state=True)
+
             Fetch properties from a custom view (note, only time series will be returned), and
             apply a custom filter on the name:
 
@@ -141,6 +147,6 @@ class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.time_series.list(
-                source=source, space=space, sort=sort, filter=filter, limit=limit
+                source=source, space=space, sort=sort, filter=filter, is_state=is_state, limit=limit
             )
         )

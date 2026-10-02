@@ -121,6 +121,7 @@ class DataModelingTimeSeriesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        is_state: bool | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
         """`List time series nodes <https://api-docs.cognite.com/20230101/tag/Instances/operation/advancedListInstance>`_.
@@ -132,6 +133,7 @@ class DataModelingTimeSeriesAPI(APIClient):
             space (str | SequenceNotStr[str] | None): Restrict results to this space (or list of spaces).
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): Sort order for the results.
             filter (Filter | dict[str, Any] | None): Advanced filter to apply. See :class:`~cognite.client.data_classes.filters`.
+            is_state (bool | None): If True, only return state time series. If False, only return non-state (numeric and string) time series. Default: None (all types). Combined with ``filter`` (if given) using AND.
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -149,6 +151,10 @@ class DataModelingTimeSeriesAPI(APIClient):
 
                 >>> res = client.data_modeling.time_series.list(space="my-space", limit=None)
 
+            List only state time series:
+
+                >>> res = client.data_modeling.time_series.list(is_state=True)
+
             Fetch properties from a custom view (note, only time series will be returned), and
             apply a custom filter on the name:
 
@@ -161,6 +167,7 @@ class DataModelingTimeSeriesAPI(APIClient):
                 ...     limit=None,
                 ... )
         """
+        filter = _build_filter(filter, is_state=is_state)
         sources, strip = resolve_source(source, COGNITE_TIME_SERIES_VIEW_ID)
         results = await self._instances_api.list(
             instance_type="node",
