@@ -6,10 +6,11 @@ import json
 import math
 from abc import abstractmethod
 from collections import ChainMap, defaultdict
-from collections.abc import Iterator, MutableSequence, Sequence
+from collections.abc import Iterator, MutableSequence, Sequence, Sized
 from dataclasses import InitVar, dataclass, fields
 from enum import IntEnum
 from functools import cached_property, partial
+from itertools import zip_longest
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, TypeAlias, TypeVar, overload
 from zoneinfo import ZoneInfo
@@ -149,9 +150,11 @@ class StateDatapointWrite:
     def __post_init__(self) -> None:
         if self.numeric_value is not None or self.string_value is not None:
             return
-        # Let's fail early if the user has provided a status code/symbol, but we won't go as far as to
-        # check the given code/symbol value; that is the API's job:
-        if self.status_code is None and self.status_symbol is None:
+        # Both state values are missing so we fail early if the user has not provided a bad status code/symbol, but we won't go as far
+        # as to parse the given symbol; that is the API's job:
+        if (self.status_code is None and self.status_symbol is None) or (
+            self.status_code is not None and self.status_code < StatusCode.Bad
+        ):
             raise ValueError(
                 "A state datapoint without numeric/string value must carry a bad status code or symbol "
                 '(e.g. status_symbol="Bad")'
@@ -163,8 +166,13 @@ class StateDatapointWrite:
             out["numericValue" if camel_case else "numeric_value"] = self.numeric_value
         if self.string_value is not None:
             out["stringValue" if camel_case else "string_value"] = self.string_value
-        if status := {k: v for k, v in (("code", self.status_code), ("symbol", self.status_symbol)) if v is not None}:
-            out["status"] = status
+        # 'Good' is the default status, so we skip it when both code and symbol are Good/missing (even with protobuf
+        # this gives quite good space savings). Anything else is sent as given (also code=0), so that the API can
+        # reject any possible mismatch between code and symbol:
+        if self.status_code not in (None, StatusCode.Good) or self.status_symbol not in (None, "Good"):
+            out["status"] = {
+                k: v for k, v in (("code", self.status_code), ("symbol", self.status_symbol)) if v is not None
+            }
         return out
 
     @classmethod
@@ -196,16 +204,40 @@ class StateDatapointsInsert:
 
     Args:
         instance_id (NodeId | tuple[str, str]): Instance id of the state time series to insert datapoints into. May be given as a ``NodeId`` or a ``(space, external_id)`` tuple.
-        datapoints (MutableSequence[StateDatapointWrite | dict[str, Any]]): Datapoints to insert. Each datapoint can be a ``StateDatapointWrite`` (or a dict)
+        datapoints (MutableSequence[StateDatapointWrite | dict[str, Any]] | Datapoints | DatapointsArray): Datapoints to insert. Each datapoint can be a ``StateDatapointWrite`` (or a dict). Raw datapoints retrieved from a state time series (``Datapoints``/``DatapointsArray``) are also accepted, see the note below.
+
+    Note:
+        When ``Datapoints``/``DatapointsArray`` are given, only the numeric states are used; the string states are ignored,
+        as they are looked up in the *current* state set when retrieved (and are missing for states since removed from it),
+        so writing them back could conflict with the state set. The target time series is given by ``instance_id`` (and
+        not by the identifiers on the given object), so e.g. data can be copied between state time series.
+
+        Status codes are preserved: any datapoint with a non-good status keeps its status (use ``include_status=True``
+        when retrieving). A datapoint with a missing numeric state (this happens for bad datapoints, when retrieved
+        with ``ignore_bad_datapoints=False``) is inserted with only its timestamp and status. If no status info is
+        available for such a datapoint (or the status is not Bad), an error is raised.
     """
 
     instance_id: NodeId | tuple[str, str]
-    datapoints: MutableSequence[StateDatapointWrite | dict[str, Any]]
+    datapoints: MutableSequence[StateDatapointWrite | dict[str, Any]] | Datapoints | DatapointsArray
 
     def __post_init__(self) -> None:
+        if isinstance(self.datapoints, (Datapoints, DatapointsArray)):
+            # Fail early if not valid. The conversion itself is deferred until needed:
+            if not self.datapoints.is_state:
+                raise ValueError(
+                    f"Only datapoints from state time series can be inserted, got type={self.datapoints.type!r}"
+                )
+            if self.datapoints.numeric_states is None:
+                raise ValueError(
+                    "Only raw datapoints from state time series can be inserted, but 'numeric_states' is missing "
+                    "(are these aggregates?)"
+                )
         # ...but we allow non-mutable sequences:
-        if not is_sequence_not_str(self.datapoints):
-            raise TypeError(f"'datapoints' must be a sequence (e.g. 'list'), not {type(self.datapoints)}")
+        elif not is_sequence_not_str(self.datapoints):
+            raise TypeError(
+                f"'datapoints' must be a sequence (e.g. 'list'), 'Datapoints' or 'DatapointsArray', not {type(self.datapoints)}"
+            )
 
     @classmethod
     def load(cls, data: StateDatapointsInsert | dict[str, Any]) -> StateDatapointsInsert:
@@ -233,7 +265,9 @@ class StateDatapointsInsert:
             "instanceId" if camel_case else "instance_id": NodeId.load(self.instance_id).dump(
                 camel_case=camel_case, include_instance_type=False
             ),
-            "datapoints": [StateDatapointWrite.load(dp).dump(camel_case=camel_case) for dp in self.datapoints],
+            "datapoints": [
+                StateDatapointWrite.load(dp).dump(camel_case=camel_case) for dp in self._to_datapoint_writes()
+            ],
         }
 
     def _to_proto_dict(self) -> dict[str, Any]:
@@ -241,6 +275,86 @@ class StateDatapointsInsert:
         dumped = self.dump(camel_case=True)
         dumped["stateDatapoints"] = {"datapoints": dumped.pop("datapoints")}
         return dumped
+
+    @staticmethod
+    def _verify_consistent_lengths(
+        dps: Datapoints | DatapointsArray,
+        timestamps: Sized,
+        num_states: Sized,
+        status_codes: Sized | None,
+        status_symbols: Sized | None,
+    ) -> None:
+        # Objects returned by the SDK are always consistent, so these errors can only happen when the user has
+        # instantiated (or modified) the object themselves:
+        hint = (
+            f"This only happens when the {type(dps).__name__} object has been instantiated (or modified) manually, "
+            "as objects returned by the SDK are always consistent."
+        )
+        if (status_codes is None) != (status_symbols is None):
+            present, missing = (
+                ("status_code", "status_symbol") if status_symbols is None else ("status_symbol", "status_code")
+            )
+            raise ValueError(f"Got '{present}' but '{missing}' is None. Either both or none must be given. {hint}")
+        lengths = {"timestamp": len(timestamps), "numeric_states": len(num_states)}
+        if status_codes is not None and status_symbols is not None:
+            lengths.update({"status_code": len(status_codes), "status_symbol": len(status_symbols)})
+        if len(set(lengths.values())) > 1:
+            raise ValueError(f"The attributes must have equal lengths, but got: {lengths}. {hint}")
+
+    def _to_datapoint_writes(self) -> MutableSequence[StateDatapointWrite | dict[str, Any]]:
+        dps = self.datapoints
+        if not isinstance(dps, (Datapoints, DatapointsArray)):
+            return dps
+
+        assert dps.numeric_states is not None  # verified in __post_init__
+        if isinstance(dps, DatapointsArray):
+            timestamps = dps.timestamp.astype("datetime64[ms]").astype(np.int64).tolist()
+            num_states = dps.numeric_states.tolist()  # float64 (with NaN for missing) when there are bad datapoints
+            status_codes = dps.status_code.tolist() if dps.status_code is not None else None
+            status_symbols = dps.status_symbol.tolist() if dps.status_symbol is not None else None
+        else:
+            timestamps, num_states = dps.timestamp, dps.numeric_states
+            status_codes, status_symbols = dps.status_code, dps.status_symbol
+
+        self._verify_consistent_lengths(dps, timestamps, num_states, status_codes, status_symbols)
+
+        datapoints: list[StateDatapointWrite | dict[str, Any]] = []
+        # zip_longest will default status codes to None if they are missing:
+        for ts, state, code in zip_longest(timestamps, num_states, status_codes or []):
+            match state:
+                case int():
+                    datapoints.append(StateDatapointWrite(ts, state, status_code=code))
+                case float():
+                    if math.isnan(state):
+                        self._maybe_raise_if_missing_state_without_bad_status(code, ts)
+                        datapoints.append(StateDatapointWrite(ts, status_code=code))
+
+                    elif state.is_integer():
+                        datapoints.append(StateDatapointWrite(ts, int(state), status_code=code))
+                    else:
+                        raise ValueError(
+                            f"Unable to insert state datapoint for time series with instance_id={self.instance_id} at "
+                            f"timestamp={ts}: the numeric state value must be a whole number, got {state}. This only "
+                            f"happens when the {type(dps).__name__} object has been instantiated (or modified) manually."
+                        )
+                case None:
+                    self._maybe_raise_if_missing_state_without_bad_status(code, ts)
+                    datapoints.append(StateDatapointWrite(ts, state, status_code=code))
+                case _:
+                    raise TypeError(f"Got a state value of unexpected type: {type(state)}")
+        return datapoints
+
+    def _maybe_raise_if_missing_state_without_bad_status(self, code: int | None, ts: int) -> None:
+        # A missing state is only valid for a Bad status; we don't guess a status (e.g. the generic 'Bad') when
+        # the known status code/symbol says otherwise (or is missing), we raise instead:
+        if code is not None and code >= StatusCode.Bad:
+            return
+        raise ValueError(
+            f"Unable to insert state datapoint for time series with instance_id={self.instance_id} at timestamp={ts}: "
+            "the numeric state value is missing, but the status code is either missing too, or not Bad. This can "
+            "happen when the state datapoints were fetched with 'ignore_bad_datapoints=False' and 'include_status=False' "
+            "(no status info), or when the object has been instantiated (or modified) manually with inconsistent data."
+        )
 
 
 @dataclass(slots=True, frozen=True)

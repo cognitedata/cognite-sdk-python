@@ -760,7 +760,7 @@ class StateDatapointsPoster:
         merged: defaultdict[NodeId, list] = defaultdict(list)
         for obj in items:
             if obj.datapoints:
-                merged[NodeId.load(obj.instance_id)].extend(obj.datapoints)
+                merged[NodeId.load(obj.instance_id)].extend(obj._to_datapoint_writes())
         if merged:
             return itertools.starmap(StateDatapointsInsert, merged.items())
         return None

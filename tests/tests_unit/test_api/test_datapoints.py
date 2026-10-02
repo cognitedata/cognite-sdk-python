@@ -1269,6 +1269,88 @@ class TestDatapointsPoster:
         assert DatapointsArray(id=1, is_string=False, is_step=False, type=ts_type).is_state is expected  # type: ignore [arg-type]
 
 
+class TestInsertStatesWithRetrievedDatapoints:
+    @pytest.fixture
+    def sent(self, monkeypatch: MonkeyPatch) -> list[dict[str, Any]]:
+        sent: list[dict[str, Any]] = []
+
+        async def fake_insert(self: Any, chunk: list[StateDatapointsInsert]) -> None:
+            sent.extend(item.dump() for item in chunk)
+
+        monkeypatch.setattr(dps_io.StateDatapointsPoster, "_insert_datapoints", fake_insert)
+        return sent
+
+    @staticmethod
+    def make_dps(xid: str = "source") -> Datapoints:
+        # Note: The identifiers on the object are not used, the target is given by StateDatapointsInsert:
+        return Datapoints(
+            id=1,
+            instance_id=NodeId("sp", xid),
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=[1000, 2000],
+            numeric_states=[0, None],  # type: ignore [list-item]
+            status_code=[0, 0x80000000],
+            status_symbol=["Good", "Bad"],
+        )
+
+    def test_datapoints_are_merged_and_dumped_for_the_given_target(
+        self, cognite_client: CogniteClient, sent: list[dict[str, Any]]
+    ) -> None:
+        target = NodeId("sp", "target")
+        explicit = StateDatapointsInsert(target, [StateDatapointWrite(3000, 1)])
+        cognite_client.time_series.data.insert_states(
+            [
+                StateDatapointsInsert(target, self.make_dps()),
+                StateDatapointsInsert(("sp", "other"), self.make_dps("whatever")),
+                explicit,
+            ]
+        )
+        by_target = {d["instanceId"]["externalId"]: d["datapoints"] for d in sent}
+        assert by_target["target"] == [
+            {"timestamp": 1000, "numericValue": 0},
+            {"timestamp": 2000, "status": {"code": 0x80000000}},
+            {"timestamp": 3000, "numericValue": 1},
+        ]
+        assert len(by_target["other"]) == 2
+        assert set(by_target) == {"target", "other"}
+
+    def test_chunking_is_applied_to_retrieved_datapoints(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, monkeypatch: MonkeyPatch, sent: list
+    ) -> None:
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 1)
+        cognite_client.time_series.data.insert_states(StateDatapointsInsert(NodeId("sp", "t"), self.make_dps()))
+        assert [len(d["datapoints"]) for d in sent] == [1, 1]
+
+    def test_empty_retrieved_datapoints_are_skipped(self, cognite_client: CogniteClient, sent: list) -> None:
+        empty = Datapoints(
+            id=1, is_string=False, is_step=True, type="state", timestamp=[], numeric_states=[], string_states=[]
+        )
+        target, other = NodeId("sp", "target"), NodeId("sp", "other")
+        cognite_client.time_series.data.insert_states(StateDatapointsInsert(target, empty))
+        assert sent == []  # nothing to insert, so no request at all
+
+        # ...and when mixed with non-empty, only those are sent (also for the same target):
+        cognite_client.time_series.data.insert_states(
+            [
+                StateDatapointsInsert(target, empty),
+                StateDatapointsInsert(other, empty),
+                StateDatapointsInsert(target, self.make_dps()),
+            ]
+        )
+        assert [d["instanceId"]["externalId"] for d in sent] == ["target"]
+        assert len(sent[0]["datapoints"]) == 2
+
+    def test_invalid_datapoints_raise_early(self) -> None:
+        with pytest.raises(TypeError, match="'Datapoints' or 'DatapointsArray', not <class 'str'>"):
+            StateDatapointsInsert(NodeId("sp", "t"), "bad")  # type: ignore [arg-type]
+        with pytest.raises(ValueError, match="Only datapoints from state time series"):
+            StateDatapointsInsert(
+                NodeId("sp", "t"), Datapoints(id=1, is_string=False, is_step=True, type="numeric", value=[1.0])
+            )
+
+
 def create_state_dps_poster(dps_limit: int, ts_limit: int) -> StateDatapointsPoster:
     # In these unit tests, we don't need the actual DatapointsAPI instance, we just need the
     # two limit attributes to be set:
@@ -1338,7 +1420,7 @@ class TestStateDatapointsPoster:
             [
                 dp.timestamp if isinstance(dp, StateDatapointWrite) else dp["timestamp"]
                 for insert in chunk
-                for dp in insert.datapoints
+                for dp in insert._to_datapoint_writes()
             ]
             for chunk in chunks
         ]
