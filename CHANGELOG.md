@@ -14,6 +14,18 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.20.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.19.0...v8.20.0) (2026-10-02)
+
+
+### Features
+
+* **time series:** accept `Datapoints`/`DatapointsArray` as datapoints in `insert_states` (DM-4187) ([#2871](https://github.com/cognitedata/cognite-sdk-python/issues/2871)) ([c3520ef](https://github.com/cognitedata/cognite-sdk-python/commit/c3520ef75e7365216f04d1a7b04a0022fdd6dec9))
+
+
+### Bug Fixes
+
+* remove UserWarning on non-standard base URLs (has become a common occurrence) ([#2867](https://github.com/cognitedata/cognite-sdk-python/issues/2867)) ([68f7a57](https://github.com/cognitedata/cognite-sdk-python/commit/68f7a571644c67843ff4f685018ac8180f05ab20))
+
 ## [8.19.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.18.0...v8.19.0) (2026-09-30)
 
 
