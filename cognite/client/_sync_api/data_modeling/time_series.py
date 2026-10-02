@@ -112,7 +112,7 @@ class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
             space (str | SequenceNotStr[str] | None): Restrict results to this space (or list of spaces).
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): Sort order for the results.
             filter (Filter | dict[str, Any] | None): Advanced filter to apply. See :class:`~cognite.client.data_classes.filters`.
-            time_series_type (TimeSeriesType | Sequence[TimeSeriesType] | None): Only return time series of this type, or any of these types, e.g. ``"state"`` or ``["numeric", "string"]``. The types are ``"numeric"``, ``"string"`` and ``"state"``. Default: None (all types). Combined with ``filter`` (if given) using AND.
+            time_series_type (TimeSeriesType | Sequence[TimeSeriesType] | None): Only return time series of this type (or types). The types are ``"numeric"``, ``"string"`` and ``"state"``. Default: None (all).
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
