@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from typing_extensions import Self
 
@@ -17,6 +17,8 @@ from cognite.client.utils._time import timestamp_to_ms
 
 if TYPE_CHECKING:
     import pandas as pd
+
+_ColumnKey = TypeVar("_ColumnKey", bound=Hashable)
 
 
 class AnswerLanguage(Enum):
@@ -302,7 +304,7 @@ def _points_to_pandas(
     return df if quantile_levels is None else df.reindex(columns=list(quantile_levels))
 
 
-def _concat_columns(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
+def _concat_columns(frames: dict[_ColumnKey, pd.DataFrame]) -> pd.DataFrame:
     pd = local_import("pandas")
     return pd.concat(frames, axis=1)
 
@@ -503,3 +505,143 @@ class ImputeResultList(CogniteResourceList[ImputeResult]):
             pd.DataFrame: The reconstructed points.
         """
         return _concat_columns({r.label: _points_to_pandas(r.imputed, self.quantile_levels) for r in self.data})
+
+
+class TimeSeriesForecast(CogniteResource):
+    """The forecast for one CDF time series.
+
+    Args:
+        forecast (list[QuantileDatapoint]): One point per forecasted step.
+        instance_id (NodeId): The instance id of the time series.
+        cohort (str | None): The cohort the series was forecast in, if any.
+    """
+
+    def __init__(
+        self,
+        forecast: list[QuantileDatapoint],
+        instance_id: NodeId,
+        cohort: str | None = None,
+    ) -> None:
+        self.forecast = forecast
+        self.instance_id = instance_id
+        self.cohort = cohort
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            forecast=[QuantileDatapoint._load(p) for p in resource["forecast"]],
+            instance_id=NodeId.load(resource["instanceId"]),
+            cohort=resource.get("cohort"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "forecast": [p.dump(camel_case) for p in self.forecast],
+            "instanceId" if camel_case else "instance_id": self.instance_id.dump(
+                camel_case, include_instance_type=False
+            ),
+        }
+        if self.cohort is not None:
+            output["cohort"] = self.cohort
+        return output
+
+    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and one column per quantile level.
+
+        Returns:
+            pd.DataFrame: The forecast.
+        """
+        return _points_to_pandas(self.forecast)
+
+
+class TimeSeriesForecastList(CogniteResourceList[TimeSeriesForecast]):
+    """Forecasts for several CDF time series.
+
+    Args:
+        resources (Sequence[TimeSeriesForecast]): One forecast per time series.
+        quantile_levels (list[float] | None): The quantile levels in every forecast.
+    """
+
+    _RESOURCE = TimeSeriesForecast
+
+    def __init__(self, resources: Sequence[TimeSeriesForecast], quantile_levels: list[float] | None = None) -> None:
+        super().__init__(resources)
+        self.quantile_levels = quantile_levels or []
+
+    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and `(time series, quantile)` columns.
+
+        Returns:
+            pd.DataFrame: The forecasts.
+        """
+        return _concat_columns({r.instance_id: _points_to_pandas(r.forecast, self.quantile_levels) for r in self.data})
+
+
+class TimeSeriesImpute(CogniteResource):
+    """The reconstructed points for one CDF time series.
+
+    Args:
+        imputed (list[QuantileDatapoint]): One point per reconstructed grid point.
+        instance_id (NodeId): The instance id of the time series.
+        cohort (str | None): The cohort the series was imputed in, if any.
+    """
+
+    def __init__(
+        self,
+        imputed: list[QuantileDatapoint],
+        instance_id: NodeId,
+        cohort: str | None = None,
+    ) -> None:
+        self.imputed = imputed
+        self.instance_id = instance_id
+        self.cohort = cohort
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            imputed=[QuantileDatapoint._load(p) for p in resource["imputed"]],
+            instance_id=NodeId.load(resource["instanceId"]),
+            cohort=resource.get("cohort"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {
+            "imputed": [p.dump(camel_case) for p in self.imputed],
+            "instanceId" if camel_case else "instance_id": self.instance_id.dump(
+                camel_case, include_instance_type=False
+            ),
+        }
+        if self.cohort is not None:
+            output["cohort"] = self.cohort
+        return output
+
+    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and one column per quantile level.
+
+        Returns:
+            pd.DataFrame: The reconstructed points.
+        """
+        return _points_to_pandas(self.imputed)
+
+
+class TimeSeriesImputeList(CogniteResourceList[TimeSeriesImpute]):
+    """Reconstructed points for several CDF time series.
+
+    Args:
+        resources (Sequence[TimeSeriesImpute]): One result per time series.
+        quantile_levels (list[float] | None): The quantile levels in every result.
+    """
+
+    _RESOURCE = TimeSeriesImpute
+
+    def __init__(self, resources: Sequence[TimeSeriesImpute], quantile_levels: list[float] | None = None) -> None:
+        super().__init__(resources)
+        self.quantile_levels = quantile_levels or []
+
+    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and `(time series, quantile)` columns.
+
+        Returns:
+            pd.DataFrame: The reconstructed points.
+        """
+        return _concat_columns({r.instance_id: _points_to_pandas(r.imputed, self.quantile_levels) for r in self.data})
