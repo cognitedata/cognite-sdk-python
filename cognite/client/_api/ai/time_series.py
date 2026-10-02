@@ -1,20 +1,24 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.ai import (
     ForecastResultList,
     ImputeResultList,
+    InputDatapoint,
     InputTimeSeries,
 )
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._forecasting import split_into_requests
+from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from cognite.client import AsyncCogniteClient, ClientConfig
 
 T_ResultList = TypeVar("T_ResultList", ForecastResultList, ImputeResultList)
@@ -101,6 +105,76 @@ class AITimeSeriesAPI(APIClient):
         """
         return await self._call("/impute", time_series, ImputeResultList)
 
+    async def forecast_dataframe(self, df: pd.DataFrame, cohort: str | Mapping[str, str] | None = None) -> pd.DataFrame:
+        """Forecast every column of a DataFrame 512 steps ahead.
+
+        Each column is one series, labelled by the column name. NaN values are sent as missing points.
+
+        Args:
+            df (pd.DataFrame): Evenly spaced history with a DatetimeIndex, one column per series.
+            cohort (str | Mapping[str, str] | None): One cohort for every column, or a `{column: cohort}` mapping.
+                Columns not in the mapping are forecast independently.
+
+        Returns:
+            pd.DataFrame: The forecasts, with a DatetimeIndex and `(column, quantile)` columns.
+
+        Examples:
+
+            Forecast two compressor pressures jointly, and a temperature independently:
+
+                >>> import pandas as pd
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> df = pd.DataFrame(
+                ...     {
+                ...         "23-PT-1101": [42.1, 42.4, 42.9],
+                ...         "23-PT-1201": [39.8, 40.1, 40.0],
+                ...         "24-TT-3001": [31.0, 31.2, 30.9],
+                ...     },
+                ...     index=pd.date_range("2026-10-01", periods=3, freq="1min"),
+                ... )
+                >>> forecast = client.ai.time_series.forecast_dataframe(
+                ...     df,
+                ...     cohort={
+                ...         "23-PT-1101": "compression-train-a",
+                ...         "23-PT-1201": "compression-train-a",
+                ...     },
+                ... )
+        """
+        res = await self.forecast(_dataframe_to_input(df, cohort))
+        return res.to_pandas()
+
+    async def impute_dataframe(self, df: pd.DataFrame, cohort: str | Mapping[str, str] | None = None) -> pd.DataFrame:
+        """Reconstruct the NaN values in every column of a DataFrame.
+
+        Each column is one series, labelled by the column name. NaN values are sent as missing points and
+        reconstructed.
+
+        Args:
+            df (pd.DataFrame): Evenly spaced history with a DatetimeIndex, one column per series.
+            cohort (str | Mapping[str, str] | None): One cohort for every column, or a `{column: cohort}` mapping.
+                Columns not in the mapping are imputed independently.
+
+        Returns:
+            pd.DataFrame: The reconstructed points, with a DatetimeIndex and `(column, quantile)` columns.
+
+        Examples:
+
+            Reconstruct a gap in a pressure measurement:
+
+                >>> import numpy as np
+                >>> import pandas as pd
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> df = pd.DataFrame(
+                ...     {"21-PT-1019": [42.1, np.nan, 42.9]},
+                ...     index=pd.date_range("2026-10-01", periods=3, freq="1min"),
+                ... )
+                >>> imputed = client.ai.time_series.impute_dataframe(df)
+        """
+        res = await self.impute(_dataframe_to_input(df, cohort))
+        return res.to_pandas()
+
     async def _call(
         self,
         path: str,
@@ -135,3 +209,22 @@ class AITimeSeriesAPI(APIClient):
             semaphore=self._get_semaphore("write"),
         )
         return response.json()
+
+
+def _dataframe_to_input(df: pd.DataFrame, cohort: str | Mapping[str, str] | None) -> list[InputTimeSeries]:
+    np = local_import("numpy")
+    if df.columns.has_duplicates:
+        raise ValueError(f"DataFrame columns must be unique. Duplicated cols: {find_duplicates(df.columns)}.")
+    if np.isinf(df.select_dtypes(include="number")).any(axis=None):
+        raise ValueError("DataFrame contains one or more (+/-) Infinity.")
+
+    idx = df.index.to_numpy("datetime64[ms]").astype(np.int64).tolist()
+    series = []
+    for column, col in df.items():
+        datapoints = [
+            InputDatapoint(ts, None, missing=True) if isna else InputDatapoint(ts, float(value))
+            for ts, value, isna in zip(idx, col.tolist(), col.isna().tolist())
+        ]
+        column_cohort = cohort if cohort is None or isinstance(cohort, str) else cohort.get(str(column))
+        series.append(InputTimeSeries(str(column), datapoints, column_cohort))
+    return series
