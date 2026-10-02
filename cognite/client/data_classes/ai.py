@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Hashable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 from typing_extensions import Self
 
-from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
+from cognite.client.data_classes._base import CogniteResource, CogniteResourceList, IdTransformerMixin
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._importing import local_import
@@ -17,6 +17,8 @@ from cognite.client.utils._time import timestamp_to_ms
 
 if TYPE_CHECKING:
     import pandas as pd
+
+_ColumnKey = TypeVar("_ColumnKey", bound=Hashable)
 
 
 class AnswerLanguage(Enum):
@@ -302,7 +304,7 @@ def _points_to_pandas(
     return df if quantile_levels is None else df.reindex(columns=list(quantile_levels))
 
 
-def _concat_columns(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
+def _concat_columns(frames: dict[_ColumnKey, pd.DataFrame]) -> pd.DataFrame:
     pd = local_import("pandas")
     return pd.concat(frames, axis=1)
 
@@ -503,3 +505,190 @@ class ImputeResultList(CogniteResourceList[ImputeResult]):
             pd.DataFrame: The reconstructed points.
         """
         return _concat_columns({r.label: _points_to_pandas(r.imputed, self.quantile_levels) for r in self.data})
+
+
+def _dump_identifiers(
+    output: dict[str, Any], id: int | None, external_id: str | None, instance_id: NodeId | None, camel_case: bool
+) -> dict[str, Any]:
+    if id is not None:
+        output["id"] = id
+    if external_id is not None:
+        output["externalId" if camel_case else "external_id"] = external_id
+    if instance_id is not None:
+        output["instanceId" if camel_case else "instance_id"] = instance_id.dump(
+            camel_case, include_instance_type=False
+        )
+    return output
+
+
+def _column_name(id: int | None, external_id: str | None, instance_id: NodeId | None) -> NodeId | str | int:
+    # Same precedence as the columns of client.time_series.data.retrieve_dataframe.
+    if instance_id is not None:
+        return instance_id
+    if external_id is not None:
+        return external_id
+    if id is not None:
+        return id
+    raise ValueError("Result has no identifier (id, external_id or instance_id)")
+
+
+class TimeSeriesForecast(CogniteResource):
+    """The forecast for one CDF time series.
+
+    Args:
+        forecast (list[QuantileDatapoint]): One point per forecasted step.
+        id (int | None): The id of the time series.
+        external_id (str | None): The external id of the time series.
+        instance_id (NodeId | None): The instance id of the time series.
+        cohort (str | None): The cohort the series was forecast in, if any.
+    """
+
+    def __init__(
+        self,
+        forecast: list[QuantileDatapoint],
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+        cohort: str | None = None,
+    ) -> None:
+        self.forecast = forecast
+        self.id = id
+        self.external_id = external_id
+        self.instance_id = instance_id
+        self.cohort = cohort
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            forecast=[QuantileDatapoint._load(p) for p in resource["forecast"]],
+            id=resource.get("id"),
+            external_id=resource.get("externalId"),
+            instance_id=NodeId._load_if(resource.get("instanceId")),
+            cohort=resource.get("cohort"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"forecast": [p.dump(camel_case) for p in self.forecast]}
+        if self.cohort is not None:
+            output["cohort"] = self.cohort
+        return _dump_identifiers(output, self.id, self.external_id, self.instance_id, camel_case)
+
+    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and one column per quantile level.
+
+        Returns:
+            pd.DataFrame: The forecast.
+        """
+        return _points_to_pandas(self.forecast)
+
+
+class TimeSeriesForecastList(IdTransformerMixin, CogniteResourceList[TimeSeriesForecast]):
+    """Forecasts for several CDF time series.
+
+    Args:
+        resources (Sequence[TimeSeriesForecast]): One forecast per time series.
+        quantile_levels (list[float] | None): The quantile levels in every forecast.
+    """
+
+    _RESOURCE = TimeSeriesForecast
+
+    def __init__(self, resources: Sequence[TimeSeriesForecast], quantile_levels: list[float] | None = None) -> None:
+        super().__init__(resources)
+        self.quantile_levels = quantile_levels or []
+
+    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and `(time series, quantile)` columns.
+
+        Time series are named like the columns of `client.time_series.data.retrieve_dataframe`: instance id, then
+        external id, then id.
+
+        Returns:
+            pd.DataFrame: The forecasts.
+        """
+        return _concat_columns(
+            {
+                _column_name(r.id, r.external_id, r.instance_id): _points_to_pandas(r.forecast, self.quantile_levels)
+                for r in self.data
+            }
+        )
+
+
+class TimeSeriesImpute(CogniteResource):
+    """The reconstructed points for one CDF time series.
+
+    Args:
+        imputed (list[QuantileDatapoint]): One point per reconstructed grid point.
+        id (int | None): The id of the time series.
+        external_id (str | None): The external id of the time series.
+        instance_id (NodeId | None): The instance id of the time series.
+        cohort (str | None): The cohort the series was imputed in, if any.
+    """
+
+    def __init__(
+        self,
+        imputed: list[QuantileDatapoint],
+        id: int | None = None,
+        external_id: str | None = None,
+        instance_id: NodeId | None = None,
+        cohort: str | None = None,
+    ) -> None:
+        self.imputed = imputed
+        self.id = id
+        self.external_id = external_id
+        self.instance_id = instance_id
+        self.cohort = cohort
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(
+            imputed=[QuantileDatapoint._load(p) for p in resource["imputed"]],
+            id=resource.get("id"),
+            external_id=resource.get("externalId"),
+            instance_id=NodeId._load_if(resource.get("instanceId")),
+            cohort=resource.get("cohort"),
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output: dict[str, Any] = {"imputed": [p.dump(camel_case) for p in self.imputed]}
+        if self.cohort is not None:
+            output["cohort"] = self.cohort
+        return _dump_identifiers(output, self.id, self.external_id, self.instance_id, camel_case)
+
+    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and one column per quantile level.
+
+        Returns:
+            pd.DataFrame: The reconstructed points.
+        """
+        return _points_to_pandas(self.imputed)
+
+
+class TimeSeriesImputeList(IdTransformerMixin, CogniteResourceList[TimeSeriesImpute]):
+    """Reconstructed points for several CDF time series.
+
+    Args:
+        resources (Sequence[TimeSeriesImpute]): One result per time series.
+        quantile_levels (list[float] | None): The quantile levels in every result.
+    """
+
+    _RESOURCE = TimeSeriesImpute
+
+    def __init__(self, resources: Sequence[TimeSeriesImpute], quantile_levels: list[float] | None = None) -> None:
+        super().__init__(resources)
+        self.quantile_levels = quantile_levels or []
+
+    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and `(time series, quantile)` columns.
+
+        Time series are named like the columns of `client.time_series.data.retrieve_dataframe`: instance id, then
+        external id, then id.
+
+        Returns:
+            pd.DataFrame: The reconstructed points.
+        """
+        return _concat_columns(
+            {
+                _column_name(r.id, r.external_id, r.instance_id): _points_to_pandas(r.imputed, self.quantile_levels)
+                for r in self.data
+            }
+        )

@@ -10,7 +10,12 @@ from cognite.client.data_classes.ai import (
     InputDatapoint,
     InputTimeSeries,
     QuantileDatapoint,
+    TimeSeriesForecast,
+    TimeSeriesForecastList,
+    TimeSeriesImpute,
+    TimeSeriesImputeList,
 )
+from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils._importing import local_import
 
 FORECAST_RESPONSE = {
@@ -116,3 +121,52 @@ class TestQuantileDatapoint:
     def test_non_numeric_keys_are_ignored(self) -> None:
         point = QuantileDatapoint._load({"timestamp": 0, "quantiles": {"0.5": 1.0, "unexpected": 2.0}})
         assert point.quantiles == {0.5: 1.0}
+
+
+POINTS = [QuantileDatapoint(60_000, {0.05: 1.0, 0.5: 2.0}), QuantileDatapoint(120_000, {0.05: 1.5, 0.5: 2.5})]
+NODE = NodeId("north_sea_asset", "21-PT-1039")
+
+
+class TestTimeSeriesForecastList:
+    def test_get_by_any_identifier(self) -> None:
+        res = TimeSeriesForecastList(
+            [
+                TimeSeriesForecast(POINTS, id=123),
+                TimeSeriesForecast(POINTS, id=456, external_id="21-PT-1029"),
+                TimeSeriesForecast(POINTS, instance_id=NODE),
+            ],
+            quantile_levels=[0.05, 0.5],
+        )
+        assert res.get(id=123) is res[0]
+        assert res.get(external_id="21-PT-1029") is res[1]
+        assert res.get(instance_id=NODE) is res[2]
+
+    def test_dump_uses_camel_case_identifiers(self) -> None:
+        dumped = TimeSeriesForecast(POINTS[:1], external_id="21-PT-1019", instance_id=NODE, cohort="train-a").dump()
+        assert dumped == {
+            "forecast": [{"timestamp": 60_000, "quantiles": {"0.05": 1.0, "0.5": 2.0}}],
+            "cohort": "train-a",
+            "externalId": "21-PT-1019",
+            "instanceId": {"space": "north_sea_asset", "externalId": "21-PT-1039"},
+        }
+
+    @pytest.mark.dsl
+    def test_to_pandas_names_columns_like_retrieve_dataframe(self) -> None:
+        res = TimeSeriesForecastList(
+            [
+                TimeSeriesForecast(POINTS, id=123),
+                TimeSeriesForecast(POINTS, id=456, external_id="21-PT-1029"),
+                TimeSeriesForecast(POINTS, external_id="ignored", instance_id=NODE),
+            ],
+            quantile_levels=[0.05, 0.5],
+        )
+        assert list(res.to_pandas().columns.get_level_values(0).unique()) == [123, "21-PT-1029", NODE]
+
+
+class TestTimeSeriesImputeList:
+    @pytest.mark.dsl
+    def test_series_with_nothing_imputed_keeps_its_columns(self) -> None:
+        res = TimeSeriesImputeList(
+            [TimeSeriesImpute(POINTS, external_id="a"), TimeSeriesImpute([], external_id="b")], quantile_levels=[0.5]
+        )
+        assert list(res.to_pandas().columns) == [("a", 0.5), ("b", 0.5)]
