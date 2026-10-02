@@ -140,7 +140,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
 
         Note:
             State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
-            You can list these like any other Data Modeling instance, or through the dedicated helper :meth:`client.data_modeling.time_series.list <cognite.client.AsyncCogniteClient.data_modeling.time_series.list>` with ``is_state=True``.
+            You can list these like any other Data Modeling instance, or through the dedicated helper :meth:`client.data_modeling.time_series.list <cognite.client.AsyncCogniteClient.data_modeling.time_series.list>` with ``time_series_type="state"``.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.time_series(
@@ -735,7 +735,7 @@ class SyncTimeSeriesAPI(SyncAPIClient):
 
         Note:
             State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
-            You can list these like any other Data Modeling instance, or through the dedicated helper :meth:`client.data_modeling.time_series.list <cognite.client.AsyncCogniteClient.data_modeling.time_series.list>` with ``is_state=True``.
+            You can list these like any other Data Modeling instance, or through the dedicated helper :meth:`client.data_modeling.time_series.list <cognite.client.AsyncCogniteClient.data_modeling.time_series.list>` with ``time_series_type="state"``.
 
         Examples:
 
