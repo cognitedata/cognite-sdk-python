@@ -977,6 +977,35 @@ class TestStateDatapointsInsertWithRetrievedDatapoints:
         )
         assert all(isinstance(dp.timestamp, int) for dp in res)
 
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("kind", ["list", "array-int32", "array-float64"])
+    @pytest.mark.parametrize("include_status", [False, True])
+    def test_empty_retrieved_datapoints(self, kind: str, include_status: bool) -> None:
+        import numpy as np
+
+        # The SDK returns empty containers (not None) when a state time series has no datapoints. With
+        # ignore_bad_datapoints=False, the (empty) numeric_states array is float64 instead of int32:
+        if kind == "list":
+            status: dict[str, Any] = dict(status_code=[], status_symbol=[]) if include_status else {}
+            dps: Datapoints | DatapointsArray = self.make_dps(
+                timestamp=[], numeric_states=[], string_states=[], **status
+            )
+        else:
+            status = dict(status_code=np.array([], dtype=np.uint32), status_symbol=np.array([], dtype=object))
+            dps = DatapointsArray(
+                id=1,
+                is_string=False,
+                is_step=True,
+                type="state",
+                timestamp=np.array([], dtype="datetime64[ns]"),
+                numeric_states=np.array([], dtype=np.int32 if kind == "array-int32" else np.float64),  # type: ignore [arg-type]
+                string_states=np.array([], dtype=object),
+                **(status if include_status else {}),
+            )
+        insert = StateDatapointsInsert(self.NODE, dps)
+        assert insert._to_datapoint_writes() == []
+        assert insert.dump()["datapoints"] == []
+
 
 class TestStateDatapointWrite:
     @pytest.mark.parametrize(

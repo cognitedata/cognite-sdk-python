@@ -1323,6 +1323,25 @@ class TestInsertStatesWithRetrievedDatapoints:
         cognite_client.time_series.data.insert_states(StateDatapointsInsert(NodeId("sp", "t"), self.make_dps()))
         assert [len(d["datapoints"]) for d in sent] == [1, 1]
 
+    def test_empty_retrieved_datapoints_are_skipped(self, cognite_client: CogniteClient, sent: list) -> None:
+        empty = Datapoints(
+            id=1, is_string=False, is_step=True, type="state", timestamp=[], numeric_states=[], string_states=[]
+        )
+        target, other = NodeId("sp", "target"), NodeId("sp", "other")
+        cognite_client.time_series.data.insert_states(StateDatapointsInsert(target, empty))
+        assert sent == []  # nothing to insert, so no request at all
+
+        # ...and when mixed with non-empty, only those are sent (also for the same target):
+        cognite_client.time_series.data.insert_states(
+            [
+                StateDatapointsInsert(target, empty),
+                StateDatapointsInsert(other, empty),
+                StateDatapointsInsert(target, self.make_dps()),
+            ]
+        )
+        assert [d["instanceId"]["externalId"] for d in sent] == ["target"]
+        assert len(sent[0]["datapoints"]) == 2
+
     def test_invalid_datapoints_raise_early(self) -> None:
         with pytest.raises(TypeError, match="'Datapoints' or 'DatapointsArray', not <class 'str'>"):
             StateDatapointsInsert(NodeId("sp", "t"), "bad")  # type: ignore [arg-type]
