@@ -1591,6 +1591,13 @@ class SyncDatapointsAPI(SyncAPIClient):
         with the time series' state set). It may also carry only a status code/symbol, e.g. to mark a
         period as ``Bad``.
 
+        Note:
+            If you are ingesting datapoints directly from a retrieve call (``Datapoints`` or ``DatapointsArray``), you should *always*
+            fetch with ``ignore_bad_datapoints=False`` and ``include_status=True``. Otherwise, bad datapoints are either not
+            retrieved at all (and thus not copied), or, when retrieved without status, a ``ValueError`` is likely to be raised before
+            anything is inserted (as only datapoints with a Bad status can have the state omitted, and the exact code is unknown).
+            Without status, any other datapoint, e.g. Uncertain, is inserted as Good.
+
         Warning:
             State time series are in `public preview <https://docs.cognite.com/cdf/product_feature_status#public-preview>`_.
 
@@ -1631,6 +1638,23 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     ],
                 ... )
                 >>> client.time_series.data.insert_states([to_insert, second_insert])
+
+            The datapoints can also be given as ``Datapoints``/``DatapointsArray`` retrieved from a state time series, e.g.
+            to easily copy data. Only the numeric states are used, and status codes are preserved: Use ``include_status=True``
+            to retrieve them, and ``ignore_bad_datapoints=False`` to also copy the bad datapoints. If the State Set differs
+            between the source and target, the insert will fail.
+
+                >>> to_insert = client.time_series.data.retrieve_arrays(
+                ...     instance_id=NodeId("state-space", "ts-read-from"),
+                ...     include_status=True,
+                ...     ignore_bad_datapoints=False,
+                ... )
+                >>> client.time_series.data.insert_states(  # doctest: +SKIP
+                ...     StateDatapointsInsert(
+                ...         instance_id=NodeId("state-space", "ts-write-to"),
+                ...         datapoints=to_insert,
+                ...     )
+                ... )
 
             The datapoints to insert can also be given by the string state value (or a matching combination).
             Status codes can also be specified:
