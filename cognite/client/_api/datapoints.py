@@ -1583,6 +1583,10 @@ class DatapointsAPI(APIClient):
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
 
+            If you are ingesting datapoints directly from a retrieve call (``Datapoints`` or ``DatapointsArray``), you should *always*
+            fetch with ``ignore_bad_datapoints=False`` and ``include_status=True``. Otherwise, the status is lost and every datapoint
+            is inserted as Good (and the insert may fail as some values are only allowed together with a Bad status).
+
             State time series are not supported by this method; use :meth:`insert_states` instead.
 
         Examples:
@@ -1674,6 +1678,10 @@ class DatapointsAPI(APIClient):
 
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
+
+            If you are ingesting datapoints directly from a retrieve call (``Datapoints`` or ``DatapointsArray``), you should *always*
+            fetch with ``ignore_bad_datapoints=False`` and ``include_status=True``. Otherwise, the status is lost and every datapoint
+            is inserted as Good (and the insert may fail as some values are only allowed together with a Bad status).
 
             State time series are not supported by this method; use :meth:`insert_states` instead.
 
