@@ -270,6 +270,7 @@ class SyncTransformationsAPI(SyncAPIClient):
         data_set_external_ids: str | list[str] | None = None,
         tags: TagsFilter | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        data_domain_external_ids: str | list[str] | None = None,
     ) -> TransformationList:
         """
         `List all transformations <https://api-docs.cognite.com/20230101/tag/Transformations/operation/filterTransformations>`_.
@@ -288,6 +289,7 @@ class SyncTransformationsAPI(SyncAPIClient):
             data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
             tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
             limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            data_domain_external_ids (str | list[str] | None): Return only transformations belonging to one of the specified data domain(s).
 
         Returns:
             TransformationList: List of transformations
@@ -316,6 +318,7 @@ class SyncTransformationsAPI(SyncAPIClient):
                 data_set_external_ids=data_set_external_ids,
                 tags=tags,
                 limit=limit,
+                data_domain_external_ids=data_domain_external_ids,
             )
         )
 
