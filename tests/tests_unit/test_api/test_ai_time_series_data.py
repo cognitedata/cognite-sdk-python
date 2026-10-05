@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
 
 import pytest
@@ -12,10 +13,14 @@ from cognite.client.data_classes import Datapoints, DatapointsList
 from cognite.client.data_classes.ai import (
     ForecastResult,
     ForecastResultList,
+    ImputeResult,
+    ImputeResultList,
     InputTimeSeries,
     QuantileDatapoint,
     TimeSeriesForecast,
     TimeSeriesForecastList,
+    TimeSeriesImpute,
+    TimeSeriesImputeList,
 )
 from cognite.client.data_classes.data_modeling import NodeId
 
@@ -66,12 +71,25 @@ class FakeCDF:
         ]
         return ForecastResultList(results, quantile_levels=[0.05, 0.5, 0.95])
 
+    async def impute(self, time_series: Sequence[InputTimeSeries]) -> ImputeResultList:
+        self.sent = list(time_series)
+        results = [
+            ImputeResult(
+                s.label,
+                [QuantileDatapoint(dp["timestamp"], {0.5: 0.0}) for dp in s.dump()["datapoints"] if dp.get("missing")],
+                s.cohort,
+            )
+            for s in self.sent
+        ]
+        return ImputeResultList(results, quantile_levels=[0.5])
+
 
 @pytest.fixture
 def cdf(monkeypatch: pytest.MonkeyPatch) -> FakeCDF:
     fake = FakeCDF()
     monkeypatch.setattr(DatapointsAPI, "retrieve", fake.retrieve)
     monkeypatch.setattr(AITimeSeriesAPI, "forecast", fake.forecast)
+    monkeypatch.setattr(AITimeSeriesAPI, "impute", fake.impute)
     return fake
 
 
@@ -194,3 +212,68 @@ class TestForecast:
         fc = await async_client.ai.time_series.data.forecast(external_id="21-PT-1019", start="1d-ago")
 
         assert isinstance(fc, TimeSeriesForecast)
+
+
+class TestImpute:
+    def test_requires_saying_what_to_reconstruct(self, cognite_client: CogniteClient, cdf: FakeCDF) -> None:
+        with pytest.raises(ValueError, match="fill_gaps=True"):
+            cognite_client.ai.time_series.data.impute(external_id="21-PT-1019", start="7d-ago")
+        assert cdf.retrieve_kwargs == {}  # fails before retrieving anything
+
+    def test_fill_gaps_reconstructs_every_empty_bucket(self, cognite_client: CogniteClient, cdf: FakeCDF) -> None:
+        cdf.retrieved = make_dps([0, HOUR, 3 * HOUR], [1.0, 2.0, 4.0], external_id="21-PT-1019", aggregate="average")
+
+        res = cognite_client.ai.time_series.data.impute(
+            external_id="21-PT-1019", start="7d-ago", granularity="1h", aggregate="average", fill_gaps=True
+        )
+
+        assert isinstance(res, TimeSeriesImpute)
+        assert res.external_id == "21-PT-1019"
+        assert [p.timestamp for p in res.imputed] == [2 * HOUR]
+
+    def test_mask_hides_existing_values_and_unmasked_gaps_are_not_returned(
+        self, cognite_client: CogniteClient, cdf: FakeCDF
+    ) -> None:
+        cdf.retrieved = make_dps([0, MIN, 3 * MIN, 4 * MIN], [1.0, 2.0, 4.0, 5.0], external_id="21-PT-1019")
+
+        res = cognite_client.ai.time_series.data.impute(external_id="21-PT-1019", start="1d-ago", mask=[(MIN, MIN)])
+
+        assert sent_datapoints(cdf)[1:3] == [
+            {"timestamp": MIN, "value": 2.0, "missing": True},
+            {"timestamp": 2 * MIN, "value": None},
+        ]
+        assert isinstance(res, TimeSeriesImpute)
+        assert [p.timestamp for p in res.imputed] == [MIN]
+
+    def test_mask_accepts_datetimes_and_single_timestamps(self, cognite_client: CogniteClient, cdf: FakeCDF) -> None:
+        cdf.retrieved = make_dps([0, MIN, 2 * MIN, 3 * MIN], [1.0, 2.0, 3.0, 4.0], external_id="21-PT-1019")
+        epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+        cognite_client.ai.time_series.data.impute(
+            external_id="21-PT-1019", start="1d-ago", mask=[(epoch, epoch + timedelta(minutes=1)), 3 * MIN]
+        )
+
+        assert [dp.get("missing", False) for dp in sent_datapoints(cdf)] == [True, True, False, True]
+
+    def test_mask_outside_the_window_raises(self, cognite_client: CogniteClient, cdf: FakeCDF) -> None:
+        cdf.retrieved = make_dps([0, MIN, 2 * MIN], [1.0, 2.0, 3.0], external_id="21-PT-1019")
+
+        with pytest.raises(ValueError, match="doesn't cover any point"):
+            cognite_client.ai.time_series.data.impute(external_id="21-PT-1019", start="1d-ago", mask=[10 * MIN])
+
+    def test_several_identifiers_return_a_list(self, cognite_client: CogniteClient, cdf: FakeCDF) -> None:
+        cdf.retrieved = DatapointsList(
+            [
+                make_dps([0, MIN, 3 * MIN], [1.0, 2.0, 4.0], id=1, external_id="23-PT-1101"),
+                make_dps([0, MIN, 2 * MIN, 3 * MIN], [1.0, 2.0, 3.0, 4.0], id=2, external_id="23-PT-1201"),
+            ]
+        )
+
+        res = cognite_client.ai.time_series.data.impute(
+            external_id=["23-PT-1101", "23-PT-1201"], start="1d-ago", fill_gaps=True
+        )
+
+        assert isinstance(res, TimeSeriesImputeList)
+        first, second = res.get(external_id="23-PT-1101"), res.get(external_id="23-PT-1201")
+        assert first is not None and [p.timestamp for p in first.imputed] == [2 * MIN]
+        assert second is not None and second.imputed == []

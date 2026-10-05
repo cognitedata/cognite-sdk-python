@@ -6,12 +6,17 @@ from typing import overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import Datapoints
-from cognite.client.data_classes.ai import TimeSeriesForecast, TimeSeriesForecastList
+from cognite.client.data_classes.ai import (
+    TimeSeriesForecast,
+    TimeSeriesForecastList,
+    TimeSeriesImpute,
+    TimeSeriesImputeList,
+)
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import Aggregate
 from cognite.client.utils._forecasting import AlignmentProblem, SourceSeries, build_inputs
 from cognite.client.utils._text import to_snake_case
-from cognite.client.utils._time import granularity_to_ms
+from cognite.client.utils._time import granularity_to_ms, timestamp_to_ms
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
@@ -174,6 +179,218 @@ class AITimeSeriesDataAPI(APIClient):
         ]
         return forecasts[0] if is_single else TimeSeriesForecastList(forecasts, results.quantile_levels)
 
+    @overload
+    async def impute(
+        self,
+        *,
+        id: int,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+        fill_gaps: bool = False,
+        mask: Sequence[
+            int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]
+        ]
+        | None = None,
+    ) -> TimeSeriesImpute: ...
+
+    @overload
+    async def impute(
+        self,
+        *,
+        id: Sequence[int],
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+        fill_gaps: bool = False,
+        mask: Sequence[
+            int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]
+        ]
+        | None = None,
+    ) -> TimeSeriesImputeList: ...
+
+    @overload
+    async def impute(
+        self,
+        *,
+        external_id: str,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+        fill_gaps: bool = False,
+        mask: Sequence[
+            int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]
+        ]
+        | None = None,
+    ) -> TimeSeriesImpute: ...
+
+    @overload
+    async def impute(
+        self,
+        *,
+        external_id: SequenceNotStr[str],
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+        fill_gaps: bool = False,
+        mask: Sequence[
+            int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]
+        ]
+        | None = None,
+    ) -> TimeSeriesImputeList: ...
+
+    @overload
+    async def impute(
+        self,
+        *,
+        instance_id: NodeId,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+        fill_gaps: bool = False,
+        mask: Sequence[
+            int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]
+        ]
+        | None = None,
+    ) -> TimeSeriesImpute: ...
+
+    @overload
+    async def impute(
+        self,
+        *,
+        instance_id: Sequence[NodeId],
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+        fill_gaps: bool = False,
+        mask: Sequence[
+            int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]
+        ]
+        | None = None,
+    ) -> TimeSeriesImputeList: ...
+
+    @overload
+    async def impute(
+        self,
+        *,
+        id: int | Sequence[int] | None,
+        external_id: str | SequenceNotStr[str] | None,
+        instance_id: NodeId | Sequence[NodeId] | None,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+        fill_gaps: bool = False,
+        mask: Sequence[
+            int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]
+        ]
+        | None = None,
+    ) -> TimeSeriesImputeList: ...
+
+    async def impute(
+        self,
+        *,
+        id: int | Sequence[int] | None = None,
+        external_id: str | SequenceNotStr[str] | None = None,
+        instance_id: NodeId | Sequence[NodeId] | None = None,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+        fill_gaps: bool = False,
+        mask: Sequence[
+            int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]
+        ]
+        | None = None,
+    ) -> TimeSeriesImpute | TimeSeriesImputeList:
+        """Reconstruct gaps and chosen datapoints of time series in `[start, end)`.
+
+        You must say what to reconstruct: `fill_gaps=True`, `mask=[...]`, or both. The history is aligned the same way
+        as in `forecast`, and is never resampled or truncated.
+
+        Args:
+            id (int | Sequence[int] | None): Id(s) of the time series.
+            external_id (str | SequenceNotStr[str] | None): External id(s) of the time series.
+            instance_id (NodeId | Sequence[NodeId] | None): Instance id(s) of the time series.
+            start (int | str | datetime.datetime): Start of the history window, for example "7d-ago".
+            end (int | str | datetime.datetime | None): End of the history window. Defaults to now.
+            granularity (str | None): Align the history using aggregates at this granularity, for example "10m".
+                Requires `aggregate`.
+            aggregate (Aggregate | str | None): The aggregate to reconstruct, for example "average".
+            cohort (str | None): Reconstruct all the requested time series jointly, aligned on one common grid.
+            fill_gaps (bool): Reconstruct every grid point without a datapoint (with aggregates, every empty bucket).
+            mask (Sequence[int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]] | None): Timestamps, or inclusive `(start, end)` ranges, to hide from the model
+                and reconstruct even though values exist.
+
+        Returns:
+            TimeSeriesImpute | TimeSeriesImputeList: A single result if a single identifier was passed, otherwise a list
+            you can look up with `.get(id=..., external_id=..., instance_id=...)`.
+
+        Examples:
+
+            Fill every empty 10-minute bucket in the last week:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.ai.time_series.data.impute(
+                ...     external_id="21-PT-1019",
+                ...     start="7d-ago",
+                ...     granularity="10m",
+                ...     aggregate="average",
+                ...     fill_gaps=True,
+                ... )
+
+            Reconstruct a period you know is bad, for example during a sensor fault:
+
+                >>> from datetime import datetime, timezone
+                >>> res = client.ai.time_series.data.impute(
+                ...     external_id="21-PT-1019",
+                ...     start="7d-ago",
+                ...     granularity="10m",
+                ...     aggregate="average",
+                ...     mask=[
+                ...         (
+                ...             datetime(2026, 9, 30, 8, tzinfo=timezone.utc),
+                ...             datetime(2026, 9, 30, 12, tzinfo=timezone.utc),
+                ...         )
+                ...     ],
+                ... )
+        """
+        if not fill_gaps and not mask:
+            raise ValueError("Say what to reconstruct: pass `fill_gaps=True`, `mask=[...]`, or both.")
+        dps_list, is_single = await self._retrieve_history(
+            id, external_id, instance_id, start, end, granularity, aggregate
+        )
+        inputs = build_inputs(
+            _to_source_series(dps_list, aggregate),
+            step_ms=None if granularity is None else granularity_to_ms(granularity),
+            cohort=cohort,
+            mask=[_mask_range(entry) for entry in mask or []],
+            fill_gaps=fill_gaps,
+            hints=_ALIGNMENT_HINTS,
+        )
+        results = await self._cognite_client.ai.time_series.impute(inputs)
+        imputed = [
+            TimeSeriesImpute(res.imputed, dps.id, dps.external_id, dps.instance_id, res.cohort)
+            for dps, res in zip(dps_list, results)
+        ]
+        return imputed[0] if is_single else TimeSeriesImputeList(imputed, results.quantile_levels)
+
     async def _retrieve_history(
         self,
         id: int | Sequence[int] | None,
@@ -223,6 +440,13 @@ def _to_source_series(dps_list: Sequence[Datapoints], aggregate: Aggregate | str
         seen.add(label)
         sources.append(SourceSeries(label, dps.timestamp, getattr(dps, attribute) or []))
     return sources
+
+
+def _mask_range(
+    entry: int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime],
+) -> tuple[int, int]:
+    start, end = entry if isinstance(entry, tuple) else (entry, entry)
+    return timestamp_to_ms(start), timestamp_to_ms(end)
 
 
 def _label(dps: Datapoints) -> str:
