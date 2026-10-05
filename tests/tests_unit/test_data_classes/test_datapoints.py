@@ -778,6 +778,235 @@ class TestStateDatapointsToPandas:
         ]
 
 
+class TestStateDatapointsInsertWithRetrievedDatapoints:
+    NODE = NodeId("sp", "target")
+
+    @classmethod
+    def writes(cls, dps: Datapoints | DatapointsArray) -> list:
+        return list(StateDatapointsInsert(cls.NODE, dps)._to_datapoint_writes())
+
+    @staticmethod
+    def make_dps(**kwargs: Any) -> Datapoints:
+        defaults: dict[str, Any] = dict(
+            id=1, instance_id=NodeId("sp", "xid"), is_string=False, is_step=True, type="state", timestamp=[1000, 2000]
+        )
+        return Datapoints(**{**defaults, **kwargs})
+
+    def test_basic_ignores_string_states(self) -> None:
+        dps = self.make_dps(numeric_states=[0, 10], string_states=["off", "ten-renamed-since"])
+        res = self.writes(dps)
+        assert res == [StateDatapointWrite(1000, 0), StateDatapointWrite(2000, 10)]
+
+    def test_status_codes_kept_only_when_not_good(self) -> None:
+        # The StateDatapointWrite objects preserve the literal status code/symbol (even Good); it's the wire
+        # format (dump()) that omits Good as it's the default, see TestStateDatapointWrite.test_dump_omits_good:
+        dps = self.make_dps(
+            timestamp=[1, 2, 3],
+            numeric_states=[0, 1, 2],
+            string_states=["a", "b", "c"],
+            status_code=[0, 0x40000000, 0],
+            status_symbol=["Good", "Uncertain", "Good"],
+        )
+        res = self.writes(dps)
+        assert res == [
+            StateDatapointWrite(1, 0, status_code=0),
+            StateDatapointWrite(2, 1, status_code=0x40000000),
+            StateDatapointWrite(3, 2, status_code=0),
+        ]
+
+    def test_bad_datapoints_with_missing_state_keep_their_status(self) -> None:
+        dps = self.make_dps(
+            numeric_states=[1, None],
+            string_states=["on", None],
+            status_code=[0, 0x80000000],
+            status_symbol=["Good", "Bad"],
+        )
+        res = self.writes(dps)
+        assert res == [StateDatapointWrite(1000, 1, status_code=0), StateDatapointWrite(2000, status_code=0x80000000)]
+
+    def test_missing_state_without_status_info_raises(self) -> None:
+        # E.g. retrieved with ignore_bad_datapoints=False, but without include_status=True: we no longer have any
+        # way to know the status was Bad, so we can't insert a generic 'Bad' guess; we raise instead:
+        dps = self.make_dps(numeric_states=[1, None], string_states=["on", None])
+        with pytest.raises(ValueError, match="numeric state value is missing"):
+            self.writes(dps)
+
+    @pytest.mark.parametrize(
+        "status_code, status_symbol",
+        [
+            (0, "Good"),
+            (0x40000000, "Uncertain"),
+            (0x40000000 | 0x400 | 0x100, "Uncertain, Low"),  # Uncertain with info bits / modifier flags
+            (3145728, "GoodClamped"),  # Good sub-code
+        ],
+    )
+    def test_missing_state_with_non_bad_status_raises(self, status_code: int, status_symbol: str) -> None:
+        dps = self.make_dps(
+            numeric_states=[1, None],
+            status_code=[0, status_code],
+            status_symbol=["Good", status_symbol],
+        )
+        with pytest.raises(ValueError, match="numeric state value is missing"):
+            self.writes(dps)
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("state", [2.7, math.inf, -math.inf])
+    def test_non_whole_numeric_state_raises(self, state: float) -> None:
+        import numpy as np
+
+        arr = DatapointsArray(
+            id=1,
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=np.array([1, 2], dtype="datetime64[ms]").astype("datetime64[ns]"),
+            numeric_states=np.array([1.0, state]),
+        )
+        with pytest.raises(ValueError, match=r"must be a whole number.*instantiated \(or modified\) manually"):
+            StateDatapointsInsert(self.NODE, arr)._to_datapoint_writes()
+        # Same for Datapoints (list based) with floats:
+        dps = self.make_dps(numeric_states=[1.0, state])
+        with pytest.raises(ValueError, match=r"must be a whole number.*Datapoints object"):
+            self.writes(dps)
+
+    @pytest.mark.parametrize("status_code", [0x80000000, 2153809152])  # Bad, and Bad sub-code with modifier flags
+    def test_missing_state_with_any_bad_status_is_kept(self, status_code: int) -> None:
+        dps = self.make_dps(numeric_states=[1, None], status_code=[0, status_code], status_symbol=["Good", "Bad..."])
+        assert self.writes(dps)[1] == StateDatapointWrite(2000, status_code=status_code)
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("status_code", [None, 0, 0x40000000])
+    def test_missing_state_with_non_bad_status_raises_for_datapoints_array(self, status_code: int | None) -> None:
+        import numpy as np
+
+        arr = DatapointsArray(
+            id=1,
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=np.array([1, 2], dtype="datetime64[ms]").astype("datetime64[ns]"),
+            numeric_states=np.array([1.0, np.nan]),
+            status_code=None if status_code is None else np.array([0, status_code], dtype=np.uint32),
+            status_symbol=None if status_code is None else np.array(["Good", "x"], dtype=object),
+        )
+        with pytest.raises(ValueError, match="numeric state value is missing"):
+            StateDatapointsInsert(self.NODE, arr)._to_datapoint_writes()
+
+    @pytest.mark.parametrize(
+        "kwargs, match",
+        [
+            (dict(type="numeric", value=[1.0, 2.0]), "Only datapoints from state time series"),
+            (dict(numeric_states=None, average=[1.0, 2.0]), "'numeric_states' is missing"),
+        ],
+    )
+    def test_invalid_input_raises(self, kwargs: dict[str, Any], match: str) -> None:
+        with pytest.raises(ValueError, match=match):
+            StateDatapointsInsert(self.NODE, self.make_dps(**kwargs))
+
+    @pytest.mark.parametrize(
+        "kwargs, match",
+        [
+            (dict(numeric_states=[0]), r"equal lengths.*'timestamp': 2, 'numeric_states': 1"),
+            (dict(timestamp=[1], numeric_states=[0, 1]), r"equal lengths.*'timestamp': 1, 'numeric_states': 2"),
+            (
+                dict(numeric_states=[0, 1], status_code=[0], status_symbol=["Good", "Good"]),
+                r"equal lengths.*'status_code': 1, 'status_symbol': 2",
+            ),
+            (
+                dict(numeric_states=[0, 1], status_code=[0, 0, 0], status_symbol=["Good"] * 3),
+                r"equal lengths.*'timestamp': 2.*'status_code': 3",
+            ),
+            (dict(numeric_states=[0, 1], status_code=[0, 0]), r"Got 'status_code' but 'status_symbol' is None"),
+            (dict(numeric_states=[0, 1], status_symbol=["Good"] * 2), r"Got 'status_symbol' but 'status_code' is None"),
+        ],
+    )
+    def test_inconsistent_lengths_or_partial_status_raises(self, kwargs: dict[str, Any], match: str) -> None:
+        insert = StateDatapointsInsert(self.NODE, self.make_dps(**kwargs))
+        with pytest.raises(ValueError, match=match) as exc:
+            insert._to_datapoint_writes()
+        assert "only happens when the Datapoints object has been instantiated (or modified) manually" in str(exc.value)
+
+    @pytest.mark.dsl
+    def test_inconsistent_lengths_raises_for_datapoints_array(self) -> None:
+        import numpy as np
+
+        arr = DatapointsArray(
+            id=1,
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=np.array([1, 2, 3], dtype="datetime64[ms]").astype("datetime64[ns]"),
+            numeric_states=np.array([1, 2], dtype=np.int32),
+        )
+        with pytest.raises(ValueError, match=r"equal lengths.*'timestamp': 3, 'numeric_states': 2.*DatapointsArray"):
+            StateDatapointsInsert(self.NODE, arr)._to_datapoint_writes()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("with_bad", [False, True])
+    def test_datapoints_array_matches_list_version(self, with_bad: bool) -> None:
+        import numpy as np
+
+        # Without bad datapoints, numeric_states is int32; with them, float64 with NaN for missing:
+        states = [1, 2, 3]
+        codes, symbols = [0, 0x40000000, 0], ["Good", "Uncertain", "Good"]
+        if with_bad:
+            states[2], codes[2], symbols[2] = np.nan, 0x80000000, "Bad"  # type: ignore [call-overload]
+        arr = DatapointsArray(
+            id=1,
+            instance_id=self.NODE,
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=np.array([1, 2, 3], dtype="datetime64[ms]").astype("datetime64[ns]"),
+            numeric_states=np.array(states, dtype=np.float64 if with_bad else np.int32),  # type: ignore [arg-type]
+            string_states=np.array(["a", "b", None], dtype=object),
+            status_code=np.array(codes, dtype=np.uint32),
+            status_symbol=np.array(symbols, dtype=object),
+        )
+        dps = self.make_dps(
+            timestamp=[1, 2, 3],
+            numeric_states=[None if with_bad and i == 2 else s for i, s in enumerate(states)],
+            status_code=codes,
+            status_symbol=symbols,
+        )
+        res = self.writes(arr)
+        assert res == self.writes(dps)
+        assert res[1] == StateDatapointWrite(2, 2, status_code=0x40000000)
+        assert res[2] == (
+            StateDatapointWrite(3, status_code=0x80000000) if with_bad else StateDatapointWrite(3, 3, status_code=0)
+        )
+        assert all(isinstance(dp.timestamp, int) for dp in res)
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("kind", ["list", "array-int32", "array-float64"])
+    @pytest.mark.parametrize("include_status", [False, True])
+    def test_empty_retrieved_datapoints(self, kind: str, include_status: bool) -> None:
+        import numpy as np
+
+        # The SDK returns empty containers (not None) when a state time series has no datapoints. With
+        # ignore_bad_datapoints=False, the (empty) numeric_states array is float64 instead of int32:
+        if kind == "list":
+            status: dict[str, Any] = dict(status_code=[], status_symbol=[]) if include_status else {}
+            dps: Datapoints | DatapointsArray = self.make_dps(
+                timestamp=[], numeric_states=[], string_states=[], **status
+            )
+        else:
+            status = dict(status_code=np.array([], dtype=np.uint32), status_symbol=np.array([], dtype=object))
+            dps = DatapointsArray(
+                id=1,
+                is_string=False,
+                is_step=True,
+                type="state",
+                timestamp=np.array([], dtype="datetime64[ns]"),
+                numeric_states=np.array([], dtype=np.int32 if kind == "array-int32" else np.float64),  # type: ignore [arg-type]
+                string_states=np.array([], dtype=object),
+                **(status if include_status else {}),
+            )
+        insert = StateDatapointsInsert(self.NODE, dps)
+        assert insert._to_datapoint_writes() == []
+        assert insert.dump()["datapoints"] == []
+
+
 class TestStateDatapointWrite:
     @pytest.mark.parametrize(
         "kwargs, expected",
@@ -794,6 +1023,14 @@ class TestStateDatapointWrite:
                 {"status_code": 0x80000000, "status_symbol": "Bad"},
                 {"timestamp": 1, "status": {"code": 0x80000000, "symbol": "Bad"}},
             ),
+            # Good (code=0/symbol="Good") is the default status and is omitted from the wire format:
+            ({"numeric_value": 1, "status_code": 0, "status_symbol": "Good"}, {"timestamp": 1, "numericValue": 1}),
+            ({"numeric_value": 1, "status_code": 0}, {"timestamp": 1, "numericValue": 1}),
+            ({"numeric_value": 1, "status_symbol": "Good"}, {"timestamp": 1, "numericValue": 1}),
+            (  # ...but a mismatch is sent as given, so that the API can reject it:
+                {"numeric_value": 1, "status_code": 0, "status_symbol": "Bad"},
+                {"timestamp": 1, "numericValue": 1, "status": {"code": 0, "symbol": "Bad"}},
+            ),
         ],
     )
     def test_dump(self, kwargs: dict[str, Any], expected: dict[str, Any]) -> None:
@@ -805,7 +1042,6 @@ class TestStateDatapointWrite:
             "timestamp": 1000,
             "numeric_value": -1,
             "string_value": "off",
-            "status": {"symbol": "Good", "code": 0},
         }
 
     @pytest.mark.parametrize(
@@ -830,9 +1066,12 @@ class TestStateDatapointWrite:
         with pytest.raises(TypeError, match="StateDatapointWrite"):
             StateDatapointWrite.load([1000, 0])  # type: ignore[arg-type]
 
-    def test_no_value_and_no_status_raises(self) -> None:
+    @pytest.mark.parametrize(
+        "kwargs", [{}, {"status_code": 0}, {"status_code": 0x40000000}, {"status_code": 0, "status_symbol": "Bad"}]
+    )
+    def test_no_value_and_no_bad_status_raises(self, kwargs: dict[str, Any]) -> None:
         with pytest.raises(ValueError, match="bad status"):
-            StateDatapointWrite(timestamp=1000)
+            StateDatapointWrite(timestamp=1000, **kwargs)
 
     @pytest.mark.parametrize("kwargs", [{"status_code": 0x80000000}, {"status_symbol": "Bad"}])
     def test_status_only_without_value_is_valid(self, kwargs: dict[str, Any]) -> None:

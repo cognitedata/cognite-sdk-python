@@ -434,7 +434,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -789,7 +789,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -918,7 +918,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id, DatapointsQuery or (mixed) sequence of these. See examples.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, -day or -month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -1397,6 +1397,10 @@ class SyncDatapointsAPI(SyncAPIClient):
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
 
+            If you are ingesting datapoints directly from a retrieve call (``Datapoints`` or ``DatapointsArray``), you should *always*
+            fetch with ``ignore_bad_datapoints=False`` and ``include_status=True``. Otherwise, the status is lost and every datapoint
+            is inserted as Good (and the insert may fail as some values are only allowed together with a Bad status).
+
             State time series are not supported by this method; use :meth:`insert_states` instead.
 
         Examples:
@@ -1491,6 +1495,10 @@ class SyncDatapointsAPI(SyncAPIClient):
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
 
+            If you are ingesting datapoints directly from a retrieve call (``Datapoints`` or ``DatapointsArray``), you should *always*
+            fetch with ``ignore_bad_datapoints=False`` and ``include_status=True``. Otherwise, the status is lost and every datapoint
+            is inserted as Good (and the insert may fail as some values are only allowed together with a Bad status).
+
             State time series are not supported by this method; use :meth:`insert_states` instead.
 
         Examples:
@@ -1583,6 +1591,13 @@ class SyncDatapointsAPI(SyncAPIClient):
         with the time series' state set). It may also carry only a status code/symbol, e.g. to mark a
         period as ``Bad``.
 
+        Note:
+            If you are ingesting datapoints directly from a retrieve call (``Datapoints`` or ``DatapointsArray``), you should *always*
+            fetch with ``ignore_bad_datapoints=False`` and ``include_status=True``. Otherwise, bad datapoints are either not
+            retrieved at all (and thus not copied), or, when retrieved without status, a ``ValueError`` is likely to be raised before
+            anything is inserted (as only datapoints with a Bad status can have the state omitted, and the exact code is unknown).
+            Without status, any other datapoint, e.g. Uncertain, is inserted as Good.
+
         Warning:
             State time series are in `public preview <https://docs.cognite.com/cdf/product_feature_status#public-preview>`_.
 
@@ -1623,6 +1638,23 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     ],
                 ... )
                 >>> client.time_series.data.insert_states([to_insert, second_insert])
+
+            The datapoints can also be given as ``Datapoints``/``DatapointsArray`` retrieved from a state time series, e.g.
+            to easily copy data. Only the numeric states are used, and status codes are preserved: Use ``include_status=True``
+            to retrieve them, and ``ignore_bad_datapoints=False`` to also copy the bad datapoints. If the State Set differs
+            between the source and target, the insert will fail.
+
+                >>> to_insert = client.time_series.data.retrieve_arrays(
+                ...     instance_id=NodeId("state-space", "ts-read-from"),
+                ...     include_status=True,
+                ...     ignore_bad_datapoints=False,
+                ... )
+                >>> client.time_series.data.insert_states(  # doctest: +SKIP
+                ...     StateDatapointsInsert(
+                ...         instance_id=NodeId("state-space", "ts-write-to"),
+                ...         datapoints=to_insert,
+                ...     )
+                ... )
 
             The datapoints to insert can also be given by the string state value (or a matching combination).
             Status codes can also be specified:

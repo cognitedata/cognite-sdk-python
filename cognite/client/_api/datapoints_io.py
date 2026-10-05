@@ -693,6 +693,11 @@ class DatapointsPoster:
 
     @staticmethod
     def _verify_dps_object_for_insertion(dps: Datapoints | DatapointsArray) -> None:
+        if dps.is_state:
+            raise ValueError(
+                f"State time series are not supported by this method. Use ``insert_states`` instead "
+                f"when inserting data from ``{type(dps).__name__}``"
+            )
         if dps.value is None:
             raise ValueError(f"Only raw datapoints are supported when inserting data from ``{type(dps).__name__}``")
         if (n_ts := len(dps.timestamp)) != (n_dps := len(dps.value)):
@@ -755,7 +760,7 @@ class StateDatapointsPoster:
         merged: defaultdict[NodeId, list] = defaultdict(list)
         for obj in items:
             if obj.datapoints:
-                merged[NodeId.load(obj.instance_id)].extend(obj.datapoints)
+                merged[NodeId.load(obj.instance_id)].extend(obj._to_datapoint_writes())
         if merged:
             return itertools.starmap(StateDatapointsInsert, merged.items())
         return None
