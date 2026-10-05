@@ -1,20 +1,28 @@
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from cognite.client._api_client import APIClient
+from cognite.client.data_classes import Datapoints
 from cognite.client.data_classes.ai import (
     ForecastResultList,
     ImputeResultList,
     InputDatapoint,
     InputTimeSeries,
+    TimeSeriesForecast,
+    TimeSeriesForecastList,
 )
+from cognite.client.data_classes.data_modeling import NodeId
+from cognite.client.data_classes.datapoint_aggregates import Aggregate
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._forecasting import split_into_requests
+from cognite.client.utils._forecasting import AlignmentProblem, SourceSeries, build_inputs, split_into_requests
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._text import to_snake_case
+from cognite.client.utils._time import granularity_to_ms
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -175,6 +183,119 @@ class AITimeSeriesAPI(APIClient):
         res = await self.impute(_dataframe_to_input(df, cohort))
         return res.to_pandas()
 
+    @overload
+    async def forecast_with_retrieval(
+        self,
+        *,
+        instance_id: NodeId,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+    ) -> TimeSeriesForecast: ...
+
+    @overload
+    async def forecast_with_retrieval(
+        self,
+        *,
+        instance_id: Sequence[NodeId],
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+    ) -> TimeSeriesForecastList: ...
+
+    async def forecast_with_retrieval(
+        self,
+        *,
+        instance_id: NodeId | Sequence[NodeId],
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+    ) -> TimeSeriesForecast | TimeSeriesForecastList:
+        """Retrieve the history of time series in `[start, end)` and forecast 512 steps past their last datapoint.
+
+        The forecasting model needs evenly spaced history, and this method never resamples or truncates the data.
+        With `granularity` and `aggregate`, the history is aligned using CDF aggregates, and empty buckets are sent as
+        missing. Without them, raw datapoints are used, and they must already be evenly spaced; gaps are allowed.
+
+        Args:
+            instance_id (NodeId | Sequence[NodeId]): Instance id(s) of the time series.
+            start (int | str | datetime.datetime): Start of the history window, for example "30d-ago".
+            end (int | str | datetime.datetime | None): End of the history window. Defaults to now.
+            granularity (str | None): Align the history using aggregates at this granularity, for example "1h".
+                Requires `aggregate`.
+            aggregate (Aggregate | str | None): The aggregate to forecast, for example "average" or "interpolation".
+            cohort (str | None): Forecast all the requested time series jointly, aligned on one common grid. Omit it
+                to forecast each time series independently.
+
+        Returns:
+            TimeSeriesForecast | TimeSeriesForecastList: A single forecast if a single instance id was passed,
+            otherwise a list you can look up with `.get(instance_id=...)`.
+
+        Examples:
+
+            Forecast a time series from 30 days of hourly averages:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> fc = client.ai.time_series.forecast_with_retrieval(
+                ...     instance_id=NodeId("my_space", "21-PT-1019"),
+                ...     start="30d-ago",
+                ...     granularity="1h",
+                ...     aggregate="average",
+                ... )
+
+            Forecast the discharge pressures of three compressors on one compression train jointly:
+
+                >>> ids = [NodeId("my_space", xid) for xid in ("23-PT-1101", "23-PT-1201", "23-PT-1301")]
+                >>> res = client.ai.time_series.forecast_with_retrieval(
+                ...     instance_id=ids,
+                ...     start="14d-ago",
+                ...     granularity="10m",
+                ...     aggregate="average",
+                ...     cohort="compression-train-a",
+                ... )
+                >>> fc = res.get(instance_id=ids[1])
+        """
+        dps_list, is_single = await self._retrieve_history(instance_id, start, end, granularity, aggregate)
+        inputs = build_inputs(
+            _to_source_series(dps_list, aggregate),
+            step_ms=None if granularity is None else granularity_to_ms(granularity),
+            cohort=cohort,
+            hints=_ALIGNMENT_HINTS,
+        )
+        results = await self.forecast(inputs)
+        forecasts = [
+            TimeSeriesForecast(res.forecast, _instance_id(dps), res.cohort) for dps, res in zip(dps_list, results)
+        ]
+        return forecasts[0] if is_single else TimeSeriesForecastList(forecasts, results.quantile_levels)
+
+    async def _retrieve_history(
+        self,
+        instance_id: NodeId | Sequence[NodeId],
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None,
+        granularity: str | None,
+        aggregate: Aggregate | str | None,
+    ) -> tuple[list[Datapoints], bool]:
+        if (granularity is None) != (aggregate is None):
+            raise ValueError("Pass `granularity` and `aggregate` together, or neither to use raw datapoints.")
+        res = await self._cognite_client.time_series.data.retrieve(
+            instance_id=instance_id, start=start, end=end, aggregates=aggregate, granularity=granularity
+        )
+        if isinstance(res, Datapoints):
+            return [res], True
+        if not res:
+            raise ValueError("Pass at least one `instance_id`.")
+        return list(res), False
+
     async def _call(
         self,
         path: str,
@@ -228,3 +349,31 @@ def _dataframe_to_input(df: pd.DataFrame, cohort: str | Mapping[str, str] | None
         column_cohort = cohort if cohort is None or isinstance(cohort, str) else cohort.get(str(column))
         series.append(InputTimeSeries(str(column), datapoints, column_cohort))
     return series
+
+
+_ALIGNMENT_HINTS: dict[AlignmentProblem, str] = {
+    "irregular": "Pass `granularity=` and `aggregate=` to align it with CDF aggregates, "
+    "e.g. `granularity='1h', aggregate='average'`.",
+    "mixed_spacing": "Pass `granularity=` and `aggregate=` so all time series share one grid.",
+    "off_grid": "Pass `granularity=` and `aggregate=` so all time series share one grid.",
+    "too_long": "Narrow `start`/`end` or use a coarser `granularity`.",
+    "too_short": "Widen `start`/`end`.",
+}
+
+
+def _to_source_series(dps_list: Sequence[Datapoints], aggregate: Aggregate | str | None) -> list[SourceSeries]:
+    attribute = "value" if aggregate is None else to_snake_case(aggregate)
+    sources = []
+    for dps in dps_list:
+        node = _instance_id(dps)
+        name = f"{node.space}:{node.external_id}"
+        if dps.is_string:
+            raise ValueError(f"Time series '{name}' is a string time series; only numeric time series can be forecast.")
+        sources.append(SourceSeries(name, dps.timestamp, getattr(dps, attribute) or []))
+    return sources
+
+
+def _instance_id(dps: Datapoints) -> NodeId:
+    if dps.instance_id is None:
+        raise ValueError(f"Datapoints for time series with id {dps.id} have no instance id")
+    return dps.instance_id
