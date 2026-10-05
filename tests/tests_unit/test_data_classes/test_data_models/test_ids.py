@@ -4,7 +4,13 @@ from typing import Literal
 
 import pytest
 
-from cognite.client.data_classes.data_modeling.ids import ContainerId, ViewId, _load_identifier, _load_space_identifier
+from cognite.client.data_classes.data_modeling.ids import (
+    ContainerId,
+    PropertyId,
+    ViewId,
+    _load_identifier,
+    _load_space_identifier,
+)
 
 
 class TestContainerReference:
@@ -79,3 +85,14 @@ class TestLoadIdentifier:
         assert identifier.is_singleton() == expected_is_singleton, (
             f"Expected {expected_is_singleton} but got {identifier.is_singleton()}"
         )
+
+
+@pytest.mark.parametrize(
+    "source, expected",
+    [
+        (ContainerId("sp", "container"), ("sp", "container", "temp")),
+        (ViewId("sp", "view", "v1"), ("sp", "view/v1", "temp")),
+    ],
+)
+def test_property_id_as_property_ref(source: ContainerId | ViewId, expected: tuple[str, str, str]) -> None:
+    assert PropertyId(source, "temp").as_property_ref() == expected
