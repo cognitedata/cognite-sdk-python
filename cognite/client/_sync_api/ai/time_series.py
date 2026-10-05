@@ -10,6 +10,7 @@ from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._sync_api.ai.time_series_data import SyncAITimeSeriesDataAPI
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.ai import ForecastResultList, ImputeResultList, InputTimeSeries
 from cognite.client.utils._async_helpers import run_sync
@@ -23,6 +24,7 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
 
     def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
+        self.data = SyncAITimeSeriesDataAPI(async_client)
 
     def forecast(self, time_series: InputTimeSeries | Sequence[InputTimeSeries]) -> ForecastResultList:
         """
