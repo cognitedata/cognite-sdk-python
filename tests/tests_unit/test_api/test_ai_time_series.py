@@ -10,6 +10,7 @@ from pytest_httpx2 import HTTPXMock
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.ai import InputDatapoint, InputTimeSeries
 from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._importing import local_import
 from tests.utils import get_url, jsgz_load
 
 QUANTILE_LEVELS = ["0.05", "0.5", "0.95"]
@@ -147,3 +148,50 @@ class TestImpute:
         result = res.get(label="21-PT-1019")
         assert result is not None
         assert [p.timestamp for p in result.imputed] == [60_000]
+
+
+@pytest.mark.dsl
+class TestDataFrames:
+    def test_forecast_dataframe_sends_one_series_per_column(
+        self, cognite_client: CogniteClient, mock_forecast: HTTPXMock
+    ) -> None:
+        np, pd = local_import("numpy", "pandas")
+        df = pd.DataFrame(
+            {"23-PT-1101": [42.1, np.nan, 42.9], "23-PT-1201": [39.8, 40.1, 40.0], "24-TT-3001": [31.0, 31.2, 30.9]},
+            index=pd.date_range("2026-10-01", periods=3, freq="1min"),
+        )
+
+        out = cognite_client.ai.time_series.forecast_dataframe(
+            df, cohort={"23-PT-1101": "compression-train-a", "23-PT-1201": "compression-train-a"}
+        )
+
+        sent = jsgz_load(mock_forecast.get_requests()[0].content)["timeSeries"]
+        assert [(s["label"], s.get("cohort")) for s in sent] == [
+            ("23-PT-1101", "compression-train-a"),
+            ("23-PT-1201", "compression-train-a"),
+            ("24-TT-3001", None),
+        ]
+        assert sent[0]["datapoints"][1] == {
+            "timestamp": sent[0]["datapoints"][1]["timestamp"],
+            "value": None,
+            "missing": True,
+        }
+        assert sent[0]["datapoints"][0]["timestamp"] == 1790812800000
+        assert list(out.columns.get_level_values(0).unique()) == ["23-PT-1101", "23-PT-1201", "24-TT-3001"]
+
+    def test_impute_dataframe_reconstructs_nans(self, cognite_client: CogniteClient, mock_impute: HTTPXMock) -> None:
+        np, pd = local_import("numpy", "pandas")
+        df = pd.DataFrame(
+            {"21-PT-1019": [42.1, np.nan, 42.9]}, index=pd.date_range("2026-10-01", periods=3, freq="1min")
+        )
+
+        out = cognite_client.ai.time_series.impute_dataframe(df)
+
+        assert out.index.tolist() == [pd.Timestamp("2026-10-01 00:01:00")]
+        assert list(out.columns) == [("21-PT-1019", q) for q in [0.05, 0.5, 0.95]]
+
+    def test_duplicate_columns_are_rejected(self, cognite_client: CogniteClient) -> None:
+        pd = local_import("pandas")
+        df = pd.DataFrame([[1.0, 2.0]], columns=["a", "a"], index=pd.date_range("2026-10-01", periods=1))
+        with pytest.raises(ValueError, match="columns must be unique"):
+            cognite_client.ai.time_series.forecast_dataframe(df)
