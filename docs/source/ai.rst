@@ -19,6 +19,7 @@ Time Series Forecasting
    :template: custom-automethods-template.rst
 
    AsyncCogniteClient.ai.time_series
+   AsyncCogniteClient.ai.time_series.data
 
 AI Data classes
 ^^^^^^^^^^^^^^^

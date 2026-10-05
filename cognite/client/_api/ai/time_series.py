@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, TypeVar
 
+from cognite.client._api.ai.time_series_data import AITimeSeriesDataAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.ai import (
     ForecastResultList,
@@ -32,6 +33,7 @@ class AITimeSeriesAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="beta", sdk_maturity="alpha", feature_name="Time series forecasting and imputation"
         )
+        self.data = AITimeSeriesDataAPI(config, api_version, cognite_client)
 
     async def forecast(self, time_series: InputTimeSeries | Sequence[InputTimeSeries]) -> ForecastResultList:
         """Forecast one or more series 512 steps ahead, with quantile estimates for every step.

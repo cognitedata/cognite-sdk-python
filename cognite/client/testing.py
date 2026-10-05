@@ -9,6 +9,7 @@ from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api.agents import AgentsAPI
 from cognite.client._api.ai import AIAPI
 from cognite.client._api.ai.time_series import AITimeSeriesAPI
+from cognite.client._api.ai.time_series_data import AITimeSeriesDataAPI
 from cognite.client._api.ai.tools import AIToolsAPI
 from cognite.client._api.ai.tools.documents import AIDocumentsAPI
 from cognite.client._api.annotations import AnnotationsAPI
@@ -100,6 +101,7 @@ from cognite.client._api.workflows.versions import WorkflowVersionAPI
 from cognite.client._sync_api.agents.agents import SyncAgentsAPI
 from cognite.client._sync_api.ai import SyncAIAPI
 from cognite.client._sync_api.ai.time_series import SyncAITimeSeriesAPI
+from cognite.client._sync_api.ai.time_series_data import SyncAITimeSeriesDataAPI
 from cognite.client._sync_api.ai.tools import SyncAIToolsAPI
 from cognite.client._sync_api.ai.tools.documents import SyncAIDocumentsAPI
 from cognite.client._sync_api.annotations import SyncAnnotationsAPI
@@ -261,9 +263,10 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
         ai_tools_documents = create_autospec(AIDocumentsAPI, instance=True, spec_set=True)
         ai_tools = create_autospec(AIToolsAPI, instance=True, documents=ai_tools_documents)
-        ai_time_series = create_autospec(AITimeSeriesAPI, instance=True, spec_set=True)
+        ai_time_series_data = create_autospec(AITimeSeriesDataAPI, instance=True, spec_set=True)
+        ai_time_series = create_autospec(AITimeSeriesAPI, instance=True, data=ai_time_series_data)
         self.ai = create_autospec(AIAPI, instance=True, tools=ai_tools, time_series=ai_time_series)
-        flip_spec_set_on(self.ai, ai_tools)
+        flip_spec_set_on(self.ai, ai_tools, ai_time_series)
 
         self.agents = create_autospec(AgentsAPI, instance=True, spec_set=True)
         self.annotations = create_autospec(AnnotationsAPI, instance=True, spec_set=True)
@@ -475,9 +478,10 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
         ai_tools_documents = create_autospec(SyncAIDocumentsAPI, instance=True, spec_set=True)
         ai_tools = create_autospec(SyncAIToolsAPI, instance=True, documents=ai_tools_documents)
-        ai_time_series = create_autospec(SyncAITimeSeriesAPI, instance=True, spec_set=True)
+        ai_time_series_data = create_autospec(SyncAITimeSeriesDataAPI, instance=True, spec_set=True)
+        ai_time_series = create_autospec(SyncAITimeSeriesAPI, instance=True, data=ai_time_series_data)
         self.ai = create_autospec(SyncAIAPI, instance=True, tools=ai_tools, time_series=ai_time_series)
-        flip_spec_set_on(self.ai, ai_tools)
+        flip_spec_set_on(self.ai, ai_tools, ai_time_series)
 
         self.agents = create_autospec(SyncAgentsAPI, instance=True, spec_set=True)
         self.annotations = create_autospec(SyncAnnotationsAPI, instance=True, spec_set=True)
