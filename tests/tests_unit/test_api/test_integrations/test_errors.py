@@ -19,11 +19,13 @@ ERROR_RESPONSE = {
 
 
 class TestIntegrationErrors:
-    def test_list(self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
+    def test_list(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
         url_pattern = re.compile(
             re.escape(get_url(async_client.integrations.errors, "/integrations/errors")) + r"(?:\?.*)?$"
         )
-        httpx_mock.add_response(method="GET", url=url_pattern, json={"items": [ERROR_RESPONSE]})
+        httpx2_mock.add_response(method="GET", url=url_pattern, json={"items": [ERROR_RESPONSE]})
 
         res = cognite_client.integrations.errors.list(external_id="my-integration", task="poll")
 
@@ -32,7 +34,7 @@ class TestIntegrationErrors:
         assert res[0].level == "error"
         assert res[0].description == "Something went wrong"
 
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         assert "externalId=my-integration" in str(request.url)
         assert "task=poll" in str(request.url)
 
