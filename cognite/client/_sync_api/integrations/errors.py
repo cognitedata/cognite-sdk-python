@@ -28,7 +28,7 @@ class SyncIntegrationErrorsAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> IntegrationErrorList:
         """
-        `List errors <https://api-docs.cognite.com/20230101-alpha/tag/Integration-Errors/operation/get_integration_errors>`_
+        `List errors <https://api-docs.cognite.com/20230101-beta/tag/Integration-Errors/operation/get_integration_errors>`_
 
         Args:
             external_id (str | None): Only return errors for the integration with this external id.
