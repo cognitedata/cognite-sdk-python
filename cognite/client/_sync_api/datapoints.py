@@ -197,6 +197,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> Datapoints | None: ...
 
     @overload
@@ -217,6 +218,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsList: ...
 
     @overload
@@ -237,6 +239,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> Datapoints | None: ...
 
     @overload
@@ -257,6 +260,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsList: ...
 
     @overload
@@ -277,6 +281,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> Datapoints | None: ...
 
     @overload
@@ -297,6 +302,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsList: ...
 
     @overload
@@ -318,6 +324,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsList: ...
 
     @overload
@@ -339,6 +346,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsList: ...
 
     @overload
@@ -360,6 +368,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsList: ...
 
     @overload
@@ -382,6 +391,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsList: ...
 
     def retrieve(
@@ -403,6 +413,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> Datapoints | DatapointsList | None:
         """
         `Retrieve datapoints for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_.
@@ -445,6 +456,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``.
             ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
+            fill_limit (str | None): Enable `gap filling <https://docs.cognite.com/dev/concepts/aggregation/gap_filling>`_ for aggregate queries: the maximum gap between raw datapoints to interpolate across (the last datapoint is also extrapolated forward this long). Uses the granularity format, e.g. '30m' or '6h', but not month-based units. Must be greater than or equal to the granularity. Default: None (no gap filling).
 
         Returns:
             Datapoints | DatapointsList | None: A ``Datapoints`` object containing the requested data, or a ``DatapointsList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
@@ -596,6 +608,17 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ...     id=42, start="2w-ago", target_unit_system="Imperial"
                 ... )
 
+            To get aggregates for intervals without raw datapoints, you can enable gap filling with ``fill_limit``. Gaps between raw
+            datapoints of up to this size are interpolated, and the last datapoint is extrapolated forward for the same duration.
+            Like most other parameters, it can also be set per time series using ``DatapointsQuery``:
+
+                >>> dps_lst = client.time_series.data.retrieve(
+                ...     id=[42, DatapointsQuery(id=43, fill_limit=None)],
+                ...     aggregates=["average", "count"],
+                ...     granularity="1h",
+                ...     fill_limit="4h",
+                ... )
+
             To retrieve status codes for a time series, pass ``include_status=True``. This is only possible for raw datapoint queries.
             You would typically also pass ``ignore_bad_datapoints=False`` to not hide all the datapoints that are marked as uncertain or bad,
             which is the API's default behaviour. You may also use ``treat_uncertain_as_bad`` to control how uncertain values are interpreted.
@@ -631,6 +654,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 include_status=include_status,
                 ignore_bad_datapoints=ignore_bad_datapoints,
                 treat_uncertain_as_bad=treat_uncertain_as_bad,
+                fill_limit=fill_limit,
             )
         )
 
@@ -652,6 +676,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsArray | None: ...
 
     @overload
@@ -672,6 +697,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsArrayList: ...
 
     @overload
@@ -692,6 +718,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsArray | None: ...
 
     @overload
@@ -712,6 +739,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsArrayList: ...
 
     @overload
@@ -732,6 +760,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsArray | None: ...
 
     @overload
@@ -752,6 +781,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsArrayList: ...
 
     def retrieve_arrays(
@@ -773,6 +803,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         include_status: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
     ) -> DatapointsArray | DatapointsArrayList | None:
         """
         `Retrieve datapoints for one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getMultiTimeSeriesDatapoints>`_.
@@ -800,6 +831,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``.
             ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
+            fill_limit (str | None): Enable `gap filling <https://docs.cognite.com/dev/concepts/aggregation/gap_filling>`_ for aggregate queries: the maximum gap between raw datapoints to interpolate across (the last datapoint is also extrapolated forward this long). Uses the granularity format, e.g. '30m' or '6h', but not month-based units. Must be greater than or equal to the granularity. Default: None (no gap filling).
 
         Returns:
             DatapointsArray | DatapointsArrayList | None: A ``DatapointsArray`` object containing the requested data, or a ``DatapointsArrayList`` if multiple time series were asked for (the ordering is ids first, then external_ids). If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
@@ -873,6 +905,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 include_status=include_status,
                 ignore_bad_datapoints=ignore_bad_datapoints,
                 treat_uncertain_as_bad=treat_uncertain_as_bad,
+                fill_limit=fill_limit,
             )
         )
 
@@ -894,6 +927,7 @@ class SyncDatapointsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
         ignore_bad_datapoints: bool = True,
         treat_uncertain_as_bad: bool = True,
+        fill_limit: str | None = None,
         uniform_index: bool = False,
         include_status: bool = False,
         include_unit: bool = True,
@@ -928,6 +962,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             ignore_unknown_ids (bool): Whether to ignore missing time series rather than raising an exception. Default: False
             ignore_bad_datapoints (bool): Treat datapoints with a bad status code as if they do not exist. If set to false, raw queries will include bad datapoints in the response, and aggregates will in general omit the time period between a bad datapoint and the next good datapoint. Also, the period between a bad datapoint and the previous good datapoint will be considered constant. Default: True.
             treat_uncertain_as_bad (bool): Treat datapoints with uncertain status codes as bad. If false, treat datapoints with uncertain status codes as good. Used for both raw queries and aggregates. Default: True.
+            fill_limit (str | None): Enable `gap filling <https://docs.cognite.com/dev/concepts/aggregation/gap_filling>`_ for aggregate queries: the maximum gap between raw datapoints to interpolate across (the last datapoint is also extrapolated forward this long). Uses the granularity format, e.g. '30m' or '6h', but not month-based units. Must be greater than or equal to the granularity. Default: None (no gap filling).
             uniform_index (bool): If only querying aggregates AND a single granularity is used (that's NOT a calendar granularity like month/quarter/year) AND no limit is used AND no timezone is used, specifying `uniform_index=True` will return a dataframe with an equidistant datetime index from the earliest `start` to the latest `end` (missing values will be NaNs). If these requirements are not met, a ValueError is raised. Default: False
             include_status (bool): Also return the status code, an integer, for each datapoint in the response. Only relevant for raw datapoint queries, and the object aggregates ``min_datapoint`` and ``max_datapoint``. Also adds the status info as a separate level in the columns (MultiIndex).
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
@@ -1018,6 +1053,7 @@ class SyncDatapointsAPI(SyncAPIClient):
                 ignore_unknown_ids=ignore_unknown_ids,
                 ignore_bad_datapoints=ignore_bad_datapoints,
                 treat_uncertain_as_bad=treat_uncertain_as_bad,
+                fill_limit=fill_limit,
                 uniform_index=uniform_index,
                 include_status=include_status,
                 include_unit=include_unit,
