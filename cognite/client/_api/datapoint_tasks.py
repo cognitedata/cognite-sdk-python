@@ -109,6 +109,7 @@ class _FullDatapointsQuery:
     include_status: bool = False
     ignore_bad_datapoints: bool = True
     treat_uncertain_as_bad: bool = True
+    fill_limit: str | None = None
 
     @property
     def is_single_identifier(self) -> bool:
@@ -138,6 +139,7 @@ class _FullDatapointsQuery:
             include_status=self.include_status,
             ignore_bad_datapoints=self.ignore_bad_datapoints,
             treat_uncertain_as_bad=self.treat_uncertain_as_bad,
+            fill_limit=self.fill_limit,
         )
 
     def parse_into_queries(self) -> list[DatapointsQuery]:
@@ -250,6 +252,8 @@ class _DpsQueryValidator:
                         "yield 5, 6 or 7. It's a feature, not a bug ;)",
                         UserWarning,
                     )
+                if query.fill_limit is not None:
+                    raise ValueError("'fill_limit' (gap filling) is only supported for aggregate queries.")
                 return True
             raise ValueError("When passing `granularity`, argument `aggregates` is also required.")
 
@@ -373,6 +377,9 @@ class BaseDpsFetchSubtask:
 
         if query.include_status is True:
             self.static_kwargs["includeStatus"] = query.include_status
+
+        if query.fill_limit is not None:
+            self.static_kwargs["fill"] = {"limit": query.fill_limit}
 
         if query.timezone:
             self.static_kwargs["timeZone"] = query.timezone
