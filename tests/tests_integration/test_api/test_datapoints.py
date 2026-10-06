@@ -3301,6 +3301,10 @@ class TestRetrieveAggregateDatapointsAPI:
                             with pytest.raises(AttributeError):
                                 min_or_max.status_symbol
 
+    @pytest.mark.allow_no_semaphore(
+        "Test inserts datapoints; DatapointsAPI._insert_datapoints holds the semaphore via outer "
+        "'async with' and passes None to _post to avoid double-acquiring."
+    )
     def test_retrieve_with_fill_limit(self, cognite_client: CogniteClient) -> None:
         ts = cognite_client.time_series.create(TimeSeriesWrite(external_id=f"gap-filling-{random_string(10)}"))
         try:
