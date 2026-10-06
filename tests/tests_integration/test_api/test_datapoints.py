@@ -3301,6 +3301,24 @@ class TestRetrieveAggregateDatapointsAPI:
                             with pytest.raises(AttributeError):
                                 min_or_max.status_symbol
 
+    def test_retrieve_with_fill_limit(self, cognite_client: CogniteClient) -> None:
+        ts = cognite_client.time_series.create(TimeSeriesWrite(external_id=f"gap-filling-{random_string(10)}"))
+        try:
+            t0, hour = ts_to_ms("2023-01-01"), 3_600_000
+            cognite_client.time_series.data.insert([(t0, 1.0), (t0 + 3 * hour, 4.0)], id=ts.id)
+            no_fill, with_fill = cognite_client.time_series.data.retrieve(
+                id=[DatapointsQuery(id=ts.id), DatapointsQuery(id=ts.id, fill_limit="3h")],
+                start=t0,
+                end=t0 + 4 * hour,
+                aggregates="average",
+                granularity="1h",
+            )
+            assert no_fill.timestamp == [t0, t0 + 3 * hour]
+            assert set(no_fill.timestamp) < set(with_fill.timestamp)
+            assert t0 + hour in with_fill.timestamp
+        finally:
+            cognite_client.time_series.delete(id=ts.id)
+
 
 class TestRetrieveMixedRawAndAgg:
     def test_multiple_settings_for_ignore_unknown_ids(
