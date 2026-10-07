@@ -376,7 +376,6 @@ class UserSessionCall(ActionCall):
     Some tools must run on behalf of the user, using the user's own credentials. When an agent wants to run one
     of these tools, this action is included in the response instead of the final result. Respond with a
     :class:`UserSessionResult` containing a session nonce, e.g. from ``client.iam.sessions.create().nonce``.
-    Sending the nonce also confirms the tool call, so inspect ``tool_name`` and ``tool_arguments`` first.
 
     Args:
         action_id (str): The unique identifier for this action call.
