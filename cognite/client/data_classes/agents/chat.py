@@ -609,6 +609,7 @@ class UserSessionResult(ActionResult):
     """
 
     _type: ClassVar[str] = "userSession"
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"nonce"})
     nonce: str
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
