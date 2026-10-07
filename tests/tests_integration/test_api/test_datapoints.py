@@ -3315,9 +3315,9 @@ class TestRetrieveAggregateDatapointsAPI:
                 [(t0 + hour, 1.0), (t0 + 3 * hour, 3.0), (t0 + 8 * hour, 8.0)], id=ts.id
             )
             no_fill, with_fill = cognite_client.time_series.data.retrieve(
-                id=[DatapointsQuery(id=ts.id), DatapointsQuery(id=ts.id, fill_limit="150m")],
+                id=[DatapointsQuery(id=ts.id), DatapointsQuery(id=ts.id, fill_limit="3h")],
                 start=t0,
-                end=t0 + 12 * hour,
+                end=t0 + 11 * hour,
                 aggregates="interpolation",
                 granularity="1h",
             )
