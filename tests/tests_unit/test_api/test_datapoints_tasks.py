@@ -4,12 +4,11 @@ import math
 import re
 from collections.abc import Iterable, Sequence
 from datetime import datetime, timezone
-from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-from cognite.client._api.datapoint_tasks import SerialFetchSubtask, _DpsQueryValidator, _FullDatapointsQuery
+from cognite.client._api.datapoint_tasks import _DpsQueryValidator, _FullDatapointsQuery
 from cognite.client.data_classes import DatapointsQuery
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -85,14 +84,15 @@ class TestSingleTSQueryValidator:
             query_validator(query.parse_into_queries())
 
     @pytest.mark.parametrize(
-        "granularity, aggregates, outside, exp_err, exp_err_msg_idx",
+        "granularity, aggregates, outside, fill_limit, exp_err, exp_err_msg_idx",
         (
-            (4000, ["min"], None, TypeError, 0),
-            ("4h", {"min"}, None, TypeError, 1),
-            ("4h", None, None, ValueError, 2),
-            ("4h", [], None, ValueError, 3),
-            (None, ["min"], None, ValueError, 4),
-            ("4h", ["min"], True, ValueError, 5),
+            (4000, ["min"], None, None, TypeError, 0),
+            ("4h", {"min"}, None, None, TypeError, 1),
+            ("4h", None, None, None, ValueError, 2),
+            ("4h", [], None, None, ValueError, 3),
+            (None, ["min"], None, None, ValueError, 4),
+            ("4h", ["min"], True, None, ValueError, 5),
+            (None, None, None, "1h", ValueError, 6),
         ),
     )
     def test_function_validate_and_create_query(
@@ -100,6 +100,7 @@ class TestSingleTSQueryValidator:
         granularity: str | None,
         aggregates: Iterable[str] | None,
         outside: bool | None,
+        fill_limit: Any,
         exp_err: type[Exception],
         exp_err_msg_idx: int,
         query_validator: _DpsQueryValidator,
@@ -111,12 +112,14 @@ class TestSingleTSQueryValidator:
             "Empty list of `aggregates` passed, expected at least one!",
             "When passing `aggregates`, argument `granularity` is also required.",
             "'Include outside points' is not supported for aggregates.",
+            "'fill_limit' (gap filling) is only supported for aggregate queries.",
         ]
         queries = _FullDatapointsQuery(
             id=1,
             granularity=granularity,
             aggregates=aggregates,  # type: ignore[arg-type]
             include_outside_points=outside,  # type: ignore[arg-type]
+            fill_limit=fill_limit,
         ).parse_into_queries()
         with pytest.raises(exp_err, match=re.escape(err_msgs[exp_err_msg_idx])):
             query_validator(queries)
@@ -178,28 +181,3 @@ class TestSingleTSQueryValidator:
         all_queries = full_query.parse_into_queries()
         with pytest.raises(ValueError, match=r"'Include outside points' is not supported for aggregates\."):
             query_validator(all_queries)
-
-
-class TestGapFilling:
-    def test_fill_limit_on_raw_query_raises(self, query_validator: _DpsQueryValidator) -> None:
-        all_queries = _FullDatapointsQuery(id=1, fill_limit="1h").parse_into_queries()
-        with pytest.raises(ValueError, match=r"'fill_limit' \(gap filling\) is only supported for aggregate queries\."):
-            query_validator(all_queries)
-
-    def test_top_level_fill_limit_is_overridden_by_query(self) -> None:
-        full_query = _FullDatapointsQuery(
-            id=[1, DatapointsQuery(id=2, fill_limit="6h"), DatapointsQuery(id=3, fill_limit=None)],
-            aggregates="average",
-            granularity="1h",
-            fill_limit="2h",
-        )
-        assert [q.fill_limit for q in full_query.parse_into_queries()] == ["2h", "6h", None]
-
-    @pytest.mark.parametrize("fill_limit, expected", [("4h", {"limit": "4h"}), (None, None)])
-    def test_fill_in_request_payload(
-        self, fill_limit: str | None, expected: dict | None, query_validator: _DpsQueryValidator
-    ) -> None:
-        full_query = _FullDatapointsQuery(id=1, aggregates="average", granularity="1h", fill_limit=fill_limit)
-        (query,) = query_validator(full_query.parse_into_queries())
-        subtask = SerialFetchSubtask(start=0, end=1, parent=SimpleNamespace(query=query), subtask_idx=(0,))
-        assert subtask.static_kwargs.get("fill") == expected
