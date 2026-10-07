@@ -94,7 +94,9 @@ class DatapointsAPI(APIClient):
             pluralize=True,
         )
         self._gap_filling_warning = FeaturePreviewWarning(
-            api_maturity="beta", sdk_maturity="alpha", feature_name="Gap filling"
+            api_maturity="beta",
+            sdk_maturity="alpha",
+            feature_name="Datapoints gap filling for aggregate queries",
         )
 
     def _validate_queries(self, queries: Iterable[DatapointsQuery]) -> None:
