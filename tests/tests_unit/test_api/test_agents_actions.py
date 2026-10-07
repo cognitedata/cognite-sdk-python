@@ -131,19 +131,20 @@ class TestUserSessionCall:
             "type": "userSession",
             "actionId": "call_789",
             "userSession": {
-                "content": {"type": "text", "text": "Run the function on your behalf?"},
-                "toolName": "my_function",
-                "toolArguments": {"x": 1},
-                "toolDescription": "Calls my function",
-                "toolType": "callFunction",
+                "content": {"type": "text", "text": "Please confirm the action."},
+                "toolName": "execute",
+                "toolArguments": {"command": "python -c 'print(42)'"},
+                "toolDescription": "Run a shell command in the sandbox",
+                "toolType": "execute",
             },
         }
         call = ActionCall._load(data)
         assert isinstance(call, UserSessionCall)
         assert call.action_id == "call_789"
-        assert call.content == TextContent(text="Run the function on your behalf?")
-        assert call.tool_name == "my_function"
-        assert call.tool_type == "callFunction"
+        assert call.content == TextContent(text="Please confirm the action.")
+        assert call.tool_name == "execute"
+        assert call.tool_arguments == {"command": "python -c 'print(42)'"}
+        assert call.tool_type == "execute"
         assert call.dump() == data
 
     def test_load_minimal(self) -> None:
