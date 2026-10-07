@@ -222,6 +222,7 @@ class _DpsQueryValidator:
                 query.timezone, query.is_raw_query
             )
             query.granularity, query.is_calendar_query = self._verify_and_convert_granularity(query.granularity)
+            query.fill_limit = self._verify_and_convert_fill_limit(query)
             query.start, query.end = self._verify_time_range(query, frozen_time_now)
             if query.is_raw_query:
                 query.max_query_limit = self.dps_limit_raw
@@ -303,6 +304,30 @@ class _DpsQueryValidator:
             return None, False
         quantity, unit = split_granularity_into_quantity_and_normalized_unit(granularity)
         return f"{quantity}{unit}", unit == "mo"
+
+    @staticmethod
+    def _verify_and_convert_fill_limit(query: DatapointsQuery) -> str | None:
+        if (fill_limit := query.fill_limit) is None:
+            return None
+        elif not isinstance(fill_limit, str):
+            raise TypeError(f"Expected `fill_limit` to be of type `str` or None, not {type(fill_limit)}")
+        try:
+            quantity, unit = split_granularity_into_quantity_and_normalized_unit(fill_limit)
+        except ValueError:
+            raise ValueError(
+                f"Invalid `fill_limit` format: `{fill_limit}`. Must be on format <quantity><unit>, e.g. 30m, 6h or 1d."
+            ) from None
+        if unit == "mo":
+            raise ValueError("'fill_limit' does not support month-based units (month, quarter or year).")
+        fill_limit = f"{quantity}{unit}"
+        # Calendar granularities (month) have no fixed length, so we leave that comparison to the API:
+        if query.is_calendar_query:
+            return fill_limit
+        if granularity_to_ms(fill_limit) < granularity_to_ms(cast(str, query.granularity)):
+            raise ValueError(
+                f"'fill_limit' ({fill_limit}) must be greater than or equal to the granularity ({query.granularity})."
+            )
+        return fill_limit
 
     @staticmethod
     def _verify_and_convert_limit(limit: int | None) -> int | None:

@@ -93,6 +93,10 @@ class TestSingleTSQueryValidator:
             (None, ["min"], None, None, ValueError, 4),
             ("4h", ["min"], True, None, ValueError, 5),
             (None, None, None, "1h", ValueError, 6),
+            ("1h", ["min"], None, 2, TypeError, 7),
+            ("1h", ["min"], None, "foo", ValueError, 8),
+            ("1h", ["min"], None, "1month", ValueError, 9),
+            ("1h", ["min"], None, "30m", ValueError, 10),
         ),
     )
     def test_function_validate_and_create_query(
@@ -113,6 +117,10 @@ class TestSingleTSQueryValidator:
             "When passing `aggregates`, argument `granularity` is also required.",
             "'Include outside points' is not supported for aggregates.",
             "'fill_limit' (gap filling) is only supported for aggregate queries.",
+            f"Expected `fill_limit` to be of type `str` or None, not {type(fill_limit)}",
+            "Invalid `fill_limit` format: `foo`.",
+            "'fill_limit' does not support month-based units (month, quarter or year).",
+            "'fill_limit' (30m) must be greater than or equal to the granularity (1h).",
         ]
         queries = _FullDatapointsQuery(
             id=1,
