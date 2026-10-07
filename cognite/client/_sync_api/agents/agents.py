@@ -429,14 +429,15 @@ class SyncAgentsAPI(SyncAPIClient):
 
                 >>> from cognite.client.data_classes.agents import UserSessionCall, UserSessionResult
                 >>> if response.action_calls:
-                ...     session_results = [
-                ...         UserSessionResult(
-                ...             action_id=action.action_id,
-                ...             nonce=client.iam.sessions.create().nonce,
-                ...         )
-                ...         for action in response.action_calls
-                ...         if isinstance(action, UserSessionCall)
-                ...     ]
+                ...     session_results = []
+                ...     for action in response.action_calls:
+                ...         if isinstance(action, UserSessionCall):
+                ...             print(f"Tool: {action.tool_name}, arguments: {action.tool_arguments}")
+                ...             # Uses token exchange with a user token, or client credentials with a service account
+                ...             session = client.iam.sessions.create()
+                ...             session_results.append(
+                ...                 UserSessionResult(action_id=action.action_id, nonce=session.nonce)
+                ...             )
                 ...     if session_results:
                 ...         response = client.agents.chat(
                 ...             agent_external_id="my_agent",
