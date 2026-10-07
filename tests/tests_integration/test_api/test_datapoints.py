@@ -2811,7 +2811,10 @@ class TestRetrieveAggregateDatapointsAPI:
                         ignore_unknown_ids=random.choice((True, False)),
                     )
                 assert exc.value.code == 400
-                assert "Aggregates are not supported for string time series" in exc.value.message
+                assert exc.value.message in (
+                    "Aggregates are not supported for string time series",
+                    "String aggregates are supported in alpha only",
+                )
 
     @pytest.mark.parametrize("granularity, lower_lim, upper_lim", (("h", 30, 1000), ("d", 1, 200)))
     def test_granularity_invariants(
