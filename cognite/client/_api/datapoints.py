@@ -99,8 +99,7 @@ class DatapointsAPI(APIClient):
             feature_name="Datapoints gap filling for aggregate queries",
         )
 
-    def _validate_queries(self, queries: Iterable[DatapointsQuery]) -> None:
-        self.query_validator(queries)
+    def _maybe_warn_if_gap_filling_is_used(self, queries: Iterable[DatapointsQuery]) -> None:
         if any(query.fill_limit is not None for query in queries):
             self._gap_filling_warning.warn()
 
@@ -273,7 +272,8 @@ class DatapointsAPI(APIClient):
             uq.identifier: DatapointsQuery.valid_from_user_query(uq, limit=request_limit, include_outside_points=False)
             for uq in user_queries
         }
-        self._validate_queries(alive_queries.values())
+        self.query_validator(alive_queries.values())
+        self._maybe_warn_if_gap_filling_is_used(alive_queries.values())
 
         dps_lst: DatapointsArrayList | DatapointsList
         chunk_fn = functools.partial(split_into_chunks, chunk_size=chunk_size_datapoints)
@@ -806,7 +806,8 @@ class DatapointsAPI(APIClient):
             treat_uncertain_as_bad=treat_uncertain_as_bad,
             fill_limit=fill_limit,
         )
-        self._validate_queries(parsed_queries := query.parse_into_queries())
+        self.query_validator(parsed_queries := query.parse_into_queries())
+        self._maybe_warn_if_gap_filling_is_used(parsed_queries)
         dps_lst = await self._select_dps_fetch_strategy(parsed_queries)(self, parsed_queries).fetch_all_datapoints()
 
         if not query.is_single_identifier:
@@ -1063,7 +1064,8 @@ class DatapointsAPI(APIClient):
             treat_uncertain_as_bad=treat_uncertain_as_bad,
             fill_limit=fill_limit,
         )
-        self._validate_queries(parsed_queries := query.parse_into_queries())
+        self.query_validator(parsed_queries := query.parse_into_queries())
+        self._maybe_warn_if_gap_filling_is_used(parsed_queries)
         dps_lst = await self._select_dps_fetch_strategy(parsed_queries)(
             self, parsed_queries
         ).fetch_all_datapoints_numpy()
@@ -1220,7 +1222,8 @@ class DatapointsAPI(APIClient):
             treat_uncertain_as_bad=treat_uncertain_as_bad,
             fill_limit=fill_limit,
         )
-        self._validate_queries(parsed_queries := query.parse_into_queries())
+        self.query_validator(parsed_queries := query.parse_into_queries())
+        self._maybe_warn_if_gap_filling_is_used(parsed_queries)
         fetcher = self._select_dps_fetch_strategy(parsed_queries)(self, parsed_queries)
 
         if not uniform_index:
