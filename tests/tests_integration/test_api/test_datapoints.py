@@ -3310,17 +3310,21 @@ class TestRetrieveAggregateDatapointsAPI:
         ts = cognite_client.time_series.create(TimeSeriesWrite(external_id=f"gap-filling-{random_string(10)}"))
         try:
             t0, hour = ts_to_ms("2023-01-01"), 3_600_000
-            cognite_client.time_series.data.insert([(t0, 1.0), (t0 + 3 * hour, 4.0)], id=ts.id)
+            # A 2h gap (within the limit), followed by a 5h gap (exceeding it):
+            cognite_client.time_series.data.insert(
+                [(t0 + hour, 1.0), (t0 + 3 * hour, 3.0), (t0 + 8 * hour, 8.0)], id=ts.id
+            )
             no_fill, with_fill = cognite_client.time_series.data.retrieve(
-                id=[DatapointsQuery(id=ts.id), DatapointsQuery(id=ts.id, fill_limit="3h")],
+                id=[DatapointsQuery(id=ts.id), DatapointsQuery(id=ts.id, fill_limit="150m")],
                 start=t0,
-                end=t0 + 4 * hour,
-                aggregates="average",
+                end=t0 + 12 * hour,
+                aggregates="interpolation",
                 granularity="1h",
             )
-            assert no_fill.timestamp == [t0, t0 + 3 * hour]
-            assert set(no_fill.timestamp) < set(with_fill.timestamp)
-            assert t0 + hour in with_fill.timestamp
+            assert no_fill.timestamp == [t0 + hour, t0 + 3 * hour, t0 + 8 * hour]
+            assert no_fill.interpolation == [1.0, 3.0, 8.0]
+            assert with_fill.timestamp == [t0 + h * hour for h in (1, 2, 3, 8, 9, 10)]
+            assert with_fill.interpolation == [1.0, 2.0, 3.0, 8.0, 8.0, 8.0]
         finally:
             cognite_client.time_series.delete(id=ts.id)
 
