@@ -84,14 +84,19 @@ class TestSingleTSQueryValidator:
             query_validator(query.parse_into_queries())
 
     @pytest.mark.parametrize(
-        "granularity, aggregates, outside, exp_err, exp_err_msg_idx",
+        "granularity, aggregates, outside, fill_limit, exp_err, exp_err_msg_idx",
         (
-            (4000, ["min"], None, TypeError, 0),
-            ("4h", {"min"}, None, TypeError, 1),
-            ("4h", None, None, ValueError, 2),
-            ("4h", [], None, ValueError, 3),
-            (None, ["min"], None, ValueError, 4),
-            ("4h", ["min"], True, ValueError, 5),
+            (4000, ["min"], None, None, TypeError, 0),
+            ("4h", {"min"}, None, None, TypeError, 1),
+            ("4h", None, None, None, ValueError, 2),
+            ("4h", [], None, None, ValueError, 3),
+            (None, ["min"], None, None, ValueError, 4),
+            ("4h", ["min"], True, None, ValueError, 5),
+            (None, None, None, "1h", ValueError, 6),
+            ("1h", ["min"], None, 2, TypeError, 7),
+            ("1h", ["min"], None, "foo", ValueError, 8),
+            ("1h", ["min"], None, "1month", ValueError, 9),
+            ("1h", ["min"], None, "30m", ValueError, 10),
         ),
     )
     def test_function_validate_and_create_query(
@@ -99,6 +104,7 @@ class TestSingleTSQueryValidator:
         granularity: str | None,
         aggregates: Iterable[str] | None,
         outside: bool | None,
+        fill_limit: Any,
         exp_err: type[Exception],
         exp_err_msg_idx: int,
         query_validator: _DpsQueryValidator,
@@ -110,12 +116,18 @@ class TestSingleTSQueryValidator:
             "Empty list of `aggregates` passed, expected at least one!",
             "When passing `aggregates`, argument `granularity` is also required.",
             "'Include outside points' is not supported for aggregates.",
+            "'fill_limit' (gap filling) is only supported for aggregate queries.",
+            f"Expected `fill_limit` to be of type `str` or None, not {type(fill_limit)}",
+            "Invalid `fill_limit` format: `foo`.",
+            "'fill_limit' does not support month-based units (month, quarter or year).",
+            "'fill_limit' (30m) must be greater than or equal to the granularity (1h).",
         ]
         queries = _FullDatapointsQuery(
             id=1,
             granularity=granularity,
             aggregates=aggregates,  # type: ignore[arg-type]
             include_outside_points=outside,  # type: ignore[arg-type]
+            fill_limit=fill_limit,
         ).parse_into_queries()
         with pytest.raises(exp_err, match=re.escape(err_msgs[exp_err_msg_idx])):
             query_validator(queries)
