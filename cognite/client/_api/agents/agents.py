@@ -446,6 +446,25 @@ class AgentsAPI(APIClient):
                 ...             messages=confirmations,
                 ...             cursor=response.cursor,
                 ...         )
+
+            Handle a user session request, letting the agent run a tool on your behalf:
+
+                >>> from cognite.client.data_classes.agents import UserSessionCall, UserSessionResult
+                >>> if response.action_calls:
+                ...     session_results = [
+                ...         UserSessionResult(
+                ...             action_id=action.action_id,
+                ...             nonce=client.iam.sessions.create().nonce,
+                ...         )
+                ...         for action in response.action_calls
+                ...         if isinstance(action, UserSessionCall)
+                ...     ]
+                ...     if session_results:
+                ...         response = client.agents.chat(
+                ...             agent_external_id="my_agent",
+                ...             messages=session_results,
+                ...             cursor=response.cursor,
+                ...         )
         """
         self._warnings.warn()
 

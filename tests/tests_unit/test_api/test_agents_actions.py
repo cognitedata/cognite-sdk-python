@@ -15,6 +15,8 @@ from cognite.client.data_classes.agents.chat import (
     ClientToolResult,
     TextContent,
     UnknownActionCall,
+    UserSessionCall,
+    UserSessionResult,
 )
 from tests.utils import get_url, jsgz_load
 
@@ -123,6 +125,48 @@ class TestClientToolResult:
         assert result.content.text == "Result: 100"
 
 
+class TestUserSessionCall:
+    def test_load_and_dump(self) -> None:
+        data = {
+            "type": "userSession",
+            "actionId": "call_789",
+            "userSession": {
+                "content": {"type": "text", "text": "Run the function on your behalf?"},
+                "toolName": "my_function",
+                "toolArguments": {"x": 1},
+                "toolDescription": "Calls my function",
+                "toolType": "callFunction",
+            },
+        }
+        call = ActionCall._load(data)
+        assert isinstance(call, UserSessionCall)
+        assert call.action_id == "call_789"
+        assert call.content == TextContent(text="Run the function on your behalf?")
+        assert call.tool_name == "my_function"
+        assert call.tool_type == "callFunction"
+        assert call.dump() == data
+
+    def test_load_minimal(self) -> None:
+        data = {"type": "userSession", "actionId": "call_789"}
+        call = ActionCall._load(data)
+        assert isinstance(call, UserSessionCall)
+        assert call.action_id == "call_789"
+        assert call.content is None
+        assert call.tool_name is None
+
+
+class TestUserSessionResult:
+    def test_dump(self) -> None:
+        result = UserSessionResult(action_id="call_789", nonce="my_nonce")
+        assert result.dump() == {
+            "role": "action",
+            "type": "userSession",
+            "actionId": "call_789",
+            "nonce": "my_nonce",
+        }
+        assert UserSessionResult._load(result.dump()) == result
+
+
 class TestUnknownActionCall:
     def test_load_and_dump(self) -> None:
         data = {"type": "unknownActionType", "actionId": "call_999", "someField": "someValue"}
@@ -168,4 +212,19 @@ class TestChatWithActions:
         request_body = jsgz_load(mock_final_response.get_requests()[0].content)
         assert request_body["cursor"] == "cursor_12345"
         assert request_body["messages"][0]["actionId"] == "call_abc123"
+        assert response.text == "The result is 100."
+
+    async def test_chat_with_user_session_result(
+        self, async_client: AsyncCogniteClient, mock_final_response: HTTPXMock
+    ) -> None:
+        response = await async_client.agents.chat(
+            agent_external_id="my_agent",
+            messages=UserSessionResult(action_id="call_789", nonce="my_nonce"),
+            cursor="cursor_12345",
+        )
+        request_body = jsgz_load(mock_final_response.get_requests()[0].content)
+        assert request_body["cursor"] == "cursor_12345"
+        assert request_body["messages"] == [
+            {"role": "action", "type": "userSession", "actionId": "call_789", "nonce": "my_nonce"}
+        ]
         assert response.text == "The result is 100."
