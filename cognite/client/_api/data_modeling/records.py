@@ -153,6 +153,15 @@ class RecordsAPI(APIClient):
                 ...     ),
                 ...     stream_id="my-stream",
                 ... )
+
+            Ingest a record through a view:
+
+                >>> from cognite.client.data_classes.data_modeling.records import RecordViewId
+                >>> source = RecordSource(
+                ...     RecordViewId("my-space", "my-view", "v1"), {"temperature": 22.5}
+                ... )
+                >>> record = RecordWrite("my-space", "rec-2", sources=[source])
+                >>> client.data_modeling.records.ingest(record, stream_id="my-stream")
         """
         self._warning.warn()
         item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
@@ -227,6 +236,9 @@ class RecordsAPI(APIClient):
         include_typing: bool = False,
     ) -> RecordsAggregation:
         """`Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_.
+
+        Aggregate properties may reference multiple containers or a single view, but cannot
+        mix views and containers. This restriction does not apply to filters or target units.
 
         Args:
             aggregates (Mapping[str, Aggregate | dict[str, Any]]): Aggregate request tree keyed
@@ -378,7 +390,7 @@ class RecordsAPI(APIClient):
             last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
                 immutable streams** (must include a lower bound).
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
+            sources (Sequence[RecordSourceSelector] | None): Which container or view properties to return.
             sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
             limit (int): Maximum number of records to return (1-1000). This endpoint returns a single
                 page and does not paginate, so a larger limit is an error rather than a silent cap.
@@ -485,7 +497,7 @@ class RecordsAPI(APIClient):
             cursor (str | None): Resume from a cursor from a previously yielded chunk. Mutually
                 exclusive with ``initialize_cursor``.
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
+            sources (Sequence[RecordSourceSelector] | None): Which container or view properties to return.
             target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
                 to another unit.
             chunk_size (int): Number of records per yielded chunk, between 1 and 1000. Defaults to 1000.

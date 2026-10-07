@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from types import MappingProxyType
 
 import pytest
 from pytest_httpx2 import HTTPXMock
@@ -27,6 +28,7 @@ from cognite.client.data_classes.data_modeling.aggregates import (
     UnknownResult,
 )
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, PropertyPath, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, TypeInformation
 from cognite.client.data_classes.data_modeling.records import (
     Record,
@@ -35,9 +37,11 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordList,
     RecordsAggregation,
     RecordSource,
+    RecordSourceIdentifier,
     RecordSourceSelector,
     RecordTargetUnit,
     RecordTargetUnits,
+    RecordViewId,
     RecordWrite,
     SyncRecord,
     SyncRecordList,
@@ -627,7 +631,7 @@ class TestRecordsAPIFilter:
     ) -> None:
         cognite_client.data_modeling.records.filter(
             stream_id=stream_id,
-            sources=[RecordSourceSelector(RecordContainerId(space="sp", external_id="container-x"), ["*"])],
+            sources=[RecordSourceSelector(ContainerId(space="sp", external_id="container-x"), ["*"])],
         )
         body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["sources"] == [
@@ -1014,9 +1018,7 @@ class TestRecordsAPISync:
                 initialize_cursor="2m-ago",
                 filter=filters.Equals(property=["sp", "container-x", "temp"], value=22.5),
                 sources=[
-                    RecordSourceSelector(
-                        source=RecordContainerId(space="sp", external_id="container-x"), properties=["*"]
-                    )
+                    RecordSourceSelector(source=ContainerId(space="sp", external_id="container-x"), properties=["*"])
                 ],
                 chunk_size=5,
             )
@@ -1049,13 +1051,13 @@ class TestRecordDTOs:
         assert loaded.sources[0].properties == {"temp": 22.5}
 
     def test_record_source_reference_dump(self) -> None:
-        ref = RecordContainerId(space="s", external_id="c")
+        ref = ContainerId(space="s", external_id="c")
         d = ref.dump()
         assert d == {"type": "container", "space": "s", "externalId": "c"}
 
     def test_record_source_dump(self) -> None:
         src = RecordSource(
-            source=RecordContainerId(space="s", external_id="c"),
+            source=ContainerId(space="s", external_id="c"),
             properties={"x": 1},
         )
         d = src.dump()
@@ -1110,7 +1112,7 @@ class TestRecordDTOs:
         assert TimeRange().dump() == {}
 
     def test_record_source_selector_dump(self) -> None:
-        selector = RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), ["temp", "pressure"])
+        selector = RecordSourceSelector(ContainerId(space="sp", external_id="c"), ["temp", "pressure"])
         assert selector.dump() == {
             "source": {"type": "container", "space": "sp", "externalId": "c"},
             "properties": ["temp", "pressure"],
@@ -1221,9 +1223,159 @@ class TestRecordPropertyPathValidation:
 
     def test_record_source_selector_rejects_bare_string_properties(self) -> None:
         with pytest.raises(TypeError, match="'properties' must be a sequence of strings"):
-            RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), "temp")  # type: ignore[arg-type]
+            RecordSourceSelector(ContainerId(space="sp", external_id="c"), "temp")  # type: ignore[arg-type]
 
     def test_record_source_selector_rejects_no_properties(self) -> None:
         # The API requires minItems: 1 for properties.
         with pytest.raises(ValueError, match="'properties' must not be empty"):
-            RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), [])
+            RecordSourceSelector(ContainerId(space="sp", external_id="c"), [])
+
+    def test_record_target_unit_accepts_view_property_reference(self) -> None:
+        target_unit = RecordTargetUnit(
+            (ViewId("sp", "my_view", "v1"), "pressure"),
+            UnitReference("pressure:pa"),
+        )
+        assert target_unit.dump() == {
+            "property": ["sp", "my_view/v1", "pressure"],
+            "unit": {"externalId": "pressure:pa"},
+        }
+
+    def test_source_property_tuple_rejects_non_string_property(self) -> None:
+        with pytest.raises(TypeError, match="must have a string property"):
+            RecordTargetUnit((ViewId("sp", "my_view", "v1"), 42), UnitReference("pressure:pa"))  # type: ignore[arg-type]
+
+    def test_target_unit_accepts_source_property_list(self) -> None:
+        target_unit = RecordTargetUnit([ViewId("sp", "v", "v1"), "temp"], UnitReference("temperature:deg_c"))
+        assert target_unit.dump()["property"] == ["sp", "v/v1", "temp"]
+
+    @pytest.mark.parametrize("property_", [[], ["sp", 42], b"temp"])
+    def test_target_unit_rejects_invalid_path(self, property_: object) -> None:
+        with pytest.raises((TypeError, ValueError), match="'property' must"):
+            RecordTargetUnit(property_, UnitReference("pressure:pa"))  # type: ignore[arg-type]
+
+
+class TestRecordViewId:
+    def test_version_is_required(self) -> None:
+        with pytest.raises(TypeError):
+            RecordViewId(space="my_space", external_id="my_view")  # type: ignore[call-arg]
+
+
+class TestRecordSourceViews:
+    @pytest.mark.parametrize(
+        "source, expected",
+        [
+            (RecordViewId("sp", "my_view", "v1"), RecordViewId("sp", "my_view", "v1")),
+            (ViewId("sp", "my_view", "v1"), RecordViewId("sp", "my_view", "v1")),
+            (("sp", "my_view", "v1"), RecordViewId("sp", "my_view", "v1")),
+            (RecordContainerId("sp", "my_container"), RecordContainerId("sp", "my_container")),
+            (ContainerId("sp", "my_container"), RecordContainerId("sp", "my_container")),
+            (("sp", "my_container"), RecordContainerId("sp", "my_container")),
+        ],
+        ids=["record-view", "view", "view-tuple", "record-container", "container", "container-tuple"],
+    )
+    def test_source_identifiers(
+        self, source: RecordSourceIdentifier, expected: RecordContainerId | RecordViewId
+    ) -> None:
+        resource = RecordSource(source, {"temp": 25.0})
+        assert resource.source == expected
+        assert resource.dump() == {"source": expected.dump(), "properties": {"temp": 25.0}}
+        if isinstance(source, (RecordContainerId, RecordViewId)):
+            assert resource.source is source
+
+    def test_selector_view_round_trip(self) -> None:
+        raw = {"source": {"type": "view", "space": "sp", "externalId": "v", "version": "v1"}, "properties": ["temp"]}
+        selector = RecordSourceSelector._load(raw)
+        assert selector.source == RecordViewId("sp", "v", "v1")
+        assert selector.dump() == raw
+
+    @pytest.mark.parametrize(
+        "raw, expected",
+        [
+            ({"space": "sp", "externalId": "v", "version": "v1", "type": "view"}, RecordViewId("sp", "v", "v1")),
+            ({"space": "sp", "external_id": "v", "version": "v1"}, RecordViewId("sp", "v", "v1")),
+            ({"space": "sp", "externalId": "c", "type": "container"}, RecordContainerId("sp", "c")),
+            ({"space": "sp", "external_id": "c"}, RecordContainerId("sp", "c")),
+        ],
+        ids=["view-camel-case", "view-snake-case", "container-camel-case", "container-snake-case"],
+    )
+    def test_source_dictionary_formats(self, raw: dict, expected: RecordContainerId | RecordViewId) -> None:
+        loaded = RecordSource._load({"source": raw, "properties": {"temp": 25.0}})
+        assert loaded.source == expected
+        assert loaded.properties == {"temp": 25.0}
+
+    @pytest.mark.parametrize(
+        "source, expected",
+        [
+            (["sp", "my_view", "v1"], RecordViewId("sp", "my_view", "v1")),
+            (["sp", "my_container"], RecordContainerId("sp", "my_container")),
+        ],
+    )
+    def test_source_accepts_any_sequence(self, source: list[str], expected: RecordContainerId | RecordViewId) -> None:
+        assert RecordSource(source, {}).source == expected  # type: ignore[arg-type]
+
+    def test_source_rejects_non_identifiers(self) -> None:
+        with pytest.raises(TypeError, match="Cannot load record source"):
+            RecordSource("sp", {})  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            {"type": "view", "space": "sp", "externalId": "v"},
+            {"space": "sp", "externalId": "v", "version": None},
+            ("sp", "v", None),
+        ],
+    )
+    def test_source_rejects_missing_version(self, source: object) -> None:
+        with pytest.raises(TypeError, match="requires an explicit 'version'"):
+            RecordSource(source, {})  # type: ignore[arg-type]
+
+    def test_source_accepts_any_mapping_and_infers_type(self) -> None:
+        source = MappingProxyType({"space": "sp", "externalId": "v", "version": "v1"})
+        assert RecordSource(source, {}).source == RecordViewId("sp", "v", "v1")  # type: ignore[arg-type]
+
+    def test_source_load_rejects_unknown_type(self) -> None:
+        raw = {"source": {"space": "sp", "externalId": "x", "type": "node"}, "properties": {}}
+        with pytest.raises(ValueError, match="must be 'container' or 'view', but was 'node'"):
+            RecordSource._load(raw)
+
+    def test_source_rejects_wrong_tuple_length(self) -> None:
+        with pytest.raises(ValueError, match="Invalid length for record source identifier"):
+            RecordSource(source=("sp",), properties={})  # type: ignore[arg-type]
+
+    def test_source_rejects_view_without_version(self) -> None:
+        with pytest.raises(ValueError, match="requires an explicit version"):
+            RecordSource(source=ViewId("sp", "my_view"), properties={})
+
+
+class TestRecordViewConversion:
+    def test_as_write_reconstructs_sources(self) -> None:
+        properties = {"sp": {"my_view/v1": {"temp": 22.5}, "my_container": {"pressure": 1.0}}}
+        record = Record("sp", "rec-1", 100, 200, properties)
+        sources = record.as_write().sources
+        assert [source.dump() for source in sources] == [
+            {
+                "source": {"type": "view", "space": "sp", "externalId": "my_view", "version": "v1"},
+                "properties": {"temp": 22.5},
+            },
+            {
+                "source": {"type": "container", "space": "sp", "externalId": "my_container"},
+                "properties": {"pressure": 1.0},
+            },
+        ]
+        sources[0].properties["temp"] = 30.0
+        assert properties["sp"]["my_view/v1"]["temp"] == 22.5
+
+
+class TestRecordsAggregateWithViews:
+    @pytest.mark.parametrize(
+        "property_",
+        [
+            (ViewId("my_space", "my_view", "v1"), "temperature"),
+            (RecordViewId("my_space", "my_view", "v1"), "temperature"),
+            ("my_space", "my_view/v1", "temperature"),
+            PropertyId(ViewId("my_space", "my_view", "v1"), "temperature"),
+        ],
+        ids=["view-tuple", "record-view-tuple", "path", "property-id"],
+    )
+    def test_aggregate_property_references(self, property_: PropertyPath) -> None:
+        assert Average(property_).dump() == {"avg": {"property": ["my_space", "my_view/v1", "temperature"]}}
