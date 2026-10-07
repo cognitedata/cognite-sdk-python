@@ -759,7 +759,10 @@ class DatapointsAPI(APIClient):
             Like most other parameters, it can also be set per time series using ``DatapointsQuery``:
 
                 >>> dps_lst = client.time_series.data.retrieve(
-                ...     id=[42, DatapointsQuery(id=43, fill_limit=None)],
+                ...     instance_id=[
+                ...         NodeId("my-space", "foo"),
+                ...         DatapointsQuery(instance_id=NodeId("my-space", "bar"), fill_limit=None),
+                ...     ],
                 ...     aggregates=["average", "count"],
                 ...     granularity="1h",
                 ...     fill_limit="4h",
