@@ -2835,6 +2835,7 @@ class TestRetrieveAggregateDatapointsAPI:
             (9, 50, "EagerDpsFetcher"),
         ],
     )
+    @pytest.mark.skip(reason="string aggregates are about to be supported")
     def test_retrieve_aggregates__string_ts_raises(
         self,
         concurrency_limit: int,
