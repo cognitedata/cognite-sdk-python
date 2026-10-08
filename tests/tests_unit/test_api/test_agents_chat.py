@@ -166,6 +166,19 @@ class TestAgentChat:
         call_args = async_client.agents._post.call_args
         assert call_args[1]["json"]["cursor"] == "previous_cursor_123"
 
+    def test_chat_with_retention_policy(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, chat_response_body: dict
+    ) -> None:
+        async_client.agents._post = AsyncMock(return_value=MagicMock(json=lambda: chat_response_body))  # type: ignore[method-assign]
+
+        cognite_client.agents.chat(
+            agent_external_id="my_agent", messages=Message("Hello"), retention_policy="persisted"
+        )
+        assert async_client.agents._post.call_args[1]["json"]["retentionPolicy"] == "persisted"
+
+        cognite_client.agents.chat(agent_external_id="my_agent", messages=Message("Hello"))
+        assert "retentionPolicy" not in async_client.agents._post.call_args[1]["json"]
+
     def test_chat_multiple_messages(
         self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, chat_response_body: dict
     ) -> None:
