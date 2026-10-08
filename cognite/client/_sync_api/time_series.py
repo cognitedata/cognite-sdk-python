@@ -251,6 +251,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         Returns:
             int: The number of time series matching the specified filters and search.
 
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Aggregation of state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.aggregate <cognite.client.AsyncCogniteClient.data_modeling.instances.aggregate>`.
+
         Examples:
 
         Count the number of time series in your CDF project:
@@ -286,6 +290,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
             filter (TimeSeriesFilter | dict[str, Any] | None): The filter to narrow down the time series to count requiring exact match.
         Returns:
             int: The number of properties matching the specified filters and search.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Aggregation of state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.aggregate <cognite.client.AsyncCogniteClient.data_modeling.instances.aggregate>`.
 
         Examples:
 
@@ -334,6 +342,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         Returns:
             int: The number of properties matching the specified filters and search.
 
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Aggregation of state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.aggregate <cognite.client.AsyncCogniteClient.data_modeling.instances.aggregate>`.
+
         Examples:
 
             Count the number of metadata keys in your CDF project:
@@ -370,6 +382,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
 
         Returns:
             UniqueResultList: List of unique values of time series matching the specified filters and search.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Aggregation of state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.aggregate <cognite.client.AsyncCogniteClient.data_modeling.instances.aggregate>`.
 
         Examples:
 
@@ -438,6 +454,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
 
         Returns:
             UniqueResultList: List of unique values of time series matching the specified filters and search.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Aggregation of state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.aggregate <cognite.client.AsyncCogniteClient.data_modeling.instances.aggregate>`.
 
         Examples:
 
@@ -656,6 +676,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
 
         Returns:
             TimeSeriesList: List of requested time series.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Searching state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.search <cognite.client.AsyncCogniteClient.data_modeling.instances.search>`.
 
         Examples:
 
