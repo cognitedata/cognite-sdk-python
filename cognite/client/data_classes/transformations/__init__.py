@@ -217,6 +217,7 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
         source_session (SessionDetails | None): Details for the session used to read from the source project.
         destination_session (SessionDetails | None): Details for the session used to write to the destination project.
         tags (list[str] | None): No description.
+        data_domain_external_id (str | None): The external ID of the data domain this transformation belongs to.
     """
 
     def __init__(
@@ -245,6 +246,7 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
         source_session: SessionDetails | None = None,
         destination_session: SessionDetails | None = None,
         tags: list[str] | None = None,
+        data_domain_external_id: str | None = None,
     ) -> None:
         self.external_id = external_id
         self.name = name
@@ -254,6 +256,7 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
         self.source_nonce = source_nonce
         self.destination_nonce = destination_nonce
         self.data_set_id = data_set_id
+        self.data_domain_external_id = data_domain_external_id
         self.id = id
         self.query = query
         self.destination = destination
@@ -300,6 +303,7 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
             source_oidc_credentials=self.source_oidc_credentials,
             destination_oidc_credentials=self.destination_oidc_credentials,
             data_set_id=self.data_set_id,
+            data_domain_external_id=self.data_domain_external_id,
             source_nonce=self.source_nonce,
             destination_nonce=self.destination_nonce,
             tags=self.tags,
@@ -334,6 +338,7 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
             blocked=self.blocked,
             schedule=self.schedule,
             data_set_id=self.data_set_id,
+            data_domain_external_id=self.data_domain_external_id,
             source_nonce=self.source_nonce,
             destination_nonce=self.destination_nonce,
             source_session=self.source_session,
@@ -412,6 +417,7 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
             blocked=TransformationBlockedInfo._load_if(resource.get("blocked")),
             schedule=TransformationSchedule._load_if(resource.get("schedule")),
             data_set_id=resource.get("dataSetId"),
+            data_domain_external_id=resource.get("dataDomainExternalId"),
             source_nonce=NonceCredentials._load_if(resource.get("sourceNonce")),
             destination_nonce=NonceCredentials._load_if(resource.get("destinationNonce")),
             source_session=SessionDetails._load_if(resource.get("sourceSession")),
@@ -440,6 +446,7 @@ class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _Tran
         source_nonce (NonceCredentials | None): Single use credentials to bind to a CDF session for reading.
         destination_nonce (NonceCredentials | None): Single use credentials to bind to a CDF session for writing.
         tags (list[str] | None): No description.
+        data_domain_external_id (str | None): The external ID of the data domain this transformation belongs to.
     """
 
     def __init__(
@@ -457,6 +464,7 @@ class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _Tran
         source_nonce: NonceCredentials | None = None,
         destination_nonce: NonceCredentials | None = None,
         tags: list[str] | None = None,
+        data_domain_external_id: str | None = None,
     ) -> None:
         self.external_id = external_id
         self.name = name
@@ -466,6 +474,7 @@ class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _Tran
         self.source_nonce = source_nonce
         self.destination_nonce = destination_nonce
         self.data_set_id = data_set_id
+        self.data_domain_external_id = data_domain_external_id
         self.query = query
         self.destination = destination
         self.conflict_mode = conflict_mode
@@ -485,6 +494,7 @@ class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _Tran
             source_oidc_credentials=OidcCredentials._load_if(resource.get("sourceOidcCredentials")),
             destination_oidc_credentials=OidcCredentials._load_if(resource.get("destinationOidcCredentials")),
             data_set_id=resource.get("dataSetId"),
+            data_domain_external_id=resource.get("dataDomainExternalId"),
             source_nonce=NonceCredentials._load_if(resource.get("sourceNonce")),
             destination_nonce=NonceCredentials._load_if(resource.get("destinationNonce")),
             tags=resource.get("tags"),
@@ -505,6 +515,7 @@ class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _Tran
             self.source_nonce,
             self.destination_nonce,
             self.tags,
+            self.data_domain_external_id,
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -599,6 +610,10 @@ class TransformationUpdate(CogniteUpdate):
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "dataSetId")
 
     @property
+    def data_domain_external_id(self) -> _PrimitiveTransformationUpdate:
+        return TransformationUpdate._PrimitiveTransformationUpdate(self, "dataDomainExternalId")
+
+    @property
     def tags(self) -> _ListTransformationUpdate:
         return TransformationUpdate._ListTransformationUpdate(self, "tags")
 
@@ -626,6 +641,7 @@ class TransformationUpdate(CogniteUpdate):
             PropertySpec("is_public", is_nullable=False),
             PropertySpec("ignore_null_fields", is_nullable=False),
             PropertySpec("data_set_id"),
+            PropertySpec("data_domain_external_id"),
             PropertySpec("tags", is_list=True),
         ]
 
@@ -683,6 +699,7 @@ class TransformationFilter(CogniteFilter):
         last_updated_time (dict[str, Any] | TimestampRange | None): Range between two timestamps
         data_set_ids (list[dict[str, Any]] | None): Return only transformations in the specified data sets with these ids, e.g. [{"id": 1}, {"externalId": "foo"}].
         tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
+        data_domain_external_ids (list[str] | None): Return only transformations belonging to one of the specified data domains, e.g. ["my-domain"].
     """
 
     def __init__(
@@ -698,6 +715,7 @@ class TransformationFilter(CogniteFilter):
         last_updated_time: dict[str, Any] | TimestampRange | None = None,
         data_set_ids: list[dict[str, Any]] | None = None,
         tags: TagsFilter | None = None,
+        data_domain_external_ids: list[str] | None = None,
     ) -> None:
         self.include_public = include_public
         self.name_regex = name_regex
@@ -710,6 +728,7 @@ class TransformationFilter(CogniteFilter):
         self.last_updated_time = last_updated_time
         self.data_set_ids = data_set_ids
         self.tags = tags
+        self.data_domain_external_ids = data_domain_external_ids
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         obj = super().dump(camel_case=camel_case)
