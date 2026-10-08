@@ -14,6 +14,14 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.21.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.20.0...v8.21.0) (2026-10-08)
+
+
+### Features
+
+* **records:** support views as record sources and in property references ([#2801](https://github.com/cognitedata/cognite-sdk-python/issues/2801)) ([7618c63](https://github.com/cognitedata/cognite-sdk-python/commit/7618c6351e62e3cd642f1f2f928745509ddc24a1))
+* **time series:** Add `time_series_type` helper param to `data_modeling.time_series.list` (DM-4186) ([#2870](https://github.com/cognitedata/cognite-sdk-python/issues/2870)) ([8be0298](https://github.com/cognitedata/cognite-sdk-python/commit/8be0298f97f83c79415c62da69ff91e246528aa9))
+
 ## [8.20.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.19.0...v8.20.0) (2026-10-02)
 
 
