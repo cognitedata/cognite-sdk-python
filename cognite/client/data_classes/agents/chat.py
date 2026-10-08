@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, TypeAlias
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.utils._text import convert_all_keys_to_camel_case
@@ -812,3 +812,78 @@ class AgentChatResponse(CogniteResource):
         )
 
         return instance
+
+
+@dataclass
+class AgentChatProgress(CogniteResource):
+    """A status update streamed while the agent is working, e.g. "Searching knowledge graph...".
+
+    Args:
+        content (str): The status message.
+    """
+
+    content: str
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"type": "progress", "content": self.content}
+
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> AgentChatProgress:
+        return cls(content=data["content"])
+
+
+@dataclass
+class AgentChatResponseChunk(CogniteResource):
+    """An incremental fragment of the agent's reply. Concatenate the chunks to build the reply as it streams in.
+
+    Args:
+        content (str): The content fragment.
+    """
+
+    content: str
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {"type": "responseChunk", "content": self.content}
+
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> AgentChatResponseChunk:
+        return cls(content=data["content"])
+
+
+@dataclass
+class UnknownAgentChatStreamEvent(CogniteResource):
+    """Unknown stream event type for forward compatibility.
+
+    Args:
+        type (str): The event type.
+        data (dict[str, Any]): The raw event data.
+    """
+
+    type: str
+    data: dict[str, Any] = field(default_factory=dict)
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        return {**self.data, "type": self.type}
+
+    @classmethod
+    def _load(cls, data: dict[str, Any]) -> UnknownAgentChatStreamEvent:
+        return cls(type=data.get("type", ""), data=data)
+
+
+AgentChatStreamEvent: TypeAlias = (
+    AgentChatProgress | AgentChatResponseChunk | AgentChatResponse | UnknownAgentChatStreamEvent
+)
+
+
+def _load_agent_chat_stream_event(data: dict[str, Any]) -> AgentChatStreamEvent:
+    """Load one streamed event, dispatching on ``response.type``."""
+    response = data["response"]
+    match response.get("type"):
+        case "progress":
+            return AgentChatProgress._load(response)
+        case "responseChunk":
+            return AgentChatResponseChunk._load(response)
+        case "result":
+            return AgentChatResponse._load(data)
+        case _:
+            return UnknownAgentChatStreamEvent._load(response)

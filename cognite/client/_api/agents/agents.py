@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, overload
+import json
+from collections.abc import AsyncIterator, Sequence
+from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
@@ -9,7 +10,9 @@ from cognite.client.data_classes.agents.chat import (
     Action,
     ActionResult,
     AgentChatResponse,
+    AgentChatStreamEvent,
     Message,
+    _load_agent_chat_stream_event,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
@@ -448,11 +451,95 @@ class AgentsAPI(APIClient):
                 ...         )
         """
         self._warnings.warn()
+        body = self._create_chat_body(agent_external_id, messages, cursor, actions)
+        response = await self._post(
+            url_path=self._RESOURCE_PATH + "/chat", json=body, semaphore=self._get_semaphore("write")
+        )
+        return AgentChatResponse._load(response.json())
 
+    async def chat_stream(
+        self,
+        agent_external_id: str,
+        messages: Message | ActionResult | Sequence[Message | ActionResult],
+        cursor: str | None = None,
+        actions: Sequence[Action] | None = None,
+    ) -> AsyncIterator[AgentChatStreamEvent]:
+        """`Chat with an agent, streaming events as the agent works <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_.
+
+        Works like :meth:`chat`, but yields events while the agent works instead of returning a single response:
+
+        * :class:`~cognite.client.data_classes.agents.AgentChatProgress`: status updates, e.g. "Searching knowledge graph...".
+        * :class:`~cognite.client.data_classes.agents.AgentChatResponseChunk`: fragments of the agent's reply. Concatenate them to build the reply as it streams in.
+        * :class:`~cognite.client.data_classes.agents.AgentChatResponse`: the final, complete response, including the cursor and any action calls. Always the last event.
+
+        Args:
+            agent_external_id (str): External ID that uniquely identifies the agent.
+            messages (Message | ActionResult | Sequence[Message | ActionResult]): A list of one or many input messages to the agent. Can include regular messages and action results.
+            cursor (str | None): The cursor to use for continuation of a conversation. Use this to
+                create multi-turn conversations, as the cursor will keep track of the conversation state.
+            actions (Sequence[Action] | None): A list of client-side actions that can be called by the agent.
+
+        Yields:
+            AgentChatStreamEvent: Progress updates, reply fragments, and finally the complete response.
+
+        Examples:
+
+            Stream the agent's reply as it is generated:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.agents import (
+                ...     AgentChatProgress,
+                ...     AgentChatResponse,
+                ...     AgentChatResponseChunk,
+                ...     Message,
+                ... )
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> for event in client.agents.chat_stream(
+                ...     agent_external_id="my_agent", messages=Message("What can you help me with?")
+                ... ):
+                ...     if isinstance(event, AgentChatProgress):
+                ...         print(f"[{event.content}]")
+                ...     elif isinstance(event, AgentChatResponseChunk):
+                ...         print(event.content, end="", flush=True)
+                ...     elif isinstance(event, AgentChatResponse):
+                ...         response = event  # use response.cursor to continue the conversation
+        """
+        self._warnings.warn()
+        body = self._create_chat_body(agent_external_id, messages, cursor, actions)
+        body["stream"] = True
+        stream = self._stream(
+            "POST",
+            url_path=self._RESOURCE_PATH + "/chat",
+            json=body,
+            headers={"accept": "text/event-stream"},
+            semaphore=self._get_semaphore("write"),
+        )
+        async with stream as response:
+            data_lines: list[str] = []
+            async for line in response.aiter_lines():
+                # Server-Sent Events: an event is one or more "data:" lines, terminated by a blank line
+                if line.startswith("data:"):
+                    data_lines.append(line.removeprefix("data:").removeprefix(" "))
+                elif not line and data_lines:
+                    data, data_lines = "\n".join(data_lines), []
+                    if data == "[DONE]":
+                        return
+                    yield _load_agent_chat_stream_event(json.loads(data))
+            if data_lines and (data := "\n".join(data_lines)) != "[DONE]":
+                yield _load_agent_chat_stream_event(json.loads(data))
+
+    @staticmethod
+    def _create_chat_body(
+        agent_external_id: str,
+        messages: Message | ActionResult | Sequence[Message | ActionResult],
+        cursor: str | None,
+        actions: Sequence[Action] | None,
+    ) -> dict[str, Any]:
         if isinstance(messages, Message | ActionResult):
             messages = [messages]
 
-        body = {
+        body: dict[str, Any] = {
             "agentExternalId": agent_external_id,
             "messages": [msg.dump(camel_case=True) for msg in messages],
         }
@@ -461,8 +548,4 @@ class AgentsAPI(APIClient):
 
         if actions is not None:
             body["actions"] = [action.dump(camel_case=True) for action in actions]
-
-        response = await self._post(
-            url_path=self._RESOURCE_PATH + "/chat", json=body, semaphore=self._get_semaphore("write")
-        )
-        return AgentChatResponse._load(response.json())
+        return body

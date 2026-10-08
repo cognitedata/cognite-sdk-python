@@ -6,14 +6,20 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from typing import overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
-from cognite.client.data_classes.agents.chat import Action, ActionResult, AgentChatResponse, Message
-from cognite.client.utils._async_helpers import run_sync
+from cognite.client.data_classes.agents.chat import (
+    Action,
+    ActionResult,
+    AgentChatResponse,
+    AgentChatStreamEvent,
+    Message,
+)
+from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 
@@ -427,6 +433,61 @@ class SyncAgentsAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.agents.chat(
+                agent_external_id=agent_external_id, messages=messages, cursor=cursor, actions=actions
+            )
+        )
+
+    def chat_stream(
+        self,
+        agent_external_id: str,
+        messages: Message | ActionResult | Sequence[Message | ActionResult],
+        cursor: str | None = None,
+        actions: Sequence[Action] | None = None,
+    ) -> Iterator[AgentChatStreamEvent]:
+        """
+        `Chat with an agent, streaming events as the agent works <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_.
+
+        Works like :meth:`chat`, but yields events while the agent works instead of returning a single response:
+
+        * :class:`~cognite.client.data_classes.agents.AgentChatProgress`: status updates, e.g. "Searching knowledge graph...".
+        * :class:`~cognite.client.data_classes.agents.AgentChatResponseChunk`: fragments of the agent's reply. Concatenate them to build the reply as it streams in.
+        * :class:`~cognite.client.data_classes.agents.AgentChatResponse`: the final, complete response, including the cursor and any action calls. Always the last event.
+
+        Args:
+            agent_external_id (str): External ID that uniquely identifies the agent.
+            messages (Message | ActionResult | Sequence[Message | ActionResult]): A list of one or many input messages to the agent. Can include regular messages and action results.
+            cursor (str | None): The cursor to use for continuation of a conversation. Use this to
+                create multi-turn conversations, as the cursor will keep track of the conversation state.
+            actions (Sequence[Action] | None): A list of client-side actions that can be called by the agent.
+
+        Yields:
+            AgentChatStreamEvent: Progress updates, reply fragments, and finally the complete response.
+
+        Examples:
+
+            Stream the agent's reply as it is generated:
+
+                >>> from cognite.client import CogniteClient
+                >>> from cognite.client.data_classes.agents import (
+                ...     AgentChatProgress,
+                ...     AgentChatResponse,
+                ...     AgentChatResponseChunk,
+                ...     Message,
+                ... )
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> for event in client.agents.chat_stream(
+                ...     agent_external_id="my_agent", messages=Message("What can you help me with?")
+                ... ):
+                ...     if isinstance(event, AgentChatProgress):
+                ...         print(f"[{event.content}]")
+                ...     elif isinstance(event, AgentChatResponseChunk):
+                ...         print(event.content, end="", flush=True)
+                ...     elif isinstance(event, AgentChatResponse):
+                ...         response = event  # use response.cursor to continue the conversation
+        """  # noqa: DOC404
+        yield from SyncIterator(
+            self.__async_client.agents.chat_stream(
                 agent_external_id=agent_external_id, messages=messages, cursor=cursor, actions=actions
             )
         )
