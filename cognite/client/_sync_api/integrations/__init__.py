@@ -11,6 +11,7 @@ from typing import overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._sync_api.integrations.errors import SyncIntegrationErrorsAPI
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.integrations.integrations import (
     Integration,
@@ -27,6 +28,7 @@ class SyncIntegrationsAPI(SyncAPIClient):
 
     def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
+        self.errors = SyncIntegrationErrorsAPI(async_client)
 
     @overload
     def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Integration]: ...
