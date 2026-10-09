@@ -15,6 +15,7 @@ ERROR_RESPONSE = {
     "description": "Something went wrong",
     "startTime": 100,
     "task": "poll",
+    "type": "general",
 }
 
 
@@ -33,6 +34,7 @@ class TestIntegrationErrors:
         assert len(res) == 1
         assert res[0].level == "error"
         assert res[0].description == "Something went wrong"
+        assert res[0].type == "general"
 
         request = httpx2_mock.get_requests()[0]
         assert "externalId=my-integration" in str(request.url)
