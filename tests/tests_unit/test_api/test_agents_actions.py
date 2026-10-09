@@ -140,20 +140,7 @@ class TestUserSessionCall:
         }
         call = ActionCall._load(data)
         assert isinstance(call, UserSessionCall)
-        assert call.action_id == "call_789"
-        assert call.content == TextContent(text="Please confirm the action.")
-        assert call.tool_name == "execute"
-        assert call.tool_arguments == {"command": "python -c 'print(42)'"}
-        assert call.tool_type == "execute"
         assert call.dump() == data
-
-    def test_load_minimal(self) -> None:
-        data = {"type": "userSession", "actionId": "call_789"}
-        call = ActionCall._load(data)
-        assert isinstance(call, UserSessionCall)
-        assert call.action_id == "call_789"
-        assert call.content is None
-        assert call.tool_name is None
 
 
 class TestUserSessionResult:
@@ -166,6 +153,11 @@ class TestUserSessionResult:
             "nonce": "my_nonce",
         }
         assert UserSessionResult._load(result.dump()) == result
+
+    def test_nonce_not_in_repr_or_str(self) -> None:
+        result = UserSessionResult(action_id="call_789", nonce="my_nonce")
+        assert "my_nonce" not in repr(result)
+        assert "my_nonce" not in str(result)
 
 
 class TestUnknownActionCall:

@@ -379,50 +379,44 @@ class UserSessionCall(ActionCall):
 
     Args:
         action_id (str): The unique identifier for this action call.
-        content (MessageContent | None): The human-readable description of the request from the agent.
-        tool_name (str | None): The name of the tool that needs a user session.
-        tool_arguments (dict[str, object] | None): The arguments for the tool call.
-        tool_description (str | None): Description of what the tool does.
-        tool_type (str | None): The type of tool (e.g., "callFunction", "runPythonCode", "execute").
+        content (MessageContent): The human-readable description of the request from the agent.
+        tool_name (str): The name of the tool that needs a user session.
+        tool_arguments (dict[str, object]): The arguments for the tool call.
+        tool_description (str): Description of what the tool does.
+        tool_type (str): The type of tool (e.g., "callFunction", "runPythonCode", "execute").
     """
 
     _type: ClassVar[str] = "userSession"
     action_id: str
-    content: MessageContent | None = None
-    tool_name: str | None = None
-    tool_arguments: dict[str, object] | None = None
-    tool_description: str | None = None
-    tool_type: str | None = None
+    content: MessageContent
+    tool_name: str
+    tool_arguments: dict[str, object]
+    tool_description: str
+    tool_type: str
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        user_session: dict[str, Any] = {}
-        if self.content is not None:
-            user_session["content"] = self.content.dump(camel_case=camel_case)
-        if self.tool_name is not None:
-            user_session["toolName" if camel_case else "tool_name"] = self.tool_name
-        if self.tool_arguments is not None:
-            user_session["toolArguments" if camel_case else "tool_arguments"] = self.tool_arguments
-        if self.tool_description is not None:
-            user_session["toolDescription" if camel_case else "tool_description"] = self.tool_description
-        if self.tool_type is not None:
-            user_session["toolType" if camel_case else "tool_type"] = self.tool_type
         return {
             "type": self._type,
             "actionId" if camel_case else "action_id": self.action_id,
-            self._type: user_session,
+            self._type: {
+                "content": self.content.dump(camel_case=camel_case),
+                "toolName" if camel_case else "tool_name": self.tool_name,
+                "toolArguments" if camel_case else "tool_arguments": self.tool_arguments,
+                "toolDescription" if camel_case else "tool_description": self.tool_description,
+                "toolType" if camel_case else "tool_type": self.tool_type,
+            },
         }
 
     @classmethod
     def _load_call(cls, data: dict[str, Any]) -> UserSessionCall:
-        user_session = data.get(cls._type) or {}
-        content = user_session.get("content")
+        user_session = data[cls._type]
         return cls(
             action_id=data["actionId"],
-            content=MessageContent._load(content) if content is not None else None,
-            tool_name=user_session.get("toolName"),
-            tool_arguments=user_session.get("toolArguments"),
-            tool_description=user_session.get("toolDescription"),
-            tool_type=user_session.get("toolType"),
+            content=MessageContent._load(user_session["content"]),
+            tool_name=user_session["toolName"],
+            tool_arguments=user_session["toolArguments"],
+            tool_description=user_session["toolDescription"],
+            tool_type=user_session["toolType"],
         )
 
 
@@ -610,7 +604,7 @@ class UserSessionResult(ActionResult):
 
     _type: ClassVar[str] = "userSession"
     _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"nonce"})
-    nonce: str
+    nonce: str = field(repr=False)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
@@ -624,7 +618,7 @@ class UserSessionResult(ActionResult):
     def _load(cls, data: dict[str, Any]) -> UserSessionResult:
         """Load from dumped data. Not used to load from API response."""
         return cls(
-            action_id=data.get("actionId", data.get("action_id", "")),
+            action_id=data["actionId"],
             nonce=data["nonce"],
         )
 
