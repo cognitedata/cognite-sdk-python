@@ -29,6 +29,8 @@ from cognite.client.data_classes.transformations.common import (
 from cognite.client.data_classes.transformations.externaldata import (  # noqa: F401
     ExternalDataSource,
     ExternalDataSourceList,
+    ExternalDataSourceRotatedKeys,
+    ExternalDataSourceRotateKeys,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
     ExternalDataSourceWriteList,
@@ -39,6 +41,13 @@ from cognite.client.data_classes.transformations.externaldata import (  # noqa: 
     OneLakeLocationDescription,
     OneLakeSettings,
     OneLakeSettingsWrite,
+    SnowflakeCredentials,
+    SnowflakeCredentialsWrite,
+    SnowflakeExternalDataSource,
+    SnowflakeExternalDataSourceWrite,
+    SnowflakeLocationDescription,
+    SnowflakeSettings,
+    SnowflakeSettingsWrite,
 )
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule

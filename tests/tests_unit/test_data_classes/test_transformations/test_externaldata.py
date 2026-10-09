@@ -8,10 +8,17 @@ from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSource,
     ExternalDataSourceList,
+    ExternalDataSourceRotatedKeys,
+    ExternalDataSourceRotateKeys,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
     OneLakeCredentialsWrite,
     OneLakeExternalDataSource,
+    SnowflakeCredentialsWrite,
+    SnowflakeExternalDataSource,
+    SnowflakeExternalDataSourceWrite,
+    SnowflakeLocationDescription,
+    SnowflakeSettingsWrite,
 )
 
 
@@ -29,6 +36,109 @@ def onelake_read_resource() -> dict[str, Any]:
         "createdTime": 1,
         "lastUpdatedTime": 2,
     }
+
+
+@pytest.fixture
+def snowflake_read_resource() -> dict[str, Any]:
+    return {
+        "externalId": "snowflake-analytics-prod",
+        "format": "snowflake",
+        "name": "Production warehouse",
+        "dataSetId": 123456,
+        "settings": {
+            "credentials": {
+                "accountIdentifier": "org-account",
+                "userName": "COGNITE_SVC",
+                "roleName": "COGNITE_READER",
+                "publicKey": "-----BEGIN PUBLIC KEY-----abc",
+            },
+            "locationDescription": {"warehouseName": "COMPUTE_WH"},
+        },
+        "expiryTime": 1700000000000,
+        "createdTime": 1,
+        "lastUpdatedTime": 2,
+    }
+
+
+def _snowflake_write(**kwargs: Any) -> SnowflakeExternalDataSourceWrite:
+    return SnowflakeExternalDataSourceWrite(
+        external_id="snowflake-analytics-prod",
+        settings=SnowflakeSettingsWrite(
+            credentials=SnowflakeCredentialsWrite(
+                account_identifier="org-account", user_name="COGNITE_SVC", role_name="COGNITE_READER"
+            ),
+            location_description=SnowflakeLocationDescription(warehouse_name="COMPUTE_WH"),
+        ),
+        **{"expiry_time": 5, **kwargs},
+    )
+
+
+class TestSnowflake:
+    def test_write_dump_shape(self) -> None:
+        assert _snowflake_write(name="n").dump() == {
+            "externalId": "snowflake-analytics-prod",
+            "name": "n",
+            "format": "snowflake",
+            "expiryTime": 5,
+            "settings": {
+                "credentials": {
+                    "accountIdentifier": "org-account",
+                    "userName": "COGNITE_SVC",
+                    "roleName": "COGNITE_READER",
+                },
+                "locationDescription": {"warehouseName": "COMPUTE_WH"},
+            },
+        }
+
+    def test_write_requires_expiry_time(self) -> None:
+        with pytest.raises(TypeError, match="expiry_time"):
+            SnowflakeExternalDataSourceWrite(  # type: ignore[call-arg]
+                external_id="x",
+                settings=_snowflake_write().settings,
+            )
+
+    def test_write_load_requires_expiry_time(self) -> None:
+        dumped = _snowflake_write().dump()
+        del dumped["expiryTime"]
+
+        with pytest.raises(KeyError, match="expiryTime"):
+            ExternalDataSourceWrite._load(dumped)
+
+    def test_write_load_roundtrip(self) -> None:
+        dumped = _snowflake_write(name="n", data_set_id=1).dump()
+
+        loaded = ExternalDataSourceWrite._load(dumped)
+
+        assert isinstance(loaded, SnowflakeExternalDataSourceWrite)
+        assert loaded.dump() == dumped
+
+    def test_read_load_returns_snowflake_subclass(self, snowflake_read_resource: dict[str, Any]) -> None:
+        loaded = ExternalDataSource._load(snowflake_read_resource)
+
+        assert isinstance(loaded, SnowflakeExternalDataSource)
+        assert loaded.settings.credentials.public_key == "-----BEGIN PUBLIC KEY-----abc"
+        assert loaded.settings.location_description.warehouse_name == "COMPUTE_WH"
+        assert loaded.expiry_time == 1700000000000
+        assert loaded.dump() == snowflake_read_resource
+
+    def test_as_write_raises(self, snowflake_read_resource: dict[str, Any]) -> None:
+        with pytest.raises(TypeError, match="stored credential material"):
+            ExternalDataSource._load(snowflake_read_resource).as_write()
+
+
+class TestRotateKeys:
+    def test_rotate_keys_roundtrip_is_flat(self) -> None:
+        resource = {"externalId": "src", "expiryTime": 123}
+
+        assert ExternalDataSourceRotateKeys._load(resource).dump() == resource
+
+    def test_rotated_keys_roundtrip_is_flat(self) -> None:
+        resource = {"externalId": "src", "publicKey": "pk", "expiryTime": 123}
+
+        loaded = ExternalDataSourceRotatedKeys._load(resource)
+
+        assert loaded.public_key == "pk"
+        assert loaded.dump() == resource
 
 
 class TestExternalDataSourceDispatch:
