@@ -38,6 +38,8 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     from cognite.client.data_classes import Asset, Datapoint
 
+TimeSeriesType: TypeAlias = Literal["numeric", "string", "state"]
+
 
 class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
     """This represents a sequence of data points. The TimeSeries object is the metadata about
