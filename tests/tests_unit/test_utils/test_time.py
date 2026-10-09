@@ -322,6 +322,8 @@ class TestObjectTimeConversion:
             ({"simulationTime": 1609459200000}, {"simulationTime": "2021-01-01 00:00:00.000+00:00"}),
             ({"last_called": 0}, {"last_called": "1970-01-01 00:00:00.000+00:00"}),
             ({"lastCalled": 0}, {"lastCalled": "1970-01-01 00:00:00.000+00:00"}),
+            ({"expiry_time": 1609459200000}, {"expiry_time": "2021-01-01 00:00:00.000+00:00"}),
+            ({"expiryTime": 1609459200000}, {"expiryTime": "2021-01-01 00:00:00.000+00:00"}),
         ],
     )
     def test_convert_and_isoformat_time_attrs(self, item: dict[str, int], expected_output: dict[str, str]) -> None:
