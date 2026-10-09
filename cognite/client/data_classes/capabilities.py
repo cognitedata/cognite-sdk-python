@@ -1417,6 +1417,35 @@ class HostedExtractorsAcl(Capability):
 
 
 @dataclass
+class IntegrationsAcl(Capability):
+    _capability_name = "integrationsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+        Use = "USE"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class IntegrationConfigsAcl(Capability):
+    _capability_name = "integrationConfigsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
 class VisionModelAcl(Capability):
     _capability_name = "visionModelAcl"
     actions: Sequence[Action]
