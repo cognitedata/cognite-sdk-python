@@ -9,33 +9,37 @@ git clone https://github.com/cognitedata/cognite-sdk-python
 cd cognite-sdk-python
 ```
 
-We use [poetry](https://pypi.org/project/poetry/) for dependency- and virtual environment management. Make sure you use python 3.10.
+We use [uv](https://docs.astral.sh/uv/) 0.13 for dependency and virtual environment management. Python 3.10 or newer is required. Install uv from the [installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
-Install dependencies and initialize a shell within the virtual environment, with these commands:
+Install dependencies, including the `all` extra and the default `dev` and `docs` groups:
 
 ```bash
-poetry install -E all
-poetry env activate
+uv sync --extra all
 ```
 
-Note that `poetry env activate` only prints out the command, you have to run it yourself (or wrap it in `eval`). You may also prefix commands with `poetry run`.
+`uv sync` creates a `.venv` in the repository. Run tools through `uv run`, or activate the environment:
+
+```bash
+source .venv/bin/activate        # macOS and Linux
+source .venv/Scripts/activate    # Windows
+```
 
 Install pre-commit hooks to run various checks and linters on every commit:
 
 ```bash
-pre-commit install
+uv run pre-commit install
 ```
 
 You can also manually trigger the static checks with:
 
 ```bash
-pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
 To include slower checks that run in CI, include `--hook-stage manual`
 
 ```bash
-pre-commit run --all-files --hook-stage manual
+uv run pre-commit run --all-files --hook-stage manual
 ```
 
 ### Getting access to `python-sdk-contributor` CDF project for running integration tests
