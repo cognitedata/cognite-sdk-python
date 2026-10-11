@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Literal, NoReturn, TypeAlias
+from typing import Any, ClassVar, Literal, NoReturn
 
-from typing_extensions import Self
+from typing_extensions import Self, TypeAlias
 
 from cognite.client.data_classes._base import (
     CogniteResource,
