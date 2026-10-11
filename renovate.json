@@ -7,7 +7,7 @@
   "packageRules": [
     {
       "enabled": false,
-      "matchManagers": ["poetry"]
+      "matchManagers": ["uv"]
     },
     {
       "enabled": false,
