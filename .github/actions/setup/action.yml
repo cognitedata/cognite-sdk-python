@@ -1,42 +1,30 @@
 name: 'Setup Python Environment'
-description: 'Set up Python and install dependencies'
+description: 'Set up Python with uv and install dependencies'
 inputs:
   python_version:
     description: 'Python version to set up'
     required: false
     default: "3.10"
-  extras:
-    description: 'extra deps: poetry install -E whatever'
+  extra:
+    description: 'Optional dependency extra to install, for example pandas or all'
     required: false
     default: ""
 
 runs:
   using: 'composite'
   steps:
-    - id: setup-python
-      uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+    - name: Install uv
+      uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
       with:
+        version: "0.13.0"
         python-version: ${{ inputs.python_version }}
-
-    - name: Install poetry
-      uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1
-      with:
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-
-    - name: Cache virtualenv
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-      with:
-        path: .venv
-        # Use the exact resolved interpreter version
-        key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ inputs.extras }}-${{ hashFiles('**/poetry.lock') }}
+        enable-cache: true
 
     - name: Install dependencies
       shell: bash
-      run: poetry install --no-interaction --no-ansi ${{ inputs.extras }}
-
-    - name: Add virtualenv to PATH
-      shell: bash
       run: |
-        echo "VIRTUAL_ENV=$GITHUB_WORKSPACE/.venv" >> "$GITHUB_ENV"
-        echo "$GITHUB_WORKSPACE/$(dirname "$VENV")" >> "$GITHUB_PATH"
+        if [ -n "${{ inputs.extra }}" ]; then
+          uv sync --locked --extra "${{ inputs.extra }}"
+        else
+          uv sync --locked
+        fi
