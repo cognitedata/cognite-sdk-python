@@ -152,6 +152,10 @@ class PropertyId(CogniteResource):
     source: ViewId | ContainerId
     property: str
 
+    def as_property_ref(self) -> tuple[str, str, str]:
+        """Return the fully qualified property path as a tuple of three strings."""
+        return self.source.as_property_ref(self.property)
+
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
@@ -195,6 +199,7 @@ class VersionedIdLike(IdLike, Protocol):
 ContainerIdentifier = ContainerId | tuple[str, str]
 ConstraintIdentifier = tuple[ContainerId, str]
 IndexIdentifier = tuple[ContainerId, str]
+PropertyPath = SequenceNotStr[str] | tuple[ContainerId | ViewId, str] | PropertyId
 ViewIdentifier = ViewId | tuple[str, str] | tuple[str, str, str]
 DataModelIdentifier = DataModelId | tuple[str, str] | tuple[str, str, str]
 NodeIdentifier = NodeId | tuple[str, str, str]
