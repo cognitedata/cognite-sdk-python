@@ -28,8 +28,10 @@ def integration_external_id(cognite_client: CogniteClient) -> Iterator[str]:
 
 
 class TestIntegrationErrors:
+    @pytest.mark.allow_no_semaphore(
+        "Errors are reported via the top-level client.post to /integrations/checkin, which the SDK does not wrap."
+    )
     def test_list_reported_error(self, cognite_client: CogniteClient, integration_external_id: str) -> None:
-        # Errors are reported by extractors through the checkin endpoint, which the SDK does not wrap.
         error_external_id = f"sdk-test-error-{random_string(10)}"
         cognite_client.post(
             f"/api/v1/projects/{cognite_client.config.project}/integrations/checkin",
