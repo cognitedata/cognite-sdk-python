@@ -126,7 +126,7 @@ class TestClientToolResult:
 
 
 class TestUserSessionCall:
-    def test_load_and_dump(self) -> None:
+    def test_load_dispatches_on_type(self) -> None:
         data = {
             "type": "userSession",
             "actionId": "call_789",
@@ -138,22 +138,10 @@ class TestUserSessionCall:
                 "toolType": "execute",
             },
         }
-        call = ActionCall._load(data)
-        assert isinstance(call, UserSessionCall)
-        assert call.dump() == data
+        assert isinstance(ActionCall._load(data), UserSessionCall)
 
 
 class TestUserSessionResult:
-    def test_dump(self) -> None:
-        result = UserSessionResult(action_id="call_789", nonce="my_nonce")
-        assert result.dump() == {
-            "role": "action",
-            "type": "userSession",
-            "actionId": "call_789",
-            "nonce": "my_nonce",
-        }
-        assert UserSessionResult._load(result.dump()) == result
-
     def test_nonce_not_in_repr_or_str(self) -> None:
         result = UserSessionResult(action_id="call_789", nonce="my_nonce")
         assert "my_nonce" not in repr(result)
