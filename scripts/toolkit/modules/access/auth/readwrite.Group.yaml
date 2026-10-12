@@ -169,6 +169,19 @@ capabilities:
       - READ
       scope:
         all: {}
+  - integrationsAcl:
+      actions:
+      - WRITE
+      - READ
+      - USE
+      scope:
+        all: {}
+  - integrationConfigsAcl:
+      actions:
+      - WRITE
+      - READ
+      scope:
+        all: {}
   - labelsAcl:
       actions:
       - WRITE
