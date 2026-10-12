@@ -17,7 +17,7 @@ def integration_external_id(cognite_client: CogniteClient) -> Iterator[str]:
     cognite_client.integrations.create(
         IntegrationWrite(
             external_id=external_id,
-            extractor=Extractor(external_id="cognite-simple-influxdb-extractor", version="1.0.0"),
+            extractor=Extractor(external_id="sdk-test-extractor", version="1.0.0"),
             name="SDK integration errors test",
         )
     )
