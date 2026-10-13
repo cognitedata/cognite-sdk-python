@@ -257,9 +257,10 @@ call is made. The background loop is created via ``asyncio.new_event_loop()``, w
 
 HTTP Request logging
 --------------------
-Internally this library uses the ``httpx2`` library to perform network calls to the Cognite API service endpoints. For authentication and
-token management we depend on ``authlib`` and ``msal``. ``msal`` uses the `requests <https://pypi.org/project/requests/>`_ library under
-the hood, which in turn is built on `urllib3 <https://pypi.org/project/urllib3/>`_.
+Internally this library uses the ``httpx2`` library to perform network calls to the Cognite API service endpoints, and to fetch tokens
+for ``OAuthClientCredentials``. The ``OAuthClientCertificate``, ``OAuthDeviceCode`` and ``OAuthInteractive`` credential providers
+instead fetch tokens using ``msal``, which is built on `requests <https://pypi.org/project/requests/>`_ and in turn
+`urllib3 <https://pypi.org/project/urllib3/>`_.
 
 The SDK redacts the credentials it knows about before they reach a log record: credential-carrying headers, and credential fields in request
 payloads and response bodies, such as client secrets, passwords, session nonces, private keys and function secrets. For payloads the SDK
