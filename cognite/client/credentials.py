@@ -893,18 +893,6 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         return cls.default_for_entra_id(*args, **kwargs)
 
 
-def _encode_token_request_value(key: str, value: Any) -> str:
-    # Matches how authlib, which we used to rely on, encoded the values it supported, e.g. True -> "True" (not "true"):
-    if isinstance(value, (bytes, bytearray)):
-        return value.decode()
-    if isinstance(value, (str, int, float)):
-        return str(value)
-    raise TypeError(
-        f"Token custom arg {key!r} must be a str, bytes, int, float or bool, not {type(value).__name__}. "
-        "Note that only 'scope' accepts a list (of scopes)."
-    )
-
-
 class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
     """OAuth credential provider for the "Client Credentials" flow.
 
@@ -955,6 +943,18 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
                 f"reserved custom args is: {sorted(_OAUTH_CC_RESERVED_TOKEN_CUSTOM_ARGS)}."
             )
 
+    @staticmethod
+    def _encode_token_request_value(key: str, value: Any) -> str:
+        # Matches how authlib, which we used to rely on, encoded the values it supported, e.g. True -> "True" (not "true"):
+        if isinstance(value, (bytes, bytearray)):
+            return value.decode()
+        if isinstance(value, (str, int, float)):
+            return str(value)
+        raise TypeError(
+            f"Token custom arg {key!r} must be a str, bytes, int, float or bool, not {type(value).__name__}. "
+            "Note that only 'scope' accepts a list (of scopes)."
+        )
+
     def _prepare_token_request(self) -> tuple[dict[str, Any], dict[str, str]]:
         custom_args = self.__token_custom_args.copy()
         http_options = {k: custom_args.pop(k) for k in _OAUTH_CC_TOKEN_REQUEST_HTTP_OPTIONS.intersection(custom_args)}
@@ -970,7 +970,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         if isinstance(scope := data["scope"], (list, tuple, set)):
             data["scope"] = " ".join(scope)
         # Falsy values are dropped, e.g. scopes=None:
-        return http_options, {k: _encode_token_request_value(k, v) for k, v in data.items() if v}
+        return http_options, {k: self._encode_token_request_value(k, v) for k, v in data.items() if v}
 
     @property
     def token_url(self) -> str:
