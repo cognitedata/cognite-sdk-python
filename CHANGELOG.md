@@ -28,6 +28,11 @@ As of 2025-08-29, changes are grouped as follows
 
 * handle empty unique aggregation buckets ([#2891](https://github.com/cognitedata/cognite-sdk-python/issues/2891)) ([9a6a5c9](https://github.com/cognitedata/cognite-sdk-python/commit/9a6a5c90ffede4bf22a35a73d26af613c36a3a58))
 
+
+### Dependencies
+
+* remove  `authlib` dependency (DM-4209) ([#2892](https://github.com/cognitedata/cognite-sdk-python/issues/2892)) ([5ca8f95](https://github.com/cognitedata/cognite-sdk-python/commit/5ca8f953fd33b4411e334abf2292530e64b1af57))
+
 ## [8.20.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.19.0...v8.20.0) (2026-10-02)
 
 
