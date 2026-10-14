@@ -1,6 +1,5 @@
 """
 ===============================================================================
-b718ab32e232347f383356675b0c60ba
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -23,9 +22,6 @@ from cognite.client.data_classes.integrations.integrations import (
 )
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncIntegrationsAPI(SyncAPIClient):
@@ -51,7 +47,7 @@ class SyncIntegrationsAPI(SyncAPIClient):
         Fetches integrations as they are iterated over, so you keep a limited number of integrations in memory.
 
         Args:
-            chunk_size (int | None): Number of integrations to return in each chunk. Defaults to yielding one integration a time.
+            chunk_size (int | None): Number of integrations to return in each chunk. Defaults to yielding one integration at a time.
             limit (int | None): Maximum number of integrations to return. Defaults to return all items.
 
         Yields:
@@ -61,7 +57,7 @@ class SyncIntegrationsAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> IntegrationList:
         """
-        `List integrations <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/list_integrations>`_
+        `List integrations <https://api-docs.cognite.com/20230101-beta/tag/Integrations/operation/list_integrations>`_
 
         Args:
             limit (int | None): Maximum number of integrations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -93,7 +89,7 @@ class SyncIntegrationsAPI(SyncAPIClient):
 
     def create(self, integration: IntegrationWrite | Sequence[IntegrationWrite]) -> Integration | IntegrationList:
         """
-        `Create one or more integrations <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/create_integrations>`_
+        `Create one or more integrations <https://api-docs.cognite.com/20230101-beta/tag/Integrations/operation/create_integrations>`_
 
         Args:
             integration (IntegrationWrite | Sequence[IntegrationWrite]): Integration or list of integrations to create.
@@ -126,7 +122,7 @@ class SyncIntegrationsAPI(SyncAPIClient):
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Integration | IntegrationList | None:
         """
-        `Retrieve one or more integrations by external id <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/retrieve_integrations>`_
+        `Retrieve one or more integrations by external id <https://api-docs.cognite.com/20230101-beta/tag/Integrations/operation/retrieve_integrations>`_
 
         Args:
             external_id (str | SequenceNotStr[str]): External id or list of external ids to retrieve.
@@ -162,7 +158,7 @@ class SyncIntegrationsAPI(SyncAPIClient):
         | Sequence[Integration | IntegrationWrite | IntegrationUpdate],
     ) -> Integration | IntegrationList:
         """
-        `Update one or more integrations <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/update_integrations>`_
+        `Update one or more integrations <https://api-docs.cognite.com/20230101-beta/tag/Integrations/operation/update_integrations>`_
 
         Args:
             item (Integration | IntegrationWrite | IntegrationUpdate | Sequence[Integration | IntegrationWrite | IntegrationUpdate]): Integration(s) to update.
@@ -185,7 +181,7 @@ class SyncIntegrationsAPI(SyncAPIClient):
 
     def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """
-        `Delete one or more integrations <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/delete_integrations>`_
+        `Delete one or more integrations <https://api-docs.cognite.com/20230101-beta/tag/Integrations/operation/delete_integrations>`_
 
         Args:
             external_id (str | SequenceNotStr[str]): External id or list of external ids to delete.

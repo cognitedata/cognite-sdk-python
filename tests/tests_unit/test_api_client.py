@@ -9,6 +9,7 @@ import re
 import unittest
 from collections import namedtuple
 from collections.abc import Callable, Iterator
+from contextlib import nullcontext as does_not_raise
 from typing import Any, ClassVar, Literal
 from unittest import mock
 
@@ -254,6 +255,48 @@ class TestBasicRequests:
             assert payload_records[0].payload == {"items": [{"clientSecret": "***"}]}
         else:
             assert not payload_records
+
+    @pytest.mark.parametrize("status_code", [200, 400])
+    async def test_custom_credential_headers_are_redacted_from_debug_logs(
+        self,
+        httpx2_mock: HTTPXMock,
+        async_client: AsyncCogniteClient,
+        caplog: pytest.LogCaptureFixture,
+        status_code: int,
+    ) -> None:
+        # ClientConfig.headers takes arbitrary headers, and users pass credentials through it under
+        # all sorts of names. None of them should end up in a log record:
+        secret = "PLANTED-SECRET-VALUE"
+        api_client = APIClient(
+            ClientConfig(
+                client_name="any",
+                project="test-project",
+                base_url=BASE_URL,
+                headers={"api-key": secret, "x-service-token": secret},
+                credentials=Token(secret),
+            ),
+            api_version=None,
+            cognite_client=async_client,
+        )
+        httpx2_mock.add_response(
+            method="POST",
+            url=BASE_URL + URL_PATH,
+            status_code=status_code,
+            json=RESPONSE if status_code == 200 else {"error": {"code": status_code, "message": "Client error"}},
+            headers={"set-cookie": f"session={secret}"},
+        )
+        with caplog.at_level(logging.DEBUG, logger=API_CLIENT_LOGGER_NAME):
+            with pytest.raises(CogniteAPIError) if status_code == 400 else does_not_raise():
+                await api_client._post(URL_PATH, json={"any": "OK"}, semaphore=None)
+
+        assert secret not in caplog.text
+
+        (record,) = [rec for rec in caplog.records if hasattr(rec, "headers")]
+        assert record.headers["api-key"] == "***"
+        assert record.headers["x-service-token"] == "***"
+        assert record.headers["authorization"] == "***"
+        assert record.headers["x-cdp-sdk"].startswith("CognitePythonSDK:")  # should be visible
+        assert getattr(record, "response-headers")["set-cookie"] == "***"  # hyphen in attr name :eyes:
 
     @pytest.mark.parametrize("payload", [math.nan, math.inf, -math.inf, {"foo": {"bar": {"baz": [[[math.nan]]]}}}])
     async def test__request_raises_more_verbose_exception(self, api_client_with_token: APIClient, payload: Any) -> None:
@@ -1953,6 +1996,37 @@ class TestRetryableEndpoints:
     async def test_is_retryable_should_fail(self, method: str, path: str, expected_error: str) -> None:
         with pytest.raises(ValueError, match=expected_error):
             validate_url_and_return_retryability(method, path)
+
+
+class TestMaturityVersionHeader:
+    @pytest.mark.parametrize(
+        "api_subversion, maturity, expected_header",
+        [
+            ("20230101", "alpha", "20230101-alpha"),
+            ("20230101", "beta", "20230101-beta"),
+            ("20230101-alpha", "alpha", "20230101-alpha"),
+            ("20230101-alpha", "beta", "beta"),
+            ("20230101-beta", "alpha", "alpha"),
+            ("20230101-beta", "beta", "20230101-beta"),
+            ("beta", "alpha", "alpha"),
+            ("beta", "beta", "beta"),
+        ],
+    )
+    def test_maturity_version_header(
+        self,
+        api_client_with_token: APIClient,
+        api_subversion: str,
+        maturity: Literal["alpha", "beta"],
+        expected_header: str,
+    ) -> None:
+        api_client_with_token._api_subversion = api_subversion
+        assert api_client_with_token._maturity_version_header(maturity) == {"cdf-version": expected_header}
+        assert api_client_with_token._alpha_version_header() == {
+            "cdf-version": api_client_with_token._maturity_version_header("alpha")["cdf-version"]
+        }
+        assert api_client_with_token._beta_version_header() == {
+            "cdf-version": api_client_with_token._maturity_version_header("beta")["cdf-version"]
+        }
 
 
 class TestHelpers:

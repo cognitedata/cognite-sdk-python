@@ -82,7 +82,7 @@ COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
 The main code base in this repository is written for the `AsyncCogniteClient`. From this source code we also create a
 "sync" `CogniteClient` through automatic code generation. The async->sync conversion script can be found in `scripts/sync_client_codegen/main.py`. It exclusively writes to `cognite/client/_sync_api/` (and temporary files as part of normalized file compares).
 
-The script stores the hash of file it was created from in the module docstring, in order to quickly skip files that don't need to be updated. A variety of updates does not result in actual code changes in the SyncAPIs, as it only wraps the async client directly.
+The script always regenerates the code and compares it with the current sync API file, ignoring comments (but not docstrings). Files that are functionally identical are left untouched, which means that e.g. added `# type: ignore` comments are preserved. A variety of updates does not result in actual code changes in the SyncAPIs, as it only wraps the async client directly.
 
 We have certain rules in place that must be followed:
 
@@ -108,8 +108,8 @@ To run through all files, pass `--all-files`. This will also run cleanup automat
 python scripts/sync_client_codegen/main.py run --all-files
 ```
 
-If a sync API file has entered into a bad state (e.g. through manual changes), you can simply delete it (or modify
-the hash) to have it re-generated from scratch.
+If a sync API file has entered into a bad state (e.g. through manual changes), `verify` will flag it, and `run` will
+re-generate it from scratch.
 
 Verbose mode is supported (e.g. debugging). Pass `-v` before the subcommand `run`/`verify`:
 

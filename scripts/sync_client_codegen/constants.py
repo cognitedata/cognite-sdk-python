@@ -7,16 +7,6 @@ KNOWN_FILES_SKIP_LIST = {
     Path("cognite/client/_api/datapoints_io.py"),
     Path("cognite/client/_api/functions/utils.py"),
 }
-MAYBE_IMPORTS = (
-    "SortSpec: TypeAlias",
-    "_FILTERS_SUPPORTED: frozenset[type[Filter]]",
-    "AggregateAssetProperty: TypeAlias",
-    "Source: TypeAlias",
-    "RunStatus: TypeAlias",
-    "WorkflowIdentifier: TypeAlias",
-    "WorkflowVersionIdentifier: TypeAlias",
-    "ComparableCapability: TypeAlias",
-)
 ASYNC_API_DIR = Path("cognite/client/_api")
 SYNC_API_DIR = Path("cognite/client/_sync_api")
 SYNC_CLIENT_PATH = Path("cognite/client/_sync_cognite_client.py")

@@ -30,6 +30,11 @@ class IntegrationsAPI(APIClient):
         self.tasks = IntegrationTasksAPI(config, api_version, cognite_client)
         self.errors = IntegrationErrorsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Integrations")
+        self._CREATE_LIMIT = 20
+        self._UPDATE_LIMIT = 20
+        self._RETRIEVE_LIMIT = 100
+        self._DELETE_LIMIT = 100
+        self._LIST_LIMIT = 100
 
     @overload
     def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[Integration]: ...
@@ -45,7 +50,7 @@ class IntegrationsAPI(APIClient):
         Fetches integrations as they are iterated over, so you keep a limited number of integrations in memory.
 
         Args:
-            chunk_size (int | None): Number of integrations to return in each chunk. Defaults to yielding one integration a time.
+            chunk_size (int | None): Number of integrations to return in each chunk. Defaults to yielding one integration at a time.
             limit (int | None): Maximum number of integrations to return. Defaults to return all items.
 
         Yields:
@@ -63,7 +68,7 @@ class IntegrationsAPI(APIClient):
             yield item
 
     async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> IntegrationList:
-        """`List integrations <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/list_integrations>`_
+        """`List integrations <https://api-docs.cognite.com/20230101-beta/tag/Integrations/operation/list_integrations>`_
 
         Args:
             limit (int | None): Maximum number of integrations to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -101,7 +106,7 @@ class IntegrationsAPI(APIClient):
     async def create(self, integration: Sequence[IntegrationWrite]) -> IntegrationList: ...
 
     async def create(self, integration: IntegrationWrite | Sequence[IntegrationWrite]) -> Integration | IntegrationList:
-        """`Create one or more integrations <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/create_integrations>`_
+        """`Create one or more integrations <https://api-docs.cognite.com/20230101-beta/tag/Integrations/operation/create_integrations>`_
 
         Args:
             integration (IntegrationWrite | Sequence[IntegrationWrite]): Integration or list of integrations to create.
@@ -140,7 +145,7 @@ class IntegrationsAPI(APIClient):
     async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Integration | IntegrationList | None:
-        """`Retrieve one or more integrations by external id <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/retrieve_integrations>`_
+        """`Retrieve one or more integrations by external id <https://api-docs.cognite.com/20230101-beta/tag/Integrations/operation/retrieve_integrations>`_
 
         Args:
             external_id (str | SequenceNotStr[str]): External id or list of external ids to retrieve.
@@ -181,7 +186,7 @@ class IntegrationsAPI(APIClient):
         | IntegrationUpdate
         | Sequence[Integration | IntegrationWrite | IntegrationUpdate],
     ) -> Integration | IntegrationList:
-        """`Update one or more integrations <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/update_integrations>`_
+        """`Update one or more integrations <https://api-docs.cognite.com/20230101-beta/tag/Integrations/operation/update_integrations>`_
 
         Args:
             item (Integration | IntegrationWrite | IntegrationUpdate | Sequence[Integration | IntegrationWrite | IntegrationUpdate]): Integration(s) to update.
@@ -210,7 +215,7 @@ class IntegrationsAPI(APIClient):
         )
 
     async def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
-        """`Delete one or more integrations <https://api-docs.cognite.com/20230101-alpha/tag/Integrations/operation/delete_integrations>`_
+        """`Delete one or more integrations <https://api-docs.cognite.com/20230101-beta/tag/Integrations/operation/delete_integrations>`_
 
         Args:
             external_id (str | SequenceNotStr[str]): External id or list of external ids to delete.

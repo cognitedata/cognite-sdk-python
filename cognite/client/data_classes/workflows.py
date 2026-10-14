@@ -1130,6 +1130,7 @@ class WorkflowVersion(WorkflowVersionCore):
         workflow_definition (WorkflowDefinition): The workflow definition of the workflow version.
         created_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
         last_updated_time (int): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
+        warnings (list[str] | None): Non-blocking warnings about referenced functions that are not ready for execution. Only populated when returned from the create/upsert endpoint, always None when listing or retrieving workflow versions. Defaults to None.
     """
 
     def __init__(
@@ -1139,11 +1140,13 @@ class WorkflowVersion(WorkflowVersionCore):
         workflow_definition: WorkflowDefinition,
         created_time: int,
         last_updated_time: int,
+        warnings: list[str] | None = None,
     ) -> None:
         super().__init__(workflow_external_id=workflow_external_id, version=version)
         self.workflow_definition = workflow_definition
         self.created_time = created_time
         self.last_updated_time = last_updated_time
+        self.warnings = warnings
 
     @classmethod
     def _load(cls, resource: dict) -> WorkflowVersion:
@@ -1153,16 +1156,20 @@ class WorkflowVersion(WorkflowVersionCore):
             workflow_definition=WorkflowDefinition._load(resource["workflowDefinition"]),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
+            warnings=resource.get("warnings"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
+        output = {
             "workflowExternalId" if camel_case else "workflow_external_id": self.workflow_external_id,
             "version": self.version,
             "workflowDefinition" if camel_case else "workflow_definition": self.workflow_definition.dump(camel_case),
             "createdTime" if camel_case else "created_time": self.created_time,
             "lastUpdatedTime" if camel_case else "last_updated_time": self.last_updated_time,
         }
+        if self.warnings:
+            output["warnings"] = self.warnings
+        return output
 
     def as_write(self) -> WorkflowVersionUpsert:
         """Returns a WorkflowVersionUpsert object with the same data."""

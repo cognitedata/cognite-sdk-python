@@ -1,6 +1,5 @@
 """
 ===============================================================================
-4d42ee5ca1c4d60147956970cc121bf2
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, overload
+from typing import overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
@@ -16,9 +15,6 @@ from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
 from cognite.client.data_classes.agents.chat import Action, ActionResult, AgentChatResponse, Message
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncAgentsAPI(SyncAPIClient):

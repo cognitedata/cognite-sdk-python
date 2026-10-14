@@ -1,22 +1,16 @@
 """
 ===============================================================================
-dcf8cdd6009c9164489cb8ff05bba49a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.integrations.errors import IntegrationErrorList
 from cognite.client.utils._async_helpers import run_sync
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncIntegrationErrorsAPI(SyncAPIClient):
@@ -34,7 +28,7 @@ class SyncIntegrationErrorsAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> IntegrationErrorList:
         """
-        `List errors <https://api-docs.cognite.com/20230101-alpha/tag/Integration-Errors/operation/get_integration_errors>`_
+        `List errors <https://api-docs.cognite.com/20230101-beta/tag/Integration-Errors/operation/get_integration_errors>`_
 
         Args:
             external_id (str | None): Only return errors for the integration with this external id.

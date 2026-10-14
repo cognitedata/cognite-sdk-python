@@ -240,15 +240,21 @@ class BasicAsyncAPIClient:
     def _select_async_http_client(self, is_retryable: bool) -> AsyncHTTPClientWithRetry:
         return self._http_client_with_retry if is_retryable else self._http_client
 
-    def _alpha_version_header(self) -> dict[str, str]:
+    def _maturity_version_header(self, maturity: Literal["alpha", "beta"]) -> dict[str, str]:
         sub = self._api_subversion
-        if "alpha" in sub:
+        if maturity in sub:
             return {"cdf-version": sub}
         elif sub.isdecimal():  # default is something like "20230101" (see __api_subversion__ in _version.py)
-            return {"cdf-version": f"{sub}-alpha"}
+            return {"cdf-version": f"{sub}-{maturity}"}
         else:
-            # Maybe the user has set "beta" or something else, whatever the case, we just return "alpha":
-            return {"cdf-version": "alpha"}
+            # Maybe the user has set a different maturity or something else, whatever the case, we just return `maturity`:
+            return {"cdf-version": maturity}
+
+    def _alpha_version_header(self) -> dict[str, str]:
+        return self._maturity_version_header("alpha")
+
+    def _beta_version_header(self) -> dict[str, str]:
+        return self._maturity_version_header("beta")
 
     def _beta_version_header(self) -> dict[str, str]:
         sub = self._api_subversion
@@ -503,7 +509,7 @@ class BasicAsyncAPIClient:
         extra: dict[str, Any] = {
             "headers": redact_headers(res.request.headers),
             "payload": redact(payload),
-            "response-headers": dict(res.headers),
+            "response-headers": redact_headers(res.headers),
         }
         if not stream and self._config.debug:
             extra["response-payload"] = redact_response_body(res.text, 1_000)

@@ -1,5 +1,5 @@
 import ast
-import hashlib
+import copy
 import inspect
 import re
 import shlex
@@ -13,7 +13,7 @@ from cognite.client import AsyncCogniteClient
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig
 from cognite.client.credentials import Token
-from scripts.sync_client_codegen.constants import ASYNC_METHODS_TO_KEEP, MAYBE_IMPORTS, SYNC_METHODS_TO_KEEP
+from scripts.sync_client_codegen.constants import ASYNC_METHODS_TO_KEEP, SYNC_METHODS_TO_KEEP
 
 
 def get_api_class_by_attribute(cls_: object, parent_name: tuple[str, ...] = ()) -> dict[str, type[APIClient]]:
@@ -40,10 +40,6 @@ def find_api_class_name(source_code: str, file: Path) -> str | None:
             raise RuntimeError(f"Found multiple API classes in file='{file}': {multiple}")
 
 
-def hash_file(path: Path) -> str:
-    return hashlib.new("md5", path.read_bytes()).hexdigest()
-
-
 def is_pyfile(file: Path) -> bool:
     return file.suffix == ".py"
 
@@ -60,39 +56,30 @@ def path_as_importable(path: Path) -> str:
     return ".".join(path.with_suffix("").parts)
 
 
-def is_md5_hash(s: str) -> bool:
-    return bool(re.match(r"^[a-f0-9]{32}$", s))
-
-
-def read_hash_from_file(path: Path) -> tuple[bool, str]:
-    with path.open("r", encoding="utf-8") as f:
-        f.readline()
-        f.readline()
-        maybe_hash = f.readline().strip()
-
-    return is_md5_hash(maybe_hash), maybe_hash
-
-
-def file_has_changed(write_file: Path, read_file_hash: str) -> bool:
-    # Skip a file if it exists and the stored hash matches:
-    if write_file.exists():
-        is_valid, existing_hash = read_hash_from_file(write_file)
-        if is_valid and existing_hash == read_file_hash:
-            return False
-    return True
-
-
 def get_module_level_imports(tree: ast.Module):
     import_nodes = [node for node in tree.body if isinstance(node, (ast.Import, ast.ImportFrom))]
     return "\n".join(ast.unparse(node) for node in import_nodes)
 
 
-def get_module_level_constants(tree: ast.Module) -> str:
-    constant_nodes = [node for node in tree.body if isinstance(node, (ast.Assign, ast.AnnAssign))]
-    return "\n".join(ast.unparse(node) for node in constant_nodes)
+def get_module_level_names(tree: ast.Module) -> list[str]:
+    names = []
+    for node in tree.body:
+        match node:
+            case ast.Assign(targets=targets):
+                names.extend(t.id for t in targets if isinstance(t, ast.Name))
+            case ast.AnnAssign(target=ast.Name(id=name), value=value) if value is not None:
+                names.append(name)
+    return [name for name in names if name != "__all__"]
 
 
-def get_module_level_type_checking_imports(tree: ast.Module) -> str:
+def get_imported_names(node: ast.Import | ast.ImportFrom) -> set[tuple[str | None, str, str | None]]:
+    module = node.module if isinstance(node, ast.ImportFrom) else None
+    return {(module, alias.name, alias.asname) for alias in node.names}
+
+
+def get_module_level_type_checking_imports(
+    tree: ast.Module, skip: frozenset[tuple[str | None, str, str | None]]
+) -> str:
     imports: list[str] = []
     for node in tree.body:
         if not isinstance(node, ast.If):
@@ -107,29 +94,30 @@ def get_module_level_type_checking_imports(tree: ast.Module) -> str:
                 continue
 
         for sub in node.body:
-            if isinstance(sub, (ast.Import, ast.ImportFrom)):
+            if not isinstance(sub, (ast.Import, ast.ImportFrom)):
+                continue
+            # Skip names already imported (at runtime) elsewhere, e.g. by the template:
+            module = sub.module if isinstance(sub, ast.ImportFrom) else None
+            if names := [alias for alias in sub.names if (module, alias.name, alias.asname) not in skip]:
+                sub = copy.copy(sub)
+                sub.names = names
                 imports.append(ast.unparse(sub))
-    return "\n".join(imports)
+    # Joined so that all imports end up indented under 'if TYPE_CHECKING:' in the template:
+    return "\n    ".join(imports)
 
 
-def get_all_imports(tree: ast.Module, source_code: str, source_path: Path) -> tuple[str, str]:
+def get_all_imports(
+    tree: ast.Module, source_path: Path, skip_type_checking: frozenset[tuple[str | None, str, str | None]]
+) -> tuple[str, str]:
     all_imports = get_module_level_imports(tree)
-    type_checking_imports = get_module_level_type_checking_imports(tree)
-    extras = []
-    parent = source_path.parent
-    parent_api_in_init = parent != Path("cognite/client/_api") and (parent / "__init__.py").exists()
-    parent_source = get_source_code(parent / "__init__.py") if parent_api_in_init else ""
-
-    for maybe in MAYBE_IMPORTS:
-        # If the alias is defined in this file, it will be included via module_constants — no import needed.
-        # For nested APIs, the alias lives in the parent init and must be imported explicitly:
-        if maybe in parent_source and maybe not in source_code:
-            to_import = maybe.split(": ")[0]
-            extras.append(f"from {path_as_importable(parent)} import {to_import}")
-
-    if extras:
-        all_imports += "\n"
-    return all_imports + "\n".join(extras), type_checking_imports
+    type_checking_imports = get_module_level_type_checking_imports(tree, skip_type_checking)
+    # Module-level names (type aliases, TypeVars, constants etc.) may be needed by the sync API, e.g. in
+    # signatures or as default values. We import them from the async API module rather than copying the
+    # definitions over. Unused names are removed by ruff afterwards:
+    if module_names := get_module_level_names(tree):
+        module = path_as_importable(source_path).removesuffix(".__init__")
+        all_imports += f"\nfrom {module} import {', '.join(module_names)}"
+    return all_imports, type_checking_imports
 
 
 def find_class_node(tree: ast.Module, class_name: str) -> ast.ClassDef:

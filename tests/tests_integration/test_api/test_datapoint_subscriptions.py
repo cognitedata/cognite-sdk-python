@@ -10,10 +10,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cognite.client import CogniteClient
-from cognite.client.data_classes import TimeSeriesWrite, filters
+from cognite.client import AsyncCogniteClient, CogniteClient
+from cognite.client.data_classes import StateDatapointsInsert, StateDatapointWrite, TimeSeriesWrite, filters
 from cognite.client.data_classes.data_modeling import NodeId, SpaceApply
-from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeriesApply
+from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteStateSetApply, CogniteTimeSeriesApply
+from cognite.client.data_classes.data_modeling.data_types import StateSetEntry
 from cognite.client.data_classes.datapoints_subscriptions import (
     DatapointSubscription,
     DatapointSubscriptionProperty,
@@ -429,3 +430,84 @@ class TestDatapointSubscriptions:
         assert bad_upsert_value[0] is None
         assert all(isinstance(v, float) for v in bad_upsert_value[1:])
         assert no_bad[0].upserts.status_symbol == ["Uncertain", "Good", "Good", "Good"]
+
+    @pytest.mark.allow_no_semaphore(
+        "StateDatapointsPoster._insert_datapoints holds the semaphore via outer "
+        "'async with' and calls the http client directly with semaphore=None to avoid double-acquiring."
+    )
+    def test_iterate_data_subscription_state_time_series(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        timeseries_space: str,
+        request: pytest.FixtureRequest,
+    ) -> None:
+        xid = f"dms-state-sub-{random_string(10)}"
+        state_set_xid = f"dms-state-set-sub-{random_string(10)}"
+        node_id = NodeId(timeseries_space, xid)
+        state_set_node_id = NodeId(timeseries_space, state_set_xid)
+        request.addfinalizer(lambda: cognite_client.data_modeling.instances.delete([node_id, state_set_node_id]))
+        with pytest.MonkeyPatch.context() as mp:
+            mp.setattr(async_client.data_modeling.instances, "_api_subversion", "beta")
+            cognite_client.data_modeling.instances.apply(
+                CogniteStateSetApply(
+                    space=timeseries_space,
+                    external_id=state_set_xid,
+                    states=[StateSetEntry(10, "ten"), StateSetEntry(20, "twenty")],
+                    name="PySDK integration test state set for subscriptions",
+                )
+            )
+            cognite_client.data_modeling.instances.apply(
+                CogniteTimeSeriesApply(
+                    space=timeseries_space,
+                    external_id=xid,
+                    is_step=False,
+                    time_series_type="state",
+                    state_set=(timeseries_space, state_set_xid),
+                )
+            )
+
+        new_subscription = DataPointSubscriptionWrite(
+            external_id=f"PYSDKDataPointSubscriptionStateTest-{random_string(10)}",
+            name="PYSDKDataPointSubscriptionStateTest",
+            instance_ids=[node_id],
+            partition_count=1,
+        )
+        with create_subscription_with_cleanup(cognite_client, new_subscription) as created:
+            assert created.created_time
+            # Consume the initial batch (just the "added" time series, no data yet):
+            next(cognite_client.time_series.subscriptions.iterate_data(new_subscription.external_id))
+
+            with pytest.MonkeyPatch.context() as mp:
+                mp.setattr(async_client.time_series.data, "_api_subversion", "beta")
+                cognite_client.time_series.data.insert_states(
+                    StateDatapointsInsert(
+                        instance_id=node_id,
+                        datapoints=[
+                            StateDatapointWrite(1000, numeric_value=10),
+                            StateDatapointWrite(2000, numeric_value=20),
+                            StateDatapointWrite(3000, status_symbol="Bad"),
+                        ],
+                    )
+                )
+            batch = next(
+                cognite_client.time_series.subscriptions.iterate_data(
+                    new_subscription.external_id, ignore_bad_datapoints=False
+                )
+            )
+            assert batch.updates
+            upserts = batch.updates[0].upserts
+            assert upserts.is_state is True
+            assert upserts.numeric_states == [10, 20, None]
+            assert upserts.string_states == ["ten", "twenty", None]
+            with pytest.raises(ValueError, match="numeric_states"):
+                upserts.value
+
+            df = upserts.to_pandas()
+            assert list(df.columns) == [(node_id, "numeric"), (node_id, "string")]
+            num_states = df[(node_id, "numeric")].tolist()
+            assert num_states[:2] == [10, 20]
+            assert num_states[2] is pd.NA
+            str_states = df[(node_id, "string")].tolist()
+            assert str_states[:2] == ["ten", "twenty"]
+            assert math.isnan(str_states[2])

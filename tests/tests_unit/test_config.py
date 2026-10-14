@@ -162,6 +162,18 @@ class TestClientConfig:
             assert "Authorization", "Bearer abc" == client_config.credentials.authorization_header()
             assert client_config.client_name == "test-client"
 
+    @pytest.mark.dsl
+    def test_str_and_repr_html_redact_credential_headers(self, client_config: ClientConfig) -> None:
+        secret = "PLANTED-SECRET-VALUE"
+        client_config.headers = {"api-key": secret, "x-my-app": "harmless"}
+
+        for output in (str(client_config), client_config._repr_html_()):
+            assert secret not in output
+            assert "harmless" in output
+
+        # ...and the config itself is of course left alone, it still has to work:
+        assert client_config.headers == {"api-key": secret, "x-my-app": "harmless"}
+
     @pytest.mark.parametrize("protocol", ("http", "https"))
     @pytest.mark.parametrize("end", ("", "/", ":8080", "/api/v1/", ":8080/api/v1/"))
     @pytest.mark.parametrize("subdomain", ("", "p001.plink."))

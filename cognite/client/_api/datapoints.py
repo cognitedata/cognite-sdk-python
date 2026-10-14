@@ -572,7 +572,7 @@ class DatapointsAPI(APIClient):
             instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -932,7 +932,7 @@ class DatapointsAPI(APIClient):
             instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -1051,6 +1051,9 @@ class DatapointsAPI(APIClient):
         include_unit: bool = True,
         include_aggregate_name: bool = True,
         include_granularity_name: bool = False,
+        include_numeric_states: bool = True,
+        include_string_states: bool = True,
+        expand_state_aggregates: bool = True,
     ) -> pd.DataFrame:
         """Get datapoints directly in a pandas dataframe.
 
@@ -1066,7 +1069,7 @@ class DatapointsAPI(APIClient):
             instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id, DatapointsQuery or (mixed) sequence of these. See examples.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. Default: None (raw datapoints returned)
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, -day or -month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -1081,6 +1084,9 @@ class DatapointsAPI(APIClient):
             include_unit (bool): Include the unit_external_id in the dataframe columns, if present (separate MultiIndex level)
             include_aggregate_name (bool): Include aggregate in the dataframe columns, if present (separate MultiIndex level)
             include_granularity_name (bool): Include granularity in the dataframe columns, if present (separate MultiIndex level)
+            include_numeric_states (bool): For state time series, include the numeric states in the dataframe columns. Defaults to True.
+            include_string_states (bool): For state time series, include the string states in the dataframe columns. Defaults to True.
+            expand_state_aggregates (bool): Expand aggregates that are only available for state time series to separate DataFrame columns per unique state. This currently only includes ``state_count``/``state_transitions``/``state_duration``. Setting to False results in a list of aggregate values with one entry per distinct state present per granularity interval. Defaults to True.
 
         Returns:
             pd.DataFrame: A pandas DataFrame containing the requested time series. The ordering of columns is ids first, then external_ids, and lastly instance_ids. For time series with multiple aggregates, they will be sorted in alphabetical order ("average" before "max").
@@ -1175,6 +1181,9 @@ class DatapointsAPI(APIClient):
                 include_granularity_name=include_granularity_name,
                 include_status=include_status,
                 include_unit=include_unit,
+                include_numeric_states=include_numeric_states,
+                include_string_states=include_string_states,
+                expand_state_aggregates=expand_state_aggregates,
             )
         # Uniform index requires extra validation and processing:
         uses_tz_or_calendar_gran = any(q.use_cursors for q in fetcher.all_queries)
@@ -1192,6 +1201,9 @@ class DatapointsAPI(APIClient):
             include_granularity_name=include_granularity_name,
             include_status=include_status,
             include_unit=include_unit,
+            include_numeric_states=include_numeric_states,
+            include_string_states=include_string_states,
+            expand_state_aggregates=expand_state_aggregates,
         )
         start = to_pandas_timestamp(min(q.start_ms for q in fetcher.agg_queries))
         end = to_pandas_timestamp(max(q.end_ms for q in fetcher.agg_queries))
@@ -1407,6 +1419,11 @@ class DatapointsAPI(APIClient):
         Returns:
             LatestDatapoint | LatestDatapointList | None: A LatestDatapoint object containing the latest datapoint (if it exists), or a LatestDatapointList if multiple time series were requested. If `ignore_unknown_ids` is `True`, a single time series is requested and it is not found, the function will return `None`.
 
+        Note:
+            For state time series, the datapoint's value is given by ``numeric_state``/``string_state`` instead of
+            ``value``. Accessing ``value`` for a state time series will raise a ``ValueError`` (and oppositely for
+            regular time series). The ``is_state`` attribute can be used to easily distinguish time series types.
+
         Examples:
 
             Getting the latest datapoint in a time series:
@@ -1418,31 +1435,63 @@ class DatapointsAPI(APIClient):
                 >>> res = client.time_series.data.retrieve_latest(
                 ...     instance_id=NodeId("my-space", "my-ts-xid")
                 ... )
-                >>> if res:  # Check if datapoint exists
+                >>> if res:  # Check if the datapoint exists
                 ...     print(res.timestamp, res.value)
 
-            You can also use id or external_id; single identifier or list of identifiers:
+            For a state time series, read ``numeric_state``/``string_state`` instead of ``value``:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, external_id=["foo", "bar"])
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     instance_id=NodeId("ts-space", "state-ts")
+                ... )
+                >>> if res.has_datapoint:
+                ...     print(res.timestamp, res.numeric_state, res.string_state)
+
+            The timestamp is a timezone-aware ``datetime`` object (UTZ). If you instead prefer the timestamp in
+            milliseconds since the epoch, you can use the ``timestamp_ms`` property:
+
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo")
+                >>> if res.has_datapoint:
+                ...     print(res.timestamp_ms, res.value)
+
+            You can also use id, external_id or instance_id; single identifier or list of identifiers:
+
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     id=1, external_id=["foo", "bar"], instance_id=NodeId("my-space", "my-ts-xid")
+                ... )
 
             You can also get the latest datapoint before a specific time:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ago")
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo", before="2d-ago")
 
             You can also get the latest datapoint before a specific time in the future e.g. forecast data:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, before="2d-ahead")
+                >>> res = client.time_series.data.retrieve_latest(external_id="foo", before="2d-ahead")
+
+            If you're querying a mix of regular and state time series, use ``is_state`` to know which field(s) to read:
+
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     instance_id=[NodeId("ts-space", "state-ts"), NodeId("ts-space", "regular-ts")],
+                ... )
+                >>> for dp in res:
+                ...     if dp.is_state:
+                ...         print(dp.numeric_state)
+                ...     else:
+                ...         print(dp.value)
 
             You can also retrieve the datapoint in a different unit or unit system:
 
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit="temperature:deg_f")
-                >>> res = client.time_series.data.retrieve_latest(id=1, target_unit_system="Imperial")
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     external_id="foo", target_unit="temperature:deg_f"
+                ... )
+                >>> res = client.time_series.data.retrieve_latest(
+                ...     external_id="foo", target_unit_system="Imperial"
+                ... )
 
             You may also pass an instance of LatestDatapointQuery:
 
                 >>> from cognite.client.data_classes import LatestDatapointQuery
                 >>> res = client.time_series.data.retrieve_latest(
-                ...     id=LatestDatapointQuery(id=1, before=60_000)
+                ...     id=LatestDatapointQuery(external_id="foo", before=60_000)
                 ... )
 
             If you need the latest datapoint for multiple time series, simply give a list of ids. Note that we are
@@ -1533,6 +1582,10 @@ class DatapointsAPI(APIClient):
 
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
+
+            If you are ingesting datapoints directly from a retrieve call (``Datapoints`` or ``DatapointsArray``), you should *always*
+            fetch with ``ignore_bad_datapoints=False`` and ``include_status=True``. Otherwise, the status is lost and every datapoint
+            is inserted as Good (and the insert may fail as some values are only allowed together with a Bad status).
 
             State time series are not supported by this method; use :meth:`insert_states` instead.
 
@@ -1625,6 +1678,10 @@ class DatapointsAPI(APIClient):
 
             Datapoints marked bad can take on any of the following values: None (missing), NaN, and +/- Infinity. It is also not
             restricted by the normal numeric range [-1e100, 1e100] (i.e. can be any valid float64).
+
+            If you are ingesting datapoints directly from a retrieve call (``Datapoints`` or ``DatapointsArray``), you should *always*
+            fetch with ``ignore_bad_datapoints=False`` and ``include_status=True``. Otherwise, the status is lost and every datapoint
+            is inserted as Good (and the insert may fail as some values are only allowed together with a Bad status).
 
             State time series are not supported by this method; use :meth:`insert_states` instead.
 
@@ -1719,6 +1776,13 @@ class DatapointsAPI(APIClient):
         with the time series' state set). It may also carry only a status code/symbol, e.g. to mark a
         period as ``Bad``.
 
+        Note:
+            If you are ingesting datapoints directly from a retrieve call (``Datapoints`` or ``DatapointsArray``), you should *always*
+            fetch with ``ignore_bad_datapoints=False`` and ``include_status=True``. Otherwise, bad datapoints are either not
+            retrieved at all (and thus not copied), or, when retrieved without status, a ``ValueError`` is likely to be raised before
+            anything is inserted (as only datapoints with a Bad status can have the state omitted, and the exact code is unknown).
+            Without status, any other datapoint, e.g. Uncertain, is inserted as Good.
+
         Warning:
             State time series are in `public preview <https://docs.cognite.com/cdf/product_feature_status#public-preview>`_.
 
@@ -1759,6 +1823,23 @@ class DatapointsAPI(APIClient):
                 ...     ],
                 ... )
                 >>> client.time_series.data.insert_states([to_insert, second_insert])
+
+            The datapoints can also be given as ``Datapoints``/``DatapointsArray`` retrieved from a state time series, e.g.
+            to easily copy data. Only the numeric states are used, and status codes are preserved: Use ``include_status=True``
+            to retrieve them, and ``ignore_bad_datapoints=False`` to also copy the bad datapoints. If the State Set differs
+            between the source and target, the insert will fail.
+
+                >>> to_insert = client.time_series.data.retrieve_arrays(
+                ...     instance_id=NodeId("state-space", "ts-read-from"),
+                ...     include_status=True,
+                ...     ignore_bad_datapoints=False,
+                ... )
+                >>> client.time_series.data.insert_states(  # doctest: +SKIP
+                ...     StateDatapointsInsert(
+                ...         instance_id=NodeId("state-space", "ts-write-to"),
+                ...         datapoints=to_insert,
+                ...     )
+                ... )
 
             The datapoints to insert can also be given by the string state value (or a matching combination).
             Status codes can also be specified:

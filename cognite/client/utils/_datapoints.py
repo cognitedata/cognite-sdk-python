@@ -22,6 +22,7 @@ from cognite.client._proto.data_point_list_response_pb2 import (
 from cognite.client._proto.data_points_pb2 import (
     AggregateDatapoint,
     NumericDatapoint,
+    StateAggregate,
     StateDatapoint,
     StringDatapoint,
 )
@@ -33,6 +34,9 @@ from cognite.client.data_classes.datapoints import (
     MaxOrMinDatapoint,
     MinDatapoint,
     MinDatapointWithStatus,
+    StateCount,
+    StateDuration,
+    StateTransition,
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -129,6 +133,30 @@ class DpsUnpackFns:
     def max_datapoint_with_status(cls, agg_dp: AggregateDatapoint) -> MaxDatapointWithStatus:
         dp = agg_dp.maxDatapoint
         return MaxDatapointWithStatus(dp.timestamp, dp.value, cls.status_code(dp), cls.status_symbol(dp))
+
+    @staticmethod
+    def state_count_entry(sa: StateAggregate) -> StateCount:
+        return StateCount(sa.numericValue, sa.stringValue or None, state_count=sa.stateCount)
+
+    @staticmethod
+    def state_transition_entry(sa: StateAggregate) -> StateTransition:
+        return StateTransition(sa.numericValue, sa.stringValue or None, state_transitions=sa.stateTransitions)
+
+    @staticmethod
+    def state_duration_entry(sa: StateAggregate) -> StateDuration:
+        return StateDuration(sa.numericValue, sa.stringValue or None, state_duration=sa.stateDuration)
+
+    @classmethod
+    def state_counts(cls, agg_dp: AggregateDatapoint) -> list[StateCount]:
+        return [cls.state_count_entry(sa) for sa in agg_dp.stateAggregates]
+
+    @classmethod
+    def state_transitions(cls, agg_dp: AggregateDatapoint) -> list[StateTransition]:
+        return [cls.state_transition_entry(sa) for sa in agg_dp.stateAggregates]
+
+    @classmethod
+    def state_durations(cls, agg_dp: AggregateDatapoint) -> list[StateDuration]:
+        return [cls.state_duration_entry(sa) for sa in agg_dp.stateAggregates]
 
     # --------------- #
     # Above are functions that operate on single elements
@@ -229,9 +257,13 @@ class DpsUnpackFns:
             return np.array([tuple(getattr(dp, agg, math.nan) for agg in aggregates) for dp in dps], dtype=np.float64)
 
     @classmethod
-    def extract_fn_min_or_max_dp(
-        cls, aggregate: Literal["minDatapoint", "maxDatapoint"], include_status: bool
-    ) -> Callable[[AggregateDatapoint], MaxOrMinDatapoint]:
+    def extract_fn_for_object_agg(
+        cls,
+        aggregate: Literal["minDatapoint", "maxDatapoint", "stateCount", "stateTransitions", "stateDuration"],
+        include_status: bool,
+    ) -> Callable[
+        [AggregateDatapoint], MaxOrMinDatapoint | list[StateCount] | list[StateTransition] | list[StateDuration]
+    ]:
         match aggregate, include_status:
             case "minDatapoint", False:
                 return cls.min_datapoint
@@ -241,6 +273,12 @@ class DpsUnpackFns:
                 return cls.min_datapoint_with_status
             case "maxDatapoint", True:
                 return cls.max_datapoint_with_status
+            case "stateCount", _:
+                return cls.state_counts
+            case "stateTransitions", _:
+                return cls.state_transitions
+            case "stateDuration", _:
+                return cls.state_durations
             case _:
                 raise ValueError(f"Unsupported {aggregate=} and/or {include_status=}")
 
@@ -313,7 +351,10 @@ def create_array_from_dps_container(container: _DataContainer) -> npt.NDArray:
 
 
 def create_object_array_from_container(container: _DataContainer) -> npt.NDArray[np.object_]:
-    return np.array(create_list_from_dps_container(container), dtype=np.object_)
+    # We don't use a simple `np.array(..., dtype=np.object_)` call here as numpy very helpfully
+    # builds a proper N-dimensional array instead of the 1D array-of-objects we actually want:
+    count = sum(len(chunk) for chunk in datapoints_in_order(container))
+    return np.fromiter(chain.from_iterable(datapoints_in_order(container)), dtype=np.object_, count=count)
 
 
 def create_aggregates_arrays_from_dps_container(container: _DataContainer, n_aggs: int) -> list[npt.NDArray]:

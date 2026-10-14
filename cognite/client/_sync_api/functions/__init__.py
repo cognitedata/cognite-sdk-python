@@ -1,15 +1,13 @@
 """
 ===============================================================================
-b08de82074f133f583b068133f1988e1
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
-import re
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Literal, overload
+from typing import Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -33,15 +31,6 @@ from cognite.client.data_classes.functions import (
 )
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
-MAX_RETRIES = 5
-REQUIREMENTS_FILE_NAME = "requirements.txt"
-REQUIREMENTS_REG = re.compile("(\\[\\/?requirements\\]){1}$", flags=re.M)
-UNCOMMENTED_LINE_REG = re.compile("^[^\\#]]*.*")
-ALLOWED_HANDLE_ARGS = frozenset({"data", "client", "secrets", "function_call_info"})
 
 
 class SyncFunctionsAPI(SyncAPIClient):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.integrations.errors import IntegrationErrorList
@@ -15,15 +15,18 @@ ERROR_RESPONSE = {
     "description": "Something went wrong",
     "startTime": 100,
     "task": "poll",
+    "type": "general",
 }
 
 
 class TestIntegrationErrors:
-    def test_list(self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
+    def test_list(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
         url_pattern = re.compile(
             re.escape(get_url(async_client.integrations.errors, "/integrations/errors")) + r"(?:\?.*)?$"
         )
-        httpx_mock.add_response(method="GET", url=url_pattern, json={"items": [ERROR_RESPONSE]})
+        httpx2_mock.add_response(method="GET", url=url_pattern, json={"items": [ERROR_RESPONSE]})
 
         res = cognite_client.integrations.errors.list(external_id="my-integration", task="poll")
 
@@ -31,8 +34,9 @@ class TestIntegrationErrors:
         assert len(res) == 1
         assert res[0].level == "error"
         assert res[0].description == "Something went wrong"
+        assert res[0].type == "general"
 
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         assert "externalId=my-integration" in str(request.url)
         assert "task=poll" in str(request.url)
 

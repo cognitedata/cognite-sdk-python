@@ -271,12 +271,6 @@ class ClientConfig:
     def _validate_config(self) -> None:
         if not self.project:
             raise ValueError(f"Invalid value for ClientConfig.project: {self.project!r}")
-        elif self._attempt_to_get_cdf_cluster() is None:
-            warnings.warn(
-                f"Given base URL may be invalid, please double-check: {self.base_url!r}",
-                UserWarning,
-                stacklevel=3,
-            )
 
     @overload
     def _validate_base_url_or_cluster(self, base_url: None, cluster: None) -> NoReturn: ...
@@ -307,11 +301,16 @@ class ClientConfig:
                 )
 
     def __str__(self) -> str:
-        return pprint.pformat(vars(self), indent=4)
+        return pprint.pformat(self._vars_redacted(), indent=4)
 
     def _repr_html_(self) -> str:
         pd = local_import("pandas")
-        return pd.Series(vars(self)).to_frame("ClientConfig").sort_index()._repr_html_()
+        return pd.Series(self._vars_redacted()).to_frame("ClientConfig").sort_index()._repr_html_()
+
+    def _vars_redacted(self) -> dict[str, Any]:
+        from cognite.client.utils._redaction import redact_headers
+
+        return {**vars(self), "headers": redact_headers(self.headers)}
 
     @classmethod
     def default(

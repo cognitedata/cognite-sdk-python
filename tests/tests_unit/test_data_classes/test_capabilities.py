@@ -20,6 +20,8 @@ from cognite.client.data_classes.capabilities import (
     EventsAcl,
     ExperimentsAcl,
     GroupsAcl,
+    IntegrationConfigsAcl,
+    IntegrationsAcl,
     ProjectCapability,
     ProjectCapabilityList,
     ProjectsAcl,
@@ -69,6 +71,13 @@ def all_acls() -> Iterator[dict[str, Any]]:
             "dataModelsAcl": {
                 "actions": ["READ"],
                 "scope": {"dataModelScope": {"externalIds": ["maintain", "main-data"]}},
+            }
+        },
+        {"dataProductsAcl": {"actions": ["READ", "CREATE", "UPDATE", "DELETE", "USE"], "scope": {"all": {}}}},
+        {
+            "dataProductsAcl": {
+                "actions": ["READ", "USE"],
+                "scope": {"dataProductScope": {"externalIds": ["maintenance-planning", "product.manager"]}},
             }
         },
         {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"all": {}}}},
@@ -273,11 +282,42 @@ class TestCapabilities:
                     "scope": {"appExternalIdScope": {"externalIds": ["my-app", "other-app"]}},
                 }
             },
+            {
+                "dataProductsAcl": {
+                    "actions": ["READ", "CREATE"],
+                    "scope": {"dataProductScope": {"externalIds": ["maintenance-planning", "supply-chain.editor"]}},
+                }
+            },
+            {"integrationsAcl": {"actions": ["READ", "WRITE", "USE"], "scope": {"all": {}}}},
+            {"integrationConfigsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         ],
     )
     def test_load_dump(self, raw: dict[str, Any]) -> None:
         capability = Capability.load(raw)
         assert capability.dump(camel_case=True) == raw
+
+    @pytest.mark.parametrize(
+        "raw, expected_cls, expected_actions",
+        [
+            (
+                {"integrationsAcl": {"actions": ["READ", "WRITE", "USE"], "scope": {"all": {}}}},
+                IntegrationsAcl,
+                [IntegrationsAcl.Action.Read, IntegrationsAcl.Action.Write, IntegrationsAcl.Action.Use],
+            ),
+            (
+                {"integrationConfigsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+                IntegrationConfigsAcl,
+                [IntegrationConfigsAcl.Action.Read, IntegrationConfigsAcl.Action.Write],
+            ),
+        ],
+    )
+    def test_load_integrations_acls(
+        self, raw: dict[str, Any], expected_cls: type[Capability], expected_actions: list[Any]
+    ) -> None:
+        capability = Capability.load(raw)
+        assert type(capability) is expected_cls
+        assert capability.actions == expected_actions
+        assert isinstance(capability.scope, AllScope)
 
     def test_load_dump__extra_top_level_keys(self, cap_with_extra_key: dict[str, Any]) -> None:
         capability = Capability.load(cap_with_extra_key)
@@ -350,6 +390,16 @@ class TestCapabilities:
                 "NotificationsAcl",
                 "SEND-PIGEON",
                 {"notificationsAcl": {"actions": ["READ", "SEND-PIGEON"], "scope": {"all": {}}}},
+            ),
+            (
+                "IntegrationsAcl",
+                "DELETE",
+                {"integrationsAcl": {"actions": ["READ", "DELETE"], "scope": {"all": {}}}},
+            ),
+            (
+                "IntegrationConfigsAcl",
+                "USE",
+                {"integrationConfigsAcl": {"actions": ["READ", "USE"], "scope": {"all": {}}}},
             ),
         ],
     )

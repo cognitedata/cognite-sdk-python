@@ -15,14 +15,14 @@ class IntegrationError(CogniteResource):
     """A problem an extractor encountered while running a task, reported to CDF.
 
     Args:
-        external_id (str): External id of the integration the error belongs to.
+        external_id (str): External id of the error.
         level (ErrorLevel): Severity of the error.
         description (str): Short description of the error.
         start_time (int): Time the error started, in milliseconds since epoch.
+        type (IntegrationErrorType): Category of the error.
         details (str | None): Full details of the error, e.g. a stack trace.
         end_time (int | None): Time the error was resolved, in milliseconds since epoch. Not set while unresolved.
         task (str | None): Name of the task the error occurred in. Not set if the error applies to the extractor generally.
-        type (IntegrationErrorType | None): Category of the error.
         active_config_revision (ActiveConfigRevision | None): The config revision (or "local") active when the error occurred.
     """
 
@@ -32,10 +32,10 @@ class IntegrationError(CogniteResource):
         level: ErrorLevel,
         description: str,
         start_time: int,
+        type: IntegrationErrorType,
         details: str | None = None,
         end_time: int | None = None,
         task: str | None = None,
-        type: IntegrationErrorType | None = None,
         active_config_revision: ActiveConfigRevision | None = None,
     ) -> None:
         self.external_id = external_id
@@ -58,7 +58,7 @@ class IntegrationError(CogniteResource):
             start_time=resource["startTime"],
             end_time=resource.get("endTime"),
             task=resource.get("task"),
-            type=resource.get("type"),
+            type=resource["type"],
             active_config_revision=resource.get("activeConfigRevision"),
         )
 

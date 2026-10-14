@@ -333,9 +333,9 @@ class SequencesDataAPI(APIClient):
             return SequenceRows._load(sequence_rows)
 
         tasks = [AsyncSDKTask(_fetch_sequence, id_) for id_ in ident_sequence.as_dicts()]
-        tasks_summary = await execute_async_tasks(tasks)
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks(
-            task_list_element_unwrap_fn=ident_sequence.extract_identifiers
+            task_unwrap_fn=lambda task: ident_sequence.extract_identifiers(task[0]),
         )
         results = tasks_summary.joined_results()
         if ident_sequence.is_singleton():

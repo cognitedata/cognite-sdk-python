@@ -890,7 +890,8 @@ class TestInstancesAPI:
             cognite_client.data_modeling.instances.search(
                 person_view.as_id(), query="Quentin", properties=["invalidProperty"]
             )
-        assert "Unknown property" in error.value.message
+        assert "invalidProperty" in error.value.message
+        assert "is not available when searching view" in error.value.message
 
     def test_search_node_data_with_filtering(self, cognite_client: CogniteClient, person_view: View) -> None:
         view_id = person_view.as_id()
