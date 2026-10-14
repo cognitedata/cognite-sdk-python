@@ -7,10 +7,15 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSource,
+    ExternalDataSourceFormat,
     ExternalDataSourceList,
+    ExternalDataSourceRotatedKeys,
+    ExternalDataSourceRotatedKeysList,
+    ExternalDataSourceRotateKeys,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
 )
+from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -22,6 +27,7 @@ if TYPE_CHECKING:
 
 class TransformationExternalDataSourcesAPI(APIClient):
     _RESOURCE_PATH = "/transformations/externaldata"
+    _ROTATE_KEYS_LIMIT = 10
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -30,13 +36,17 @@ class TransformationExternalDataSourcesAPI(APIClient):
         )
 
     @overload
-    def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[ExternalDataSource]: ...
+    def __call__(
+        self, chunk_size: None = None, limit: int | None = None, format: ExternalDataSourceFormat | None = None
+    ) -> AsyncIterator[ExternalDataSource]: ...
 
     @overload
-    def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[ExternalDataSourceList]: ...
+    def __call__(
+        self, chunk_size: int, limit: int | None = None, format: ExternalDataSourceFormat | None = None
+    ) -> AsyncIterator[ExternalDataSourceList]: ...
 
     async def __call__(
-        self, chunk_size: int | None = None, limit: int | None = None
+        self, chunk_size: int | None = None, limit: int | None = None, format: ExternalDataSourceFormat | None = None
     ) -> AsyncIterator[ExternalDataSource] | AsyncIterator[ExternalDataSourceList]:
         """Iterate over external data sources
 
@@ -45,6 +55,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
         Args:
             chunk_size (int | None): Number of data sources to return in each chunk. Defaults to yielding one data source at a time.
             limit (int | None): Maximum number of data sources to return. Defaults to return all.
+            format (ExternalDataSourceFormat | None): Only return data sources of this format ("one_lake" or "snowflake"). Defaults to all formats.
 
         Yields:
             ExternalDataSource | ExternalDataSourceList: yields ExternalDataSource one by one if chunk_size is not specified, else ExternalDataSourceList objects.
@@ -57,14 +68,18 @@ class TransformationExternalDataSourcesAPI(APIClient):
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
+            other_params={"format": format} if format else None,
         ):
             yield item
 
-    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> ExternalDataSourceList:
+    async def list(
+        self, limit: int | None = DEFAULT_LIMIT_READ, format: ExternalDataSourceFormat | None = None
+    ) -> ExternalDataSourceList:
         """`List external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/listExternalDataSources>`_.
 
         Args:
             limit (int | None): Maximum number of data sources to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            format (ExternalDataSourceFormat | None): Only return data sources of this format ("one_lake" or "snowflake"). Defaults to all formats.
 
         Returns:
             ExternalDataSourceList: List of external data sources.
@@ -77,6 +92,12 @@ class TransformationExternalDataSourcesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_sources = client.transformations.external_data_sources.list(limit=5)
+
+            List only Snowflake data sources:
+
+                >>> snowflake_sources = client.transformations.external_data_sources.list(
+                ...     format="snowflake"
+                ... )
 
             Iterate over data sources, one-by-one:
 
@@ -94,7 +115,39 @@ class TransformationExternalDataSourcesAPI(APIClient):
             list_cls=ExternalDataSourceList,
             resource_cls=ExternalDataSource,  # type: ignore[type-abstract]
             limit=limit,
+            other_params={"format": format} if format else None,
         )
+
+    async def retrieve(self, external_id: str) -> ExternalDataSource | None:
+        """`Retrieve an external data source by external ID <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/getExternalDataSource>`_.
+
+        Args:
+            external_id (str): External ID of the data source.
+
+        Returns:
+            ExternalDataSource | None: The requested data source, or None if it does not exist.
+
+        Examples:
+
+            Retrieve a data source:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> data_source = client.transformations.external_data_sources.retrieve(
+                ...     "fabric-lakehouse-prod"
+                ... )
+        """
+        self._warning.warn()
+        try:
+            res = await self._get(
+                url_path=self._RESOURCE_PATH + "/byid",
+                params={"externalId": external_id},
+                semaphore=self._get_semaphore("read"),
+            )
+        except CogniteNotFoundError:
+            return None
+        return ExternalDataSource._load(res.json())._maybe_set_client_ref(self._cognite_client)
 
     @overload
     async def create(self, data_source: ExternalDataSourceWrite) -> ExternalDataSource: ...
@@ -106,6 +159,10 @@ class TransformationExternalDataSourcesAPI(APIClient):
         self, data_source: ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]
     ) -> ExternalDataSource | ExternalDataSourceList:
         """`Create external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/createExternalDataSources>`_.
+
+        Both OneLake and Snowflake data sources can be created, also in the same call. For Snowflake, the client sends
+        no keys: the server generates the key pair and only the public key is returned, which you must register with
+        the Snowflake user. ``expiry_time`` is required for Snowflake and not allowed for OneLake.
 
         Fails with a 409 if any external ID in the request already exists for the project; no items
         are created in that case. To modify an existing data source, delete it and create a replacement.
@@ -150,6 +207,34 @@ class TransformationExternalDataSourcesAPI(APIClient):
                 ...     ),
                 ... )
                 >>> res = client.transformations.external_data_sources.create(data_source)
+
+            Register a Snowflake data source, valid for 30 days:
+
+                >>> from cognite.client.data_classes.transformations.externaldata import (
+                ...     SnowflakeCredentialsWrite,
+                ...     SnowflakeExternalDataSourceWrite,
+                ...     SnowflakeLocationDescription,
+                ...     SnowflakeSettingsWrite,
+                ... )
+                >>> from cognite.client.utils._time import timestamp_to_ms
+                >>> snowflake_source = SnowflakeExternalDataSourceWrite(
+                ...     external_id="snowflake-analytics-prod",
+                ...     expiry_time=timestamp_to_ms("now") + 30 * 24 * 3600 * 1000,
+                ...     settings=SnowflakeSettingsWrite(
+                ...         credentials=SnowflakeCredentialsWrite(
+                ...             account_identifier="org-account",
+                ...             user_name="COGNITE_SVC",
+                ...             role_name="COGNITE_READER",
+                ...         ),
+                ...         location_description=SnowflakeLocationDescription(
+                ...             warehouse_name="COMPUTE_WH"
+                ...         ),
+                ...     ),
+                ... )
+                >>> created = client.transformations.external_data_sources.create(snowflake_source)
+                >>> public_key = (
+                ...     created.settings.credentials.public_key
+                ... )  # register with the Snowflake user
         """
         self._warning.warn()
         return await self._create_multiple(
@@ -183,6 +268,65 @@ class TransformationExternalDataSourcesAPI(APIClient):
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
         )
+
+    @overload
+    async def rotate_keys(self, rotation: ExternalDataSourceRotateKeys) -> ExternalDataSourceRotatedKeys: ...
+
+    @overload
+    async def rotate_keys(
+        self, rotation: Sequence[ExternalDataSourceRotateKeys]
+    ) -> ExternalDataSourceRotatedKeysList: ...
+
+    async def rotate_keys(
+        self, rotation: ExternalDataSourceRotateKeys | Sequence[ExternalDataSourceRotateKeys]
+    ) -> ExternalDataSourceRotatedKeys | ExternalDataSourceRotatedKeysList:
+        """`Rotate the keys of Snowflake external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/rotateExternalDataSourceKeys>`_.
+
+        The server generates a new key pair for each data source and returns the new public key, which you must
+        register with the Snowflake user. Only Snowflake data sources support this. The operation is atomic: if any
+        item fails, no keys are rotated. At most 10 data sources can be rotated per call, with unique external IDs.
+
+        Args:
+            rotation (ExternalDataSourceRotateKeys | Sequence[ExternalDataSourceRotateKeys]): The rotation(s) to perform. Each ``expiry_time`` must be in the future and at most one year from now.
+
+        Returns:
+            ExternalDataSourceRotatedKeys | ExternalDataSourceRotatedKeysList: The new public key and expiry time of each rotated data source.
+
+        Raises:
+            ValueError: If more than 10 rotations are passed.
+
+        Examples:
+
+            Rotate the keys of a Snowflake data source, valid for 30 days:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.transformations.externaldata import (
+                ...     ExternalDataSourceRotateKeys,
+                ... )
+                >>> from cognite.client.utils._time import timestamp_to_ms
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> expiry_time = timestamp_to_ms("now") + 30 * 24 * 3600 * 1000
+                >>> res = client.transformations.external_data_sources.rotate_keys(
+                ...     ExternalDataSourceRotateKeys("snowflake-analytics-prod", expiry_time)
+                ... )
+                >>> new_public_key = res.public_key
+        """
+        self._warning.warn()
+        is_single = isinstance(rotation, ExternalDataSourceRotateKeys)
+        items = [rotation] if isinstance(rotation, ExternalDataSourceRotateKeys) else list(rotation)
+        if len(items) > self._ROTATE_KEYS_LIMIT:
+            raise ValueError(
+                f"At most {self._ROTATE_KEYS_LIMIT} data sources can be rotated per call (the operation is atomic "
+                f"and cannot be split), got {len(items)}"
+            )
+        res = await self._post(
+            url_path=self._RESOURCE_PATH + "/rotatekeys",
+            json={"items": [item.dump(camel_case=True) for item in items]},
+            semaphore=self._get_semaphore("write"),
+        )
+        rotated = ExternalDataSourceRotatedKeysList._load(res.json()["items"])
+        return rotated[0] if is_single else rotated
 
     async def verify_usability(self, external_id: str) -> ExternalDataSourceUsability:
         """`Verify external data source usability <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/verifyExternalDataSourceUsability>`_.
