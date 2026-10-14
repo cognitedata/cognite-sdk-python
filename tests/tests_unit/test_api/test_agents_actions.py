@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client.data_classes.agents import Message
 from cognite.client.data_classes.agents.chat import (
@@ -72,22 +72,22 @@ def final_response_body() -> dict:
 
 @pytest.fixture
 def mock_action_call_response(
-    httpx_mock: HTTPXMock, async_client: AsyncCogniteClient, action_call_response_body: dict
+    httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient, action_call_response_body: dict
 ) -> HTTPXMock:
     """Mock HTTP response for agent chat that returns an action call."""
     url = get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json=action_call_response_body)
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json=action_call_response_body)
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_final_response(
-    httpx_mock: HTTPXMock, async_client: AsyncCogniteClient, final_response_body: dict
+    httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient, final_response_body: dict
 ) -> HTTPXMock:
     """Mock HTTP response for final agent response."""
     url = get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat")
-    httpx_mock.add_response(method="POST", url=url, status_code=200, json=final_response_body)
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json=final_response_body)
+    return httpx2_mock
 
 
 class TestClientToolAction:

@@ -47,7 +47,7 @@ class TestJupyterSyncAsyncInterop:
     There was also a separate issue on 3.14, but that has no particular test case (as it was due
     to asyncio internals, and how we used to patch them with nest_asyncio)
 
-    Each test gets a fresh Jupyter kernel (separate process), so global state like the httpx
+    Each test gets a fresh Jupyter kernel (separate process), so global state like the httpx2
     client cache and semaphore cache is naturally isolated between tests — no explicit cleanup needed.
     """
 

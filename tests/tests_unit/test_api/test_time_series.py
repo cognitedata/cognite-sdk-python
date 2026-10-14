@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import TimeSeries, TimeSeriesFilter, TimeSeriesList, TimeSeriesUpdate, TimeSeriesWrite
@@ -13,14 +13,14 @@ from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_or_raise, get_url, jsgz_load
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
 def mock_ts_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[dict[str, Any]]:
     response_body = {
         "items": [
@@ -44,10 +44,10 @@ def mock_ts_response(
         re.escape(get_url(async_client.time_series)) + r"/timeseries(?:/byids|/update|/delete|/list|/search|$|\?.+)"
     )
 
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True, is_reusable=True
     )
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     yield response_body
 
 
@@ -67,7 +67,7 @@ class TestTimeSeries:
         assert mock_ts_response["items"] == res.dump(camel_case=True)
 
     def test_list_with_filters(
-        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.time_series.list(
             is_step=True,
@@ -93,18 +93,18 @@ class TestTimeSeries:
             "dataSetIds": [{"id": 1}, {"id": 2}, {"externalId": "x"}],
             "createdTime": {"max": 123},
             "lastUpdatedTime": {"min": 45},
-        } == jsgz_load(httpx_mock.get_requests()[0].content)["filter"]
+        } == jsgz_load(httpx2_mock.get_requests()[0].content)["filter"]
 
     @pytest.mark.dsl
     def test_list_with_asset_ids(
-        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         import numpy
 
         cognite_client.time_series.list(asset_ids=[1])
         cognite_client.time_series.list(asset_ids=[numpy.int64(1)])  # type: ignore[list-item]
-        for i in range(len(httpx_mock.get_requests())):
-            assert [1] == jsgz_load(httpx_mock.get_requests()[i].content)["filter"]["assetIds"]
+        for i in range(len(httpx2_mock.get_requests())):
+            assert [1] == jsgz_load(httpx2_mock.get_requests()[i].content)["filter"]["assetIds"]
 
     def test_create_single(self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any]) -> None:
         res = cognite_client.time_series.create(TimeSeriesWrite(external_id="1", name="blabla"))
@@ -121,24 +121,24 @@ class TestTimeSeries:
             assert mock_ts_response["items"] == assets.dump(camel_case=True)
 
     def test_delete_single(
-        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.time_series.delete(id=1)
-        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(httpx2_mock.get_requests()[0].content)
         assert res is None
 
     def test_delete_single_ignore_unknown(
-        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.time_series.delete(id=1, ignore_unknown_ids=True)
-        assert {"items": [{"id": 1}], "ignoreUnknownIds": True} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": True} == jsgz_load(httpx2_mock.get_requests()[0].content)
         assert res is None
 
     def test_delete_multiple(
-        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.time_series.delete(id=[1])
-        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"items": [{"id": 1}], "ignoreUnknownIds": False} == jsgz_load(httpx2_mock.get_requests()[0].content)
         assert res is None
 
     def test_update_with_resource_class(self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any]) -> None:
@@ -163,7 +163,7 @@ class TestTimeSeries:
         assert 1 == len(res)
 
     def test_search(
-        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.time_series.search(filter=TimeSeriesFilter(is_string=True))
         assert mock_ts_response["items"] == res.dump(camel_case=True)
@@ -171,11 +171,11 @@ class TestTimeSeries:
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
             "limit": 25,
-        } == jsgz_load(httpx_mock.get_requests()[0].content)
+        } == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     @pytest.mark.parametrize("filter_field", ["is_string", "isString"])
     def test_search_dict_filter(
-        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], filter_field: Any, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], filter_field: Any, httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.time_series.search(filter={filter_field: True})
         assert mock_ts_response["items"] == res.dump(camel_case=True)
@@ -183,16 +183,16 @@ class TestTimeSeries:
             "search": {"name": None, "description": None, "query": None},
             "filter": {"isString": True},
             "limit": 25,
-        } == jsgz_load(httpx_mock.get_requests()[0].content)
+        } == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     def test_search_with_filter(
-        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_ts_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.time_series.search(
             name="n", description="d", query="q", filter=TimeSeriesFilter(unit="bla")
         )
         assert mock_ts_response["items"] == res.dump(camel_case=True)
-        req_body = jsgz_load(httpx_mock.get_requests()[0].content)
+        req_body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert "bla" == req_body["filter"]["unit"]
         assert {"name": "n", "description": "d", "query": "q"} == req_body["search"]
 
@@ -225,12 +225,12 @@ class TestTimeSeries:
 
 @pytest.fixture
 def mock_time_series_empty(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     url_pattern = re.compile(re.escape(get_url(async_client.time_series)) + "/.+")
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []}, is_optional=True)
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json={"items": []}, is_optional=True)
-    return httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []}, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json={"items": []}, is_optional=True)
+    return httpx2_mock
 
 
 @pytest.mark.dsl

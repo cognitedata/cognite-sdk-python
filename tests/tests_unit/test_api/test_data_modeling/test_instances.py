@@ -7,7 +7,7 @@ from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.aggregations import Count
@@ -58,7 +58,7 @@ class TestAggregate:
     @pytest.mark.usefixtures("disable_gzip")
     @pytest.mark.parametrize("limit", [None, -1, math.inf])
     def test_aggregate_maximum(
-        self, limit: int | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+        self, limit: int | None, httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
     ) -> None:
         url = re.compile(r".*/models/instances/aggregate$")
         response = {
@@ -76,13 +76,13 @@ class TestAggregate:
                 },
             ]
         }
-        httpx_mock.add_response(method="POST", url=url, status_code=200, json=response)
+        httpx2_mock.add_response(method="POST", url=url, status_code=200, json=response)
 
         cognite_client.data_modeling.instances.aggregate(
             ViewId("my_space", "MyView", "v1"), Count("externalId"), group_by="site", limit=limit
         )
-        assert len(httpx_mock.get_requests()) == 1
-        req = httpx_mock.get_requests()[0]
+        assert len(httpx2_mock.get_requests()) == 1
+        req = httpx2_mock.get_requests()[0]
         body = json.loads(req.content)
         assert "limit" in body
         assert body["limit"] == async_client.data_modeling.instances._AGGREGATE_LIMIT
@@ -92,7 +92,7 @@ class TestSearch:
     @pytest.mark.usefixtures("disable_gzip")
     @pytest.mark.parametrize("limit", [None, -1, math.inf])
     def test_search_maximum(
-        self, limit: int | None, httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+        self, limit: int | None, httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
     ) -> None:
         url = re.compile(r".*/models/instances/search$")
         response = {
@@ -107,11 +107,11 @@ class TestSearch:
                 },
             ]
         }
-        httpx_mock.add_response(method="POST", url=url, status_code=200, json=response)
+        httpx2_mock.add_response(method="POST", url=url, status_code=200, json=response)
 
         _ = cognite_client.data_modeling.instances.search(ViewId("my_space", "MyView", "v1"), "dummy text", limit=limit)
-        assert len(httpx_mock.get_requests()) == 1
-        req = httpx_mock.get_requests()[0]
+        assert len(httpx2_mock.get_requests()) == 1
+        req = httpx2_mock.get_requests()[0]
         body = json.loads(req.content)
         assert "limit" in body
         assert body["limit"] == async_client.data_modeling.instances._SEARCH_LIMIT

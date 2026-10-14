@@ -792,7 +792,7 @@ class FilesAPI(APIClient):
                     message=e.message,
                     code=e.code,
                     x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
+                    cluster=self._config._attempt_to_get_cdf_cluster(),
                     project=self._config.project,
                 ) from e
             raise
@@ -913,7 +913,7 @@ class FilesAPI(APIClient):
                     message=msg,
                     code=e.code,
                     x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
+                    cluster=self._config._attempt_to_get_cdf_cluster(),
                     project=self._config.project,
                 ) from e
             raise
@@ -1012,7 +1012,7 @@ class FilesAPI(APIClient):
                     message=msg,
                     code=e.code,
                     x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
+                    cluster=self._config._attempt_to_get_cdf_cluster(),
                     project=self._config.project,
                 ) from e
             raise
@@ -1080,7 +1080,7 @@ class FilesAPI(APIClient):
                     message=e.message,
                     code=e.code,
                     x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
+                    cluster=self._config._attempt_to_get_cdf_cluster(),
                     project=self._config.project,
                 ) from e
             raise

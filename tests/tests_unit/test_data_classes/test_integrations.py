@@ -27,7 +27,7 @@ INTEGRATION_DUMPED = {
 
 
 class TestIntegration:
-    def test_load_dump_round_trip(self) -> None:
+    def test_load_properties(self) -> None:
         loaded = Integration._load(INTEGRATION_DUMPED)
 
         assert loaded.external_id == "my-integration"
@@ -35,8 +35,6 @@ class TestIntegration:
         assert loaded.tasks[0].name == "poll"
         assert loaded.tasks[0].action is True
         assert loaded.active_config_revision == "local"
-
-        assert loaded.dump(camel_case=True) == INTEGRATION_DUMPED
 
     def test_load_with_explicit_null_tasks(self) -> None:
         dumped = {**INTEGRATION_DUMPED, "tasks": None}

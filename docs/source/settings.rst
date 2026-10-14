@@ -235,7 +235,8 @@ Alternatively, you can toggle debug logging on or off dynamically by setting the
     client.config.debug = False  # disable debug logging
     client.config.debug = True   # enable debug logging again
 
-Note: Large outgoing or incoming payloads will be truncated to 1000 characters in the logs to avoid overwhelming the log output.
+Note: Incoming payloads (response bodies) are truncated to 1000 characters in the logs to avoid overwhelming the log output.
+Outgoing payloads are logged in full.
 
 Custom event loop (e.g. uvloop)
 -------------------------------
@@ -256,10 +257,15 @@ call is made. The background loop is created via ``asyncio.new_event_loop()``, w
 
 HTTP Request logging
 --------------------
-Internally this library uses the ``httpx`` library to perform network calls to the Cognite API service endpoints. For authentication and
+Internally this library uses the ``httpx2`` library to perform network calls to the Cognite API service endpoints. For authentication and
 token management we depend on ``authlib`` and ``msal``. ``msal`` uses the `requests <https://pypi.org/project/requests/>`_ library under
 the hood, which in turn is built on `urllib3 <https://pypi.org/project/urllib3/>`_.
 
-If you are enabling DEBUG level logging, please be advised that requests going through ``urllib3`` will not be sanitized at all, meaning
-sensitive information such as authentication credentials and sensitive data may be logged. Thus, it is not recommended in production
-environments, or where credentials cannot be easily disabled or rotated, or where log data may be accessed by others.
+The SDK redacts the credentials it knows about before they reach a log record: authorization headers, and credential fields in request
+payloads and response bodies, such as client secrets, passwords, session nonces, private keys and function secrets. For payloads the SDK
+did not build itself, such as a raw ``dict`` passed to ``client.post()``, all we have to go by is the field names, so treat that case as
+best-effort.
+
+Enabling DEBUG level logging for the third-party libraries above is a different matter: requests going through e.g. ``urllib3`` will not be
+sanitized at all, meaning sensitive information such as authentication credentials and sensitive data may be logged. Thus, it is not
+recommended in production environments, or where credentials cannot be easily disabled or rotated, or where log data may be accessed by others.

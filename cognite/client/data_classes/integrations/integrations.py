@@ -223,7 +223,6 @@ class Integration(IntegrationCore):
         )
 
     def as_write(self) -> IntegrationWrite:
-        """Returns this Integration as an IntegrationWrite"""
         return IntegrationWrite(
             external_id=self.external_id,
             extractor=self.extractor,
@@ -233,9 +232,6 @@ class Integration(IntegrationCore):
             metadata=self.metadata,
             allowed_not_seen_minutes=self.allowed_not_seen_minutes,
         )
-
-    def __hash__(self) -> int:
-        return hash(self.external_id)
 
 
 class IntegrationWriteList(CogniteResourceList[IntegrationWrite], ExternalIDTransformerMixin):

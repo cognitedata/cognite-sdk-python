@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import math
 import random
 import re
@@ -9,10 +10,11 @@ import unittest
 from collections import namedtuple
 from collections.abc import Callable, Iterator
 from typing import Any, ClassVar, Literal
+from unittest import mock
 
 import pytest
-from httpx import Headers, Request, Response
-from pytest_httpx import HTTPXMock
+from httpx2 import Request, Response
+from pytest_httpx2 import HTTPXMock
 from typing_extensions import Self
 
 from cognite.client import AsyncCogniteClient, CogniteClient
@@ -34,12 +36,14 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.hosted_extractors import MQTT5SourceUpdate, MQTT5SourceWrite
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
+from cognite.client.utils._redaction import redact
 from cognite.client.utils._url import validate_url_and_return_retryability
 from tests.tests_unit.conftest import DefaultResourceGenerator
 from tests.utils import get_or_raise, get_wrapped_async_client, jsgz_load
 
 BASE_URL = "http://localtest.com/api/v1/projects/test-project"
 URL_PATH = "/someurl"
+API_CLIENT_LOGGER_NAME = "cognite.client._basic_api_client"
 
 RESPONSE = {"any": "ok"}
 
@@ -83,34 +87,34 @@ RequestCase = namedtuple("RequestCase", ["name", "method", "kwargs"])
 )
 class TestBasicRequests:
     @pytest.fixture
-    def mock_all_requests_ok(self, httpx_mock: HTTPXMock) -> Iterator[HTTPXMock]:
+    def mock_all_requests_ok(self, httpx2_mock: HTTPXMock) -> Iterator[HTTPXMock]:
         for method in ["GET", "PUT", "POST", "DELETE"]:
-            httpx_mock.add_response(
+            httpx2_mock.add_response(
                 method=method, url=BASE_URL + URL_PATH, status_code=200, json=RESPONSE, is_optional=True
             )
-        yield httpx_mock
+        yield httpx2_mock
 
     @pytest.fixture
-    def mock_all_requests_fail(self, httpx_mock: HTTPXMock) -> None:
+    def mock_all_requests_fail(self, httpx2_mock: HTTPXMock) -> None:
         for method in ["GET", "PUT", "POST", "DELETE"]:
-            httpx_mock.add_response(
+            httpx2_mock.add_response(
                 method=method,
                 url=BASE_URL + URL_PATH,
                 status_code=400,
                 json={"error": "Client error"},
                 is_optional=True,
             )
-            httpx_mock.add_response(
+            httpx2_mock.add_response(
                 method=method, url=BASE_URL + URL_PATH, status_code=500, text="Server error", is_optional=True
             )
-            httpx_mock.add_response(
+            httpx2_mock.add_response(
                 method=method,
                 url=BASE_URL + URL_PATH,
                 status_code=500,
                 json={"error": "Server error"},
                 is_optional=True,
             )
-            httpx_mock.add_response(
+            httpx2_mock.add_response(
                 method=method,
                 url=BASE_URL + URL_PATH,
                 status_code=400,
@@ -170,26 +174,26 @@ class TestBasicRequests:
         assert e.value.message == "Client error"
 
     @pytest.mark.usefixtures("disable_gzip")
-    async def test_request_gzip_disabled(self, httpx_mock: HTTPXMock, api_client_with_token: APIClient) -> None:
+    async def test_request_gzip_disabled(self, httpx2_mock: HTTPXMock, api_client_with_token: APIClient) -> None:
         def check_gzip_disabled(request: Any) -> Response:
             assert "Content-Encoding" not in request.headers
             assert {"any": "OK"} == json.loads(request.content)
             return Response(200, headers={}, json=RESPONSE)
 
         for method in ["PUT", "POST"]:
-            httpx_mock.add_callback(check_gzip_disabled, method=method, url=BASE_URL + URL_PATH)
+            httpx2_mock.add_callback(check_gzip_disabled, method=method, url=BASE_URL + URL_PATH)
 
         await api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={}, semaphore=None)
         await api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={}, semaphore=None)
 
-    async def test_request_gzip_enabled(self, httpx_mock: HTTPXMock, api_client_with_token: APIClient) -> None:
+    async def test_request_gzip_enabled(self, httpx2_mock: HTTPXMock, api_client_with_token: APIClient) -> None:
         def check_gzip_enabled(request: Any) -> Response:
             assert "Content-Encoding" in request.headers
             assert {"any": "OK"} == jsgz_load(request.content)
             return Response(200, headers={}, json=RESPONSE)
 
         for method in ["PUT", "POST"]:
-            httpx_mock.add_callback(check_gzip_enabled, method=method, url=BASE_URL + URL_PATH)
+            httpx2_mock.add_callback(check_gzip_enabled, method=method, url=BASE_URL + URL_PATH)
 
         await api_client_with_token._post(URL_PATH, json={"any": "OK"}, headers={}, semaphore=None)
         await api_client_with_token._put(URL_PATH, json={"any": "OK"}, headers={}, semaphore=None)
@@ -223,6 +227,33 @@ class TestBasicRequests:
 
         assert "api-key" not in headers
         assert api_client_with_token._config.credentials.authorization_header()[1] == headers["Authorization"]
+
+    @pytest.mark.parametrize("debug_enabled", [False, True])
+    async def test_request_payload_only_redacted_when_debug_logging_enabled(
+        self,
+        mock_all_requests_ok: HTTPXMock,
+        api_client_with_token: APIClient,
+        caplog: pytest.LogCaptureFixture,
+        debug_enabled: bool,
+    ) -> None:
+        # Redacting is quite heavy as we recurse into the full payload, creating a full copy with redacted fields
+        # in order to log it. Since _log_successful_request runs on every single (successful) request, we have
+        # this test to ensure it -only- runs when needed.
+        payload = {"items": [{"clientSecret": "super-secret"}]}
+        log_level = logging.DEBUG if debug_enabled else logging.INFO
+
+        with mock.patch("cognite.client._basic_api_client.redact", side_effect=redact) as redactor:
+            with caplog.at_level(log_level, logger=API_CLIENT_LOGGER_NAME):
+                await api_client_with_token._post(URL_PATH, json=payload, semaphore=None)
+
+        assert redactor.called is debug_enabled
+
+        payload_records = [rec for rec in caplog.records if hasattr(rec, "payload")]
+        if debug_enabled:
+            assert len(payload_records) == 1
+            assert payload_records[0].payload == {"items": [{"clientSecret": "***"}]}
+        else:
+            assert not payload_records
 
     @pytest.mark.parametrize("payload", [math.nan, math.inf, -math.inf, {"foo": {"bar": {"baz": [[[math.nan]]]}}}])
     async def test__request_raises_more_verbose_exception(self, api_client_with_token: APIClient, payload: Any) -> None:
@@ -350,14 +381,14 @@ class SomeFilter(CogniteFilter):
 
 
 class TestStandardRetrieve:
-    async def test_standard_retrieve_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(method="GET", url=BASE_URL + URL_PATH + "/1", status_code=200, json={"x": 1, "y": 2})
+    async def test_standard_retrieve_ok(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(method="GET", url=BASE_URL + URL_PATH + "/1", status_code=200, json={"x": 1, "y": 2})
         assert SomeResourceWithClient(1, 2) == await api_client_with_token._retrieve(
             cls=SomeResourceWithClient, resource_path=URL_PATH, identifier=Identifier(1)
         )
 
-    async def test_standard_retrieve_not_found(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_retrieve_not_found(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="GET", url=BASE_URL + URL_PATH + "/1", status_code=404, json={"error": {"message": "Not Found."}}
         )
         assert (
@@ -367,8 +398,8 @@ class TestStandardRetrieve:
             is None
         )
 
-    async def test_standard_retrieve_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_retrieve_fail(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="GET", url=BASE_URL + URL_PATH + "/1", status_code=400, json={"error": {"message": "Client Error"}}
         )
         with pytest.raises(CogniteAPIError, match="Client Error") as e:
@@ -379,17 +410,17 @@ class TestStandardRetrieve:
         assert 400 == e.value.code
 
     async def test_cognite_client_is_set(
-        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(method="GET", url=BASE_URL + URL_PATH + "/1", status_code=200, json={"x": 1, "y": 2})
+        httpx2_mock.add_response(method="GET", url=BASE_URL + URL_PATH + "/1", status_code=200, json={"x": 1, "y": 2})
         res = await api_client_with_token._retrieve(
             cls=SomeResourceWithClient, resource_path=URL_PATH, identifier=Identifier(1)
         )
         assert res
         assert async_client is res._cognite_client
 
-    async def test_cognite_client_is_not_set(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(method="GET", url=BASE_URL + URL_PATH + "/1", status_code=200, json={"x": 1, "y": 2})
+    async def test_cognite_client_is_not_set(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(method="GET", url=BASE_URL + URL_PATH + "/1", status_code=200, json={"x": 1, "y": 2})
         res = await api_client_with_token._retrieve(
             cls=SomeResourceNoClient, resource_path=URL_PATH, identifier=Identifier(1)
         )
@@ -400,14 +431,14 @@ class TestStandardRetrieve:
 
 class TestStandardRetrieveMultiple:
     @pytest.fixture
-    def mock_by_ids(self, httpx_mock: HTTPXMock) -> HTTPXMock:
-        httpx_mock.add_response(
+    def mock_by_ids(self, httpx2_mock: HTTPXMock) -> HTTPXMock:
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/byids",
             status_code=200,
             json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
-        return httpx_mock
+        return httpx2_mock
 
     async def test_by_id_wrap_OK(self, api_client_with_token: APIClient, mock_by_ids: HTTPXMock) -> None:
         assert SomeResourceListWithClient(
@@ -479,9 +510,9 @@ class TestStandardRetrieveMultiple:
         assert {"items": [{"id": 1}, {"externalId": "2"}]} == jsgz_load(mock_by_ids.get_requests()[0].content)
 
     async def test_standard_retrieve_multiple_fail(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/byids",
             status_code=400,
@@ -508,8 +539,8 @@ class TestStandardRetrieveMultiple:
         assert isinstance(result, SomeResourceListWithClient)
         assert len(result) == 0
 
-    async def test_single_id_not_found(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_single_id_not_found(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/byids",
             status_code=400,
@@ -524,15 +555,15 @@ class TestStandardRetrieveMultiple:
         assert res is None
 
     async def test_multiple_ids_not_found(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/byids",
             status_code=400,
             json={"error": {"message": "Not Found", "missing": [{"id": 1}]}},
         )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/byids",
             status_code=400,
@@ -574,12 +605,12 @@ class TestStandardRetrieveMultiple:
             res._cognite_client  # type: ignore[attr-defined]
 
     async def test_over_limit_concurrent(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/byids", status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/byids", status_code=200, json={"items": [{"x": 3, "y": 4}]}
         )
 
@@ -593,15 +624,15 @@ class TestStandardRetrieveMultiple:
         unittest.TestCase().assertCountEqual(
             [{"items": [{"id": 1}]}, {"items": [{"id": 2}]}],
             [
-                jsgz_load(httpx_mock.get_requests()[0].content),
-                jsgz_load(httpx_mock.get_requests()[1].content),
+                jsgz_load(httpx2_mock.get_requests()[0].content),
+                jsgz_load(httpx2_mock.get_requests()[1].content),
             ],
         )
 
 
 class TestStandardList:
-    async def test_standard_list_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_list_ok(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="GET",
             url=BASE_URL + URL_PATH + "?limit=1000",
             status_code=200,
@@ -618,9 +649,9 @@ class TestStandardList:
         )
 
     async def test_standard_list_with_filter_get_ok(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=BASE_URL + URL_PATH + "?filter=bla&limit=1000",
             status_code=200,
@@ -638,9 +669,9 @@ class TestStandardList:
         )
 
     async def test_standard_list_with_filter_post_ok(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/list",
             status_code=200,
@@ -654,10 +685,10 @@ class TestStandardList:
             filter={"filter": "bla"},
         )
         assert SomeResourceListWithClient([SomeResourceWithClient(1, 2), SomeResourceWithClient(1)]) == res
-        assert {"filter": {"filter": "bla"}, "limit": 1000} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"filter": {"filter": "bla"}, "limit": 1000} == jsgz_load(httpx2_mock.get_requests()[0].content)
 
-    async def test_standard_list_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_list_fail(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="GET",
             url=BASE_URL + URL_PATH + "?limit=1000",
             status_code=400,
@@ -676,9 +707,9 @@ class TestStandardList:
     NUMBER_OF_ITEMS_FOR_AUTOPAGING = 11500
     ITEMS_TO_GET_WHILE_AUTOPAGING: ClassVar = [{"x": 1, "y": 1} for _ in range(NUMBER_OF_ITEMS_FOR_AUTOPAGING)]
 
-    async def test_list_partitions(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_list_partitions(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
         for _ in range(3):
-            httpx_mock.add_response(
+            httpx2_mock.add_response(
                 method="POST",
                 url=BASE_URL + URL_PATH + "/list",
                 status_code=200,
@@ -696,15 +727,15 @@ class TestStandardList:
         assert 6 == len(res)
         assert isinstance(res, SomeResourceListWithClient)
         assert isinstance(res[0], SomeResourceWithClient)
-        assert 3 == len(httpx_mock.get_requests())
-        assert {"1/3", "2/3", "3/3"} == {jsgz_load(c.content)["partition"] for c in httpx_mock.get_requests()}
-        for request in httpx_mock.get_requests():
+        assert 3 == len(httpx2_mock.get_requests())
+        assert {"1/3", "2/3", "3/3"} == {jsgz_load(c.content)["partition"] for c in httpx2_mock.get_requests()}
+        for request in httpx2_mock.get_requests():
             payload = jsgz_load(request.content)
             assert "x-test" in request.headers
             del payload["partition"]
             assert {"cursor": None, "filter": {}, "limit": 1000} == payload
 
-    async def test_list_partitions_with_failure(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
+    async def test_list_partitions_with_failure(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
         async def request_callback(request: Any) -> Response:
             payload = jsgz_load(request.content)
             partition = int(payload["partition"].split("/")[0])
@@ -715,7 +746,7 @@ class TestStandardList:
                 await asyncio.sleep(0.05)
             return Response(200, headers={}, json={"items": [{"x": 42, "y": 13}]})
 
-        httpx_mock.add_callback(
+        httpx2_mock.add_callback(
             request_callback,
             method="POST",
             url=BASE_URL + URL_PATH + "/list",
@@ -736,10 +767,10 @@ class TestStandardList:
         assert exc.value.skipped
         assert exc.value.successful
         assert 14 == len(exc.value.successful) + len(exc.value.skipped)
-        assert 1 < len(httpx_mock.get_requests())
+        assert 1 < len(httpx2_mock.get_requests())
 
     @pytest.fixture
-    def mock_get_for_autopaging(self, httpx_mock: HTTPXMock) -> None:
+    def mock_get_for_autopaging(self, httpx2_mock: HTTPXMock) -> None:
         def callback(request: Request) -> Response:
             params = {
                 elem.split("=")[0]: elem.split("=")[1] for elem in request.url.query.decode().split("?")[-1].split("&")
@@ -754,7 +785,7 @@ class TestStandardList:
             response = json.dumps({"nextCursor": next_cursor, "items": items})
             return Response(200, headers={}, content=response)
 
-        httpx_mock.add_callback(
+        httpx2_mock.add_callback(
             callback,
             method="GET",
             url=re.compile(re.escape(BASE_URL + URL_PATH) + r"\?limit=\d+(?:$|&cursor=\d+)"),
@@ -762,7 +793,7 @@ class TestStandardList:
         )
 
     @pytest.fixture
-    def mock_get_for_autopaging_2589(self, httpx_mock: HTTPXMock) -> None:
+    def mock_get_for_autopaging_2589(self, httpx2_mock: HTTPXMock) -> None:
         NUM_ITEMS = 2589
         ITEMS_EDGECASE = [{"x": 1, "y": 1} for _ in range(NUM_ITEMS)]
 
@@ -780,7 +811,7 @@ class TestStandardList:
             response = json.dumps({"nextCursor": next_cursor, "items": items})
             return Response(200, headers={}, content=response)
 
-        httpx_mock.add_callback(
+        httpx2_mock.add_callback(
             callback,
             method="GET",
             url=re.compile(re.escape(BASE_URL + URL_PATH) + r"\?limit=\d+(?:$|&cursor=\d+)"),
@@ -954,15 +985,15 @@ class TestStandardList:
         assert 5333 == len(res)
 
     async def test_cognite_client_is_set(
-        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/list",
             status_code=200,
             json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=BASE_URL + URL_PATH + "?limit=1000",
             status_code=200,
@@ -984,14 +1015,14 @@ class TestStandardList:
         )
         assert async_client is res._cognite_client
 
-    async def test_cognite_client_is_not_set(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_cognite_client_is_not_set(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/list",
             status_code=200,
             json={"items": [{"x": 1, "y": 2}, {"x": 1}]},
         )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=BASE_URL + URL_PATH + "?limit=1000",
             status_code=200,
@@ -1010,9 +1041,9 @@ class TestStandardList:
             res2._cognite_client  # type: ignore[attr-defined]
 
     async def test_list_generator_does_not_send_null_cursor(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/list",
             status_code=200,
@@ -1025,13 +1056,13 @@ class TestStandardList:
             resource_path=URL_PATH,
         ):
             pass
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert "cursor" not in body
 
     async def test_list_generator_raw_responses_does_not_send_null_cursor(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/list",
             status_code=200,
@@ -1047,19 +1078,19 @@ class TestStandardList:
             )
         ]
         assert len(responses) == 1
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert "cursor" not in body
 
 
 class TestStandardAggregate:
-    async def test_standard_aggregate_OK(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_aggregate_OK(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/aggregate", status_code=200, json={"items": [{"count": 1}]}
         )
         assert 1 == await api_client_with_token._aggregate_count(resource_path=URL_PATH, filter={"x": 1})
 
-    async def test_standard_aggregate_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_aggregate_fail(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/aggregate",
             status_code=400,
@@ -1072,8 +1103,8 @@ class TestStandardAggregate:
 
 
 class TestStandardCreate:
-    async def test_standard_create_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_create_ok(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]}
         )
         res = await api_client_with_token._create_multiple(
@@ -1082,14 +1113,14 @@ class TestStandardCreate:
             resource_path=URL_PATH,
             items=[SomeResourceWithClient(1, 1), SomeResourceWithClient(1)],
         )
-        assert {"items": [{"x": 1, "y": 1}, {"x": 1}]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"items": [{"x": 1, "y": 1}, {"x": 1}]} == jsgz_load(httpx2_mock.get_requests()[0].content)
         assert SomeResourceWithClient(1, 2) == res[0]
         assert SomeResourceWithClient(1) == res[1]
 
     async def test_standard_create_extra_body_fields(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}, {"x": 1}]}
         )
         await api_client_with_token._create_multiple(
@@ -1099,12 +1130,12 @@ class TestStandardCreate:
             items=[SomeResourceWithClient(1, 1), SomeResourceWithClient(1)],
             extra_body_fields={"foo": "bar"},
         )
-        assert {"items": [{"x": 1, "y": 1}, {"x": 1}], "foo": "bar"} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"items": [{"x": 1, "y": 1}, {"x": 1}], "foo": "bar"} == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     async def test_standard_create_single_item_ok(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
         res = await api_client_with_token._create_multiple(
@@ -1113,13 +1144,13 @@ class TestStandardCreate:
             resource_path=URL_PATH,
             items=SomeResourceWithClient(1, 2),
         )
-        assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(httpx2_mock.get_requests()[0].content)
         assert SomeResourceWithClient(1, 2) == res
 
     async def test_standard_create_single_item_in_list_ok(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
         res = await api_client_with_token._create_multiple(
@@ -1128,17 +1159,17 @@ class TestStandardCreate:
             resource_path=URL_PATH,
             items=[SomeResourceWithClient(1, 2)],
         )
-        assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"items": [{"x": 1, "y": 2}]} == jsgz_load(httpx2_mock.get_requests()[0].content)
         assert SomeResourceListWithClient([SomeResourceWithClient(1, 2)]) == res
 
     async def test_standard_create_fail(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
         def callback(request: Any) -> Response:
             item = jsgz_load(request.content)["items"][0]
             return Response(status_code=int(item["externalId"]), headers={}, json={})
 
-        httpx_mock.add_callback(
+        httpx2_mock.add_callback(
             callback,
             method="POST",
             url=BASE_URL + URL_PATH,
@@ -1163,11 +1194,11 @@ class TestStandardCreate:
         assert [SomeResourceWithClient(1, 1, external_id="200")] == e.value.successful
         assert [SomeResourceWithClient(external_id="500")] == e.value.unknown
 
-    async def test_standard_create_concurrent(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_create_concurrent(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH, status_code=200, json={"items": [{"x": 3, "y": 4}]}
         )
 
@@ -1183,15 +1214,15 @@ class TestStandardCreate:
 
         expected_item_bodies = [{"items": [{"x": 1, "y": 2}]}, {"items": [{"x": 3, "y": 4}]}]
         gotten_item_bodies = [
-            jsgz_load(httpx_mock.get_requests()[0].content),
-            jsgz_load(httpx_mock.get_requests()[1].content),
+            jsgz_load(httpx2_mock.get_requests()[0].content),
+            jsgz_load(httpx2_mock.get_requests()[1].content),
         ]
         unittest.TestCase().assertCountEqual(expected_item_bodies, gotten_item_bodies)
 
     async def test_cognite_client_is_set(
-        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH,
             status_code=200,
@@ -1214,8 +1245,8 @@ class TestStandardCreate:
         )
         assert async_client is res2._cognite_client
 
-    async def test_cognite_client_is_not_set(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_cognite_client_is_not_set(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH,
             status_code=200,
@@ -1242,35 +1273,35 @@ class TestStandardCreate:
 
 
 class TestStandardDelete:
-    async def test_standard_delete_multiple_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
+    async def test_standard_delete_multiple_ok(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
         await api_client_with_token._delete_multiple(
             resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1, 2])
         )
-        assert {"items": [1, 2]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"items": [1, 2]} == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     async def test_standard_delete_multiple_ok__single_id(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
+        httpx2_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
         await api_client_with_token._delete_multiple(
             resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of(1)
         )
-        assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"items": [1]} == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     async def test_standard_delete_multiple_ok__single_id_in_list(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
+        httpx2_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
         await api_client_with_token._delete_multiple(
             resource_path=URL_PATH, wrap_ids=False, identifiers=IdentifierSequence.of([1])
         )
-        assert {"items": [1]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"items": [1]} == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     async def test_standard_delete_multiple_fail_4xx(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/delete",
             status_code=400,
@@ -1285,9 +1316,9 @@ class TestStandardDelete:
         assert e.value.failed == [1, 2]
 
     async def test_standard_delete_multiple_fail_5xx(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/delete",
             status_code=500,
@@ -1303,15 +1334,15 @@ class TestStandardDelete:
         assert e.value.failed == []
 
     async def test_standard_delete_multiple_fail_missing_ids(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/delete",
             status_code=400,
             json={"error": {"message": "Missing ids", "missing": [{"id": 1}]}},
         )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/delete",
             status_code=400,
@@ -1327,10 +1358,10 @@ class TestStandardDelete:
         assert [1, 2, 3] == sorted(e.value.failed)
 
     async def test_over_limit_concurrent(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
-        httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
-        httpx_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
+        httpx2_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
+        httpx2_mock.add_response(method="POST", url=BASE_URL + URL_PATH + "/delete", status_code=200, json={})
 
         set_request_limit(api_client_with_token, 2)
         await api_client_with_token._delete_multiple(
@@ -1339,23 +1370,23 @@ class TestStandardDelete:
         unittest.TestCase().assertCountEqual(
             [{"items": [1, 2]}, {"items": [3, 4]}],
             [
-                jsgz_load(httpx_mock.get_requests()[0].content),
-                jsgz_load(httpx_mock.get_requests()[1].content),
+                jsgz_load(httpx2_mock.get_requests()[0].content),
+                jsgz_load(httpx2_mock.get_requests()[1].content),
             ],
         )
 
 
 class TestStandardUpdate:
     @pytest.fixture
-    def mock_update(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> HTTPXMock:
-        httpx_mock.add_response(
+    def mock_update(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> HTTPXMock:
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/update",
             status_code=200,
             json={"items": [{"id": 1, "x": 1, "y": 100}]},
             is_reusable=True,
         )
-        return httpx_mock
+        return httpx2_mock
 
     async def test_standard_update_with_cognite_resource_OK(
         self, api_client_with_token: APIClient, mock_update: HTTPXMock
@@ -1467,8 +1498,8 @@ class TestStandardUpdate:
             mock_update.get_requests()[0].content
         )
 
-    async def test_standard_update_fail_4xx(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_update_fail_4xx(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/update",
             status_code=400,
@@ -1486,8 +1517,8 @@ class TestStandardUpdate:
         assert e.value.code == 400
         assert e.value.failed == [0, "abc"]
 
-    async def test_standard_update_fail_5xx(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_update_fail_5xx(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/update",
             status_code=500,
@@ -1508,20 +1539,20 @@ class TestStandardUpdate:
 
     @pytest.mark.usefixtures("disable_gzip")  # -> because match_json doesn't work with gzip
     async def test_standard_update_fail_missing_and_5xx(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
         # Note 1: We have two tasks being added to an executor, but that doesn't mean we know the
         # execution order. Depending on whether the 400 or 500 hits the first or second task,
         # the following asserts fail (ordering issue). Thus, we use 'matchers.json_params_matcher'
         # to make sure the responses match the two tasks.
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/update",
             status_code=400,
             json={"error": {"message": "Missing ids", "missing": [{"id": 0}]}},
             match_json={"items": [{"update": {}, "id": 0}]},
         )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/update",
             status_code=500,
@@ -1587,12 +1618,12 @@ class TestStandardUpdate:
             res2._cognite_client  # type: ignore[attr-defined]
 
     async def test_over_limit_concurrent(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock, set_request_limit: Callable
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock, set_request_limit: Callable
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/update", status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/update", status_code=200, json={"items": [{"x": 3, "y": 4}]}
         )
 
@@ -1607,15 +1638,15 @@ class TestStandardUpdate:
         unittest.TestCase().assertCountEqual(
             [{"items": [{"id": 1, "update": {"y": {"set": 2}}}]}, {"items": [{"id": 2, "update": {"y": {"set": 4}}}]}],
             [
-                jsgz_load(httpx_mock.get_requests()[0].content),
-                jsgz_load(httpx_mock.get_requests()[1].content),
+                jsgz_load(httpx2_mock.get_requests()[0].content),
+                jsgz_load(httpx2_mock.get_requests()[1].content),
             ],
         )
 
 
 class TestStandardSearch:
-    async def test_standard_search_ok(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_search_ok(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/search", status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
 
@@ -1628,13 +1659,13 @@ class TestStandardSearch:
         )
         assert SomeResourceListWithClient([SomeResourceWithClient(1, 2)]) == res
         assert {"search": {"name": "bla"}, "limit": 1000, "filter": {"varX": 1, "varY": 1}} == jsgz_load(
-            httpx_mock.get_requests()[0].content
+            httpx2_mock.get_requests()[0].content
         )
 
     async def test_standard_search_dict_filter_ok(
-        self, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/search", status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
 
@@ -1647,11 +1678,11 @@ class TestStandardSearch:
         )
         assert SomeResourceListWithClient([SomeResourceWithClient(1, 2)]) == res
         assert {"search": {"name": "bla"}, "limit": 1000, "filter": {"varX": 1, "varY": 1}} == jsgz_load(
-            httpx_mock.get_requests()[0].content
+            httpx2_mock.get_requests()[0].content
         )
 
-    async def test_standard_search_fail(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_standard_search_fail(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST",
             url=BASE_URL + URL_PATH + "/search",
             status_code=400,
@@ -1666,9 +1697,9 @@ class TestStandardSearch:
         assert 400 == e.value.code
 
     async def test_cognite_client_is_set(
-        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx_mock: HTTPXMock
+        self, async_client: AsyncCogniteClient, api_client_with_token: APIClient, httpx2_mock: HTTPXMock
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/search", status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
         res = await api_client_with_token._search(
@@ -1680,8 +1711,8 @@ class TestStandardSearch:
         )
         assert async_client == res._cognite_client
 
-    async def test_cognite_client_is_not_set(self, api_client_with_token: APIClient, httpx_mock: HTTPXMock) -> None:
-        httpx_mock.add_response(
+    async def test_cognite_client_is_not_set(self, api_client_with_token: APIClient, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(
             method="POST", url=BASE_URL + URL_PATH + "/search", status_code=200, json={"items": [{"x": 1, "y": 2}]}
         )
         res = await api_client_with_token._search(
@@ -1925,14 +1956,6 @@ class TestRetryableEndpoints:
 
 
 class TestHelpers:
-    @pytest.mark.parametrize("header_type", [Headers, dict])
-    async def test_sanitize_headers(self, header_type: Any) -> None:
-        before = header_type({"Authorization": "bla", "key": "bla"})
-        after = header_type({"Authorization": "***", "key": "bla"})
-
-        assert before != after
-        assert after == APIClient._sanitize_headers(before)
-
     @pytest.mark.parametrize(
         "resource, update_obj, mode, expected_update_object",
         [
@@ -2018,12 +2041,12 @@ class TestConnectionPooling:
         )
 
 
-async def test_worker_in_backoff_loop_gets_new_token(httpx_mock: HTTPXMock) -> None:
+async def test_worker_in_backoff_loop_gets_new_token(httpx2_mock: HTTPXMock) -> None:
     # Right before sending a request, we verify that our token is not about to expire.
     url = "https://foo.cognitedata.com/api/v1/projects/c/assets/byids"
-    httpx_mock.add_response(method="POST", url=url, status_code=429, json={"error": "Backoff plz"})
-    httpx_mock.add_response(method="POST", url=url, status_code=429, json={"error": "Backoff plz"})
-    httpx_mock.add_response(
+    httpx2_mock.add_response(method="POST", url=url, status_code=429, json={"error": "Backoff plz"})
+    httpx2_mock.add_response(method="POST", url=url, status_code=429, json={"error": "Backoff plz"})
+    httpx2_mock.add_response(
         method="POST",
         url=url,
         status_code=200,
@@ -2042,7 +2065,7 @@ async def test_worker_in_backoff_loop_gets_new_token(httpx_mock: HTTPXMock) -> N
 
     assert get_or_raise(client.assets.retrieve(id=1)).id == 123
     assert call_count == 4
-    requests = httpx_mock.get_requests()
+    requests = httpx2_mock.get_requests()
     # First request should be 'valid-token-2' (not -1) because the first check-in with the Credentials class on
     # "get or maybe refresh token" happens in BasicAsyncAPIClient._configure_headers.
     assert requests[0].headers["Authorization"] == "Bearer valid-token-2"

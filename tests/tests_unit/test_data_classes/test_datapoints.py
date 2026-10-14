@@ -10,8 +10,8 @@ import pytest
 from cognite.client.data_classes import Datapoint, DatapointsArray, StateDatapointsInsert, StateDatapointWrite
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
-from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
-from tests.utils import PANDAS_TS_UNIT
+from cognite.client.data_classes.datapoints import Datapoints, DatapointsArrayList, DatapointsList
+from tests.utils import PANDAS_STR_DTYPE, PANDAS_TS_UNIT
 
 
 class TestDatapoint:
@@ -63,6 +63,64 @@ class TestDatapoint:
         assert pd.Timestamp(expected) == df1.index[0] == df2.index[0]
 
 
+class TestStateDatapoint:
+    @pytest.fixture
+    def state_dps(self) -> Datapoints:
+        return Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            timestamp=[1000, 2000, 3000],
+            # For bad datapoints, even numeric can be missing (None); 0 is a valid state, not missing:
+            numeric_states=[10, None, 0],  # type: ignore [list-item]
+            string_states=["on", None, None],
+        )
+
+    def test_getitem(self, state_dps: Datapoints) -> None:
+        dp = state_dps[0]
+        assert isinstance(dp, Datapoint)
+        assert dp.numeric_state == 10
+        assert dp.string_state == "on"
+
+        dp_missing = state_dps[1]
+        assert isinstance(dp_missing, Datapoint)
+        assert dp_missing.numeric_state is None
+        assert dp_missing.string_state is None
+
+    def test_getitem_slice(self, state_dps: Datapoints) -> None:
+        sliced = state_dps[1:3]
+        assert isinstance(sliced, Datapoints)
+        assert sliced.numeric_states == [None, 0]
+        assert sliced.string_states == [None, None]
+
+    def test_iteration_yields_correct_state_values(self, state_dps: Datapoints) -> None:
+        for dp in state_dps:
+            assert isinstance(dp, Datapoint)
+        assert [dp.numeric_state for dp in state_dps] == [10, None, 0]
+        assert [dp.string_state for dp in state_dps] == ["on", None, None]
+
+    def test_iteration_yields_correct_state_values_no_states(self) -> None:
+        non_state_dps = Datapoints(
+            id=1,
+            is_string=False,
+            is_step=True,
+            type="numeric",
+            timestamp=[1000, 2000, 3000],
+            value=[1.0, 2.0, 3.0],
+        )
+        # Note that a single Datapoint object (what we get while iterating) can't distinguish between
+        # None being a missing, but real value and no value, e.g. for something that is not a state dp:
+        assert [dp.numeric_state for dp in non_state_dps] == [None, None, None]
+        assert [dp.string_state for dp in non_state_dps] == [None, None, None]
+
+    def test_dump_uses_singular_state_keys(self, state_dps: Datapoints) -> None:
+        # singular meaning 'numericState' not 'numericStates' etc.
+        dumped = state_dps.dump()["datapoints"]
+        assert [dp.get("numericState") for dp in dumped] == [10, None, 0]
+        assert [dp.get("stringState") for dp in dumped] == ["on", None, None]
+
+
 @pytest.mark.dsl
 class TestDatapointsArray:
     def test_dump_converts_missing_values_to_none(self) -> None:
@@ -82,6 +140,67 @@ class TestDatapointsArray:
         assert dps1 != dps2
         assert math.isnan(dps1["datapoints"][1]["value"])
         assert dps2["datapoints"][1]["value"] is None
+
+
+@pytest.mark.dsl
+class TestStateDatapointsArray:
+    @pytest.fixture
+    def bad_state_arr(self) -> DatapointsArray:
+        import numpy as np
+
+        return DatapointsArray(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            timestamp=np.array([1000, 2000, 3000], dtype="datetime64[ns]"),
+            # When 'ignore_bad_datapoints=False' upcasts to float64, using NaN for missing:
+            numeric_states=np.array([10, np.nan, 0], dtype=np.float64),
+            string_states=np.array(["on", None, None], dtype=object),
+        )
+
+    def test_getitem(self, bad_state_arr: DatapointsArray) -> None:
+        dp = bad_state_arr[0]
+        assert isinstance(dp, Datapoint)
+
+        # The numeric values (float64) should be converted to int:
+        assert isinstance(dp.numeric_state, int)
+        assert dp.numeric_state == 10
+        assert dp.string_state == "on"
+
+        dp_missing = bad_state_arr[1]
+        # NaN should be converted to None:
+        assert dp_missing.numeric_state is None
+        assert dp_missing.string_state is None
+
+    def test_slice(self, bad_state_arr: DatapointsArray) -> None:
+        import numpy as np
+
+        sliced = bad_state_arr[1:3]
+        assert isinstance(sliced, DatapointsArray)
+
+        assert sliced.numeric_states is not None
+        assert math.isnan(sliced.numeric_states[0])
+        assert sliced.numeric_states[1] == 0
+        np.testing.assert_array_equal(sliced.string_states, np.array([None, None], dtype=object))
+
+    @pytest.mark.parametrize(
+        "keys, use_camel_case",
+        [
+            (("numericState", "stringState"), True),
+            (("numeric_state", "string_state"), False),
+        ],
+    )
+    def test_dump(
+        self,
+        bad_state_arr: DatapointsArray,
+        keys: tuple[str, str],
+        use_camel_case: bool,
+    ) -> None:
+        num_key, str_key = keys
+        dumped = bad_state_arr.dump(camel_case=use_camel_case)["datapoints"]
+        assert [dp[num_key] for dp in dumped] == [10.0, None, 0.0]
+        assert [dp[str_key] for dp in dumped] == ["on", None, None]
 
 
 @pytest.mark.dsl
@@ -118,6 +237,152 @@ class TestToPandas:
         )
         exp_df.columns = pd.Index([123, "foo", NodeId(space="s", external_id="x")], name="identifier")
         pd.testing.assert_frame_equal(df, exp_df)
+
+
+@pytest.mark.dsl
+class TestStateDatapointsToPandas:
+    @pytest.fixture
+    def node_id(self) -> NodeId:
+        return NodeId("ss", "xx")
+
+    @pytest.fixture
+    def state_dps(self, node_id: NodeId) -> Datapoints:
+        return Datapoints(
+            id=123,
+            instance_id=node_id,
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=[1000, 2000, 3000, 4000],
+            # For bad datapoints, even numeric can be missing (None):
+            numeric_states=[0, 1, 0, None],  # type: ignore [list-item]
+            string_states=["off", "on", None, None],
+        )
+
+    def test_default_includes_both_state_columns(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import pandas as pd
+
+        df = state_dps.to_pandas()
+
+        assert list(df.columns) == [(node_id, "numeric"), (node_id, "string")]
+        assert df.columns.names == ["identifier", "state"]
+
+        numeric_values = df[node_id, "numeric"].tolist()
+        assert numeric_values[:-1] == [0, 1, 0]
+        assert numeric_values[3] is pd.NA
+        assert df[node_id, "numeric"].dtype == "Int32"
+
+        # Missing string states are represented as None on pandas v2 (object dtype) and as
+        # NaN on pandas v3 (its new native 'str' dtype), see PANDAS_STR_DTYPE:
+        string_values = df[node_id, "string"].tolist()
+        assert string_values[:2] == ["off", "on"]
+        assert all(pd.isna(v) for v in string_values[2:])
+        assert df[node_id, "string"].dtype == PANDAS_STR_DTYPE
+
+    def test_exclude_numeric_states(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import pandas as pd
+
+        df = state_dps.to_pandas(include_numeric_states=False)
+
+        assert list(df.columns) == [(node_id, "string")]
+        string_values = df[node_id, "string"].tolist()
+        assert string_values[:2] == ["off", "on"]
+        assert all(pd.isna(v) for v in string_values[2:])
+
+    def test_exclude_string_states(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import pandas as pd
+
+        df = state_dps.to_pandas(include_string_states=False)
+
+        assert list(df.columns) == [(node_id, "numeric")]
+        numeric_values = df[node_id, "numeric"].tolist()
+        assert numeric_values[:3] == [0, 1, 0]
+        assert numeric_values[3] is pd.NA
+
+    def test_exclude_both_states_without_status_gives_empty_dataframe(
+        self, state_dps: Datapoints, node_id: NodeId
+    ) -> None:
+        df = state_dps.to_pandas(include_numeric_states=False, include_string_states=False, include_status=False)
+
+        assert df.shape == (4, 0)
+
+    def test_status_columns_included_alongside_state_columns(self) -> None:
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            timestamp=[1000, 2000],
+            numeric_states=[0, 1],
+            string_states=["off", "on"],
+            status_code=[0, 2147483648],
+            status_symbol=["Good", "Bad"],
+        )
+        df = dps.to_pandas()
+
+        assert set(df.columns) == {
+            (123, "numeric", ""),
+            (123, "string", ""),
+            (123, "", "code"),
+            (123, "", "symbol"),
+        }
+        assert df[123, "", "code"].tolist() == [0, 2147483648]
+        assert df[123, "", "symbol"].tolist() == ["Good", "Bad"]
+
+    def test_datapoints_array_with_state_type_raises(self) -> None:
+        import numpy as np
+
+        arr = DatapointsArray(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            timestamp=np.array([1000], dtype="datetime64[ns]"),
+        )
+        arr_lst = DatapointsArrayList([arr])
+
+        for dps in [arr, arr_lst]:
+            with pytest.raises(NotImplementedError, match="DatapointsArray are not supported"):
+                dps.to_pandas()  # type: ignore [attr-defined]
+
+    def test_mixed_state_and_numeric_dps_list_to_pandas(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        numeric_dps = Datapoints(
+            id=456,
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            timestamp=[1000, 2000, 3000, 4000],
+            value=[1.5, 2.5, 3.5, 4.5],
+        )
+        df = DatapointsList([state_dps, numeric_dps]).to_pandas()
+
+        assert set(df.columns) == {(node_id, "numeric"), (node_id, "string"), (456, "")}
+        assert df[(456, "")].tolist() == [1.5, 2.5, 3.5, 4.5]
+
+    def test_datapoints_list_to_pandas(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import numpy as np
+        import pandas as pd
+
+        other_state_dps = Datapoints(
+            id=456,
+            is_string=False,
+            is_step=True,
+            type="state",
+            # Ensure some timestamps align and others don't, to test the outer join behavior:
+            timestamp=[1000, 2000, 3500, 5500],
+            numeric_states=[10, 11, 10, 11],
+            string_states=["idle", "running", "idle", "running"],
+        )
+        df = DatapointsList([state_dps, other_state_dps]).to_pandas()
+
+        assert set(df.columns) == {(node_id, "numeric"), (node_id, "string"), (456, "numeric"), (456, "string")}
+        assert df[456, "numeric"].tolist() == [10, 11, pd.NA, 10, pd.NA, 11]
+        np.testing.assert_array_equal(  # easy way to make nans compare equal
+            df[456, "string"].tolist(),
+            ["idle", "running", math.nan, "idle", math.nan, "running"],
+        )
+        assert df[node_id, "numeric"].dtype == "Int32"
+        assert df[456, "numeric"].dtype == "Int32"
 
 
 class TestStateDatapointWrite:
