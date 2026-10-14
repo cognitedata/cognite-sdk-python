@@ -344,7 +344,9 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
         integrations_tasks = create_autospec(IntegrationTasksAPI, instance=True, spec_set=True)
         integrations_errors = create_autospec(IntegrationErrorsAPI, instance=True, spec_set=True)
-        self.integrations = create_autospec(IntegrationsAPI, instance=True, errors=integrations_errors)
+        self.integrations = create_autospec(
+            IntegrationsAPI, instance=True, tasks=integrations_tasks, errors=integrations_errors
+        )
         flip_spec_set_on(self.integrations)
 
         self.labels = create_autospec(LabelsAPI, instance=True, spec_set=True)
@@ -560,7 +562,9 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
         integrations_tasks = create_autospec(SyncIntegrationTasksAPI, instance=True, spec_set=True)
         integrations_errors = create_autospec(SyncIntegrationErrorsAPI, instance=True, spec_set=True)
-        self.integrations = create_autospec(SyncIntegrationsAPI, instance=True, errors=integrations_errors)
+        self.integrations = create_autospec(
+            SyncIntegrationsAPI, instance=True, tasks=integrations_tasks, errors=integrations_errors
+        )
         flip_spec_set_on(self.integrations)
 
         self.labels = create_autospec(SyncLabelsAPI, instance=True, spec_set=True)
