@@ -727,6 +727,12 @@ class ExternalDataSourceRotatedKeys(CogniteResource):
         )
 
 
+class ExternalDataSourceRotatedKeysList(CogniteResourceList[ExternalDataSourceRotatedKeys], ExternalIDTransformerMixin):
+    """A list of ExternalDataSourceRotatedKeys objects."""
+
+    _RESOURCE = ExternalDataSourceRotatedKeys
+
+
 _EXTERNAL_DATA_SOURCE_WRITE_CLASS_BY_FORMAT: dict[str, type[ExternalDataSourceWrite]] = {
     subclass._format: subclass  # type: ignore[type-abstract]
     for subclass in ExternalDataSourceWrite.__subclasses__()
