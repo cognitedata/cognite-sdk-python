@@ -9,11 +9,19 @@ from pytest_httpx2 import HTTPXMock
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSourceList,
+    ExternalDataSourceRotatedKeys,
+    ExternalDataSourceRotatedKeysList,
+    ExternalDataSourceRotateKeys,
     OneLakeCredentialsWrite,
     OneLakeExternalDataSource,
     OneLakeExternalDataSourceWrite,
     OneLakeLocationDescription,
     OneLakeSettingsWrite,
+    SnowflakeCredentialsWrite,
+    SnowflakeExternalDataSource,
+    SnowflakeExternalDataSourceWrite,
+    SnowflakeLocationDescription,
+    SnowflakeSettingsWrite,
 )
 from cognite.client.exceptions import CogniteDuplicatedError
 from tests.utils import get_url, jsgz_load
@@ -39,6 +47,39 @@ def onelake_read_item() -> dict[str, Any]:
         "createdTime": 1,
         "lastUpdatedTime": 2,
     }
+
+
+@pytest.fixture
+def snowflake_read_item() -> dict[str, Any]:
+    return {
+        "externalId": "snowflake-analytics-prod",
+        "format": "snowflake",
+        "settings": {
+            "credentials": {
+                "accountIdentifier": "org-account",
+                "userName": "COGNITE_SVC",
+                "roleName": "COGNITE_READER",
+                "publicKey": "-----BEGIN PUBLIC KEY-----abc",
+            },
+            "locationDescription": {"warehouseName": "COMPUTE_WH"},
+        },
+        "expiryTime": 1700000000000,
+        "createdTime": 1,
+        "lastUpdatedTime": 2,
+    }
+
+
+def make_snowflake_write_source(external_id: str) -> SnowflakeExternalDataSourceWrite:
+    return SnowflakeExternalDataSourceWrite(
+        external_id=external_id,
+        expiry_time=1700000000000,
+        settings=SnowflakeSettingsWrite(
+            credentials=SnowflakeCredentialsWrite(
+                account_identifier="org-account", user_name="COGNITE_SVC", role_name="COGNITE_READER"
+            ),
+            location_description=SnowflakeLocationDescription(warehouse_name="COMPUTE_WH"),
+        ),
+    )
 
 
 def make_write_source(external_id: str) -> OneLakeExternalDataSourceWrite:
@@ -236,3 +277,143 @@ class TestTransformationExternalDataSourcesAPI:
 
         assert usability.usable_version is None
         assert usability.is_usable is False
+
+    def test_list_sends_format_filter(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        external_data_url: str,
+        snowflake_read_item: dict[str, Any],
+    ) -> None:
+        httpx2_mock.add_response(
+            method="GET",
+            url=external_data_url + "?format=snowflake&limit=5",
+            status_code=200,
+            json={"items": [snowflake_read_item]},
+        )
+
+        result = cognite_client.transformations.external_data_sources.list(limit=5, format="snowflake")
+
+        assert isinstance(result[0], SnowflakeExternalDataSource)
+
+    def test_call_sends_format_filter(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        external_data_url: str,
+        snowflake_read_item: dict[str, Any],
+    ) -> None:
+        httpx2_mock.add_response(
+            method="GET",
+            url=re.compile(re.escape(external_data_url) + r"\?.*format=snowflake"),
+            status_code=200,
+            json={"items": [snowflake_read_item]},
+        )
+
+        data_sources = list(cognite_client.transformations.external_data_sources(format="snowflake"))
+
+        assert len(data_sources) == 1
+
+    def test_retrieve(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        external_data_url: str,
+        snowflake_read_item: dict[str, Any],
+    ) -> None:
+        httpx2_mock.add_response(
+            method="GET",
+            url=external_data_url + "/byid?externalId=snowflake-analytics-prod",
+            status_code=200,
+            json=snowflake_read_item,
+        )
+
+        result = cognite_client.transformations.external_data_sources.retrieve("snowflake-analytics-prod")
+
+        assert isinstance(result, SnowflakeExternalDataSource)
+        assert result.settings.credentials.public_key == "-----BEGIN PUBLIC KEY-----abc"
+
+    def test_retrieve_missing_returns_none(
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, external_data_url: str
+    ) -> None:
+        httpx2_mock.add_response(
+            method="GET",
+            url=external_data_url + "/byid?externalId=nope",
+            status_code=400,
+            json={"error": {"code": 400, "message": "Not found", "missing": [{"externalId": "nope"}]}},
+        )
+
+        assert cognite_client.transformations.external_data_sources.retrieve("nope") is None
+
+    def test_create_snowflake_sends_no_keys(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        external_data_url: str,
+        snowflake_read_item: dict[str, Any],
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST", url=external_data_url, status_code=201, json={"items": [snowflake_read_item]}
+        )
+
+        result = cognite_client.transformations.external_data_sources.create(
+            make_snowflake_write_source("snowflake-analytics-prod")
+        )
+
+        assert isinstance(result, SnowflakeExternalDataSource)
+        item = jsgz_load(httpx2_mock.get_requests()[-1].content)["items"][0]
+        assert item["format"] == "snowflake"
+        assert item["expiryTime"] == 1700000000000
+        assert "publicKey" not in item["settings"]["credentials"]
+
+    def test_rotate_keys_single(
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, external_data_url: str
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST",
+            url=external_data_url + "/rotatekeys",
+            status_code=200,
+            json={"items": [{"externalId": "src", "publicKey": "pk", "expiryTime": 123}]},
+        )
+
+        result = cognite_client.transformations.external_data_sources.rotate_keys(
+            ExternalDataSourceRotateKeys("src", 123)
+        )
+
+        assert isinstance(result, ExternalDataSourceRotatedKeys)
+        assert result.public_key == "pk"
+        assert jsgz_load(httpx2_mock.get_requests()[-1].content) == {
+            "items": [{"externalId": "src", "expiryTime": 123}]
+        }
+
+    def test_rotate_keys_multiple(
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, external_data_url: str
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST",
+            url=external_data_url + "/rotatekeys",
+            status_code=200,
+            json={
+                "items": [
+                    {"externalId": "a", "publicKey": "pk-a", "expiryTime": 1},
+                    {"externalId": "b", "publicKey": "pk-b", "expiryTime": 2},
+                ]
+            },
+        )
+
+        result = cognite_client.transformations.external_data_sources.rotate_keys(
+            [ExternalDataSourceRotateKeys("a", 1), ExternalDataSourceRotateKeys("b", 2)]
+        )
+
+        assert isinstance(result, ExternalDataSourceRotatedKeysList)
+        assert result.as_external_ids() == ["a", "b"]
+
+    def test_rotate_keys_over_limit_raises_without_request(
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
+        too_many = [ExternalDataSourceRotateKeys(f"src-{no}", 1) for no in range(11)]
+
+        with pytest.raises(ValueError, match="At most 10"):
+            cognite_client.transformations.external_data_sources.rotate_keys(too_many)
+
+        assert httpx2_mock.get_requests() == []
