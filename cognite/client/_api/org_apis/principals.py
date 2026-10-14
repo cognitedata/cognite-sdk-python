@@ -28,6 +28,7 @@ class PrincipalsAPI(OrgAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.principals.me()
         """
+        await self._get_organization()  # needed to pick the right auth URL
         # the /me endpoint is not using the /orgs/{org} base path, so we have to construct the URL manually
         path = f"/api/{self._api_version}{self._RESOURCE_PATH}/me"
         full_url = append_url_path(self._auth_url, path)
@@ -103,6 +104,7 @@ class PrincipalsAPI(OrgAPIClient):
                 >>> res = client.iam.principals.retrieve(external_id="my_external_id")
         """
         identifier = PrincipalIdentifierSequence.load(ids=id, external_ids=external_id)
+        await self._get_organization()
         return await self._retrieve_multiple(
             list_cls=PrincipalList,
             resource_cls=Principal,  # type: ignore[type-abstract]
@@ -134,6 +136,7 @@ class PrincipalsAPI(OrgAPIClient):
             case Sequence():
                 other_params = {"types": [t.upper() for t in types]}
 
+        await self._get_organization()
         return await self._list(
             method="GET",
             list_cls=PrincipalList,
