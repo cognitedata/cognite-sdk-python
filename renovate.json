@@ -7,7 +7,7 @@
   "packageRules": [
     {
       "enabled": false,
-      "matchManagers": ["uv"]
+      "matchManagers": ["pep621"]
     },
     {
       "enabled": false,
