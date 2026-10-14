@@ -110,6 +110,7 @@ class TestSyncResult:
                     "level": "warning",
                     "description": "Slow response",
                     "startTime": 100,
+                    "type": "general",
                 }
             ],
         }
