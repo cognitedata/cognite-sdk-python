@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.integrations.tasks import SyncResult, TaskHistoryList
@@ -20,12 +20,12 @@ TASK_HISTORY_RESPONSE = {
 
 class TestIntegrationTasks:
     def test_list_history(
-        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
         url_pattern = re.compile(
             re.escape(get_url(async_client.integrations.tasks, "/integrations/history")) + r"(?:\?.*)?$"
         )
-        httpx_mock.add_response(method="GET", url=url_pattern, json={"items": [TASK_HISTORY_RESPONSE]})
+        httpx2_mock.add_response(method="GET", url=url_pattern, json={"items": [TASK_HISTORY_RESPONSE]})
 
         res = cognite_client.integrations.tasks.list_history(external_id="my-integration", task_name="poll")
 
@@ -33,7 +33,7 @@ class TestIntegrationTasks:
         assert len(res) == 1
         assert res[0].task_name == "poll"
 
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         assert "externalId=my-integration" in str(request.url)
         assert "taskName=poll" in str(request.url)
 
@@ -41,11 +41,13 @@ class TestIntegrationTasks:
         with pytest.raises(ValueError, match="'task_name' requires 'external_id'"):
             cognite_client.integrations.tasks.list_history(task_name="poll")
 
-    def test_sync(self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx_mock: HTTPXMock) -> None:
+    def test_sync(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
         url_pattern = re.compile(
             re.escape(get_url(async_client.integrations.tasks, "/integrations/sync")) + r"(?:\?.*)?$"
         )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=url_pattern,
             json={"nextCursor": "abc", "moreData": False, "history": [TASK_HISTORY_RESPONSE]},
