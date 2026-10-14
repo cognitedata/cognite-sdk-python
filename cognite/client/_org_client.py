@@ -12,7 +12,7 @@ class OrgAPIClient(APIClient, ABC):
     _DEFAULT_AUTH_URL = "https://auth.cognite.com"
     _AUTH_URLS_BY_ORG_PREFIX = (
         ("cog-dev-", "https://auth-dev.cognitedata-development.cognite.ai"),
-        ("cog-staging-", "https://auth-dev.gc-bru-001.cogheim.net"),
+        ("cog-staging-", "https://auth-staging.gc-bru-001.cogheim.net"),
     )
     _resolved_organization: str | None = None
 

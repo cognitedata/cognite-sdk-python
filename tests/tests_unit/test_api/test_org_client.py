@@ -11,7 +11,7 @@ from cognite.client.credentials import Token
     "project, organization, expected_auth_url",
     [
         ("dev-project", "cog-dev-foo", "https://auth-dev.cognitedata-development.cognite.ai"),
-        ("staging-project", "cog-staging-foo", "https://auth-dev.gc-bru-001.cogheim.net"),
+        ("staging-project", "cog-staging-foo", "https://auth-staging.gc-bru-001.cogheim.net"),
         ("prod-project", "foo", "https://auth.cognite.com"),
     ],
 )
