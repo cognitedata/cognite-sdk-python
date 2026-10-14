@@ -159,7 +159,7 @@ class UnknownContent(MessageContent):
 
 # Build the mapping AFTER concrete classes are defined
 _MESSAGE_CONTENT_CLS_BY_TYPE: dict[str, type[MessageContent]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
+    subclass._type: subclass
     for subclass in MessageContent.__subclasses__()
     if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
 }
@@ -247,7 +247,7 @@ class UnknownAction(Action):
 
 # Build the mapping AFTER concrete classes are defined
 _ACTION_CLS_BY_TYPE: dict[str, type[Action]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
+    subclass._type: subclass
     for subclass in Action.__subclasses__()
     if subclass is not UnknownAction and hasattr(subclass, "_type")
 }
@@ -398,7 +398,7 @@ class UnknownActionCall(ActionCall):
 
 # Build the mapping AFTER concrete classes are defined
 _ACTION_CALL_CLS_BY_TYPE: dict[str, type[ActionCall]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
+    subclass._type: subclass
     for subclass in ActionCall.__subclasses__()
     if subclass is not UnknownActionCall and hasattr(subclass, "_type")
 }
