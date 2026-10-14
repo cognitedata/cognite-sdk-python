@@ -375,7 +375,8 @@ class UserSessionCall(ActionCall):
 
     Some tools must run on behalf of the user, using the user's own credentials. When an agent wants to run one
     of these tools, this action is included in the response instead of the final result. Respond with a
-    :class:`UserSessionResult` containing a session nonce, e.g. from ``client.iam.sessions.create().nonce``.
+    :class:`UserSessionResult` containing a session nonce. A short-lived one-shot session is recommended, e.g.
+    ``client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE").nonce``.
 
     Args:
         action_id (str): The unique identifier for this action call.
@@ -594,7 +595,8 @@ class UserSessionResult(ActionResult):
     """Result of a user session request, sent back to the agent.
 
     Use this to respond to a :class:`UserSessionCall` received in the agent response. The nonce lets the agent
-    run the tool on behalf of the user, and can be created with ``client.iam.sessions.create().nonce``.
+    run the tool on behalf of the user. A short-lived one-shot session is recommended, e.g.
+    ``client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE").nonce``.
     Always include the ``cursor`` from the user session response when sending this result.
 
     Args:

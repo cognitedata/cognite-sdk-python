@@ -433,8 +433,10 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...     for action in response.action_calls:
                 ...         if isinstance(action, UserSessionCall):
                 ...             print(f"Tool: {action.tool_name}, arguments: {action.tool_arguments}")
-                ...             # Uses token exchange with a user token, or client credentials with a service account
-                ...             session = client.iam.sessions.create()
+                ...             # A one-shot session is short-lived and is not refreshed, so nothing lingers after use
+                ...             session = client.iam.sessions.create(
+                ...                 session_type="ONESHOT_TOKEN_EXCHANGE"
+                ...             )
                 ...             session_results.append(
                 ...                 UserSessionResult(action_id=action.action_id, nonce=session.nonce)
                 ...             )
