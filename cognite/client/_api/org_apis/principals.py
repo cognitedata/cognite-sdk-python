@@ -30,7 +30,7 @@ class PrincipalsAPI(OrgAPIClient):
         """
         # the /me endpoint is not using the /orgs/{org} base path, so we have to construct the URL manually
         path = f"/api/{self._api_version}{self._RESOURCE_PATH}/me"
-        full_url = append_url_path(self._AUTH_URL, path)
+        full_url = append_url_path(self._auth_url, path)
         response = await self._cognite_client.get(url=full_url)
         return Principal._load(response.json())
 

@@ -10,7 +10,20 @@ from cognite.client.utils._auxiliary import append_url_path
 
 
 class OrgAPIClient(APIClient, ABC):
-    _AUTH_URL = "https://auth.cognite.com"
+    # CogIdP base URL depends on the organization prefix; anything not listed uses the default:
+    _DEFAULT_AUTH_URL = "https://auth.cognite.com"
+    _AUTH_URLS_BY_ORG_PREFIX = (
+        ("cog-dev-", "https://auth-dev.cognitedata-development.cognite.ai"),
+        ("cog-staging-", "https://auth-dev.gc-bru-001.cogheim.net"),
+    )
+
+    @cached_property
+    def _auth_url(self) -> str:
+        organization = self._organization
+        for prefix, url in self._AUTH_URLS_BY_ORG_PREFIX:
+            if organization.startswith(prefix):
+                return url
+        return self._DEFAULT_AUTH_URL
 
     # TODO: Code smell: _base_url_with_base_path calling _organization calling run_sync in an async-first SDK...
     @property
@@ -19,7 +32,7 @@ class OrgAPIClient(APIClient, ABC):
         # base_url like the rest of the SDK.
         assert self._api_version, "API version must be set for organization endpoints"
         base_path = f"/api/{self._api_version}/orgs/{self._organization}"
-        return append_url_path(self._AUTH_URL, base_path)
+        return append_url_path(self._auth_url, base_path)
 
     @cached_property
     def _organization(self) -> str:
