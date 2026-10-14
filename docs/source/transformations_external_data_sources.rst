@@ -56,6 +56,7 @@ Operation                                 Action
 ``retrieve()``                            ``READ``
 ``create()``                              ``WRITE``
 ``delete()``                              ``WRITE``
+``rotate_keys()``                         ``WRITE``
 ``verify_usability()``                    ``USE``
 ========================================= ==========
 
@@ -249,6 +250,13 @@ Filter on format (``one_lake`` or ``snowflake``), and retrieve data sources by e
     data_sources = client.transformations.external_data_sources.retrieve(
         ["snowflake-analytics-prod", "fabric-lakehouse-prod"], ignore_unknown_ids=True
     )
+
+Filter on format, and retrieve a single data source by external ID (``None`` if it does not exist):
+
+.. code-block:: python
+
+    snowflake_sources = client.transformations.external_data_sources.list(format="snowflake")
+    data_source = client.transformations.external_data_sources.retrieve("snowflake-analytics-prod")
 
 To iterate without holding every data source in memory, call the API directly, optionally in chunks:
 

@@ -9,6 +9,9 @@ from pytest_httpx2 import HTTPXMock
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSourceList,
+    ExternalDataSourceRotatedKeys,
+    ExternalDataSourceRotatedKeysList,
+    ExternalDataSourceRotateKeys,
     OneLakeCredentialsWrite,
     OneLakeExternalDataSource,
     OneLakeExternalDataSourceWrite,

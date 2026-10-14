@@ -9,9 +9,13 @@ from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSource,
     ExternalDataSourceFormat,
     ExternalDataSourceList,
+    ExternalDataSourceRotatedKeys,
+    ExternalDataSourceRotatedKeysList,
+    ExternalDataSourceRotateKeys,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
 )
+from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -23,6 +27,7 @@ if TYPE_CHECKING:
 
 class TransformationExternalDataSourcesAPI(APIClient):
     _RESOURCE_PATH = "/transformations/externaldata"
+    _ROTATE_KEYS_LIMIT = 10
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -166,6 +171,37 @@ class TransformationExternalDataSourcesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
+    async def retrieve(self, external_id: str) -> ExternalDataSource | None:
+        """`Retrieve an external data source by external ID <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/getExternalDataSource>`_.
+
+        Args:
+            external_id (str): External ID of the data source.
+
+        Returns:
+            ExternalDataSource | None: The requested data source, or None if it does not exist.
+
+        Examples:
+
+            Retrieve a data source:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> data_source = client.transformations.external_data_sources.retrieve(
+                ...     "fabric-lakehouse-prod"
+                ... )
+        """
+        self._warning.warn()
+        try:
+            res = await self._get(
+                url_path=self._RESOURCE_PATH + "/byid",
+                params={"externalId": external_id},
+                semaphore=self._get_semaphore("read"),
+            )
+        except CogniteNotFoundError:
+            return None
+        return ExternalDataSource._load(res.json())._maybe_set_client_ref(self._cognite_client)
+
     @overload
     async def create(self, data_source: ExternalDataSourceWrite) -> ExternalDataSource: ...
 
@@ -285,6 +321,65 @@ class TransformationExternalDataSourcesAPI(APIClient):
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
         )
+
+    @overload
+    async def rotate_keys(self, rotation: ExternalDataSourceRotateKeys) -> ExternalDataSourceRotatedKeys: ...
+
+    @overload
+    async def rotate_keys(
+        self, rotation: Sequence[ExternalDataSourceRotateKeys]
+    ) -> ExternalDataSourceRotatedKeysList: ...
+
+    async def rotate_keys(
+        self, rotation: ExternalDataSourceRotateKeys | Sequence[ExternalDataSourceRotateKeys]
+    ) -> ExternalDataSourceRotatedKeys | ExternalDataSourceRotatedKeysList:
+        """`Rotate the keys of Snowflake external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/rotateExternalDataSourceKeys>`_.
+
+        The server generates a new key pair for each data source and returns the new public key, which you must
+        register with the Snowflake user. Only Snowflake data sources support this. The operation is atomic: if any
+        item fails, no keys are rotated. At most 10 data sources can be rotated per call, with unique external IDs.
+
+        Args:
+            rotation (ExternalDataSourceRotateKeys | Sequence[ExternalDataSourceRotateKeys]): The rotation(s) to perform. Each ``expiry_time`` must be in the future and at most one year from now.
+
+        Returns:
+            ExternalDataSourceRotatedKeys | ExternalDataSourceRotatedKeysList: The new public key and expiry time of each rotated data source.
+
+        Raises:
+            ValueError: If more than 10 rotations are passed.
+
+        Examples:
+
+            Rotate the keys of a Snowflake data source, valid for 30 days:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.transformations.externaldata import (
+                ...     ExternalDataSourceRotateKeys,
+                ... )
+                >>> from cognite.client.utils._time import timestamp_to_ms
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> expiry_time = timestamp_to_ms("now") + 30 * 24 * 3600 * 1000
+                >>> res = client.transformations.external_data_sources.rotate_keys(
+                ...     ExternalDataSourceRotateKeys("snowflake-analytics-prod", expiry_time)
+                ... )
+                >>> new_public_key = res.public_key
+        """
+        self._warning.warn()
+        is_single = isinstance(rotation, ExternalDataSourceRotateKeys)
+        items = [rotation] if isinstance(rotation, ExternalDataSourceRotateKeys) else list(rotation)
+        if len(items) > self._ROTATE_KEYS_LIMIT:
+            raise ValueError(
+                f"At most {self._ROTATE_KEYS_LIMIT} data sources can be rotated per call (the operation is atomic "
+                f"and cannot be split), got {len(items)}"
+            )
+        res = await self._post(
+            url_path=self._RESOURCE_PATH + "/rotatekeys",
+            json={"items": [item.dump(camel_case=True) for item in items]},
+            semaphore=self._get_semaphore("write"),
+        )
+        rotated = ExternalDataSourceRotatedKeysList._load(res.json()["items"])
+        return rotated[0] if is_single else rotated
 
     async def verify_usability(self, external_id: str) -> ExternalDataSourceUsability:
         """`Verify external data source usability <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/verifyExternalDataSourceUsability>`_.
