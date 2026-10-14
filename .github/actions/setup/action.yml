@@ -24,7 +24,7 @@ runs:
       shell: bash
       run: |
         if [ -n "${{ inputs.extra }}" ]; then
-          uv sync --locked --extra "${{ inputs.extra }}"
+          uv sync --frozen --extra "${{ inputs.extra }}"
         else
-          uv sync --locked
+          uv sync --frozen
         fi
