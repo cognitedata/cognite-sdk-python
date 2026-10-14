@@ -27,7 +27,7 @@ class IntegrationTasksAPI(APIClient):
         last_per_task: bool = False,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TaskHistoryList:
-        """`List task history <https://api-docs.cognite.com/20230101-alpha/tag/Integration-Tasks/operation/get_integration_task_history>`_
+        """`List task history <https://api-docs.cognite.com/20230101-beta/tag/Integration-Tasks/operation/get_integration_task_history>`_
 
         Args:
             external_id (str | None): Only return history for the integration with this external id.
@@ -80,7 +80,7 @@ class IntegrationTasksAPI(APIClient):
         cursor: str | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> SyncResult:
-        """`Sync integration history <https://api-docs.cognite.com/20230101-alpha/tag/Integration-Tasks/operation/sync_integration_history>`_
+        """`Sync integration history <https://api-docs.cognite.com/20230101-beta/tag/Integration-Tasks/operation/sync_integration_history>`_
 
         Incrementally fetch task history and/or errors for an integration since a previous sync call. This is more
         efficient than repeatedly listing task history/errors when polling for updates, e.g. for dashboards or
