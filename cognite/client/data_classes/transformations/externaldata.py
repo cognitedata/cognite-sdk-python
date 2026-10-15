@@ -17,8 +17,6 @@ from cognite.client.data_classes._base import (
 ONE_LAKE_FORMAT = "one_lake"
 SNOWFLAKE_FORMAT = "snowflake"
 
-# Typing alias only: dispatch stays stringly-typed (plain str lookup in the registries below) for forward
-# compatibility. Unknown formats load as UnknownCogniteResource on read and raise TypeError on write.
 ExternalDataSourceFormat: TypeAlias = Literal["one_lake", "snowflake"]
 
 
@@ -408,12 +406,15 @@ class SnowflakeExternalDataSourceWrite(ExternalDataSourceWrite):
 
         Construct a Snowflake source for creation, with credentials expiring in 90 days:
 
-            >>> import time
+            >>> from datetime import datetime, timedelta, timezone
             >>> from cognite.client.data_classes.transformations.externaldata import (
             ...     SnowflakeCredentialsWrite,
             ...     SnowflakeExternalDataSourceWrite,
             ...     SnowflakeLocationDescription,
             ...     SnowflakeSettingsWrite,
+            ... )
+            >>> expiry_time = int(
+            ...     (datetime.now(timezone.utc) + timedelta(days=90)).timestamp() * 1000
             ... )
             >>> source = SnowflakeExternalDataSourceWrite(
             ...     external_id="snowflake-analytics-prod",
@@ -429,7 +430,7 @@ class SnowflakeExternalDataSourceWrite(ExternalDataSourceWrite):
             ...             warehouse_name="COMPUTE_WH"
             ...         ),
             ...     ),
-            ...     expiry_time=int((time.time() + 90 * 24 * 3600) * 1000),
+            ...     expiry_time=expiry_time,
             ... )
     """
 
