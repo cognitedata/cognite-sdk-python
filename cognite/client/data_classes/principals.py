@@ -214,7 +214,7 @@ class PrincipalList(CogniteResourceList[Principal]):
 
 # Build the mapping AFTER all classes are defined
 _PRINCIPAL_CLS_BY_TYPE: dict[str, type[Principal]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
+    subclass._type: subclass
     for subclass in Principal.__subclasses__()
     if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
 }

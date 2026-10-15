@@ -9,7 +9,8 @@ from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteTimeSeries
 from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeList
 from cognite.client.data_classes.data_modeling.views import View
-from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.filters import Equals, Filter, In
+from cognite.client.data_classes.time_series import TimeSeriesType
 from cognite.client.utils._data_modeling import resolve_source, strip_canonical_source
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -19,6 +20,24 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 COGNITE_TIME_SERIES_VIEW_ID = CogniteTimeSeries.get_source()
+
+
+def _build_filter(
+    filter: Filter | dict[str, Any] | None, time_series_type: TimeSeriesType | Sequence[TimeSeriesType] | None = None
+) -> Filter | None:
+    if isinstance(filter, dict):
+        filter = Filter.load(filter)
+
+    if time_series_type is None:
+        return filter
+
+    type_prop = COGNITE_TIME_SERIES_VIEW_ID.as_property_ref("type")
+    types = [time_series_type] if isinstance(time_series_type, str) else list(time_series_type)
+    if not types:
+        raise ValueError("'time_series_type' must not be empty, pass None to list all kinds of time series")
+
+    type_flt = Equals(type_prop, value=types[0]) if len(types) == 1 else In(type_prop, values=types)
+    return type_flt if filter is None else type_flt & filter
 
 
 class DataModelingTimeSeriesAPI(APIClient):
@@ -107,6 +126,7 @@ class DataModelingTimeSeriesAPI(APIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        time_series_type: TimeSeriesType | Sequence[TimeSeriesType] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
         """`List time series nodes <https://api-docs.cognite.com/20230101/tag/Instances/operation/advancedListInstance>`_.
@@ -118,6 +138,7 @@ class DataModelingTimeSeriesAPI(APIClient):
             space (str | SequenceNotStr[str] | None): Restrict results to this space (or list of spaces).
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): Sort order for the results.
             filter (Filter | dict[str, Any] | None): Advanced filter to apply. See :class:`~cognite.client.data_classes.filters`.
+            time_series_type (TimeSeriesType | Sequence[TimeSeriesType] | None): Only return time series of this type (or types). The types are ``"numeric"``, ``"string"`` and ``"state"``. Default: None (all).
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -135,6 +156,11 @@ class DataModelingTimeSeriesAPI(APIClient):
 
                 >>> res = client.data_modeling.time_series.list(space="my-space", limit=None)
 
+            List only state time series, or e.g. only numeric and string time series:
+
+                >>> res = client.data_modeling.time_series.list(time_series_type="state")
+                >>> res = client.data_modeling.time_series.list(time_series_type=["numeric", "string"])
+
             Fetch properties from a custom view (note, only time series will be returned), and
             apply a custom filter on the name:
 
@@ -147,6 +173,7 @@ class DataModelingTimeSeriesAPI(APIClient):
                 ...     limit=None,
                 ... )
         """
+        filter = _build_filter(filter, time_series_type=time_series_type)
         sources, strip = resolve_source(source, COGNITE_TIME_SERIES_VIEW_ID)
         results = await self._instances_api.list(
             instance_type="node",

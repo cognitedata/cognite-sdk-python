@@ -17,6 +17,7 @@ from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeList
 from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.filters import Filter
+from cognite.client.data_classes.time_series import TimeSeriesType
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -98,6 +99,7 @@ class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
         space: str | SequenceNotStr[str] | None = None,
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         filter: Filter | dict[str, Any] | None = None,
+        time_series_type: TimeSeriesType | Sequence[TimeSeriesType] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
         """
@@ -110,6 +112,7 @@ class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
             space (str | SequenceNotStr[str] | None): Restrict results to this space (or list of spaces).
             sort (Sequence[InstanceSort | dict] | InstanceSort | dict | None): Sort order for the results.
             filter (Filter | dict[str, Any] | None): Advanced filter to apply. See :class:`~cognite.client.data_classes.filters`.
+            time_series_type (TimeSeriesType | Sequence[TimeSeriesType] | None): Only return time series of this type (or types). The types are ``"numeric"``, ``"string"`` and ``"state"``. Default: None (all).
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
 
         Returns:
@@ -127,6 +130,11 @@ class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
 
                 >>> res = client.data_modeling.time_series.list(space="my-space", limit=None)
 
+            List only state time series, or e.g. only numeric and string time series:
+
+                >>> res = client.data_modeling.time_series.list(time_series_type="state")
+                >>> res = client.data_modeling.time_series.list(time_series_type=["numeric", "string"])
+
             Fetch properties from a custom view (note, only time series will be returned), and
             apply a custom filter on the name:
 
@@ -141,6 +149,6 @@ class SyncDataModelingTimeSeriesAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.data_modeling.time_series.list(
-                source=source, space=space, sort=sort, filter=filter, limit=limit
+                source=source, space=space, sort=sort, filter=filter, time_series_type=time_series_type, limit=limit
             )
         )

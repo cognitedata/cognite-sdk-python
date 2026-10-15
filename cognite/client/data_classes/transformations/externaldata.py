@@ -428,11 +428,9 @@ class ExternalDataSourceUsability(CogniteResource):
 
 
 _EXTERNAL_DATA_SOURCE_WRITE_CLASS_BY_FORMAT: dict[str, type[ExternalDataSourceWrite]] = {
-    subclass._format: subclass  # type: ignore[type-abstract]
-    for subclass in ExternalDataSourceWrite.__subclasses__()
+    subclass._format: subclass for subclass in ExternalDataSourceWrite.__subclasses__()
 }
 
 _EXTERNAL_DATA_SOURCE_CLASS_BY_FORMAT: dict[str, type[ExternalDataSource]] = {
-    subclass._format: subclass  # type: ignore[type-abstract]
-    for subclass in ExternalDataSource.__subclasses__()
+    subclass._format: subclass for subclass in ExternalDataSource.__subclasses__()
 }
