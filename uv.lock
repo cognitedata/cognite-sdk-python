@@ -442,7 +442,7 @@ wheels = [
 
 [[package]]
 name = "cognite-sdk"
-version = "8.21.0"  # x-release-please-version
+version = "8.22.0"  # x-release-please-version
 source = { editable = "." }
 dependencies = [
     { name = "httpx2" },
