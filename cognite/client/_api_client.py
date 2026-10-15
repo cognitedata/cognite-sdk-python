@@ -714,7 +714,8 @@ class APIClient(BasicAsyncAPIClient):
         if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
             return json_items[0]["count"]
         elif aggregate in {"uniqueValues", "uniqueProperties"}:
-            return UniqueResultList._load(json_items)
+            buckets = [item for item in json_items if item.get("values")]
+            return UniqueResultList._load(buckets) if buckets else UniqueResultList([])
         else:
             raise ValueError(f"Unknown aggregate: {aggregate}")
 

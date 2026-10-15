@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pickle
 import sys
 import tempfile
 import time
@@ -8,10 +9,12 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any, ClassVar
 from unittest.mock import MagicMock, Mock, patch
+from urllib.parse import parse_qs
 
+import httpx2
 import pytest
 import requests
-from authlib.integrations.httpx_client import OAuthError
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client.credentials import (
     CredentialProvider,
@@ -621,44 +624,223 @@ class TestOAuthInteractive:
         assert isinstance(creds, OAuthInteractive)
 
 
+def _form_fields(request: httpx2.Request) -> dict[str, list[str]]:
+    # keep_blank_values ensures we notice fields sent with an empty value:
+    return parse_qs(request.content.decode(), keep_blank_values=True)
+
+
 class TestOauthClientCredentials:
+    TOKEN_URL: ClassVar[str] = "https://login.microsoftonline.com/testingabc123/oauth2/v2.0/token"
     DEFAULT_PROVIDER_ARGS: ClassVar[MappingProxyType[str, Any]] = MappingProxyType(
         {
             "client_id": "azure-client-id",
             "client_secret": "azure-client-secret",
-            "token_url": "https://login.microsoftonline.com/testingabc123/oauth2/v2.0/token",
+            "token_url": TOKEN_URL,
             "scopes": ["https://greenfield.cognitedata.com/.default"],
             "other_custom_arg": "some_value",
         }
     )
 
-    @patch("authlib.integrations.httpx_client.OAuth2Client")
+    def add_token_response(self, httpx2_mock: HTTPXMock, access_token: str = "tok", expires_in: Any = 1000) -> None:
+        httpx2_mock.add_response(
+            method="POST", url=self.TOKEN_URL, json={"access_token": access_token, "expires_in": expires_in}
+        )
+
     @pytest.mark.parametrize("expires_in", (1000, "1001"))  # some IDPs return as string
-    def test_access_token_generated(self, mock_oauth_client: MagicMock, expires_in: int | str) -> None:
-        mock_oauth_client().fetch_token.return_value = {"access_token": "azure_token", "expires_in": expires_in}
+    def test_access_token_generated(self, httpx2_mock: HTTPXMock, expires_in: int | str) -> None:
+        self.add_token_response(httpx2_mock, "azure_token", expires_in)
         creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
-        creds._refresh_access_token()
         assert creds.authorization_header() == ("Authorization", "Bearer azure_token")
 
-    @patch("authlib.integrations.httpx_client.OAuth2Client")
-    def test_access_token_not_generated_due_to_error(self, mock_oauth_client: MagicMock) -> None:
-        mock_oauth_client().fetch_token.side_effect = OAuthError("very_invalid", "Invalid client_id parameter value.")
+    def test_token_request(self, httpx2_mock: HTTPXMock) -> None:
+        self.add_token_response(httpx2_mock)
+        creds = OAuthClientCredentials(**{**self.DEFAULT_PROVIDER_ARGS, "scopes": ["a/.default", "b"]})
+        creds.authorization_header()
+
+        (request,) = httpx2_mock.get_requests()
+        assert request.headers["Content-Type"] == "application/x-www-form-urlencoded"
+        assert request.headers["Accept"] == "application/json"
+        assert "Authorization" not in request.headers
+        assert "Cookie" not in request.headers
+        assert _form_fields(request) == {
+            "grant_type": ["client_credentials"],
+            "client_id": ["azure-client-id"],
+            "client_secret": ["azure-client-secret"],
+            "scope": ["a/.default b"],
+            "other_custom_arg": ["some_value"],
+        }
+
+    @pytest.mark.parametrize("empty_scopes", (None, []))
+    @pytest.mark.parametrize("falsy_value", (None, "", False, 0))
+    def test_token_request_skips_falsy_fields(
+        self, httpx2_mock: HTTPXMock, empty_scopes: list[str] | None, falsy_value: Any
+    ) -> None:
+        self.add_token_response(httpx2_mock)
+        creds = OAuthClientCredentials(
+            **{**self.DEFAULT_PROVIDER_ARGS, "scopes": empty_scopes, "other_custom_arg": falsy_value}
+        )
+        creds.authorization_header()
+
+        (request,) = httpx2_mock.get_requests()
+        assert set(_form_fields(request)) == {"grant_type", "client_id", "client_secret"}
+
+    @pytest.mark.parametrize("client_secret", ("a+b&c=d%20e f", "æøå~!*'()", "%%=="))
+    def test_client_secret_encoding(self, httpx2_mock: HTTPXMock, client_secret: str) -> None:
+        self.add_token_response(httpx2_mock)
+        creds = OAuthClientCredentials(**{**self.DEFAULT_PROVIDER_ARGS, "client_secret": client_secret})
+        creds.authorization_header()
+
+        (request,) = httpx2_mock.get_requests()
+        assert _form_fields(request)["client_secret"] == [client_secret]
+
+    @pytest.mark.parametrize(
+        "value, expected",
+        (
+            ("x y&æ", "x y&æ"),
+            ("a+b=c%d", "a+b=c%d"),
+            (True, "True"),
+            (1, "1"),
+            (1.5, "1.5"),
+            (b"aud", "aud"),
+        ),
+    )
+    def test_token_custom_arg_encoding(self, httpx2_mock: HTTPXMock, value: Any, expected: str) -> None:
+        self.add_token_response(httpx2_mock)
+        creds = OAuthClientCredentials(**{**self.DEFAULT_PROVIDER_ARGS, "other_custom_arg": value})
+        creds.authorization_header()
+
+        (request,) = httpx2_mock.get_requests()
+        assert _form_fields(request)["other_custom_arg"] == [expected]
+
+    @pytest.mark.parametrize("value", ([1, 2], ("a", "b"), {"k": "v"}))
+    def test_token_custom_arg_unsupported_type(self, value: Any) -> None:
+        # Should fail already at init, not on the first token fetch:
+        with pytest.raises(TypeError, match=r"^Token custom arg 'other_custom_arg' must be a str, bytes, int"):
+            OAuthClientCredentials(**{**self.DEFAULT_PROVIDER_ARGS, "other_custom_arg": value})
+
+    @pytest.mark.parametrize("scope", ("a/.default b", ["a/.default", "b"]))
+    @pytest.mark.parametrize("scopes", (None, ["ignored"]))
+    def test_scope_custom_arg_overrides_scopes(
+        self, httpx2_mock: HTTPXMock, scopes: list[str] | None, scope: str | list[str]
+    ) -> None:
+        self.add_token_response(httpx2_mock)
+        creds = OAuthClientCredentials(**{**self.DEFAULT_PROVIDER_ARGS, "scopes": scopes, "scope": scope})
+        creds.authorization_header()
+
+        (request,) = httpx2_mock.get_requests()
+        assert _form_fields(request)["scope"] == ["a/.default b"]
+
+    def test_http_options_not_sent_as_form_fields(self, httpx2_mock: HTTPXMock) -> None:
+        redirected_url = "https://login.example.com/token"
+        httpx2_mock.add_response(
+            method="POST", url=self.TOKEN_URL, status_code=307, headers={"Location": redirected_url}
+        )
+        httpx2_mock.add_response(method="POST", url=redirected_url, json={"access_token": "tok", "expires_in": 1000})
+        creds = OAuthClientCredentials(
+            **self.DEFAULT_PROVIDER_ARGS, timeout=60, follow_redirects=True, cookies={"foo": "bar"}
+        )
+        assert creds.authorization_header() == ("Authorization", "Bearer tok")
+
+        request = httpx2_mock.get_requests()[0]
+        assert request.extensions["timeout"] == {"connect": 60, "read": 60, "write": 60, "pool": 60}
+        assert request.headers["Cookie"] == "foo=bar"
+        assert _form_fields(request) == {
+            "grant_type": ["client_credentials"],
+            "client_id": ["azure-client-id"],
+            "client_secret": ["azure-client-secret"],
+            "scope": ["https://greenfield.cognitedata.com/.default"],
+            "other_custom_arg": ["some_value"],
+        }
+
+    @pytest.mark.parametrize("disable_ssl", (False, True))
+    def test_disable_ssl_is_respected(
+        self, httpx2_mock: HTTPXMock, monkeypatch: pytest.MonkeyPatch, disable_ssl: bool
+    ) -> None:
+        from cognite.client.config import global_config
+
+        self.add_token_response(httpx2_mock)
+        creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
+        # Read at refresh time, so this should take effect even after the credentials are created:
+        monkeypatch.setattr(global_config, "disable_ssl", disable_ssl)
+        with patch("cognite.client.credentials.httpx2.post", wraps=httpx2.post) as post_spy:
+            creds.authorization_header()
+        assert post_spy.call_args.kwargs["verify"] is not disable_ssl
+
+    @pytest.mark.parametrize("status_code", (400, 401))
+    def test_access_token_not_generated_due_to_error(self, httpx2_mock: HTTPXMock, status_code: int) -> None:
+        httpx2_mock.add_response(
+            method="POST",
+            url=self.TOKEN_URL,
+            status_code=status_code,
+            json={"error": "very_invalid", "error_description": "Invalid client_id parameter value."},
+        )
+        creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
         with pytest.raises(
-            CogniteAuthError,
+            CogniteOAuthError,
             match=r"Error generating access token: 'very_invalid'. Description: Invalid client_id parameter value.",
         ):
-            creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
             creds._refresh_access_token()
 
-    @patch("authlib.integrations.httpx_client.OAuth2Client")
-    def test_access_token_expired(self, mock_oauth_client: MagicMock) -> None:
-        mock_oauth_client().fetch_token.side_effect = [
-            {"access_token": "azure_token_expired", "expires_in": -1000},
-            {"access_token": "azure_token_refreshed", "expires_in": 1000},
-        ]
+    @pytest.mark.parametrize(
+        "error_body", ({"error": "invalid_client"}, {"error": "invalid_client", "error_description": None})
+    )
+    def test_missing_error_description(self, httpx2_mock: HTTPXMock, error_body: dict[str, Any]) -> None:
+        httpx2_mock.add_response(method="POST", url=self.TOKEN_URL, status_code=401, json=error_body)
         creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
-        assert creds.authorization_header() == ("Authorization", "Bearer azure_token_expired")
-        assert creds.authorization_header() == ("Authorization", "Bearer azure_token_refreshed")
+        with pytest.raises(CogniteOAuthError) as exc_info:
+            creds._refresh_access_token()
+        assert exc_info.value.description == ""
+        assert str(exc_info.value) == "Error generating access token: 'invalid_client'. Description: "
+
+    def test_server_error_raises(self, httpx2_mock: HTTPXMock) -> None:
+        httpx2_mock.add_response(method="POST", url=self.TOKEN_URL, status_code=503, text="Service Unavailable")
+        creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
+        with pytest.raises(httpx2.HTTPStatusError):
+            creds._refresh_access_token()
+
+    def test_valid_token_is_reused(self, httpx2_mock: HTTPXMock) -> None:
+        self.add_token_response(httpx2_mock, "azure_token", expires_in=1000)
+        creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
+        assert creds.authorization_header() == ("Authorization", "Bearer azure_token")
+        assert creds.authorization_header() == ("Authorization", "Bearer azure_token")
+        assert len(httpx2_mock.get_requests()) == 1
+
+    @pytest.mark.parametrize("expires_in, should_refresh", ((-1000, True), (50, True), (70, False)))
+    def test_token_refreshed_within_leeway(self, httpx2_mock: HTTPXMock, expires_in: int, should_refresh: bool) -> None:
+        self.add_token_response(httpx2_mock, "first_token", expires_in)
+        if should_refresh:
+            self.add_token_response(httpx2_mock, "second_token", 1000)
+        creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS, token_expiry_leeway_seconds=60)
+        assert creds.authorization_header() == ("Authorization", "Bearer first_token")
+
+        expected_token = "second_token" if should_refresh else "first_token"
+        assert creds.authorization_header() == ("Authorization", f"Bearer {expected_token}")
+        assert len(httpx2_mock.get_requests()) == (2 if should_refresh else 1)
+
+    @pytest.mark.parametrize("reserved", ("auth", "body", "grant_type", "headers", "method", "state", "url"))
+    def test_OAUTH_CC_RESERVED_TOKEN_CUSTOM_ARGS(self, reserved: str) -> None:
+        with pytest.raises(TypeError, match=rf"reserved token custom arg\(s\) were passed: \['{reserved}'\]"):
+            OAuthClientCredentials(**{**self.DEFAULT_PROVIDER_ARGS, reserved: "x"})
+
+    def test_pickle_roundtrip_fetches_token(self, httpx2_mock: HTTPXMock) -> None:
+        self.add_token_response(httpx2_mock)
+        creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS, timeout=60)
+        unpickled = pickle.loads(pickle.dumps(creds))
+        assert unpickled.authorization_header() == ("Authorization", "Bearer tok")
+
+        (request,) = httpx2_mock.get_requests()
+        assert request.extensions["timeout"] == {"connect": 60, "read": 60, "write": 60, "pool": 60}
+        assert _form_fields(request)["client_secret"] == ["azure-client-secret"]
+        assert _form_fields(request)["other_custom_arg"] == ["some_value"]
+
+    def test_pickle_roundtrip_preserves_cached_token(self, httpx2_mock: HTTPXMock) -> None:
+        self.add_token_response(httpx2_mock, "cached_token")
+        creds = OAuthClientCredentials(**self.DEFAULT_PROVIDER_ARGS)
+        creds.authorization_header()
+
+        unpickled = pickle.loads(pickle.dumps(creds))
+        assert unpickled.authorization_header() == ("Authorization", "Bearer cached_token")
+        assert len(httpx2_mock.get_requests()) == 1
 
     def test_load(self) -> None:
         creds = OAuthClientCredentials.load(dict(self.DEFAULT_PROVIDER_ARGS))

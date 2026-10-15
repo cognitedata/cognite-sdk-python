@@ -583,7 +583,7 @@ class AgentToolList(WriteableCogniteResourceList[AgentToolUpsert, AgentTool]):
 
 # Build the mapping AFTER all classes are defined
 _AGENT_TOOL_CLS_BY_TYPE: dict[str, type[AgentTool]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
+    subclass._type: subclass
     for subclass in AgentTool.__subclasses__()
     if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
 }

@@ -10,7 +10,8 @@ from pytest_httpx2 import HTTPXMock
 from cognite.client import CogniteClient
 from cognite.client.data_classes import AggregateResultItem, Label, LabelFilter, TimestampRange
 from cognite.client.data_classes._base import UnknownCogniteResource
-from cognite.client.data_classes.assets import Asset, AssetFilter, AssetList, AssetUpdate, AssetWrite
+from cognite.client.data_classes.aggregations import UniqueResult, UniqueResultList
+from cognite.client.data_classes.assets import Asset, AssetFilter, AssetList, AssetProperty, AssetUpdate, AssetWrite
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import convert_all_keys_to_snake_case
 from tests.tests_unit.conftest import DefaultResourceGenerator
@@ -186,6 +187,35 @@ class TestAssets:
     ) -> None:
         cognite_client.assets.list(name="bla", aggregated_properties=["child_count"])
         assert ["childCount"] == jsgz_load(mock_assets_response.get_requests()[0].content)["aggregatedProperties"]
+
+    @pytest.mark.parametrize(
+        "items, expected",
+        [
+            pytest.param([{"count": 0}], UniqueResultList([]), id="empty bucket"),
+            pytest.param(
+                [{"count": 2, "values": [123]}],
+                UniqueResultList([UniqueResult(count=2, values=[123])]),
+                id="values present",
+            ),
+        ],
+    )
+    def test_aggregate_unique_values(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        async_client: AsyncCogniteClient,
+        items: list[dict[str, Any]],
+        expected: UniqueResultList,
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST",
+            url=get_url(async_client.assets) + "/assets/aggregate",
+            status_code=200,
+            json={"items": items},
+        )
+        result = cognite_client.assets.aggregate_unique_values(AssetProperty.data_set_id)
+        assert result == expected
+        assert result.unique == expected.unique
 
     def test_list_with_dataset_ids(
         self, cognite_client: CogniteClient, mock_assets_response: HTTPXMock, expected_asset: dict[str, Any]
