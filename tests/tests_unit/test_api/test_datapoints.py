@@ -22,6 +22,7 @@ from pytest_httpx2 import HTTPXMock
 import cognite.client._api.datapoints_io as dps_io  # for mocking
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.datapoints_io import StateDatapointsPoster, _InsertDatapoint
+from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes import (
     Datapoint,
     Datapoints,
@@ -34,6 +35,7 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import LatestDatapoint, LatestDatapointList
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._time import datetime_to_ms
 from tests.utils import PANDAS_TS_UNIT, get_or_raise, get_url, jsgz_load, random_gamma_dist_integer
 
@@ -412,6 +414,25 @@ class TestInsertDatapoints:
 
         assert len(dump_sem_held) == 50
         assert all(dump_sem_held), "dp.dump() was called outside the semaphore context"
+
+
+class TestRetrieveWithGapFilling:
+    def test_fill_limit_is_sent_and_warns(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST",
+            url=get_url(async_client.time_series.data, "/timeseries/data/list"),
+            status_code=200,
+            content=DataPointListResponse(items=[DataPointListItem(id=1)]).SerializeToString(),
+        )
+        with pytest.warns(FeaturePreviewWarning, match="gap filling"):
+            cognite_client.time_series.data.retrieve(
+                id=1, start=0, end=24 * 3_600_000, aggregates="average", granularity="1h", fill_limit="2h"
+            )
+
+        (item,) = jsgz_load(httpx2_mock.get_requests()[0].content)["items"]
+        assert item["fill"] == {"limit": "2h"}
 
 
 class TestFetchAllDoesNotLeakTaskExceptions:

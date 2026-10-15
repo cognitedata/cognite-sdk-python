@@ -574,6 +574,7 @@ class DatapointsQuery:
             "include_status": False,
             "ignore_bad_datapoints": True,
             "treat_uncertain_as_bad": True,
+            "fill_limit": None,
         }
     )
     id: InitVar[int | None] = None
@@ -592,6 +593,7 @@ class DatapointsQuery:
     include_status: bool = _NOT_SET  # type: ignore [assignment]
     ignore_bad_datapoints: bool = _NOT_SET  # type: ignore [assignment]
     treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
+    fill_limit: str | None = _NOT_SET  # type: ignore [assignment]
 
     def __post_init__(
         self, id: int | None, external_id: str | None, instance_id: NodeId | tuple[str, str] | None
