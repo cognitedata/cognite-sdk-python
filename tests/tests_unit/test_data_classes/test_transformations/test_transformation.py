@@ -1,55 +1,35 @@
 from __future__ import annotations
 
-from typing import Any
-
 import pytest
 
 from cognite.client.data_classes.transformations import (
     Transformation,
-    TransformationFilter,
+    TransformationUpdate,
     TransformationWrite,
 )
+from tests.utils import FakeCogniteResourceGenerator
 
 
-@pytest.fixture
-def transformation_resource() -> dict[str, Any]:
-    return {
-        "id": 1,
-        "externalId": "my-transformation",
-        "name": "My transformation",
-        "query": "SELECT 1",
-        "destination": {"type": "assets"},
-        "conflictMode": "upsert",
-        "isPublic": True,
-        "ignoreNullFields": False,
-        "createdTime": 1,
-        "lastUpdatedTime": 2,
-        "owner": "someone",
-        "ownerIsCurrentUser": True,
-        "dataSetId": 123,
-        "dataDomainExternalId": "my-domain",
-    }
+@pytest.mark.dsl  # requirement when using FakeCogniteResourceGenerator
+@pytest.mark.parametrize("transformation_cls", (Transformation, TransformationWrite))
+def test_copy_preserves_all_fields(transformation_cls: type[Transformation] | type[TransformationWrite]) -> None:
+    transformation = FakeCogniteResourceGenerator().create_instance(transformation_cls)
+
+    copied = transformation.copy()
+
+    assert copied is not transformation
+    assert type(copied) is transformation_cls
+    assert copied.dump() == transformation.dump()
 
 
-class TestTransformationDataDomainExternalId:
-    def test_as_write_preserves_data_domain_external_id(self, transformation_resource: dict[str, Any]) -> None:
-        transformation = Transformation._load(transformation_resource)
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        pytest.param("my-domain", {"set": "my-domain"}, id="set value"),
+        pytest.param(None, {"setNull": True}, id="set to None clears the value"),
+    ],
+)
+def test_update_data_domain_external_id(value: str | None, expected: dict[str, object]) -> None:
+    update = TransformationUpdate(external_id="my-transformation").data_domain_external_id.set(value)
 
-        written = transformation.as_write()
-
-        assert isinstance(written, TransformationWrite)
-        assert written.data_domain_external_id == "my-domain"
-
-    def test_copy_preserves_data_domain_external_id(self, transformation_resource: dict[str, Any]) -> None:
-        transformation = Transformation._load(transformation_resource)
-
-        copied = transformation.copy()
-
-        assert copied.data_domain_external_id == "my-domain"
-
-    def test_filter_dumps_data_domain_external_ids(self) -> None:
-        filter = TransformationFilter(data_domain_external_ids=["my-domain", "other-domain"])
-
-        dumped = filter.dump(camel_case=True)
-
-        assert dumped["dataDomainExternalIds"] == ["my-domain", "other-domain"]
+    assert update.dump()["update"] == {"dataDomainExternalId": expected}

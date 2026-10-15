@@ -66,35 +66,22 @@ def mock_transformations_list_response(httpx2_mock: HTTPXMock, async_client: Asy
     return httpx2_mock
 
 
-class TestTransformationsListDataDomainExternalIdsFilter:
-    def test_omitted_when_not_given(
-        self, cognite_client: CogniteClient, mock_transformations_list_response: HTTPXMock
-    ) -> None:
-        cognite_client.transformations.list()
+@pytest.mark.parametrize(
+    "data_domain_external_ids, expected",
+    [
+        pytest.param(None, None, id="omitted when not given"),
+        pytest.param([], None, id="omitted when empty list given"),
+        pytest.param("my-domain", ["my-domain"], id="single string is wrapped in list"),
+        pytest.param(["domain-a", "domain-b"], ["domain-a", "domain-b"], id="list of strings passed through"),
+    ],
+)
+def test_list_data_domain_external_ids_filter(
+    cognite_client: CogniteClient,
+    mock_transformations_list_response: HTTPXMock,
+    data_domain_external_ids: str | list[str] | None,
+    expected: list[str] | None,
+) -> None:
+    cognite_client.transformations.list(data_domain_external_ids=data_domain_external_ids)
 
-        sent_filter = jsgz_load(mock_transformations_list_response.get_requests()[0].content)["filter"]
-        assert "dataDomainExternalIds" not in sent_filter
-
-    def test_omitted_when_empty_list_given(
-        self, cognite_client: CogniteClient, mock_transformations_list_response: HTTPXMock
-    ) -> None:
-        cognite_client.transformations.list(data_domain_external_ids=[])
-
-        sent_filter = jsgz_load(mock_transformations_list_response.get_requests()[0].content)["filter"]
-        assert "dataDomainExternalIds" not in sent_filter
-
-    def test_single_string_is_wrapped_in_list(
-        self, cognite_client: CogniteClient, mock_transformations_list_response: HTTPXMock
-    ) -> None:
-        cognite_client.transformations.list(data_domain_external_ids="my-domain")
-
-        sent_filter = jsgz_load(mock_transformations_list_response.get_requests()[0].content)["filter"]
-        assert sent_filter["dataDomainExternalIds"] == ["my-domain"]
-
-    def test_list_of_strings_is_passed_through(
-        self, cognite_client: CogniteClient, mock_transformations_list_response: HTTPXMock
-    ) -> None:
-        cognite_client.transformations.list(data_domain_external_ids=["domain-a", "domain-b"])
-
-        sent_filter = jsgz_load(mock_transformations_list_response.get_requests()[0].content)["filter"]
-        assert sent_filter["dataDomainExternalIds"] == ["domain-a", "domain-b"]
+    sent_filter = jsgz_load(mock_transformations_list_response.get_requests()[0].content)["filter"]
+    assert sent_filter.get("dataDomainExternalIds") == expected
