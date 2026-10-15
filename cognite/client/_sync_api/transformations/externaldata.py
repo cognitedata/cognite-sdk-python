@@ -102,28 +102,44 @@ class SyncTransformationExternalDataSourcesAPI(SyncAPIClient):
         """
         return run_sync(self.__async_client.transformations.external_data_sources.list(limit=limit, format=format))
 
-    def retrieve(self, external_id: str) -> ExternalDataSource | None:
+    def retrieve_multiple(
+        self, external_ids: SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> ExternalDataSourceList:
         """
-        `Retrieve an external data source by external ID <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/getExternalDataSource>`_.
+        `Retrieve external data sources by external IDs <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/getExternalDataSourcesByExternalIds>`_.
+
+        The API accepts at most 100 external IDs per request; larger inputs are split into several requests
+        automatically. The external IDs must be unique. A data source you do not have access to is treated as missing.
 
         Args:
-            external_id (str): External ID of the data source.
+            external_ids (SequenceNotStr[str]): External IDs of the data sources.
+            ignore_unknown_ids (bool): Ignore external IDs that are not found (or not accessible) rather than raise an exception.
 
         Returns:
-            ExternalDataSource | None: The requested data source, or None if it does not exist.
+            ExternalDataSourceList: The requested data sources.
 
         Examples:
 
-            Retrieve a data source:
+            Retrieve multiple data sources:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> data_source = client.transformations.external_data_sources.retrieve(
-                ...     "fabric-lakehouse-prod"
+                >>> res = client.transformations.external_data_sources.retrieve_multiple(
+                ...     ["fabric-lakehouse-prod", "snowflake-analytics-prod"]
+                ... )
+
+            Skip unknown external IDs:
+
+                >>> res = client.transformations.external_data_sources.retrieve_multiple(
+                ...     ["fabric-lakehouse-prod", "might-not-exist"], ignore_unknown_ids=True
                 ... )
         """
-        return run_sync(self.__async_client.transformations.external_data_sources.retrieve(external_id=external_id))
+        return run_sync(
+            self.__async_client.transformations.external_data_sources.retrieve_multiple(
+                external_ids=external_ids, ignore_unknown_ids=ignore_unknown_ids
+            )
+        )
 
     @overload
     def create(self, data_source: ExternalDataSourceWrite) -> ExternalDataSource: ...
