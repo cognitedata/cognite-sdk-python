@@ -327,7 +327,7 @@ class TestTransformationExternalDataSourcesAPI:
         assert data_source.settings.location_description.warehouse_name == "COMPUTE_WH"
         assert data_source.expiry_time == 1700000000000
 
-    def test_retrieve(
+    def test_retrieve_multiple(
         self,
         cognite_client: CogniteClient,
         httpx2_mock: HTTPXMock,
@@ -364,7 +364,9 @@ class TestTransformationExternalDataSourcesAPI:
             method="POST", url=external_data_url + "/byids", status_code=200, json={"items": [snowflake_read_item]}
         )
 
-        result = cognite_client.transformations.external_data_sources.retrieve("snowflake-analytics-prod")
+        result = cognite_client.transformations.external_data_sources.retrieve_multiple(
+            ["fabric-lakehouse-prod", "nope"], ignore_unknown_ids=True
+        )
 
         assert isinstance(result, SnowflakeExternalDataSource)
         assert jsgz_load(httpx2_mock.get_requests()[-1].content)["items"] == [
@@ -381,7 +383,36 @@ class TestTransformationExternalDataSourcesAPI:
             json={"error": {"code": 400, "message": "Not found", "missing": [{"externalId": "nope"}]}},
         )
 
-        assert cognite_client.transformations.external_data_sources.retrieve("nope") is None
+        with pytest.raises(CogniteNotFoundError):
+            cognite_client.transformations.external_data_sources.retrieve_multiple(["nope"])
+
+    def test_retrieve_multiple_chunks_at_100(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        external_data_url: str,
+        onelake_read_item: dict[str, Any],
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST",
+            url=external_data_url + "/byids",
+            status_code=200,
+            json={"items": [onelake_read_item]},
+            is_reusable=True,
+        )
+
+        cognite_client.transformations.external_data_sources.retrieve_multiple([f"src-{no}" for no in range(150)])
+
+        sizes = sorted(len(jsgz_load(req.content)["items"]) for req in httpx2_mock.get_requests())
+        assert sizes == [50, 100]
+
+    def test_retrieve_multiple_empty_sends_no_request(
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
+        result = cognite_client.transformations.external_data_sources.retrieve_multiple([])
+
+        assert len(result) == 0
+        assert httpx2_mock.get_requests() == []
 
     def test_retrieve_ignore_unknown_ids(
         self,

@@ -53,7 +53,7 @@ Every operation is governed by ``transformationsExternalDataSourcesAcl``, availa
 Operation                                 Action
 ========================================= ==========
 ``list()``                                ``READ``
-``retrieve()``                            ``READ``
+``retrieve_multiple()``                   ``READ``
 ``create()``                              ``WRITE``
 ``delete()``                              ``WRITE``
 ``rotate_keys()``                         ``WRITE``
@@ -251,12 +251,14 @@ Filter on format (``one_lake`` or ``snowflake``), and retrieve data sources by e
         ["snowflake-analytics-prod", "fabric-lakehouse-prod"], ignore_unknown_ids=True
     )
 
-Filter on format, and retrieve a single data source by external ID (``None`` if it does not exist):
+Filter on format, and retrieve data sources by external ID. A data source you do not have access to counts as missing: ``retrieve_multiple()`` raises for it unless you pass ``ignore_unknown_ids=True``:
 
 .. code-block:: python
 
     snowflake_sources = client.transformations.external_data_sources.list(format="snowflake")
-    data_source = client.transformations.external_data_sources.retrieve("snowflake-analytics-prod")
+    data_sources = client.transformations.external_data_sources.retrieve_multiple(
+        ["snowflake-analytics-prod", "fabric-lakehouse-prod"], ignore_unknown_ids=True
+    )
 
 To iterate without holding every data source in memory, call the API directly, optionally in chunks:
 

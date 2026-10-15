@@ -128,7 +128,7 @@ class SyncTransformationExternalDataSourcesAPI(SyncAPIClient):
 
         Examples:
 
-            Retrieve a data source:
+            Retrieve multiple data sources:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()

@@ -15,7 +15,6 @@ from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
 )
-from cognite.client.exceptions import CogniteNotFoundError
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -175,32 +174,36 @@ class TransformationExternalDataSourcesAPI(APIClient):
         """`Retrieve an external data source by external ID <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/getExternalDataSource>`_.
 
         Args:
-            external_id (str): External ID of the data source.
+            external_ids (SequenceNotStr[str]): External IDs of the data sources.
+            ignore_unknown_ids (bool): Ignore external IDs that are not found (or not accessible) rather than raise an exception.
 
         Returns:
-            ExternalDataSource | None: The requested data source, or None if it does not exist.
+            ExternalDataSourceList: The requested data sources.
 
         Examples:
 
-            Retrieve a data source:
+            Retrieve multiple data sources:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> data_source = client.transformations.external_data_sources.retrieve(
-                ...     "fabric-lakehouse-prod"
+                >>> res = client.transformations.external_data_sources.retrieve_multiple(
+                ...     ["fabric-lakehouse-prod", "snowflake-analytics-prod"]
+                ... )
+
+            Skip unknown external IDs:
+
+                >>> res = client.transformations.external_data_sources.retrieve_multiple(
+                ...     ["fabric-lakehouse-prod", "might-not-exist"], ignore_unknown_ids=True
                 ... )
         """
         self._warning.warn()
-        try:
-            res = await self._get(
-                url_path=self._RESOURCE_PATH + "/byid",
-                params={"externalId": external_id},
-                semaphore=self._get_semaphore("read"),
-            )
-        except CogniteNotFoundError:
-            return None
-        return ExternalDataSource._load(res.json())._maybe_set_client_ref(self._cognite_client)
+        return await self._retrieve_multiple(
+            list_cls=ExternalDataSourceList,
+            resource_cls=ExternalDataSource,  # type: ignore[type-abstract]
+            identifiers=IdentifierSequence.load(external_ids=external_ids),
+            ignore_unknown_ids=ignore_unknown_ids,
+        )
 
     @overload
     async def create(self, data_source: ExternalDataSourceWrite) -> ExternalDataSource: ...
