@@ -63,6 +63,7 @@ from cognite.client.data_classes.data_modeling.ids import (
 from cognite.client.utils._auxiliary import exactly_one_is_not_none, find_duplicates, flatten_dict
 from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._pandas_helpers import squeeze_single_row_list_df
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_camel_case
 from cognite.client.utils._time import convert_data_modeling_timestamp
 from cognite.client.utils.useful_types import SequenceNotStr, is_sequence_not_str
@@ -455,39 +456,14 @@ class Instance(WritableInstanceCore[T_CogniteResource], ABC):
         Returns:
             pd.DataFrame: The dataframe.
         """
-        df = super().to_pandas(
-            expand_metadata=False, ignore=ignore, camel_case=camel_case, convert_timestamps=convert_timestamps
+        assert self._LIST_CLASS is not None
+        df = cast("type[DataModelingInstancesList]", self._LIST_CLASS)([self]).to_pandas(
+            camel_case=camel_case,
+            convert_timestamps=convert_timestamps,
+            expand_properties=expand_properties,
+            remove_property_prefix=remove_property_prefix,
         )
-        if not expand_properties or "properties" not in df.index:
-            return df
-
-        pd = local_import("pandas")
-        col = df.squeeze()
-        prop_df = pd.json_normalize(col.pop("properties"), max_level=2)
-        if remove_property_prefix and not prop_df.empty:
-            view_id, *extra = self.properties.keys()
-            # We only do/allow this if we have a single source:
-            if not extra:
-                prefix = "{}.{}/{}.".format(*view_id.as_tuple())
-                prop_df.columns = prop_df.columns.str.removeprefix(prefix)
-
-                if isinstance(self, TypedInstance):
-                    attr_name_mapping = self._get_descriptor_property_name_mapping()
-                    prop_df = prop_df.rename(columns=attr_name_mapping)
-
-                if any(overlapping := col.index.intersection(prop_df.columns)):
-                    warnings.warn(
-                        "One or more expanded property names overlapped with base properties. "
-                        f"These rows (index) will not have their view ID prefix removed: {sorted(overlapping)}",
-                        RuntimeWarning,
-                    )
-                    prop_df = prop_df.rename(columns={col: f"{prefix}{col}" for col in overlapping})
-            else:
-                warnings.warn(
-                    "Can't remove view ID prefix from expanded property rows as source was not unique",
-                    RuntimeWarning,
-                )
-        return pd.concat((col, prop_df.T.squeeze(axis=1))).to_frame(name="value")
+        return squeeze_single_row_list_df(df, ignore)
 
     @abstractmethod
     def as_apply(self) -> InstanceApply:

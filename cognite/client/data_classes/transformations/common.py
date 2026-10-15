@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, ClassVar
 
 from typing_extensions import Self
 
@@ -322,7 +322,7 @@ class Instances(TransformationDestination):
         )
 
 
-class OidcCredentials:
+class OidcCredentials(CogniteResource):
     """
     Class that represents OpenID Connect (OIDC) credentials used to authenticate towards Cognite Data Fusion (CDF).
 
@@ -338,6 +338,8 @@ class OidcCredentials:
         scopes (str | list[str] | None): A list of scopes or a comma-separated string (for backwards compatibility).
         audience (str | None): Audience (optional)
     """
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"client_secret"})
 
     def __init__(
         self,
@@ -368,6 +370,7 @@ class OidcCredentials:
     def as_credential_provider(self) -> OAuthClientCredentials:
         if self.scopes is None:
             raise ValueError("Scopes must be provided to create OAuthClientCredentials")
+
         return OAuthClientCredentials(
             token_url=self.token_uri,
             client_id=self.client_id,
@@ -379,19 +382,8 @@ class OidcCredentials:
     def as_client_credentials(self) -> ClientCredentials:
         return ClientCredentials(client_id=self.client_id, client_secret=self.client_secret)
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the instance into a json serializable Python data type.
-
-        Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the instance.
-        """
-        return basic_obj_dump(self, camel_case)
-
     @classmethod
-    def load(cls, data: dict[str, Any]) -> Self:
+    def _load(cls, data: dict[str, Any]) -> Self:
         """Load data into the instance.
 
         Args:
@@ -408,14 +400,10 @@ class OidcCredentials:
             audience=data.get("audience"),
         )
 
-    @classmethod
-    def _load_if(cls, data: dict[str, Any] | None) -> Self | None:
-        return cls.load(data) if data is not None else None
 
-    load_if = _load_if  # OidcCredentials has no private load method, so these are the same
+class NonceCredentials(CogniteResource):
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"nonce"})
 
-
-class NonceCredentials:
     def __init__(
         self,
         session_id: int,
@@ -426,19 +414,8 @@ class NonceCredentials:
         self.nonce = nonce
         self.cdf_project_name = cdf_project_name
 
-    def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        """Dump the instance into a json serializable Python data type.
-
-        Args:
-            camel_case (bool): Use camelCase for attribute names. Defaults to True.
-
-        Returns:
-            dict[str, Any]: A dictionary representation of the instance.
-        """
-        return basic_obj_dump(self, camel_case)
-
     @classmethod
-    def load(cls, data: dict[str, Any]) -> NonceCredentials:
+    def _load(cls, data: dict[str, Any]) -> NonceCredentials:
         """Load data into the instance.
 
         Args:
@@ -451,12 +428,6 @@ class NonceCredentials:
             nonce=data["nonce"],
             cdf_project_name=data["cdfProjectName"],
         )
-
-    @classmethod
-    def _load_if(cls, data: dict[str, Any] | None) -> NonceCredentials | None:
-        return cls.load(data) if data is not None else None
-
-    load_if = _load_if  # NonceCredentials has no private load method, so these are the same
 
 
 class TransformationBlockedInfo:

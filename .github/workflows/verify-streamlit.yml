@@ -1,33 +1,32 @@
 ---
-name: build
+name: verify-streamlit
 
 on:
   pull_request:
-    branches: [master, pysdk-release-v8]
+    branches: [master]
 
 jobs:
   build_and_test_streamlit_pyodide:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
-          python-version: '3.10'
-          cache: 'pip'
-      - name: Build package using poetry
-        run: |
-          pip install poetry
-          poetry build
+          version: "0.13.0"
+          python-version: "3.10"
+      - name: Build package
+        run: uv build
       - name: Set up Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "24"
       - name: Install dependencies
-        run: npm install pyodide@0.26.2 # stlite currently using pyodide 0.26.2
+        run: npm install pyodide@0.26.3 # stlite currently using pyodide 0.26.3
       - name: Install cognite-sdk in pyodide environment
         run: |
           whl_file=$(find dist -name "*.whl" | sed 's|^dist/||') # Find the built wheel file, remove dist/ prefix
           echo "Found built wheel file: $whl_file"
           SDK_FILE_PATH=$whl_file \
-          PACKAGES="[\"ssl\", \"anyio\", \"http://localhost:3000/dist/$whl_file\"]" \
+          PACKAGES="[\"http://localhost:3000/dist/$whl_file\"]" \
           node scripts/test-pyodide.js

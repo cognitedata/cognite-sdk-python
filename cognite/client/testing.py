@@ -51,6 +51,8 @@ from cognite.client._api.iam.groups import GroupsAPI
 from cognite.client._api.iam.security_categories import SecurityCategoriesAPI
 from cognite.client._api.iam.sessions import SessionsAPI
 from cognite.client._api.iam.token import TokenAPI
+from cognite.client._api.integrations import IntegrationsAPI
+from cognite.client._api.integrations.errors import IntegrationErrorsAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.limits import LimitsAPI
 from cognite.client._api.metering import MeteringAPI
@@ -140,6 +142,8 @@ from cognite.client._sync_api.iam.groups import SyncGroupsAPI
 from cognite.client._sync_api.iam.security_categories import SyncSecurityCategoriesAPI
 from cognite.client._sync_api.iam.sessions import SyncSessionsAPI
 from cognite.client._sync_api.iam.token import SyncTokenAPI
+from cognite.client._sync_api.integrations import SyncIntegrationsAPI
+from cognite.client._sync_api.integrations.errors import SyncIntegrationErrorsAPI
 from cognite.client._sync_api.labels import SyncLabelsAPI
 from cognite.client._sync_api.limits import SyncLimitsAPI
 from cognite.client._sync_api.metering import SyncMeteringAPI
@@ -184,6 +188,8 @@ from cognite.client._sync_api.workflows.executions import SyncWorkflowExecutionA
 from cognite.client._sync_api.workflows.tasks import SyncWorkflowTaskAPI
 from cognite.client._sync_api.workflows.triggers import SyncWorkflowTriggerAPI
 from cognite.client._sync_api.workflows.versions import SyncWorkflowVersionAPI
+from cognite.client.config import ClientConfig
+from cognite.client.credentials import Token
 
 
 def flip_spec_set_on(*mocked_apis: MagicMock) -> None:
@@ -202,6 +208,39 @@ class _SpecSetEnforcer(type):
         return instance
 
 
+def _create_client_config_mock() -> MagicMock:
+    """
+    Creates a strict mock of ClientConfig that safely bypasses __init__ side-effects.
+
+    Why this setup is non-trivial:
+    - We cannot instantiate a real `ClientConfig` because its __init__ triggers side-effects like PyPI
+    version checks and logger configurations.
+    - We cannot simply use `create_autospec` with `instance=True` because that loses all instance
+    attributes defined in __init__.
+
+    The Workaround: We initialize a loose mock and manually set all instance variables (annoying but safe).
+    After seeding, we flip `_spec_set = True`.
+    """
+    config = MagicMock(spec=ClientConfig)
+
+    config.client_name = "Who am I? None of your business!"
+    config.project = "mock-project"
+    config.credentials = create_autospec(Token("abc"))
+    config.api_subversion = "v42"
+    config.base_url = "https://mock_cluster.cognitedata.com"
+    config.headers = {}
+    config.timeout = 60
+    config.file_transfer_timeout = 600
+    config.debug = False
+    # Non-init attributes:
+    config._cluster = "mock_cluster"
+    config.cdf_cluster = "mock_cluster"
+    config._attempt_to_get_cdf_cluster.return_value = "mock_cluster"
+
+    flip_spec_set_on(config)
+    return config
+
+
 class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
     """Mock for AsyncCogniteClient object
 
@@ -210,6 +249,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=AsyncCogniteClient, *args, **kwargs)
+        self.config = _create_client_config_mock()
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.
@@ -299,6 +339,10 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             token=iam_token,
         )
         flip_spec_set_on(self.iam)
+
+        integrations_errors = create_autospec(IntegrationErrorsAPI, instance=True, spec_set=True)
+        self.integrations = create_autospec(IntegrationsAPI, instance=True, errors=integrations_errors)
+        flip_spec_set_on(self.integrations)
 
         self.labels = create_autospec(LabelsAPI, instance=True, spec_set=True)
         self.limits = create_autospec(LimitsAPI, instance=True, spec_set=True)
@@ -420,6 +464,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=CogniteClient, *args, **kwargs)
+        self.config = _create_client_config_mock()
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.
@@ -509,6 +554,10 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             token=iam_token,
         )
         flip_spec_set_on(self.iam)
+
+        integrations_errors = create_autospec(SyncIntegrationErrorsAPI, instance=True, spec_set=True)
+        self.integrations = create_autospec(SyncIntegrationsAPI, instance=True, errors=integrations_errors)
+        flip_spec_set_on(self.integrations)
 
         self.labels = create_autospec(SyncLabelsAPI, instance=True, spec_set=True)
         self.limits = create_autospec(SyncLimitsAPI, instance=True, spec_set=True)

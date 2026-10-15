@@ -49,6 +49,56 @@ You can set global configuration options like this:
 
 You should **assume that these must be set prior to instantiating** an ``AsyncCogniteClient`` or ``CogniteClient`` in order for them to *take effect*.
 
+SSL / Certificate configuration
+--------------------------------
+By default the SDK verifies TLS certificates against the `certifi <https://pypi.org/project/certifi/>`_ CA bundle (Mozilla's curated root list).
+If your environment uses a corporate or custom root CA — for example an internal PKI — you have a few options:
+
+**Option 1: Environment variables (no code change required)**
+
+Set ``SSL_CERT_FILE`` or ``SSL_CERT_DIR`` before starting your process. The SDK's underlying ``httpx`` transport picks these
+up automatically when no custom ``ssl_context`` is configured:
+
+.. code:: bash
+
+    export SSL_CERT_FILE=/etc/ssl/certs/my-corp-bundle.pem
+
+**Option 2: OS trust store**
+
+Use Python's built-in ``ssl`` module to create a context that reads from the operating system's trust store
+(macOS Keychain, Windows Certificate Store, or the system ``/etc/ssl/certs`` directory on Linux).
+This is useful when your IT department pushes corporate root CAs via OS-level policy:
+
+.. code:: python
+
+    import ssl
+    from cognite.client import global_config
+
+    global_config.ssl_context = ssl.create_default_context()
+
+**Option 3: Custom CA bundle file**
+
+Load a specific PEM file directly:
+
+.. code:: python
+
+    import ssl
+    from cognite.client import global_config
+
+    global_config.ssl_context = ssl.create_default_context(cafile="/path/to/ca-bundle.pem")
+
+**Disabling SSL verification entirely** (not recommended outside development):
+
+.. code:: python
+
+    from cognite.client import global_config
+
+    global_config.disable_ssl = True
+
+.. note::
+    ``ssl_context`` and ``SSL_CERT_FILE``/``SSL_CERT_DIR`` must be configured **before the first API request** is made.
+    ``disable_ssl = True`` takes precedence over any ``ssl_context`` that has been set.
+
 Concurrency Settings
 --------------------
 The SDK allows you to control how many concurrent API requests are made for different categories of APIs
@@ -185,7 +235,8 @@ Alternatively, you can toggle debug logging on or off dynamically by setting the
     client.config.debug = False  # disable debug logging
     client.config.debug = True   # enable debug logging again
 
-Note: Large outgoing or incoming payloads will be truncated to 1000 characters in the logs to avoid overwhelming the log output.
+Note: Incoming payloads (response bodies) are truncated to 1000 characters in the logs to avoid overwhelming the log output.
+Outgoing payloads are logged in full.
 
 Custom event loop (e.g. uvloop)
 -------------------------------
@@ -206,10 +257,20 @@ call is made. The background loop is created via ``asyncio.new_event_loop()``, w
 
 HTTP Request logging
 --------------------
-Internally this library uses the ``httpx`` library to perform network calls to the Cognite API service endpoints. For authentication and
-token management we depend on ``authlib`` and ``msal``. ``msal`` uses the `requests <https://pypi.org/project/requests/>`_ library under
-the hood, which in turn is built on `urllib3 <https://pypi.org/project/urllib3/>`_.
+Internally this library uses the ``httpx2`` library to perform network calls to the Cognite API service endpoints, and to fetch tokens
+for ``OAuthClientCredentials``. The ``OAuthClientCertificate``, ``OAuthDeviceCode`` and ``OAuthInteractive`` credential providers
+instead fetch tokens using ``msal``, which is built on `requests <https://pypi.org/project/requests/>`_ and in turn
+`urllib3 <https://pypi.org/project/urllib3/>`_.
 
-If you are enabling DEBUG level logging, please be advised that requests going through ``urllib3`` will not be sanitized at all, meaning
-sensitive information such as authentication credentials and sensitive data may be logged. Thus, it is not recommended in production
-environments, or where credentials cannot be easily disabled or rotated, or where log data may be accessed by others.
+The SDK redacts the credentials it knows about before they reach a log record: credential-carrying headers, and credential fields in request
+payloads and response bodies, such as client secrets, passwords, session nonces, private keys and function secrets. For payloads the SDK
+did not build itself, such as a raw ``dict`` passed to ``client.post()``, all we have to go by is the field names, so treat that case as
+best-effort.
+
+Because ``ClientConfig.headers`` accepts custom headers, the SDK automatically identifies and redacts sensitive header names—such as those
+containing authentication keywords, API keys (not that we use them anymore), and tokens using case-insensitive pattern matching. Standard
+headers whose values do not contain secrets are automatically excluded from redaction.
+
+Enabling DEBUG level logging for the third-party libraries above is a different matter: requests going through e.g. ``urllib3`` will not be
+sanitized at all, meaning sensitive information such as authentication credentials and sensitive data may be logged. Thus, it is not
+recommended in production environments, or where credentials cannot be easily disabled or rotated, or where log data may be accessed by others.

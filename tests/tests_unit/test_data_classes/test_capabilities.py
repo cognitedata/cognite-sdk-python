@@ -5,7 +5,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 import cognite.client.data_classes.capabilities as capabilities_module  # F401
 from cognite.client import CogniteClient
@@ -20,6 +20,8 @@ from cognite.client.data_classes.capabilities import (
     EventsAcl,
     ExperimentsAcl,
     GroupsAcl,
+    IntegrationConfigsAcl,
+    IntegrationsAcl,
     ProjectCapability,
     ProjectCapabilityList,
     ProjectsAcl,
@@ -33,7 +35,7 @@ from cognite.client.data_classes.capabilities import (
 from tests.utils import get_url
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
@@ -69,6 +71,13 @@ def all_acls() -> Iterator[dict[str, Any]]:
             "dataModelsAcl": {
                 "actions": ["READ"],
                 "scope": {"dataModelScope": {"externalIds": ["maintain", "main-data"]}},
+            }
+        },
+        {"dataProductsAcl": {"actions": ["READ", "CREATE", "UPDATE", "DELETE", "USE"], "scope": {"all": {}}}},
+        {
+            "dataProductsAcl": {
+                "actions": ["READ", "USE"],
+                "scope": {"dataProductScope": {"externalIds": ["maintenance-planning", "product.manager"]}},
             }
         },
         {"datasetsAcl": {"actions": ["READ", "WRITE", "OWNER"], "scope": {"all": {}}}},
@@ -273,11 +282,42 @@ class TestCapabilities:
                     "scope": {"appExternalIdScope": {"externalIds": ["my-app", "other-app"]}},
                 }
             },
+            {
+                "dataProductsAcl": {
+                    "actions": ["READ", "CREATE"],
+                    "scope": {"dataProductScope": {"externalIds": ["maintenance-planning", "supply-chain.editor"]}},
+                }
+            },
+            {"integrationsAcl": {"actions": ["READ", "WRITE", "USE"], "scope": {"all": {}}}},
+            {"integrationConfigsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
         ],
     )
     def test_load_dump(self, raw: dict[str, Any]) -> None:
         capability = Capability.load(raw)
         assert capability.dump(camel_case=True) == raw
+
+    @pytest.mark.parametrize(
+        "raw, expected_cls, expected_actions",
+        [
+            (
+                {"integrationsAcl": {"actions": ["READ", "WRITE", "USE"], "scope": {"all": {}}}},
+                IntegrationsAcl,
+                [IntegrationsAcl.Action.Read, IntegrationsAcl.Action.Write, IntegrationsAcl.Action.Use],
+            ),
+            (
+                {"integrationConfigsAcl": {"actions": ["READ", "WRITE"], "scope": {"all": {}}}},
+                IntegrationConfigsAcl,
+                [IntegrationConfigsAcl.Action.Read, IntegrationConfigsAcl.Action.Write],
+            ),
+        ],
+    )
+    def test_load_integrations_acls(
+        self, raw: dict[str, Any], expected_cls: type[Capability], expected_actions: list[Any]
+    ) -> None:
+        capability = Capability.load(raw)
+        assert type(capability) is expected_cls
+        assert capability.actions == expected_actions
+        assert isinstance(capability.scope, AllScope)
 
     def test_load_dump__extra_top_level_keys(self, cap_with_extra_key: dict[str, Any]) -> None:
         capability = Capability.load(cap_with_extra_key)
@@ -350,6 +390,16 @@ class TestCapabilities:
                 "NotificationsAcl",
                 "SEND-PIGEON",
                 {"notificationsAcl": {"actions": ["READ", "SEND-PIGEON"], "scope": {"all": {}}}},
+            ),
+            (
+                "IntegrationsAcl",
+                "DELETE",
+                {"integrationsAcl": {"actions": ["READ", "DELETE"], "scope": {"all": {}}}},
+            ),
+            (
+                "IntegrationConfigsAcl",
+                "USE",
+                {"integrationConfigsAcl": {"actions": ["READ", "USE"], "scope": {"all": {}}}},
             ),
         ],
     )
@@ -481,7 +531,7 @@ def unknown_acls_items() -> list[dict[str, Any]]:
 
 @pytest.fixture
 def mock_groups_resp(
-    httpx_mock: HTTPXMock,
+    httpx2_mock: HTTPXMock,
     cognite_client: CogniteClient,
     unknown_acls_items: list[dict],
     async_client: AsyncCogniteClient,
@@ -499,13 +549,13 @@ def mock_groups_resp(
         ]
     }
     url_pattern = get_url(async_client.iam.groups) + "/groups?all=false"
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
-    yield httpx_mock
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
+    yield httpx2_mock
 
 
 @pytest.fixture
 def mock_token_inspect_resp(
-    httpx_mock: HTTPXMock,
+    httpx2_mock: HTTPXMock,
     cognite_client: CogniteClient,
     unknown_acls_items: list[dict[str, Any]],
     async_client: AsyncCogniteClient,
@@ -516,8 +566,8 @@ def mock_token_inspect_resp(
         "capabilities": [{"projectScope": {"projects": ["my-sandbox"]}, **unknown} for unknown in unknown_acls_items],
     }
     url_pattern = get_url(async_client.iam.token) + "/api/v1/token/inspect"
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
-    yield httpx_mock
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body)
+    yield httpx2_mock
 
 
 class TestCogniteClientDoesntRaiseOnUnknownAcls:

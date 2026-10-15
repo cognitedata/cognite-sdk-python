@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import re
+from types import MappingProxyType
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import filters
@@ -27,6 +28,7 @@ from cognite.client.data_classes.data_modeling.aggregates import (
     UnknownResult,
 )
 from cognite.client.data_classes.data_modeling.data_types import UnitReference
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, PropertyPath, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, TypeInformation
 from cognite.client.data_classes.data_modeling.records import (
     Record,
@@ -35,9 +37,11 @@ from cognite.client.data_classes.data_modeling.records import (
     RecordList,
     RecordsAggregation,
     RecordSource,
+    RecordSourceIdentifier,
     RecordSourceSelector,
     RecordTargetUnit,
     RecordTargetUnits,
+    RecordViewId,
     RecordWrite,
     SyncRecord,
     SyncRecordList,
@@ -62,8 +66,8 @@ def delete_url_pattern(records_base_url: str) -> re.Pattern:
 
 
 @pytest.fixture
-def mock_delete(httpx_mock: HTTPXMock, delete_url_pattern: re.Pattern) -> None:
-    httpx_mock.add_response(method="POST", url=delete_url_pattern, status_code=200)
+def mock_delete(httpx2_mock: HTTPXMock, delete_url_pattern: re.Pattern) -> None:
+    httpx2_mock.add_response(method="POST", url=delete_url_pattern, status_code=200)
 
 
 @pytest.fixture
@@ -72,8 +76,8 @@ def ingest_url_pattern(records_base_url: str) -> re.Pattern:
 
 
 @pytest.fixture
-def mock_ingest(httpx_mock: HTTPXMock, ingest_url_pattern: re.Pattern) -> None:
-    httpx_mock.add_response(method="POST", url=ingest_url_pattern, status_code=202)
+def mock_ingest(httpx2_mock: HTTPXMock, ingest_url_pattern: re.Pattern) -> None:
+    httpx2_mock.add_response(method="POST", url=ingest_url_pattern, status_code=202)
 
 
 @pytest.fixture
@@ -82,8 +86,8 @@ def upsert_url_pattern(records_base_url: str) -> re.Pattern:
 
 
 @pytest.fixture
-def mock_upsert(httpx_mock: HTTPXMock, upsert_url_pattern: re.Pattern) -> None:
-    httpx_mock.add_response(method="POST", url=upsert_url_pattern, status_code=202)
+def mock_upsert(httpx2_mock: HTTPXMock, upsert_url_pattern: re.Pattern) -> None:
+    httpx2_mock.add_response(method="POST", url=upsert_url_pattern, status_code=202)
 
 
 @pytest.fixture
@@ -103,8 +107,8 @@ def record_response() -> dict:
 
 
 @pytest.fixture
-def mock_filter(httpx_mock: HTTPXMock, filter_url_pattern: re.Pattern, record_response: dict) -> None:
-    httpx_mock.add_response(method="POST", url=filter_url_pattern, status_code=200, json={"items": [record_response]})
+def mock_filter(httpx2_mock: HTTPXMock, filter_url_pattern: re.Pattern, record_response: dict) -> None:
+    httpx2_mock.add_response(method="POST", url=filter_url_pattern, status_code=200, json={"items": [record_response]})
 
 
 @pytest.fixture
@@ -130,12 +134,12 @@ class TestRecordsAPIDelete:
     def test_delete_posts_space_external_id_pairs(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_delete: None,
         stream_id: str,
     ) -> None:
         cognite_client.data_modeling.records.delete(RecordId(space="sp", external_id="rec-1"), stream_id=stream_id)
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 1
         body = jsgz_load(requests[0].content)
         assert body == {"items": [{"space": "sp", "externalId": "rec-1"}]}
@@ -143,13 +147,13 @@ class TestRecordsAPIDelete:
     def test_delete_accepts_sequence(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_delete: None,
         stream_id: str,
     ) -> None:
         items = [RecordId(space="sp", external_id="rec-1"), RecordId(space="sp", external_id="rec-2")]
         cognite_client.data_modeling.records.delete(items, stream_id=stream_id)
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body == {
             "items": [
                 {"space": "sp", "externalId": "rec-1"},
@@ -161,30 +165,30 @@ class TestRecordsAPIDelete:
         self,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         delete_url_pattern: re.Pattern,
         stream_id: str,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.setattr(async_client.data_modeling.records, "_DELETE_LIMIT", 42)
-        httpx_mock.add_response(method="POST", url=delete_url_pattern, status_code=200)
-        httpx_mock.add_response(method="POST", url=delete_url_pattern, status_code=200)
+        httpx2_mock.add_response(method="POST", url=delete_url_pattern, status_code=200)
+        httpx2_mock.add_response(method="POST", url=delete_url_pattern, status_code=200)
         items = [RecordId(space="sp", external_id=f"r-{i}") for i in range(43)]
         cognite_client.data_modeling.records.delete(items, stream_id=stream_id)
-        assert len(httpx_mock.get_requests()) == 2
+        assert len(httpx2_mock.get_requests()) == 2
 
 
 class TestRecordsAPIIngest:
     def test_ingest_single_posts_correct_body(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_ingest: None,
         stream_id: str,
         write_item: RecordWrite,
     ) -> None:
         cognite_client.data_modeling.records.ingest(write_item, stream_id=stream_id)
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 1
         body = jsgz_load(requests[0].content)
         assert body == {
@@ -205,15 +209,15 @@ class TestRecordsAPIIngest:
     def test_ingest_chunks_over_1000(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         ingest_url_pattern: re.Pattern,
         stream_id: str,
     ) -> None:
-        httpx_mock.add_response(method="POST", url=ingest_url_pattern, status_code=202)
-        httpx_mock.add_response(method="POST", url=ingest_url_pattern, status_code=202)
+        httpx2_mock.add_response(method="POST", url=ingest_url_pattern, status_code=202)
+        httpx2_mock.add_response(method="POST", url=ingest_url_pattern, status_code=202)
         items = [RecordWrite(space="sp", external_id=f"r-{i}", sources=[]) for i in range(1001)]
         cognite_client.data_modeling.records.ingest(items, stream_id=stream_id)
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 2
         assert len(jsgz_load(requests[0].content)["items"]) == 1000
         assert len(jsgz_load(requests[1].content)["items"]) == 1
@@ -223,13 +227,13 @@ class TestRecordsAPIUpsert:
     def test_upsert_single_posts_correct_body(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_upsert: None,
         stream_id: str,
         write_item: RecordWrite,
     ) -> None:
         cognite_client.data_modeling.records.upsert(write_item, stream_id=stream_id)
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 1
         assert requests[0].url.path.endswith(f"/streams/{stream_id}/records/upsert")
         body = jsgz_load(requests[0].content)
@@ -251,7 +255,7 @@ class TestRecordsAPIUpsert:
     def test_upsert_accepts_sequence(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_upsert: None,
         stream_id: str,
     ) -> None:
@@ -260,24 +264,24 @@ class TestRecordsAPIUpsert:
             RecordWrite(space="sp", external_id="rec-2", sources=[]),
         ]
         cognite_client.data_modeling.records.upsert(items, stream_id=stream_id)
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert [item["externalId"] for item in body["items"]] == ["rec-1", "rec-2"]
 
     def test_upsert_chunks(
         self,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         upsert_url_pattern: re.Pattern,
         stream_id: str,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         monkeypatch.setattr(async_client.data_modeling.records, "_CREATE_LIMIT", 10)
-        httpx_mock.add_response(method="POST", url=upsert_url_pattern, status_code=202)
-        httpx_mock.add_response(method="POST", url=upsert_url_pattern, status_code=202)
+        httpx2_mock.add_response(method="POST", url=upsert_url_pattern, status_code=202)
+        httpx2_mock.add_response(method="POST", url=upsert_url_pattern, status_code=202)
         items = [RecordWrite(space="sp", external_id=f"r-{i}", sources=[]) for i in range(11)]
         cognite_client.data_modeling.records.upsert(items, stream_id=stream_id)
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 2
         assert len(jsgz_load(requests[0].content)["items"]) == 10
         assert len(jsgz_load(requests[1].content)["items"]) == 1
@@ -287,11 +291,11 @@ class TestRecordsAPIAggregate:
     def test_aggregate_posts_request_and_returns_wrapper(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         records_base_url: str,
         stream_id: str,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=re.compile(re.escape(records_base_url) + r"/aggregate$"),
             json={"aggregates": {"avg_temp": {"avg": 22.5}}},
@@ -307,7 +311,7 @@ class TestRecordsAPIAggregate:
 
         assert isinstance(out, RecordsAggregation)
         assert out.dump()["aggregates"] == {"avg_temp": {"avg": 22.5}}
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body == {
             "aggregates": {"avg_temp": {"avg": {"property": ["sp", "container-x", "temp"]}}},
             "lastUpdatedTime": {"gte": 1_000_000},
@@ -319,11 +323,11 @@ class TestRecordsAPIAggregate:
     def test_aggregate_accepts_dict_filter(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         records_base_url: str,
         stream_id: str,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=re.compile(re.escape(records_base_url) + r"/aggregate$"),
             json={"aggregates": {"total": {"count": 7}}},
@@ -334,17 +338,17 @@ class TestRecordsAPIAggregate:
             filter={"matchAll": {}},
         )
 
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["filter"] == {"matchAll": {}}
 
     def test_aggregate_accepts_mixed_typed_and_dict_aggregates(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         records_base_url: str,
         stream_id: str,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=re.compile(re.escape(records_base_url) + r"/aggregate$"),
             json={"aggregates": {"total": {"count": 7}}},
@@ -387,7 +391,7 @@ class TestRecordsAPIAggregate:
             },
         )
 
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["aggregates"] == {
             "by_day": {
                 "timeHistogram": {
@@ -581,7 +585,7 @@ class TestRecordsAPIFilter:
     def test_list_returns_record_list(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_filter: None,
         stream_id: str,
     ) -> None:
@@ -590,46 +594,46 @@ class TestRecordsAPIFilter:
         assert len(result) == 1
         assert result[0].external_id == "rec-1"
         assert result[0].properties == {"sp": {"container-x": {"temp": 22.5}}}
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         assert request.url.path.endswith(f"/streams/{stream_id}/records/filter")
 
     def test_list_default_limit_is_10(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_filter: None,
         stream_id: str,
     ) -> None:
         cognite_client.data_modeling.records.filter(stream_id=stream_id)
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body == {"limit": 10}
 
     def test_list_sends_last_updated_time_and_limit(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_filter: None,
         stream_id: str,
     ) -> None:
         cognite_client.data_modeling.records.filter(
             stream_id=stream_id, last_updated_time=TimeRange(gte=1_000_000), limit=50
         )
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["lastUpdatedTime"] == {"gte": 1_000_000}
         assert body["limit"] == 50
 
     def test_list_sources_body_shape(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_filter: None,
         stream_id: str,
     ) -> None:
         cognite_client.data_modeling.records.filter(
             stream_id=stream_id,
-            sources=[RecordSourceSelector(RecordContainerId(space="sp", external_id="container-x"), ["*"])],
+            sources=[RecordSourceSelector(ContainerId(space="sp", external_id="container-x"), ["*"])],
         )
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["sources"] == [
             {"source": {"type": "container", "space": "sp", "externalId": "container-x"}, "properties": ["*"]}
         ]
@@ -637,30 +641,30 @@ class TestRecordsAPIFilter:
     def test_list_sort_body_shape(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_filter: None,
         stream_id: str,
     ) -> None:
         cognite_client.data_modeling.records.filter(
             stream_id=stream_id, sort=InstanceSort(property=["sp", "container-x", "temp"], direction="descending")
         )
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["sort"] == [{"property": ["sp", "container-x", "temp"], "direction": "descending"}]
 
     def test_list_include_typing(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         filter_url_pattern: re.Pattern,
         record_response: dict,
         stream_id: str,
     ) -> None:
         typing = {"sp": {"container-x": {"temp": {"type": {"type": "float64", "list": False}, "nullable": True}}}}
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=filter_url_pattern, status_code=200, json={"items": [record_response], "typing": typing}
         )
         result = cognite_client.data_modeling.records.filter(stream_id=stream_id, include_typing=True)
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["includeTyping"] is True
         assert isinstance(result.typing, TypeInformation)
 
@@ -669,35 +673,35 @@ class TestRecordsAPISync:
     def test_sync_returns_page_with_cursor(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         sync_url_pattern: re.Pattern,
         record_response: dict,
         stream_id: str,
     ) -> None:
         items = [{**record_response, "externalId": f"rec-{i}", "status": "created"} for i in range(10)]
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=sync_url_pattern,
             status_code=200,
             json={"items": items, "nextCursor": "abc", "hasNext": False},
         )
-        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago")
+        page = next(cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago"))
         assert isinstance(page, SyncRecordList)
         assert page.cursor == "abc"
         assert page.has_next is False
         assert page[0].status == "created"
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         assert request.url.path.endswith(f"/streams/{stream_id}/records/sync")
-        assert jsgz_load(request.content) == {"initializeCursor": "7d-ago", "limit": 10}
+        assert jsgz_load(request.content) == {"initializeCursor": "7d-ago", "limit": 1000}
 
-    def test_sync_resume_sends_cursor(
+    def test_sync_with_cursor_sends_cursor(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         sync_url_pattern: re.Pattern,
         stream_id: str,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=sync_url_pattern,
             status_code=200,
@@ -709,7 +713,7 @@ class TestRecordsAPISync:
                 "hasNext": True,
             },
         )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=sync_url_pattern,
             status_code=200,
@@ -721,77 +725,312 @@ class TestRecordsAPISync:
                 "hasNext": False,
             },
         )
-        first = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="2d-ago", limit=1)
+        first = next(
+            cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="2d-ago", chunk_size=1)
+        )
         assert first.has_next is True
         assert first.cursor is not None
-        second = cognite_client.data_modeling.records.sync_resume(stream_id=stream_id, cursor=first.cursor, limit=1)
+        second = next(cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor=first.cursor, chunk_size=1))
         assert second.cursor == "p3"
-        body2 = jsgz_load(httpx_mock.get_requests()[1].content)
+        body2 = jsgz_load(httpx2_mock.get_requests()[1].content)
         assert body2 == {"cursor": "p2", "limit": 1}
 
     def test_sync_deleted_tombstone_has_no_properties(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         sync_url_pattern: re.Pattern,
         stream_id: str,
     ) -> None:
         item = {"space": "sp", "externalId": "rec-1", "createdTime": 1, "lastUpdatedTime": 2, "status": "deleted"}
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=sync_url_pattern,
             status_code=200,
             json={"items": [item], "nextCursor": "z", "hasNext": False},
         )
-        page = cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="c", limit=1)
+        page = next(cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="c", chunk_size=1))
         assert page[0].status == "deleted"
         assert page[0].properties is None
 
     def test_sync_include_typing(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         sync_url_pattern: re.Pattern,
         record_response: dict,
         stream_id: str,
     ) -> None:
         item = {**record_response, "status": "updated"}
         typing = {"sp": {"container-x": {"temp": {"type": {"type": "float64", "list": False}, "nullable": True}}}}
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=sync_url_pattern,
             status_code=200,
             json={"items": [item], "nextCursor": "z", "hasNext": False, "typing": typing},
         )
-        page = cognite_client.data_modeling.records.sync(
-            stream_id=stream_id, initialize_cursor="c", include_typing=True, limit=1
+        page = next(
+            cognite_client.data_modeling.records.sync(
+                stream_id=stream_id, initialize_cursor="c", include_typing=True, chunk_size=1
+            )
         )
-        assert jsgz_load(httpx_mock.get_requests()[0].content)["includeTyping"] is True
+        assert jsgz_load(httpx2_mock.get_requests()[0].content)["includeTyping"] is True
         assert isinstance(page.typing, TypeInformation)
 
     def test_sync_target_units_body_shape(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         sync_url_pattern: re.Pattern,
         record_response: dict,
         stream_id: str,
     ) -> None:
         item = {**record_response, "status": "updated"}
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=sync_url_pattern,
             status_code=200,
             json={"items": [item], "nextCursor": "z", "hasNext": False},
         )
-        cognite_client.data_modeling.records.sync(
-            stream_id=stream_id,
-            initialize_cursor="c",
-            target_units=RecordTargetUnits(unit_system_name="Imperial"),
-            limit=1,
+        next(
+            cognite_client.data_modeling.records.sync(
+                stream_id=stream_id,
+                initialize_cursor="c",
+                target_units=RecordTargetUnits(unit_system_name="Imperial"),
+                chunk_size=1,
+            )
         )
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["targetUnits"] == {"unitSystemName": "Imperial"}
+
+    @pytest.mark.parametrize("has_next", [False, True])
+    def test_sync_partial_chunk_yields_after_one_request(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+        has_next: bool,
+    ) -> None:
+        # The sync endpoint always returns a 'nextCursor' - that is what makes the feed
+        # resumable - so a chunk holding fewer records than 'chunk_size' must not make the
+        # SDK keep requesting. Only one response is registered, so any extra request fails.
+        items = [{**record_response, "externalId": "rec-1", "status": "created"}]
+        httpx2_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": items, "nextCursor": "abc", "hasNext": has_next},
+        )
+        page = next(
+            cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago", chunk_size=10)
+        )
+        assert len(page) == 1
+        assert page.cursor == "abc"
+        assert page.has_next is has_next
+        assert len(httpx2_mock.get_requests()) == 1
+
+    def test_sync_empty_chunk_yields_after_one_request(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        stream_id: str,
+    ) -> None:
+        # A drained change feed returns no items, but still a cursor to resume from later.
+        httpx2_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [], "nextCursor": "abc", "hasNext": False},
+        )
+        page = next(
+            cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago", chunk_size=10)
+        )
+        assert len(page) == 0
+        assert page.cursor == "abc"
+        assert page.has_next is False
+        assert len(httpx2_mock.get_requests()) == 1
+
+    def test_sync_with_cursor_partial_chunk_yields_after_one_request(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        items = [{**record_response, "externalId": "rec-1", "status": "updated"}]
+        httpx2_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": items, "nextCursor": "p2", "hasNext": False},
+        )
+        page = next(cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="p1", chunk_size=10))
+        assert len(page) == 1
+        assert page.cursor == "p2"
+        assert len(httpx2_mock.get_requests()) == 1
+
+    def test_sync_iterates_all_chunks(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        # Iteration keeps requesting chunks until hasNext is False, rotating the cursor
+        # ('initializeCursor' only on the first request) and yielding one list per request.
+        pages = [
+            {
+                "items": [{**record_response, "externalId": "rec-1", "status": "created"}],
+                "nextCursor": "c1",
+                "hasNext": True,
+            },
+            {
+                "items": [{**record_response, "externalId": "rec-2", "status": "updated"}],
+                "nextCursor": "c2",
+                "hasNext": True,
+            },
+            {"items": [], "nextCursor": "c3", "hasNext": False},
+        ]
+        for page in pages:
+            httpx2_mock.add_response(method="POST", url=sync_url_pattern, status_code=200, json=page)
+        chunks = list(
+            cognite_client.data_modeling.records.sync(stream_id=stream_id, initialize_cursor="7d-ago", chunk_size=2)
+        )
+        assert [[record.external_id for record in chunk] for chunk in chunks] == [["rec-1"], ["rec-2"], []]
+        assert [chunk.cursor for chunk in chunks] == ["c1", "c2", "c3"]
+        assert [chunk.has_next for chunk in chunks] == [True, True, False]
+        bodies = [jsgz_load(request.content) for request in httpx2_mock.get_requests()]
+        assert bodies == [
+            {"initializeCursor": "7d-ago", "limit": 2},
+            {"cursor": "c1", "limit": 2},
+            {"cursor": "c2", "limit": 2},
+        ]
+
+    @pytest.mark.parametrize("sizes", [(0, 1, 2), (1, 0, 2), (0, 0, 1)])
+    def test_sync_empty_intermediate_and_full_final_pages(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+        sizes: tuple[int, ...],
+    ) -> None:
+        for index, size in enumerate(sizes):
+            httpx2_mock.add_response(
+                method="POST",
+                url=sync_url_pattern,
+                json={
+                    "items": [
+                        {**record_response, "externalId": f"{index}-{i}", "status": "created"} for i in range(size)
+                    ],
+                    "nextCursor": f"c{index}",
+                    "hasNext": index < len(sizes) - 1,
+                },
+            )
+        chunks = list(cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="start", chunk_size=2))
+        assert [len(chunk) for chunk in chunks] == list(sizes)
+        assert chunks[-1].has_next is False
+        bodies = [jsgz_load(request.content) for request in httpx2_mock.get_requests()]
+        assert bodies == [{"cursor": "start" if i == 0 else f"c{i - 1}", "limit": 2} for i in range(len(sizes))]
+
+    def test_sync_with_cursor_iterates_all_chunks(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        record_response: dict,
+        stream_id: str,
+    ) -> None:
+        pages = [
+            {
+                "items": [{**record_response, "externalId": "rec-1", "status": "created"}],
+                "nextCursor": "c1",
+                "hasNext": True,
+            },
+            {
+                "items": [{**record_response, "externalId": "rec-2", "status": "deleted"}],
+                "nextCursor": "c2",
+                "hasNext": False,
+            },
+        ]
+        for page in pages:
+            httpx2_mock.add_response(method="POST", url=sync_url_pattern, status_code=200, json=page)
+        chunks = list(cognite_client.data_modeling.records.sync(stream_id=stream_id, cursor="p0"))
+        assert [record.external_id for chunk in chunks for record in chunk] == ["rec-1", "rec-2"]
+        assert chunks[-1].cursor == "c2"
+        assert chunks[-1].has_next is False
+        bodies = [jsgz_load(request.content) for request in httpx2_mock.get_requests()]
+        assert bodies == [{"cursor": "p0", "limit": 1000}, {"cursor": "c1", "limit": 1000}]
+
+    @pytest.mark.parametrize("chunk_size", [0, -2, 1001])
+    def test_sync_rejects_out_of_range_chunk_size(
+        self,
+        cognite_client: CogniteClient,
+        stream_id: str,
+        chunk_size: int,
+    ) -> None:
+        # 'chunk_size' is the page size of a single request, which the API caps at 1000.
+        # Validation is lazy (the method is a generator), so the raise happens on next().
+        with pytest.raises(ValueError, match="between 1 and 1000"):
+            next(
+                cognite_client.data_modeling.records.sync(
+                    stream_id=stream_id, initialize_cursor="c", chunk_size=chunk_size
+                )
+            )
+
+    def test_sync_requires_exactly_one_cursor(
+        self,
+        cognite_client: CogniteClient,
+        stream_id: str,
+    ) -> None:
+        # The overloads enforce this statically; the runtime check covers untyped callers.
+        with pytest.raises(ValueError, match="exactly one of 'initialize_cursor' or 'cursor'"):
+            next(
+                cognite_client.data_modeling.records.sync(  # type: ignore[call-overload]
+                    stream_id=stream_id, initialize_cursor="7d-ago", cursor="abc"
+                )
+            )
+        with pytest.raises(ValueError, match="exactly one of 'initialize_cursor' or 'cursor'"):
+            next(cognite_client.data_modeling.records.sync(stream_id=stream_id))  # type: ignore[call-overload]
+
+    def test_sync_body_shape_with_filter_and_sources(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        sync_url_pattern: re.Pattern,
+        stream_id: str,
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST",
+            url=sync_url_pattern,
+            status_code=200,
+            json={"items": [], "nextCursor": "z", "hasNext": False},
+        )
+        next(
+            cognite_client.data_modeling.records.sync(
+                stream_id=stream_id,
+                initialize_cursor="2m-ago",
+                filter=filters.Equals(property=["sp", "container-x", "temp"], value=22.5),
+                sources=[
+                    RecordSourceSelector(source=ContainerId(space="sp", external_id="container-x"), properties=["*"])
+                ],
+                chunk_size=5,
+            )
+        )
+        assert jsgz_load(httpx2_mock.get_requests()[0].content) == {
+            "initializeCursor": "2m-ago",
+            "limit": 5,
+            "filter": {"equals": {"property": ["sp", "container-x", "temp"], "value": 22.5}},
+            "sources": [
+                {"source": {"space": "sp", "externalId": "container-x", "type": "container"}, "properties": ["*"]}
+            ],
+        }
 
 
 class TestRecordDTOs:
@@ -812,13 +1051,13 @@ class TestRecordDTOs:
         assert loaded.sources[0].properties == {"temp": 22.5}
 
     def test_record_source_reference_dump(self) -> None:
-        ref = RecordContainerId(space="s", external_id="c")
+        ref = ContainerId(space="s", external_id="c")
         d = ref.dump()
         assert d == {"type": "container", "space": "s", "externalId": "c"}
 
     def test_record_source_dump(self) -> None:
         src = RecordSource(
-            source=RecordContainerId(space="s", external_id="c"),
+            source=ContainerId(space="s", external_id="c"),
             properties={"x": 1},
         )
         d = src.dump()
@@ -873,7 +1112,7 @@ class TestRecordDTOs:
         assert TimeRange().dump() == {}
 
     def test_record_source_selector_dump(self) -> None:
-        selector = RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), ["temp", "pressure"])
+        selector = RecordSourceSelector(ContainerId(space="sp", external_id="c"), ["temp", "pressure"])
         assert selector.dump() == {
             "source": {"type": "container", "space": "sp", "externalId": "c"},
             "properties": ["temp", "pressure"],
@@ -907,11 +1146,12 @@ class TestRecordDTOs:
     ) -> None:
         expected_err = "Provide exactly one of 'properties' or 'unit_system_name'."
         with pytest.raises(ValueError, match=expected_err):
-            cognite_client.data_modeling.records.sync(
-                stream_id=stream_id,
-                initialize_cursor="c",
-                target_units=RecordTargetUnits(),
-                limit=1,
+            next(
+                cognite_client.data_modeling.records.sync(
+                    stream_id=stream_id,
+                    initialize_cursor="c",
+                    target_units=RecordTargetUnits(),
+                )
             )
 
     def test_record_target_units_rejects_multiple_request_modes(
@@ -919,11 +1159,12 @@ class TestRecordDTOs:
     ) -> None:
         expected_err = "Provide exactly one of 'properties' or 'unit_system_name'."
         with pytest.raises(ValueError, match=expected_err):
-            cognite_client.data_modeling.records.sync(
-                stream_id=stream_id,
-                initialize_cursor="c",
-                target_units=RecordTargetUnits(properties=[], unit_system_name="Imperial"),
-                limit=1,
+            next(
+                cognite_client.data_modeling.records.sync(
+                    stream_id=stream_id,
+                    initialize_cursor="c",
+                    target_units=RecordTargetUnits(properties=[], unit_system_name="Imperial"),
+                )
             )
 
     def test_sync_record_load_dump_round_trip(self) -> None:
@@ -948,6 +1189,30 @@ class TestRecordDTOs:
         assert record.properties is None
         assert "properties" not in record.dump()
 
+    def test_sync_record_list_public_load(self) -> None:
+        items = [
+            {"space": "sp", "externalId": f"rec-{i}", "createdTime": 1, "lastUpdatedTime": 2, "status": "created"}
+            for i in range(2)
+        ]
+        page = SyncRecordList.load(items)
+        assert isinstance(page, SyncRecordList)
+        assert [record.external_id for record in page] == ["rec-0", "rec-1"]
+        assert page.cursor is None
+        assert page.has_next is False
+        assert page.typing is None
+
+
+class TestRecordsAPIFilterLimit:
+    @pytest.mark.parametrize("limit", [1001, 5000])
+    def test_filter_rejects_limit_above_max(self, cognite_client: CogniteClient, stream_id: str, limit: int) -> None:
+        with pytest.raises(ValueError, match="'limit' must be between 1 and 1000"):
+            cognite_client.data_modeling.records.filter(stream_id=stream_id, limit=limit)
+
+    @pytest.mark.parametrize("limit", [None, -1])
+    def test_filter_rejects_unlimited(self, cognite_client: CogniteClient, stream_id: str, limit: object) -> None:
+        with pytest.raises((TypeError, ValueError), match="'limit'"):
+            cognite_client.data_modeling.records.filter(stream_id=stream_id, limit=limit)  # type: ignore[arg-type]
+
 
 class TestRecordPropertyPathValidation:
     """The records DTOs take property paths too, with the same bare-string hazard."""
@@ -958,9 +1223,159 @@ class TestRecordPropertyPathValidation:
 
     def test_record_source_selector_rejects_bare_string_properties(self) -> None:
         with pytest.raises(TypeError, match="'properties' must be a sequence of strings"):
-            RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), "temp")  # type: ignore[arg-type]
+            RecordSourceSelector(ContainerId(space="sp", external_id="c"), "temp")  # type: ignore[arg-type]
 
     def test_record_source_selector_rejects_no_properties(self) -> None:
         # The API requires minItems: 1 for properties.
         with pytest.raises(ValueError, match="'properties' must not be empty"):
-            RecordSourceSelector(RecordContainerId(space="sp", external_id="c"), [])
+            RecordSourceSelector(ContainerId(space="sp", external_id="c"), [])
+
+    def test_record_target_unit_accepts_view_property_reference(self) -> None:
+        target_unit = RecordTargetUnit(
+            (ViewId("sp", "my_view", "v1"), "pressure"),
+            UnitReference("pressure:pa"),
+        )
+        assert target_unit.dump() == {
+            "property": ["sp", "my_view/v1", "pressure"],
+            "unit": {"externalId": "pressure:pa"},
+        }
+
+    def test_source_property_tuple_rejects_non_string_property(self) -> None:
+        with pytest.raises(TypeError, match="must have a string property"):
+            RecordTargetUnit((ViewId("sp", "my_view", "v1"), 42), UnitReference("pressure:pa"))  # type: ignore[arg-type]
+
+    def test_target_unit_accepts_source_property_list(self) -> None:
+        target_unit = RecordTargetUnit([ViewId("sp", "v", "v1"), "temp"], UnitReference("temperature:deg_c"))
+        assert target_unit.dump()["property"] == ["sp", "v/v1", "temp"]
+
+    @pytest.mark.parametrize("property_", [[], ["sp", 42], b"temp"])
+    def test_target_unit_rejects_invalid_path(self, property_: object) -> None:
+        with pytest.raises((TypeError, ValueError), match="'property' must"):
+            RecordTargetUnit(property_, UnitReference("pressure:pa"))  # type: ignore[arg-type]
+
+
+class TestRecordViewId:
+    def test_version_is_required(self) -> None:
+        with pytest.raises(TypeError):
+            RecordViewId(space="my_space", external_id="my_view")  # type: ignore[call-arg]
+
+
+class TestRecordSourceViews:
+    @pytest.mark.parametrize(
+        "source, expected",
+        [
+            (RecordViewId("sp", "my_view", "v1"), RecordViewId("sp", "my_view", "v1")),
+            (ViewId("sp", "my_view", "v1"), RecordViewId("sp", "my_view", "v1")),
+            (("sp", "my_view", "v1"), RecordViewId("sp", "my_view", "v1")),
+            (RecordContainerId("sp", "my_container"), RecordContainerId("sp", "my_container")),
+            (ContainerId("sp", "my_container"), RecordContainerId("sp", "my_container")),
+            (("sp", "my_container"), RecordContainerId("sp", "my_container")),
+        ],
+        ids=["record-view", "view", "view-tuple", "record-container", "container", "container-tuple"],
+    )
+    def test_source_identifiers(
+        self, source: RecordSourceIdentifier, expected: RecordContainerId | RecordViewId
+    ) -> None:
+        resource = RecordSource(source, {"temp": 25.0})
+        assert resource.source == expected
+        assert resource.dump() == {"source": expected.dump(), "properties": {"temp": 25.0}}
+        if isinstance(source, (RecordContainerId, RecordViewId)):
+            assert resource.source is source
+
+    def test_selector_view_round_trip(self) -> None:
+        raw = {"source": {"type": "view", "space": "sp", "externalId": "v", "version": "v1"}, "properties": ["temp"]}
+        selector = RecordSourceSelector._load(raw)
+        assert selector.source == RecordViewId("sp", "v", "v1")
+        assert selector.dump() == raw
+
+    @pytest.mark.parametrize(
+        "raw, expected",
+        [
+            ({"space": "sp", "externalId": "v", "version": "v1", "type": "view"}, RecordViewId("sp", "v", "v1")),
+            ({"space": "sp", "external_id": "v", "version": "v1"}, RecordViewId("sp", "v", "v1")),
+            ({"space": "sp", "externalId": "c", "type": "container"}, RecordContainerId("sp", "c")),
+            ({"space": "sp", "external_id": "c"}, RecordContainerId("sp", "c")),
+        ],
+        ids=["view-camel-case", "view-snake-case", "container-camel-case", "container-snake-case"],
+    )
+    def test_source_dictionary_formats(self, raw: dict, expected: RecordContainerId | RecordViewId) -> None:
+        loaded = RecordSource._load({"source": raw, "properties": {"temp": 25.0}})
+        assert loaded.source == expected
+        assert loaded.properties == {"temp": 25.0}
+
+    @pytest.mark.parametrize(
+        "source, expected",
+        [
+            (["sp", "my_view", "v1"], RecordViewId("sp", "my_view", "v1")),
+            (["sp", "my_container"], RecordContainerId("sp", "my_container")),
+        ],
+    )
+    def test_source_accepts_any_sequence(self, source: list[str], expected: RecordContainerId | RecordViewId) -> None:
+        assert RecordSource(source, {}).source == expected  # type: ignore[arg-type]
+
+    def test_source_rejects_non_identifiers(self) -> None:
+        with pytest.raises(TypeError, match="Cannot load record source"):
+            RecordSource("sp", {})  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize(
+        "source",
+        [
+            {"type": "view", "space": "sp", "externalId": "v"},
+            {"space": "sp", "externalId": "v", "version": None},
+            ("sp", "v", None),
+        ],
+    )
+    def test_source_rejects_missing_version(self, source: object) -> None:
+        with pytest.raises(TypeError, match="requires an explicit 'version'"):
+            RecordSource(source, {})  # type: ignore[arg-type]
+
+    def test_source_accepts_any_mapping_and_infers_type(self) -> None:
+        source = MappingProxyType({"space": "sp", "externalId": "v", "version": "v1"})
+        assert RecordSource(source, {}).source == RecordViewId("sp", "v", "v1")  # type: ignore[arg-type]
+
+    def test_source_load_rejects_unknown_type(self) -> None:
+        raw = {"source": {"space": "sp", "externalId": "x", "type": "node"}, "properties": {}}
+        with pytest.raises(ValueError, match="must be 'container' or 'view', but was 'node'"):
+            RecordSource._load(raw)
+
+    def test_source_rejects_wrong_tuple_length(self) -> None:
+        with pytest.raises(ValueError, match="Invalid length for record source identifier"):
+            RecordSource(source=("sp",), properties={})  # type: ignore[arg-type]
+
+    def test_source_rejects_view_without_version(self) -> None:
+        with pytest.raises(ValueError, match="requires an explicit version"):
+            RecordSource(source=ViewId("sp", "my_view"), properties={})
+
+
+class TestRecordViewConversion:
+    def test_as_write_reconstructs_sources(self) -> None:
+        properties = {"sp": {"my_view/v1": {"temp": 22.5}, "my_container": {"pressure": 1.0}}}
+        record = Record("sp", "rec-1", 100, 200, properties)
+        sources = record.as_write().sources
+        assert [source.dump() for source in sources] == [
+            {
+                "source": {"type": "view", "space": "sp", "externalId": "my_view", "version": "v1"},
+                "properties": {"temp": 22.5},
+            },
+            {
+                "source": {"type": "container", "space": "sp", "externalId": "my_container"},
+                "properties": {"pressure": 1.0},
+            },
+        ]
+        sources[0].properties["temp"] = 30.0
+        assert properties["sp"]["my_view/v1"]["temp"] == 22.5
+
+
+class TestRecordsAggregateWithViews:
+    @pytest.mark.parametrize(
+        "property_",
+        [
+            (ViewId("my_space", "my_view", "v1"), "temperature"),
+            (RecordViewId("my_space", "my_view", "v1"), "temperature"),
+            ("my_space", "my_view/v1", "temperature"),
+            PropertyId(ViewId("my_space", "my_view", "v1"), "temperature"),
+        ],
+        ids=["view-tuple", "record-view-tuple", "path", "property-id"],
+    )
+    def test_aggregate_property_references(self, property_: PropertyPath) -> None:
+        assert Average(property_).dump() == {"avg": {"property": ["my_space", "my_view/v1", "temperature"]}}

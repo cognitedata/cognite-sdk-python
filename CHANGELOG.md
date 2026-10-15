@@ -12,6 +12,170 @@ As of 2025-08-29, changes are grouped as follows
 - ✨ Features: New features or additions to existing features.
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
+- 📦 Dependencies: Dependency updates and changes.
+
+## [8.22.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.21.0...v8.22.0) (2026-10-15)
+
+
+### Features
+
+* **agents:** support userSession actions in agent chat ([#2883](https://github.com/cognitedata/cognite-sdk-python/issues/2883)) ([0a86981](https://github.com/cognitedata/cognite-sdk-python/commit/0a8698111ef8ae4885751e220c7669e39aae4ef8))
+
+
+### Bug Fixes
+
+* **PrincipalsAPI:** pick CogIdP auth URL from org prefix, fix sync-client deadlock ([#2894](https://github.com/cognitedata/cognite-sdk-python/issues/2894)) ([33fe33a](https://github.com/cognitedata/cognite-sdk-python/commit/33fe33a9dbb33017fe0556aaa1d1207503faf8a7))
+
+## [8.21.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.20.0...v8.21.0) (2026-10-13)
+
+
+### Features
+
+* **integrations:** Add Integration Errors sub-resource ([#2828](https://github.com/cognitedata/cognite-sdk-python/issues/2828)) ([c96adef](https://github.com/cognitedata/cognite-sdk-python/commit/c96adef344df74249840446eb4c3076b676b23c2))
+* **records:** support views as record sources and in property references ([#2801](https://github.com/cognitedata/cognite-sdk-python/issues/2801)) ([7618c63](https://github.com/cognitedata/cognite-sdk-python/commit/7618c6351e62e3cd642f1f2f928745509ddc24a1))
+* **time series:** Add `time_series_type` helper param to `data_modeling.time_series.list` (DM-4186) ([#2870](https://github.com/cognitedata/cognite-sdk-python/issues/2870)) ([8be0298](https://github.com/cognitedata/cognite-sdk-python/commit/8be0298f97f83c79415c62da69ff91e246528aa9))
+
+
+### Bug Fixes
+
+* handle empty unique aggregation buckets ([#2891](https://github.com/cognitedata/cognite-sdk-python/issues/2891)) ([9a6a5c9](https://github.com/cognitedata/cognite-sdk-python/commit/9a6a5c90ffede4bf22a35a73d26af613c36a3a58))
+
+
+### Dependencies
+
+* remove  `authlib` dependency (DM-4209) ([#2892](https://github.com/cognitedata/cognite-sdk-python/issues/2892)) ([5ca8f95](https://github.com/cognitedata/cognite-sdk-python/commit/5ca8f953fd33b4411e334abf2292530e64b1af57))
+
+## [8.20.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.19.0...v8.20.0) (2026-10-02)
+
+
+### Features
+
+* **time series:** accept `Datapoints`/`DatapointsArray` as datapoints in `insert_states` (DM-4187) ([#2871](https://github.com/cognitedata/cognite-sdk-python/issues/2871)) ([c3520ef](https://github.com/cognitedata/cognite-sdk-python/commit/c3520ef75e7365216f04d1a7b04a0022fdd6dec9))
+
+
+### Bug Fixes
+
+* remove UserWarning on non-standard base URLs (has become a common occurrence) ([#2867](https://github.com/cognitedata/cognite-sdk-python/issues/2867)) ([68f7a57](https://github.com/cognitedata/cognite-sdk-python/commit/68f7a571644c67843ff4f685018ac8180f05ab20))
+
+## [8.19.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.18.0...v8.19.0) (2026-09-30)
+
+
+### Features
+
+* **ACL:** Add data products ACL ([#2857](https://github.com/cognitedata/cognite-sdk-python/issues/2857)) ([9ab774a](https://github.com/cognitedata/cognite-sdk-python/commit/9ab774a42fd5f1ee73ee7cee93d28b74eb2495c5))
+* **integrations:** Add Integrations core CRUD (list/create/retrieve/update/delete) ([#2827](https://github.com/cognitedata/cognite-sdk-python/issues/2827)) ([3c44e4d](https://github.com/cognitedata/cognite-sdk-python/commit/3c44e4d5dcd948397370de7516cffe4cd6f1b225))
+* **time series:** add state time series support to datapoint subscriptions (DM-4159) ([#2860](https://github.com/cognitedata/cognite-sdk-python/issues/2860)) ([006b670](https://github.com/cognitedata/cognite-sdk-python/commit/006b6706b43f411e2d689a889ca1de381c838b36))
+* **time series:** add to_pandas()/retrieve_dataframe() support for state-only aggregates ([#2858](https://github.com/cognitedata/cognite-sdk-python/issues/2858)) ([51b6886](https://github.com/cognitedata/cognite-sdk-python/commit/51b6886cd1c5f6d05b1a5cd7506edecf3fbd1459))
+* **time series:** Retrieve support for state-only aggregates `state_count`, `state_transitions`, `state_duration` (DM-4097) ([#2851](https://github.com/cognitedata/cognite-sdk-python/issues/2851)) ([d59a99e](https://github.com/cognitedata/cognite-sdk-python/commit/d59a99e19ba4ee468027ccd3688c29704b5977ae))
+* **time series:** support state time series in `retrieve_latest` (DM-4156) ([#2859](https://github.com/cognitedata/cognite-sdk-python/issues/2859)) ([84adc60](https://github.com/cognitedata/cognite-sdk-python/commit/84adc604edb1907da4b1bc178df145940733c254))
+* **workflows:** surface non-blocking function warnings on WorkflowVersion upsert ([#2863](https://github.com/cognitedata/cognite-sdk-python/issues/2863)) ([b9f08bf](https://github.com/cognitedata/cognite-sdk-python/commit/b9f08bffa69c39ec451d539de8cdc143e22d3b1a))
+
+
+### Bug Fixes
+
+* Ensure concurrent read operations use fail_fast mode ([#2861](https://github.com/cognitedata/cognite-sdk-python/issues/2861)) ([57ca30c](https://github.com/cognitedata/cognite-sdk-python/commit/57ca30c4707316ff028fa13d43daa68df7eadb86))
+
+## [8.18.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.17.0...v8.18.0) (2026-09-23)
+
+
+### Features
+
+* **datapoints:** add timestamp_ms property to LatestDatapoint ([#2843](https://github.com/cognitedata/cognite-sdk-python/issues/2843)) ([402d537](https://github.com/cognitedata/cognite-sdk-python/commit/402d537c8a657f1e114ac8a62513c0316c1072e3))
+* **state time series:** add retrieve_arrays and to_pandas support for state aggregate dps ([#2841](https://github.com/cognitedata/cognite-sdk-python/issues/2841)) ([2640f34](https://github.com/cognitedata/cognite-sdk-python/commit/2640f34c846d3adadac581f94d216221d4701d66))
+* **state time series:** add to_pandas support for raw state datapoints (DatapointsArray) (DM-4093) ([#2840](https://github.com/cognitedata/cognite-sdk-python/issues/2840)) ([3afc8a1](https://github.com/cognitedata/cognite-sdk-python/commit/3afc8a177ed985a367f141aabb4a207cb9a3ab7b))
+
+
+### Bug Fixes
+
+* **credentials:** Store OAuth token cache securely instead of a predictable shared temp path ([#2845](https://github.com/cognitedata/cognite-sdk-python/issues/2845)) ([174e529](https://github.com/cognitedata/cognite-sdk-python/commit/174e529fdfe5192c70fda2831eb53d007d2710b7))
+* **files:** prevent path traversal via file metadata directory in download() ([#2847](https://github.com/cognitedata/cognite-sdk-python/issues/2847)) ([011a4d4](https://github.com/cognitedata/cognite-sdk-python/commit/011a4d47222dc6311d1d015fa03c8600158cc921))
+* **logging:** Redact all credential-carrying headers from logs (DM-4117, VULN-113) ([#2848](https://github.com/cognitedata/cognite-sdk-python/issues/2848)) ([400d173](https://github.com/cognitedata/cognite-sdk-python/commit/400d173890ad90d11687a46b5eabecd68c341cdf))
+
+## [8.17.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.16.1...v8.17.0) (2026-09-15)
+
+
+### Features
+
+* **state time series:** add retrieve support for simple state aggregate datapoints (DM-4096) ([#2839](https://github.com/cognitedata/cognite-sdk-python/issues/2839)) ([d75ac85](https://github.com/cognitedata/cognite-sdk-python/commit/d75ac8542d52068fed15aa995f4c7263315eb069))
+* **state time series:** add retrieve_arrays support for raw state datapoints ([#2812](https://github.com/cognitedata/cognite-sdk-python/issues/2812)) ([6bc589c](https://github.com/cognitedata/cognite-sdk-python/commit/6bc589cc949201fb9beed565e0e2bed0cb3d9264))
+
+
+### Bug Fixes
+
+* **logging:** Stop exposing credentials in debug logs and `str()` of data classes (DM-4118, VULN-112) ([#2842](https://github.com/cognitedata/cognite-sdk-python/issues/2842)) ([e93af64](https://github.com/cognitedata/cognite-sdk-python/commit/e93af64c407a3e9695fe60e2274d6709f8de75b0))
+* **SyntheticTimeSeries:** Make synthetic time series more robust with special characters ([#2766](https://github.com/cognitedata/cognite-sdk-python/issues/2766)) ([21250c9](https://github.com/cognitedata/cognite-sdk-python/commit/21250c9bcad594d5c2d176a8f4f8727aa869ebdf))
+
+## [8.16.1](https://github.com/cognitedata/cognite-sdk-python/compare/v8.16.0...v8.16.1) (2026-09-09)
+
+
+### Bug Fixes
+
+* Avoid throwing noisy warning in pyodide ([#2825](https://github.com/cognitedata/cognite-sdk-python/issues/2825)) ([3d091a6](https://github.com/cognitedata/cognite-sdk-python/commit/3d091a6af636d474f699e64695ba71f2c5281d27))
+
+## [8.16.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.15.0...v8.16.0) (2026-09-08)
+
+
+### Features
+
+* **state time series:** add retrieve support for raw state datapoints ([#2807](https://github.com/cognitedata/cognite-sdk-python/issues/2807)) ([26efd9e](https://github.com/cognitedata/cognite-sdk-python/commit/26efd9e561b8e186d8c27f95a0a7c33aa909bb82))
+
+
+### Dependencies
+
+* **dependencies:** replace `httpx` with `httpx2` for the SDK HTTP client, including Pyodide support (DM-4106) ([#2818](https://github.com/cognitedata/cognite-sdk-python/issues/2818)) ([deecd07](https://github.com/cognitedata/cognite-sdk-python/commit/deecd076683df296160e64d5b3240b914c4d298a))
+
+
+### Bug Fixes
+
+* **ClientConfig:** Make API subversion mutable at runtime + easy to override per API class ([#2803](https://github.com/cognitedata/cognite-sdk-python/issues/2803)) ([ce1a1a6](https://github.com/cognitedata/cognite-sdk-python/commit/ce1a1a6f82b70ff287c1122d275f363f0aa30715))
+* **config:** Deprecate `cdf_cluster` property; warn on overspecified `base_url`/`cluster` combo (DM-4104) ([#2814](https://github.com/cognitedata/cognite-sdk-python/issues/2814)) ([e5be404](https://github.com/cognitedata/cognite-sdk-python/commit/e5be4046cfcebc98830d4796a26d0fb4aee7ef70))
+* Correctly parse `cdf-is-auto-retryable` header when false ([#2817](https://github.com/cognitedata/cognite-sdk-python/issues/2817)) ([6077788](https://github.com/cognitedata/cognite-sdk-python/commit/607778845caad89742d5dbb063163c7263d5c7fc))
+
+## [8.15.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.14.0...v8.15.0) (2026-08-31)
+
+
+### Features
+
+* **CDM:** CogniteStateSet to cdm/v1.py + StateSetEntry helper class (DM-4075) ([#2785](https://github.com/cognitedata/cognite-sdk-python/issues/2785)) ([cf33cff](https://github.com/cognitedata/cognite-sdk-python/commit/cf33cffe47712a3919f1785ad8bd80297b437e0c))
+* **state time series:** Add insert method for states datapoints (DM-4078) ([#2797](https://github.com/cognitedata/cognite-sdk-python/issues/2797)) ([76ca320](https://github.com/cognitedata/cognite-sdk-python/commit/76ca320e87712d97a897028999ec3e7e895e38cd))
+
+
+### Bug Fixes
+
+* **transformations:** external data sources endpoint is create-only, not upsert ([#2799](https://github.com/cognitedata/cognite-sdk-python/issues/2799)) ([b9eb747](https://github.com/cognitedata/cognite-sdk-python/commit/b9eb747f2455529b39782bc1d134d110785362ea))
+
+## [8.14.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.13.0...v8.14.0) (2026-08-24)
+
+
+### Features
+
+* **config:** Add `ssl_config` to `global_config` (DM-3969) ([#2720](https://github.com/cognitedata/cognite-sdk-python/issues/2720)) ([3a76a19](https://github.com/cognitedata/cognite-sdk-python/commit/3a76a19acd52ebb75d897f77d07779b2022eaa86))
+* **data modeling:** merge records sync and sync_resume into a chunk-yielding generator ([#2755](https://github.com/cognitedata/cognite-sdk-python/issues/2755)) ([0fbe857](https://github.com/cognitedata/cognite-sdk-python/commit/0fbe85710fc5cb0955cb5d8708095af7c5b41db5))
+
+
+### Bug Fixes
+
+* **datapoints:** cancel and await outstanding tasks also on failure ([#2775](https://github.com/cognitedata/cognite-sdk-python/issues/2775)) ([36ed7de](https://github.com/cognitedata/cognite-sdk-python/commit/36ed7de04c86f0675b9ad36fe8813333dd85824a))
+* **datapoints:** passing emtpy list of time series ids to retrieve latest datapoints no longer fails when converted to pandas ([#2769](https://github.com/cognitedata/cognite-sdk-python/issues/2769)) ([c70d872](https://github.com/cognitedata/cognite-sdk-python/commit/c70d872abf2423222c0a0f46c2e6620430c13925))
+* **mocks:** add config to Cognite client mock ([#2770](https://github.com/cognitedata/cognite-sdk-python/issues/2770)) ([6e3837d](https://github.com/cognitedata/cognite-sdk-python/commit/6e3837d1e2cc169793551620493ebddcf0d6e7bb))
+* **pandas:** Support pandas v3 timestamp semantics while preserving v2 behavior (DM-3534) ([#2780](https://github.com/cognitedata/cognite-sdk-python/issues/2780)) ([6da7399](https://github.com/cognitedata/cognite-sdk-python/commit/6da73997d8b71cdf20ac632d453104fd9baacf82))
+* **records:** reject a filter limit above 1000 instead of truncating ([#2751](https://github.com/cognitedata/cognite-sdk-python/issues/2751)) ([c758433](https://github.com/cognitedata/cognite-sdk-python/commit/c758433e86ec8117810bcf1875945887a38b5d5f))
+* **SyntaxWarning:** Fix unnecessary SyntaxWarning in SyncApi (docstring not marked as r(aw)) ([#2771](https://github.com/cognitedata/cognite-sdk-python/issues/2771)) ([e97333d](https://github.com/cognitedata/cognite-sdk-python/commit/e97333d651a97fd2a096216c375d524a56c18807))
+
+## [8.13.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.12.0...v8.13.0) (2026-08-13)
+
+
+### Features
+
+* **credentials:** let users choose the account for interactive login (DM-3512) ([#2730](https://github.com/cognitedata/cognite-sdk-python/issues/2730)) ([bef4f27](https://github.com/cognitedata/cognite-sdk-python/commit/bef4f27a836b2e93410fd2411e59043ee28a5cc0))
+* **functions:** add py314 to RunTime ([#2735](https://github.com/cognitedata/cognite-sdk-python/issues/2735)) ([cf66c51](https://github.com/cognitedata/cognite-sdk-python/commit/cf66c51a8b73c243a7d1a8f742fb137463386f67))
+* **streams:** rename StreamTemplateWriteSettings to StreamWriteSettings ([#2753](https://github.com/cognitedata/cognite-sdk-python/issues/2753)) ([801ee75](https://github.com/cognitedata/cognite-sdk-python/commit/801ee75c61c49024f79701ea10dacf46706b03fc))
+* **transformations:** add external data sources client API ([#2732](https://github.com/cognitedata/cognite-sdk-python/issues/2732)) ([60b6c36](https://github.com/cognitedata/cognite-sdk-python/commit/60b6c36e42c60020198f298ad784580e00c0bdc2))
+
+
+### Bug Fixes
+
+* **records:** validate property paths instead of splitting bare strings ([#2747](https://github.com/cognitedata/cognite-sdk-python/issues/2747)) ([b90a384](https://github.com/cognitedata/cognite-sdk-python/commit/b90a3847d0ee49e5eaa37b8ae980cf1b6fe4d0eb))
 
 ## [8.12.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v8.11.0...cognite-sdk-python-v8.12.0) (2026-08-05)
 
@@ -288,7 +452,7 @@ As of 2025-08-29, changes are grouped as follows
 - The specific exceptions `CogniteDuplicatedError` and `CogniteNotFoundError` should now always be used when appropriate (previously certain API endpoints always used `CogniteAPIError`).
 - `ModelFailedException` has changed name to `CogniteModelFailedError`.
 - For `class Transformation`, which used to have an async `run` method, this is now named `run_async` to unify the overall interface. The same applies to the `cancel` and `jobs` methods for the same class, and `update` and `wait` on `TransformationJob`.
-- **ClientConfig**: `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`. See the [Settings documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/v8/settings.html#concurrency-settings) for details.
+- **ClientConfig**: `max_workers` has functionally been removed (just throws a warning). Concurrency is now controlled via `global_config.concurrency_settings`. See the [Settings documentation](https://cognite-sdk-python.readthedocs-hosted.com/en/stable/settings.html#concurrency-settings) for details.
 - **ClientConfig**: `timeout` default has been increased from 30 sec to 60 sec.
 - **global_config**: New setting `follow_redirects` that controls whether or not to follow redirects. Defaults to `False`.
 - **global_config**: New setting `file_download_chunk_size` that allows you to override the chunk size for streaming file downloads. Defaults to `None` (auto).

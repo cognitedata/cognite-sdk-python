@@ -1,6 +1,5 @@
 """
 ===============================================================================
-1721a11a7b3ff170668f49cc318725e6
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -11,7 +10,6 @@ from collections.abc import Iterator, MutableSequence, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.workflows import WorkflowIdentifier, WorkflowVersionIdentifier
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.workflows import (
@@ -24,7 +22,7 @@ from cognite.client.data_classes.workflows import (
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 
 if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
+    from cognite.client._api.workflows import WorkflowIdentifier, WorkflowVersionIdentifier
 
 
 class SyncWorkflowVersionAPI(SyncAPIClient):

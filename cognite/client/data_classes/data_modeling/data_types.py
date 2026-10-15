@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from typing import Any, ClassVar, TypeAlias, cast
 
@@ -52,6 +53,53 @@ class DirectRelationReference:
 
     def as_tuple(self) -> tuple[str, str]:
         return self.space, self.external_id
+
+
+# CogniteStateSet, a vital part of state time series, has the 'states' property just defined as
+# list[json] in the Core Data Model. To make life easier for users, we provide a dedicated class:
+@dataclass(frozen=True, slots=True)
+class StateSetEntry:
+    numeric_value: int
+    string_value: str
+    description: str | None = None
+
+    def __post_init__(self) -> None:
+        match self.numeric_value:
+            case int():
+                pass
+            case float():
+                if not self.numeric_value.is_integer():
+                    raise TypeError("State 'numeric_value' must be an int32-compatible integer.")
+                object.__setattr__(self, "numeric_value", int(self.numeric_value))
+            case _:
+                raise TypeError("State 'numeric_value' must be an int32-compatible integer.")
+
+        if not -(2**31) <= self.numeric_value <= 2**31 - 1:
+            raise ValueError("State 'numeric_value' must be in the signed 32-bit range.")
+
+    @classmethod
+    def load(cls, data: Self | Mapping[str, Any]) -> Self:
+        if isinstance(data, cls):
+            return data
+        elif not isinstance(data, Mapping):
+            raise TypeError(f"Expected a StateSetEntry instance or a mapping, got {type(data).__name__}.")
+
+        num_val = data.get("numericValue", data.get("numeric_value"))
+        str_val = data.get("stringValue", data.get("string_value"))
+        if num_val is None or str_val is None:
+            raise ValueError(
+                "Invalid state set entry, expected keys 'numericValue' and 'stringValue' (or snake_case equivalents)."
+            )
+        return cls(num_val, str_val, data.get("description"))
+
+    def dump(self, camel_case: bool = True) -> dict[str, int | str]:
+        output: dict[str, int | str] = {
+            "numericValue" if camel_case else "numeric_value": self.numeric_value,
+            "stringValue" if camel_case else "string_value": self.string_value,
+        }
+        if self.description is not None:
+            output["description"] = self.description
+        return output
 
 
 @dataclass

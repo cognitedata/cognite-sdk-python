@@ -4,7 +4,7 @@ import re
 from typing import Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.transformations.externaldata import (
@@ -15,6 +15,7 @@ from cognite.client.data_classes.transformations.externaldata import (
     OneLakeLocationDescription,
     OneLakeSettingsWrite,
 )
+from cognite.client.exceptions import CogniteDuplicatedError
 from tests.utils import get_url, jsgz_load
 
 
@@ -60,11 +61,11 @@ class TestTransformationExternalDataSourcesAPI:
     def test_list(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         external_data_url: str,
         onelake_read_item: dict[str, Any],
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET", url=external_data_url + "?limit=5", status_code=200, json={"items": [onelake_read_item]}
         )
 
@@ -81,11 +82,11 @@ class TestTransformationExternalDataSourcesAPI:
     def test_call_yields_data_sources_one_by_one(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         external_data_url: str,
         onelake_read_item: dict[str, Any],
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=re.compile(re.escape(external_data_url) + r"\?.+"),
             status_code=200,
@@ -100,12 +101,12 @@ class TestTransformationExternalDataSourcesAPI:
     def test_call_yields_chunks(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         external_data_url: str,
         onelake_read_item: dict[str, Any],
     ) -> None:
         items = [{**onelake_read_item, "externalId": f"lakehouse-{no}"} for no in range(30)]
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=re.compile(re.escape(external_data_url) + r"\?.+"),
             status_code=200,
@@ -117,23 +118,23 @@ class TestTransformationExternalDataSourcesAPI:
         assert [len(chunk) for chunk in chunks] == [25, 5]
         assert all(isinstance(chunk, ExternalDataSourceList) for chunk in chunks)
 
-    def test_upsert_single(
+    def test_create_single(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         external_data_url: str,
         onelake_read_item: dict[str, Any],
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=external_data_url, status_code=201, json={"items": [onelake_read_item]}
         )
 
-        result = cognite_client.transformations.external_data_sources.upsert(make_write_source("fabric-lakehouse-prod"))
+        result = cognite_client.transformations.external_data_sources.create(make_write_source("fabric-lakehouse-prod"))
 
         assert isinstance(result, OneLakeExternalDataSource)
         assert result.external_id == "fabric-lakehouse-prod"
 
-        item = jsgz_load(httpx_mock.get_requests()[-1].content)["items"][0]
+        item = jsgz_load(httpx2_mock.get_requests()[-1].content)["items"][0]
         assert item["format"] == "one_lake"
         assert item["settings"] == {
             "credentials": {
@@ -144,42 +145,66 @@ class TestTransformationExternalDataSourcesAPI:
             "locationDescription": {"workspaceId": "my-workspace-id", "containerId": "my-container-id"},
         }
 
-    def test_upsert_multiple(
+    def test_create_multiple(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         external_data_url: str,
         onelake_read_item: dict[str, Any],
     ) -> None:
         second_item = {**onelake_read_item, "externalId": "fabric-lakehouse-staging"}
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=external_data_url, status_code=201, json={"items": [onelake_read_item, second_item]}
         )
 
-        result = cognite_client.transformations.external_data_sources.upsert(
+        result = cognite_client.transformations.external_data_sources.create(
             [make_write_source("fabric-lakehouse-prod"), make_write_source("fabric-lakehouse-staging")]
         )
 
         assert isinstance(result, ExternalDataSourceList)
         assert result.as_external_ids() == ["fabric-lakehouse-prod", "fabric-lakehouse-staging"]
-        assert len(jsgz_load(httpx_mock.get_requests()[-1].content)["items"]) == 2
+        assert len(jsgz_load(httpx2_mock.get_requests()[-1].content)["items"]) == 2
 
-    def test_delete(self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, external_data_url: str) -> None:
-        httpx_mock.add_response(method="POST", url=external_data_url + "/delete", status_code=200, json={})
+    def test_create_existing_external_id_raises_duplicated(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        external_data_url: str,
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST",
+            url=external_data_url,
+            status_code=409,
+            json={
+                "error": {
+                    "code": 409,
+                    "message": "Duplicated external ids",
+                    "duplicated": [{"externalId": "fabric-lakehouse-prod"}],
+                }
+            },
+        )
+
+        with pytest.raises(CogniteDuplicatedError) as exc_info:
+            cognite_client.transformations.external_data_sources.create(make_write_source("fabric-lakehouse-prod"))
+
+        assert exc_info.value.duplicated == [{"externalId": "fabric-lakehouse-prod"}]
+
+    def test_delete(self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, external_data_url: str) -> None:
+        httpx2_mock.add_response(method="POST", url=external_data_url + "/delete", status_code=200, json={})
 
         cognite_client.transformations.external_data_sources.delete(
             ["fabric-lakehouse-prod", "fabric-lakehouse-staging"]
         )
 
         # The API accepts no other fields than 'items' (notably, there is no 'ignoreUnknownIds'):
-        assert jsgz_load(httpx_mock.get_requests()[-1].content) == {
+        assert jsgz_load(httpx2_mock.get_requests()[-1].content) == {
             "items": [{"externalId": "fabric-lakehouse-prod"}, {"externalId": "fabric-lakehouse-staging"}]
         }
 
     def test_verify_usability(
-        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, external_data_url: str
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, external_data_url: str
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=external_data_url + "/usability",
             status_code=200,
@@ -195,12 +220,12 @@ class TestTransformationExternalDataSourcesAPI:
         assert usability.usable_version == "550e8400-e29b-41d4-a716-446655440000"
         assert usability.is_usable is True
         # The request takes a flat external ID, only the response nests it:
-        assert jsgz_load(httpx_mock.get_requests()[-1].content) == {"externalId": "fabric-lakehouse-prod"}
+        assert jsgz_load(httpx2_mock.get_requests()[-1].content) == {"externalId": "fabric-lakehouse-prod"}
 
     def test_verify_usability_not_usable(
-        self, cognite_client: CogniteClient, httpx_mock: HTTPXMock, external_data_url: str
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, external_data_url: str
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=external_data_url + "/usability",
             status_code=200,

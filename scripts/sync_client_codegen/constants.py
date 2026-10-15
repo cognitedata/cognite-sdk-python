@@ -4,18 +4,9 @@ FOUR_SPACES = " " * 4
 EIGHT_SPACES = " " * 8
 KNOWN_FILES_SKIP_LIST = {
     Path("cognite/client/_api/datapoint_tasks.py"),
+    Path("cognite/client/_api/datapoints_io.py"),
     Path("cognite/client/_api/functions/utils.py"),
 }
-MAYBE_IMPORTS = (
-    "SortSpec: TypeAlias",
-    "_FILTERS_SUPPORTED: frozenset[type[Filter]]",
-    "AggregateAssetProperty: TypeAlias",
-    "Source: TypeAlias",
-    "RunStatus: TypeAlias",
-    "WorkflowIdentifier: TypeAlias",
-    "WorkflowVersionIdentifier: TypeAlias",
-    "ComparableCapability: TypeAlias",
-)
 ASYNC_API_DIR = Path("cognite/client/_api")
 SYNC_API_DIR = Path("cognite/client/_sync_api")
 SYNC_CLIENT_PATH = Path("cognite/client/_sync_cognite_client.py")
@@ -29,6 +20,9 @@ SYNC_CLIENT_PATH = Path("cognite/client/_sync_cognite_client.py")
 SYNC_METHODS_TO_KEEP = {
     "compare_capabilities",
     "__call__",
+    # RecordsAPI.sync: async generator with overloads, so its overload stubs are plain 'def' (see above).
+    # TODO(haakonvt): link API class + method here; sync could match an unwanted method
+    "sync",
 }
 ASYNC_METHODS_TO_KEEP = {
     "_unsafely_wipe_and_regenerate_dml",

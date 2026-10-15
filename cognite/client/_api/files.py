@@ -792,7 +792,7 @@ class FilesAPI(APIClient):
                     message=e.message,
                     code=e.code,
                     x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
+                    cluster=self._config._attempt_to_get_cdf_cluster(),
                     project=self._config.project,
                 ) from e
             raise
@@ -913,7 +913,7 @@ class FilesAPI(APIClient):
                     message=msg,
                     code=e.code,
                     x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
+                    cluster=self._config._attempt_to_get_cdf_cluster(),
                     project=self._config.project,
                 ) from e
             raise
@@ -1012,7 +1012,7 @@ class FilesAPI(APIClient):
                     message=msg,
                     code=e.code,
                     x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
+                    cluster=self._config._attempt_to_get_cdf_cluster(),
                     project=self._config.project,
                 ) from e
             raise
@@ -1080,7 +1080,7 @@ class FilesAPI(APIClient):
                     message=e.message,
                     code=e.code,
                     x_request_id=e.x_request_id,
-                    cluster=self._config.cdf_cluster,
+                    cluster=self._config._attempt_to_get_cdf_cluster(),
                     project=self._config.project,
                 ) from e
             raise
@@ -1220,8 +1220,11 @@ class FilesAPI(APIClient):
             )
             for batch in identifiers.chunked(100)
         ]
-        tasks_summary = await execute_async_tasks(tasks)
-        tasks_summary.raise_compound_exception_if_failed_tasks()
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
+        tasks_summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task["json"]["items"],
+            task_list_element_unwrap_fn=lambda item: item,
+        )
         results = tasks_summary.joined_results(unpack_items)
         return {
             result.get("id") or result.get("externalId") or NodeId.load(result["instanceId"]): result["downloadUrl"]
@@ -1332,13 +1335,23 @@ class FilesAPI(APIClient):
     ) -> tuple[list[int], list[Path], list[Path]]:
         ids: list[int] = []
         filepaths, file_directories = [], []
+        resolved_root = directory.resolve()
         for identifier, metadata in id_to_metadata.items():
             if not isinstance(identifier, int):
                 continue
             file_directory = directory
             if metadata.directory and keep_directory_structure:
-                # CDF enforces absolute, unix-style paths (i.e. always stating with '/'). We strip to make it relative:
-                file_directory /= metadata.directory[1:]
+                # CDF enforces absolute, unix-style paths (i.e. always starting with '/'). We strip all
+                # leading slashes to make it relative: an absolute right-hand side would make pathlib
+                # discard the download root entirely. The metadata is server-returned and thus untrusted,
+                # so we additionally verify that the result stays inside the download directory - this
+                # must happen before download() creates the directories.
+                file_directory = directory / metadata.directory.lstrip("/")
+                if not file_directory.resolve().is_relative_to(resolved_root):
+                    raise RuntimeError(
+                        f"File with id {identifier} has a directory ('{metadata.directory}') that resolves "
+                        f"outside of the download directory '{directory}'"
+                    )
 
             ids.append(identifier)
             file_directories.append(file_directory)
@@ -1377,7 +1390,7 @@ class FilesAPI(APIClient):
             AsyncSDKTask(self._process_file_download, directory, identifier={"id": id_}, path=filepath)
             for id_, filepath in zip(all_ids, filepaths)
         ]
-        tasks_summary = await execute_async_tasks(tasks)
+        tasks_summary = await execute_async_tasks(tasks, fail_fast=True)
         tasks_summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: id_to_metadata[task["identifier"]["id"]]
         )

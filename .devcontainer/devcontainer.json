@@ -7,7 +7,9 @@
 
   // Features to add to the dev container. More info: https://containers.dev/features
   "features": {
-    "ghcr.io/devcontainers-extra/features/poetry:2": {},
+    "ghcr.io/va-h/devcontainers-features/uv:1": {
+      "version": "0.13.0"
+    },
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },
 
@@ -17,13 +19,12 @@
   "customizations": {
     "vscode": {
       "extensions": [
-        "zeshuaro.vscode-python-poetry",
         "njpwerner.autodocstring",
         "mutantdino.resourcemonitor",
         "streetsidesoftware.code-spell-checker"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "~/.cache/pypoetry/virtualenvs/cognite-sdk-*-py3.10/bin/python"
+        "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python"
       }
     }
   }

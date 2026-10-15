@@ -11,7 +11,7 @@ from cognite.client.utils._identifier import LimitId
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
-    from cognite.client.data_classes.filters import Prefix
+    from cognite.client.data_classes import filters
 
 
 class LimitsAPI(APIClient):
@@ -58,13 +58,13 @@ class LimitsAPI(APIClient):
             headers=headers,
         )
 
-    async def list(self, filter: Prefix | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> LimitList:
+    async def list(self, filter: filters.Prefix | None = None, limit: int | None = DEFAULT_LIMIT_READ) -> LimitList:
         """`List all limit values <https://api-docs.cognite.com/20230101-alpha/tag/Limits/operation/listLimits/>`_.
 
         Retrieves all limit values for a specific project. Optionally filter by limit ID prefix using a `Prefix` filter.
 
         Args:
-            filter (Prefix | None): Optional `Prefix` filter to apply on the `limitId` property (only `Prefix` filters are supported).
+            filter (filters.Prefix | None): Optional `Prefix` filter to apply on the `limitId` property (only `Prefix` filters are supported).
             limit (int | None): Maximum number of limits to return. Defaults to 25. Set to None or -1 to return all limits
 
         Returns:

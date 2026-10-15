@@ -39,3 +39,9 @@ Mappings
    :template: custom-automethods-template.rst
 
    AsyncCogniteClient.hosted_extractors.mappings
+
+Data classes
+------------
+.. automodule:: cognite.client.data_classes.hosted_extractors
+    :members:
+    :show-inheritance:

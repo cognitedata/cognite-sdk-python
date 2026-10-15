@@ -1,6 +1,6 @@
 [project]
 name = "cognite-sdk"
-version = "8.12.0"
+version = "8.22.0"
 
 description = "Cognite Python SDK"
 readme = "README.md"
@@ -13,15 +13,14 @@ license = "Apache-2.0"
 license-files = ["LICENSE"]
 requires-python = ">= 3.10, <4"
 dependencies = [
-    "httpx (>=0, <1)",
+    "httpx2 (>=2, <3)",
     "msal (>=1.31, <2)",
-    "authlib (>=1, <2)",
-    "protobuf >=4",
+    "protobuf (>=5)",
     "packaging >=20",
-    "pip >=20", # make optional once poetry doesn't auto-remove it on "simple install"
-    "typing_extensions >=4",
+    "pip >=20", # Imported at runtime to validate Cognite Function requirements
+    "typing_extensions >=4.5.0",
     # Windows does not have a ANSI database and need tzdata...:
-    "tzdata >=2024.1; sys_platform == 'win32' or sys_platform=='emscripten'"
+    "tzdata >=2024.1; sys_platform == 'win32' or sys_platform=='emscripten'",
 ]
 
 [project.optional-dependencies]
@@ -29,13 +28,13 @@ numpy = [
     "numpy (>=1.25, <2.3); python_version == '3.10'",
     "numpy (>=1.25, <2.5); python_version == '3.11'",
     "numpy >=1.26; python_version >= '3.12'"
-]  # poetry 2.4.1 does not correctly limit numpy 2.2 to only python 3.10
+]  # numpy 2.3 drops Python 3.10; numpy 2.5 drops Python 3.11
 sympy = ["sympy"]
-pandas = ["pandas (>=2.1, <3)"]
+pandas = ["pandas >=2.1"]
 geo = [
     "geopandas >=0.14",
     "shapely >=1.7.0",
-    "pandas (>=2.1, <3)"
+    "pandas >=2.1"
 ]
 yaml = ["PyYAML (>=6, <7)"]
 all = [
@@ -43,7 +42,7 @@ all = [
     "numpy (>=1.25, <2.5); python_version == '3.11'",
     "numpy >=1.26; python_version >= '3.12'",
     "sympy",
-    "pandas (>=2.1, <3)",
+    "pandas >=2.1",
     "geopandas >=0.14",
     "shapely >=1.7.0",
     "PyYAML (>=6, <7)",
@@ -51,7 +50,7 @@ all = [
 
 [dependency-groups]
 dev = [
-    "pytest >=7",
+    "pytest (>=9)",
     "pytest-cov (>=3, <7)",  # pytest-cov 7+ has issues with coverage measurement
     "coverage (>=7, <7.11)",  # 7.11+ has issues with editable installs in parallel test execution
     "pytest-rerunfailures >=10",
@@ -60,11 +59,9 @@ dev = [
     "pre-commit >=3",
     "toml (>=0, <1)",
     "python-dotenv (>=1, <2)",
-    "mypy (>=1, <2)",
-    "types-urllib3 (>=1.26.16, <2)",
-    "types-requests (>=2.28.1, <3)",
+    "mypy[faster-cache] (>=2, <3)",
     "types-backports (>=0, <1)",
-    "types-protobuf (>=4.22.0.2, <5)",
+    "types-protobuf (>=5, <6)",
     "types-PyYAML (>=6, <7)",
     "packaging >=23",
     "IPython >=7.0.0",  # Used in docstring examples
@@ -74,11 +71,10 @@ dev = [
     "types-pytz (>=2025.2.0.20250516, <2026)",
     "tenacity (>=9.1.2, <10)",
     "ruff ==0.16.*",
-    "pytest-httpx >=0.35",
-    "types-authlib (>=1.6.2.20250825, <2)",
+    "httpx2-pytest (>=2,<3)",
     "anyio (>=4.11.0, <5)",
     "testbook (>=0.4.2, <0.5)",
-    "ipykernel (>=7.2.0, <8)"
+    "ipykernel (>=7.2.0, <8)",
 ]
 docs = [
     "sphinx ==8.1.*",  # Increase when Python 3.10 support is dropped
@@ -112,9 +108,16 @@ external = ["DOC"]
 docstring-code-format = true
 docstring-code-line-length = 85
 
-[tool.poetry]
-packages = [{ include="cognite", from="." }]
+[tool.uv]
+package = true
+# Poetry installed every non-optional dependency group. Keep docs alongside dev.
+default-groups = ["dev", "docs"]
+
+[tool.uv.build-backend]
+# `cognite` is a namespace package and must not ship an __init__.py.
+module-name = "cognite.client"
+module-root = ""
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.13.0,<0.14"]
+build-backend = "uv_build"

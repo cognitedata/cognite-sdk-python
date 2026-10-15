@@ -7,15 +7,15 @@ from typing import TYPE_CHECKING, Any
 from zoneinfo import ZoneInfo
 
 import pytest
-from httpx import Request, Response
-from pytest_httpx import HTTPXMock
+from httpx2 import Request, Response
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.datapoints import SyntheticDatapoints, SyntheticDatapointsList
 from tests.utils import get_url, jsgz_load
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
@@ -26,7 +26,7 @@ def generate_datapoints(start: int, end: int, granularity: int = 1) -> list[dict
 
 @pytest.fixture
 def mock_get_datapoints(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
     def request_callback(request: Request) -> Response:
         payload = jsgz_load(request.content)
@@ -49,27 +49,27 @@ def mock_get_datapoints(
             items.append({"isString": False, "type": "numeric", "datapoints": dps})
         return Response(200, headers={}, json={"items": items})
 
-    httpx_mock.add_callback(
+    httpx2_mock.add_callback(
         request_callback,
         method="POST",
         url=get_url(async_client.time_series.data.synthetic) + "/timeseries/synthetic/query",
         match_headers={"content-type": "application/json"},
         is_reusable=True,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_get_datapoints_empty(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=re.compile(re.escape(get_url(async_client.time_series.data.synthetic)) + "/timeseries/synthetic/.*"),
         status_code=200,
         json={"items": [{"isString": False, "type": "numeric", "datapoints": []}]},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class TestSyntheticQuery:
@@ -150,6 +150,17 @@ class TestSyntheticQuery:
             cognite_client.time_series.data.synthetic.query(
                 [symbols("a") + cot(symbols("a"))], start=0, end="now", variables={"a": "a"}
             )
+
+    @pytest.mark.dsl
+    def test_expression_builder_variables_non_word_characters(self, async_client: AsyncCogniteClient) -> None:
+        # Until SDK version 8.15.0, variable names with non-word characters were not fully supported.
+        from sympy import symbols
+
+        build_fn = async_client.time_series.data.synthetic._build_expression
+        assert ("ts{externalId:'x'}", "a-dash") == build_fn(symbols("a-dash"), {"a-dash": "x"})
+        assert ("(ts{externalId:'y'}+(-1*ts{externalId:'x'}))", "(a+(-1*a-dash))") == build_fn(
+            symbols("a") - symbols("a-dash"), {"a": "y", "a-dash": "x"}
+        )
 
 
 @pytest.mark.dsl

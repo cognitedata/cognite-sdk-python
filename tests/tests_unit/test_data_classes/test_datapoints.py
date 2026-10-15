@@ -1,15 +1,30 @@
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from datetime import timedelta, timezone
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import pytest
 
-from cognite.client.data_classes import Datapoint, DatapointsArray
+from cognite.client.data_classes import Datapoint, DatapointsArray, StateDatapointsInsert, StateDatapointWrite
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
-from cognite.client.data_classes.datapoints import DatapointsArrayList, DatapointsList
+from cognite.client.data_classes.datapoints import (
+    Datapoints,
+    DatapointsArrayList,
+    DatapointsList,
+    LatestDatapoint,
+    LatestDatapointList,
+    StateCount,
+    StateDuration,
+    StateTransition,
+    _BaseStateOnlyAggregate,
+)
+from cognite.client.utils._datapoints import create_object_array_from_container
+from cognite.client.utils._text import to_camel_case
+from tests.utils import PANDAS_TS_UNIT
 
 
 class TestDatapoint:
@@ -61,6 +76,64 @@ class TestDatapoint:
         assert pd.Timestamp(expected) == df1.index[0] == df2.index[0]
 
 
+class TestStateDatapoint:
+    @pytest.fixture
+    def state_dps(self) -> Datapoints:
+        return Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            timestamp=[1000, 2000, 3000],
+            # For bad datapoints, even numeric can be missing (None); 0 is a valid state, not missing:
+            numeric_states=[10, None, 0],  # type: ignore [list-item]
+            string_states=["on", None, None],
+        )
+
+    def test_getitem(self, state_dps: Datapoints) -> None:
+        dp = state_dps[0]
+        assert isinstance(dp, Datapoint)
+        assert dp.numeric_state == 10
+        assert dp.string_state == "on"
+
+        dp_missing = state_dps[1]
+        assert isinstance(dp_missing, Datapoint)
+        assert dp_missing.numeric_state is None
+        assert dp_missing.string_state is None
+
+    def test_getitem_slice(self, state_dps: Datapoints) -> None:
+        sliced = state_dps[1:3]
+        assert isinstance(sliced, Datapoints)
+        assert sliced.numeric_states == [None, 0]
+        assert sliced.string_states == [None, None]
+
+    def test_iteration_yields_correct_state_values(self, state_dps: Datapoints) -> None:
+        for dp in state_dps:
+            assert isinstance(dp, Datapoint)
+        assert [dp.numeric_state for dp in state_dps] == [10, None, 0]
+        assert [dp.string_state for dp in state_dps] == ["on", None, None]
+
+    def test_iteration_yields_correct_state_values_no_states(self) -> None:
+        non_state_dps = Datapoints(
+            id=1,
+            is_string=False,
+            is_step=True,
+            type="numeric",
+            timestamp=[1000, 2000, 3000],
+            value=[1.0, 2.0, 3.0],
+        )
+        # Note that a single Datapoint object (what we get while iterating) can't distinguish between
+        # None being a missing, but real value and no value, e.g. for something that is not a state dp:
+        assert [dp.numeric_state for dp in non_state_dps] == [None, None, None]
+        assert [dp.string_state for dp in non_state_dps] == [None, None, None]
+
+    def test_dump_uses_singular_state_keys(self, state_dps: Datapoints) -> None:
+        # singular meaning 'numericState' not 'numericStates' etc.
+        dumped = state_dps.dump()["datapoints"]
+        assert [dp.get("numericState") for dp in dumped] == [10, None, 0]
+        assert [dp.get("stringState") for dp in dumped] == ["on", None, None]
+
+
 @pytest.mark.dsl
 class TestDatapointsArray:
     def test_dump_converts_missing_values_to_none(self) -> None:
@@ -80,6 +153,176 @@ class TestDatapointsArray:
         assert dps1 != dps2
         assert math.isnan(dps1["datapoints"][1]["value"])
         assert dps2["datapoints"][1]["value"] is None
+
+
+@pytest.mark.dsl
+class TestStateDatapointsArray:
+    @pytest.fixture
+    def bad_state_arr(self) -> DatapointsArray:
+        import numpy as np
+
+        return DatapointsArray(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            timestamp=np.array([1000, 2000, 3000], dtype="datetime64[ns]"),
+            # When 'ignore_bad_datapoints=False' upcasts to float64, using NaN for missing:
+            numeric_states=np.array([10, np.nan, 0], dtype=np.float64),
+            string_states=np.array(["on", None, None], dtype=object),
+        )
+
+    def test_getitem(self, bad_state_arr: DatapointsArray) -> None:
+        dp = bad_state_arr[0]
+        assert isinstance(dp, Datapoint)
+
+        # The numeric values (float64) should be converted to int:
+        assert isinstance(dp.numeric_state, int)
+        assert dp.numeric_state == 10
+        assert dp.string_state == "on"
+
+        dp_missing = bad_state_arr[1]
+        # NaN should be converted to None:
+        assert dp_missing.numeric_state is None
+        assert dp_missing.string_state is None
+
+    def test_slice(self, bad_state_arr: DatapointsArray) -> None:
+        import numpy as np
+
+        sliced = bad_state_arr[1:3]
+        assert isinstance(sliced, DatapointsArray)
+
+        assert sliced.numeric_states is not None
+        assert math.isnan(sliced.numeric_states[0])
+        assert sliced.numeric_states[1] == 0
+        np.testing.assert_array_equal(sliced.string_states, np.array([None, None], dtype=object))
+
+    @pytest.mark.parametrize(
+        "keys, use_camel_case",
+        [
+            (("numericState", "stringState"), True),
+            (("numeric_state", "string_state"), False),
+        ],
+    )
+    def test_dump(
+        self,
+        bad_state_arr: DatapointsArray,
+        keys: tuple[str, str],
+        use_camel_case: bool,
+    ) -> None:
+        num_key, str_key = keys
+        dumped = bad_state_arr.dump(camel_case=use_camel_case)["datapoints"]
+        assert [dp[num_key] for dp in dumped] == [10.0, None, 0.0]
+        assert [dp[str_key] for dp in dumped] == ["on", None, None]
+
+
+class TestStateOnlyAggregateTypes:
+    @pytest.mark.parametrize(
+        "instance, exp_value, field",
+        [
+            (StateCount(1, "on", state_count=3), 3, "state_count"),
+            (StateTransition(1, "on", state_transitions=1), 1, "state_transitions"),
+            (StateDuration(1, "on", state_duration=1000), 1000, "state_duration"),
+        ],
+    )
+    @pytest.mark.parametrize("camel_case", [True, False])
+    def test_dump_and_load_roundtrip(
+        self, instance: _BaseStateOnlyAggregate, exp_value: int, field: str, camel_case: bool
+    ) -> None:
+        dumped = instance.dump(camel_case=camel_case)
+        assert dumped == {
+            ("numericValue" if camel_case else "numeric_value"): 1,
+            ("stringValue" if camel_case else "string_value"): "on",
+            (to_camel_case(field) if camel_case else field): exp_value,
+        }
+        loaded = type(instance)._load(instance.dump(camel_case=True))
+        assert loaded == instance
+
+    @pytest.mark.parametrize(
+        "state_cls, field",
+        [(StateCount, "state_count"), (StateTransition, "state_transitions"), (StateDuration, "state_duration")],
+    )
+    def test_dump_omits_string_value_when_none(self, state_cls: type, field: str) -> None:
+        instance = state_cls(numeric_value=0, string_value=None, **{field: 3})
+        assert instance.dump() == {"numericValue": 0, to_camel_case(field): 3}
+
+    @pytest.fixture
+    def state_counts_by_ts(self) -> list[list[StateCount]]:
+        return [
+            [
+                StateCount(numeric_value=0, string_value="off", state_count=3),
+                StateCount(numeric_value=1, string_value="on", state_count=2),
+            ],
+            [
+                StateCount(numeric_value=0, string_value="off", state_count=5),
+            ],
+        ]
+
+    def test_datapoints_getitem_and_dump(self, state_counts_by_ts: list[list[StateCount]]) -> None:
+        transitions_by_ts = [
+            [
+                StateTransition(numeric_value=e.numeric_value, string_value=e.string_value, state_transitions=1)
+                for e in ts
+            ]
+            for ts in state_counts_by_ts
+        ]
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=[1000, 2000],
+            state_count=state_counts_by_ts,
+            state_transitions=transitions_by_ts,
+        )
+        dp = dps[0]
+        assert isinstance(dp, Datapoint)
+        assert dp.state_count == state_counts_by_ts[0]
+        assert dp.state_transitions == transitions_by_ts[0]
+
+        dumped = dps.dump()["datapoints"]
+        assert dumped[0]["stateCount"] == [e.dump() for e in state_counts_by_ts[0]]
+        assert dumped[0]["stateTransitions"] == [e.dump() for e in transitions_by_ts[0]]
+        assert dumped[1]["stateCount"] == [e.dump() for e in state_counts_by_ts[1]]
+
+    @pytest.mark.dsl
+    def test_datapoints_array_getitem_and_dump(self, state_counts_by_ts: list[list[StateCount]]) -> None:
+        import numpy as np
+
+        arr = DatapointsArray(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=np.array([1000, 2000], dtype="datetime64[ns]"),
+            # Use the helper fn to create the array-of-list-of-state-aggs:
+            state_count=create_object_array_from_container(defaultdict(list, {(0,): [state_counts_by_ts]})),
+        )
+        assert arr.state_count is not None
+        assert arr.state_count.shape == (2,)
+        assert list(arr.state_count) == state_counts_by_ts
+
+        dp = arr[0]
+        assert isinstance(dp, Datapoint)
+        assert dp.state_count == state_counts_by_ts[0]
+
+        dumped = arr.dump()["datapoints"]
+        assert dumped[0]["stateCount"] == [e.dump() for e in state_counts_by_ts[0]]
+        assert dumped[1]["stateCount"] == [e.dump() for e in state_counts_by_ts[1]]
+
+    @pytest.mark.dsl
+    def test_create_object_array_from_container_does_not_collapse_equal_length_rows(self) -> None:
+        # "Regression" test (failed hard during development): if every "row" has the same length (like here, 2 each)
+        # the numpy call np.array(..., dtype=object) would build a proper 2D array instead of a 1D array-of-lists,
+        # thus keeping this test here as a guard for future "optimizations" ;)
+        container = defaultdict(list, {(0,): [[[1, 2], [3, 4], [5, 6]]]})
+        arr = create_object_array_from_container(container)  # type: ignore [arg-type]
+        assert arr.shape == (3,)
+        assert arr.dtype == object
+        assert arr[0] == [1, 2]
+        assert arr[2] == [5, 6]
 
 
 @pytest.mark.dsl
@@ -109,9 +352,923 @@ class TestToPandas:
             ]
         ).to_pandas()
 
+        exp_ts = 1234 * 1_000_000 if PANDAS_TS_UNIT == "ns" else 1234
         exp_df = pd.DataFrame(
             {1: 2.0, 2: 4.0, 3: 6.0},
-            index=np.array([1234 * 1_000_000], dtype="datetime64[ns]"),
+            index=np.array([exp_ts], dtype=f"datetime64[{PANDAS_TS_UNIT}]"),
         )
         exp_df.columns = pd.Index([123, "foo", NodeId(space="s", external_id="x")], name="identifier")
         pd.testing.assert_frame_equal(df, exp_df)
+
+
+@pytest.mark.dsl
+class TestStateDatapointsToPandas:
+    @pytest.fixture
+    def node_id(self) -> NodeId:
+        return NodeId("ss", "xx")
+
+    @pytest.fixture
+    def state_dps(self, node_id: NodeId) -> Datapoints:
+        return Datapoints(
+            id=123,
+            instance_id=node_id,
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=[1000, 2000, 3000, 4000],
+            # For bad datapoints, even numeric can be missing (None):
+            numeric_states=[0, 1, 0, None],  # type: ignore [list-item]
+            string_states=["off", "on", None, None],
+        )
+
+    def test_default_includes_both_state_columns(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import pandas as pd
+
+        df = state_dps.to_pandas()
+
+        assert list(df.columns) == [(node_id, "numeric"), (node_id, "string")]
+        assert df.columns.names == ["identifier", "state"]
+
+        numeric_values = df[node_id, "numeric"].tolist()
+        assert numeric_values[:-1] == [0, 1, 0]
+        assert numeric_values[3] is pd.NA
+        assert df[node_id, "numeric"].dtype == "Int32"
+
+        string_values = df[node_id, "string"].tolist()
+        assert string_values[:2] == ["off", "on"]
+        assert all(pd.isna(v) for v in string_values[2:])
+        assert df[node_id, "string"].dtype == "category"
+
+    def test_exclude_numeric_states(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import pandas as pd
+
+        df = state_dps.to_pandas(include_numeric_states=False)
+
+        assert list(df.columns) == [(node_id, "string")]
+        string_values = df[node_id, "string"].tolist()
+        assert string_values[:2] == ["off", "on"]
+        assert all(pd.isna(v) for v in string_values[2:])
+
+    def test_exclude_string_states(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import pandas as pd
+
+        df = state_dps.to_pandas(include_string_states=False)
+
+        assert list(df.columns) == [(node_id, "numeric")]
+        numeric_values = df[node_id, "numeric"].tolist()
+        assert numeric_values[:3] == [0, 1, 0]
+        assert numeric_values[3] is pd.NA
+
+    def test_exclude_both_states_without_status_gives_empty_dataframe(
+        self, state_dps: Datapoints, node_id: NodeId
+    ) -> None:
+        df = state_dps.to_pandas(include_numeric_states=False, include_string_states=False, include_status=False)
+
+        assert df.shape == (4, 0)
+
+    def test_status_columns_included_alongside_state_columns(self) -> None:
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            timestamp=[1000, 2000],
+            numeric_states=[0, 1],
+            string_states=["off", "on"],
+            status_code=[0, 2147483648],
+            status_symbol=["Good", "Bad"],
+        )
+        df = dps.to_pandas()
+
+        assert set(df.columns) == {
+            (123, "numeric", ""),
+            (123, "string", ""),
+            (123, "", "code"),
+            (123, "", "symbol"),
+        }
+        assert df[123, "", "code"].tolist() == [0, 2147483648]
+        assert df[123, "", "symbol"].tolist() == ["Good", "Bad"]
+
+    def test_datapoints_array_state_type_simple_aggregate_data_to_pandas(self) -> None:
+        import numpy as np
+
+        arr = DatapointsArray(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=np.array([1000, 2000], dtype="datetime64[ns]"),
+            count=np.array([3, 5], dtype=np.int64),
+            duration_good=np.array([100, 200], dtype=np.int64),
+        )
+        assert arr.numeric_states is None
+        assert arr.string_states is None
+
+        df = arr.to_pandas(include_aggregate_name=True)
+        assert list(df.columns) == [(123, "count"), (123, "duration_good")]
+        assert df[123, "count"].tolist() == [3, 5]
+        assert df[123, "duration_good"].tolist() == [100, 200]
+
+    def test_mixed_state_and_numeric_dps_list_to_pandas(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        numeric_dps = Datapoints(
+            id=456,
+            is_string=False,
+            is_step=False,
+            type="numeric",
+            timestamp=[1000, 2000, 3000, 4000],
+            value=[1.5, 2.5, 3.5, 4.5],
+        )
+        df = DatapointsList([state_dps, numeric_dps]).to_pandas()
+
+        assert set(df.columns) == {(node_id, "numeric"), (node_id, "string"), (456, "")}
+        assert df[(456, "")].tolist() == [1.5, 2.5, 3.5, 4.5]
+
+    def test_datapoints_list_to_pandas(self, state_dps: Datapoints, node_id: NodeId) -> None:
+        import numpy as np
+        import pandas as pd
+
+        other_state_dps = Datapoints(
+            id=456,
+            is_string=False,
+            is_step=True,
+            type="state",
+            # Ensure some timestamps align and others don't, to test the outer join behavior:
+            timestamp=[1000, 2000, 3500, 5500],
+            numeric_states=[10, 11, 10, 11],
+            string_states=["idle", "running", "idle", "running"],
+        )
+        df = DatapointsList([state_dps, other_state_dps]).to_pandas()
+
+        assert set(df.columns) == {(node_id, "numeric"), (node_id, "string"), (456, "numeric"), (456, "string")}
+        assert df[456, "numeric"].tolist() == [10, 11, pd.NA, 10, pd.NA, 11]
+        np.testing.assert_array_equal(  # easy way to make nans compare equal
+            df[456, "string"].tolist(),
+            ["idle", "running", math.nan, "idle", math.nan, "running"],
+        )
+        assert df[node_id, "numeric"].dtype == "Int32"
+        assert df[456, "numeric"].dtype == "Int32"
+
+    @pytest.mark.parametrize(
+        "agg, state_cls",
+        [("state_count", StateCount), ("state_transitions", StateTransition), ("state_duration", StateDuration)],
+    )
+    def test_to_pandas_unexpanded_state_only_aggregates_is_raw_list_per_interval(
+        self, agg: str, state_cls: type
+    ) -> None:
+        entries = [[state_cls(numeric_value=0, string_value="off", **{agg: 3})]]
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=[1000],
+            **{agg: entries},  # type: ignore [arg-type]
+        )
+        df = dps.to_pandas(include_aggregate_name=True, expand_state_aggregates=False)
+        assert list(df.columns) == [(123, agg)]
+        assert df[123, agg].iloc[0] == entries[0]
+
+        dp = Datapoint(timestamp=1000, **{agg: entries[0]})  # type: ignore [arg-type]
+        df_dp = dp.to_pandas(expand_state_aggregates=False)
+        assert df_dp[agg].iloc[0] == entries[0]
+
+    def test_to_pandas_unexpanded_state_only_aggregates_array_is_raw_list_per_interval(self) -> None:
+        import numpy as np
+
+        entries = [[StateCount(numeric_value=0, string_value="off", state_count=3)]]
+        arr = DatapointsArray(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=np.array([1000], dtype="datetime64[ns]"),
+            state_count=create_object_array_from_container(defaultdict(list, {(0,): [entries]})),
+        )
+        df = arr.to_pandas(include_aggregate_name=True, expand_state_aggregates=False)
+        assert list(df.columns) == [(123, "state_count")]
+        assert df[123, "state_count"].iloc[0] == entries[0]
+
+    def test_to_pandas_unexpanded_state_only_aggregates_does_not_collapse_equal_length_rows(self) -> None:
+        # Regression test: every interval here has exactly one entry, so a simple np.array call would turn this
+        # into a 2D array instead of the 1D array of variable length lists:
+        entries_per_interval = [
+            [StateCount(numeric_value=0, string_value="off", state_count=3)],
+            [StateCount(numeric_value=1, string_value="on", state_count=5)],
+        ]
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=[1000, 2000],
+            state_count=entries_per_interval,
+        )
+        df = dps.to_pandas(include_aggregate_name=True, expand_state_aggregates=False)
+        assert list(df.columns) == [(123, "state_count")]
+        assert df[123, "state_count"].tolist() == entries_per_interval
+
+    @pytest.fixture
+    def state_count_by_ts(self) -> list[list[StateCount]]:
+        return [
+            [
+                StateCount(numeric_value=0, string_value="off", state_count=3),
+                StateCount(numeric_value=1, string_value="on", state_count=2),
+            ],
+            [StateCount(numeric_value=0, string_value="off", state_count=5)],
+        ]
+
+    def test_to_pandas_state_only_aggregates_column_shape_and_dtype(
+        self, state_count_by_ts: list[list[StateCount]]
+    ) -> None:
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=[1000, 2000],
+            state_count=state_count_by_ts,
+        )
+        df = dps.to_pandas(include_aggregate_name=True)
+
+        # Ascending sort order by numeric_value (state_value):
+        assert list(df.columns) == [(123, "state_count", 0, "off"), (123, "state_count", 1, "on")]
+        assert df.columns.names == ["identifier", "aggregate", "state_value", "state_string"]
+
+        assert df[123, "state_count", 0, "off"].tolist() == [3, 5]
+        assert df[123, "state_count", 0, "off"].dtype == "int64"
+
+        # State 1 didn't occur in the second interval -> filled with 0 (same assumption as e.g. 'count'):
+        assert df[123, "state_count", 1, "on"].tolist() == [2, 0]
+        assert df[123, "state_count", 1, "on"].dtype == "int64"
+
+    def test_to_pandas_state_value_level_stays_int_when_mixed_with_other_columns(
+        self, state_count_by_ts: list[list[StateCount]]
+    ) -> None:
+        # Regression test: requesting a simple aggregate (e.g. 'count') alongside state_count used to silently
+        # upcast the 'state_value' MultiIndex level to float (10 -> 10.0), since building the underlying column
+        # info DataFrame mixes None (for the simple aggregate's row) with plain ints (for the state-only rows):
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=[1000, 2000],
+            count=[5, 5],
+            state_count=state_count_by_ts,
+        )
+        df = dps.to_pandas(include_aggregate_name=True)
+        assert list(df.columns) == [
+            (123, "count", "", ""),
+            (123, "state_count", 0, "off"),
+            (123, "state_count", 1, "on"),
+        ]
+        state_values = df.columns.get_level_values("state_value")
+        assert state_values.tolist() == ["", 0, 1]
+        assert [type(v) for v in state_values] == [str, int, int]
+
+    def test_to_pandas_state_only_aggregates_array_matches_list_version(
+        self, state_count_by_ts: list[list[StateCount]]
+    ) -> None:
+        import numpy as np
+        import pandas as pd
+
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=[1000, 2000],
+            state_count=state_count_by_ts,
+        )
+        arr = DatapointsArray(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=np.array([1000, 2000], dtype="datetime64[ms]").astype("datetime64[ns]"),
+            state_count=create_object_array_from_container(defaultdict(list, {(0,): [state_count_by_ts]})),
+        )
+        pd.testing.assert_frame_equal(
+            dps.to_pandas(include_aggregate_name=True), arr.to_pandas(include_aggregate_name=True)
+        )
+
+    def test_to_pandas_state_only_aggregates_default_excludes_when_not_populated(
+        self, state_count_by_ts: list[list[StateCount]]
+    ) -> None:
+        # expand_state_aggregates=True (the default) shouldn't add any columns/levels when there's
+        # simply no state-only aggregate data on the object (e.g. only simple aggregates were requested):
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=[1000, 2000],
+            count=[3, 5],
+        )
+        df = dps.to_pandas(include_aggregate_name=True)
+        assert list(df.columns) == [(123, "count")]
+
+    def test_datapoint_to_pandas_state_only_aggregates_single_row(
+        self, state_count_by_ts: list[list[StateCount]]
+    ) -> None:
+        dp = Datapoint(timestamp=1000, state_count=state_count_by_ts[0])
+        df = dp.to_pandas()
+
+        assert list(df.columns) == ["value", ("state_count", 0, "off"), ("state_count", 1, "on")]
+        assert df[("state_count", 0, "off")].iloc[0] == 3
+        assert df[("state_count", 1, "on")].iloc[0] == 2
+
+    @pytest.fixture
+    def state_count_with_dropped_states(self) -> list[list[StateCount]]:
+        # States 20 and 30 are no longer part of the state set, so the API omits their string value:
+        return [
+            [
+                StateCount(numeric_value=10, string_value="ten", state_count=1),
+                StateCount(numeric_value=20, string_value=None, state_count=2),
+                StateCount(numeric_value=30, string_value=None, state_count=3),
+            ],
+            [
+                StateCount(numeric_value=10, string_value="ten", state_count=4),
+                StateCount(numeric_value=40, string_value="forty", state_count=5),
+            ],
+        ]
+
+    @pytest.mark.parametrize("use_array", [False, True])
+    def test_to_pandas_multiple_states_without_string_value_gives_unique_columns(
+        self, state_count_with_dropped_states: list[list[StateCount]], use_array: bool
+    ) -> None:
+        import numpy as np
+
+        if use_array:
+            dps: Datapoints | DatapointsArray = DatapointsArray(
+                id=123,
+                is_string=False,
+                is_step=False,
+                type="state",
+                granularity="1h",
+                timestamp=np.array([1000, 2000], dtype="datetime64[ms]").astype("datetime64[ns]"),
+                state_count=create_object_array_from_container(
+                    defaultdict(list, {(0,): [state_count_with_dropped_states]})
+                ),
+            )
+        else:
+            dps = Datapoints(
+                id=123,
+                is_string=False,
+                is_step=False,
+                type="state",
+                granularity="1h",
+                timestamp=[1000, 2000],
+                state_count=state_count_with_dropped_states,
+            )
+        df = dps.to_pandas(include_aggregate_name=True)
+
+        assert df.columns.is_unique
+        assert list(df.columns) == [
+            (123, "state_count", 10, "ten"),
+            (123, "state_count", 20, ""),
+            (123, "state_count", 30, ""),
+            (123, "state_count", 40, "forty"),
+        ]
+        assert df[123, "state_count", 20, ""].tolist() == [2, 0]
+        assert df[123, "state_count", 30, ""].tolist() == [3, 0]
+        # The numeric value is what makes these columns unique, selecting on the string alone gives both:
+        assert df.xs("", axis="columns", level="state_string").shape == (2, 2)
+
+    def test_to_pandas_all_states_without_string_value_keeps_state_string_level(self) -> None:
+        # If every single string state value is missing, we still want the 'state_string' level to be present
+        dps = Datapoints(
+            id=123,
+            is_string=False,
+            is_step=False,
+            type="state",
+            granularity="1h",
+            timestamp=[1000],
+            state_count=[
+                [
+                    StateCount(numeric_value=20, string_value=None, state_count=2),
+                    StateCount(numeric_value=30, string_value=None, state_count=3),
+                ]
+            ],
+        )
+        df = dps.to_pandas(include_aggregate_name=True)
+        assert df.columns.is_unique
+        assert df.columns.names == ["identifier", "aggregate", "state_value", "state_string"]
+        assert list(df.columns) == [(123, "state_count", 20, ""), (123, "state_count", 30, "")]
+
+    def test_datapoint_to_pandas_multiple_states_without_string_value(
+        self, state_count_with_dropped_states: list[list[StateCount]]
+    ) -> None:
+        df = Datapoint(timestamp=1000, state_count=state_count_with_dropped_states[0]).to_pandas()
+        assert df.columns.is_unique
+        assert list(df.columns) == [
+            "value",
+            ("state_count", 10, "ten"),
+            ("state_count", 20, ""),
+            ("state_count", 30, ""),
+        ]
+
+
+class TestStateDatapointsInsertWithRetrievedDatapoints:
+    NODE = NodeId("sp", "target")
+
+    @classmethod
+    def writes(cls, dps: Datapoints | DatapointsArray) -> list:
+        return list(StateDatapointsInsert(cls.NODE, dps)._to_datapoint_writes())
+
+    @staticmethod
+    def make_dps(**kwargs: Any) -> Datapoints:
+        defaults: dict[str, Any] = dict(
+            id=1, instance_id=NodeId("sp", "xid"), is_string=False, is_step=True, type="state", timestamp=[1000, 2000]
+        )
+        return Datapoints(**{**defaults, **kwargs})
+
+    def test_basic_ignores_string_states(self) -> None:
+        dps = self.make_dps(numeric_states=[0, 10], string_states=["off", "ten-renamed-since"])
+        res = self.writes(dps)
+        assert res == [StateDatapointWrite(1000, 0), StateDatapointWrite(2000, 10)]
+
+    def test_status_codes_kept_only_when_not_good(self) -> None:
+        # The StateDatapointWrite objects preserve the literal status code/symbol (even Good); it's the wire
+        # format (dump()) that omits Good as it's the default, see TestStateDatapointWrite.test_dump_omits_good:
+        dps = self.make_dps(
+            timestamp=[1, 2, 3],
+            numeric_states=[0, 1, 2],
+            string_states=["a", "b", "c"],
+            status_code=[0, 0x40000000, 0],
+            status_symbol=["Good", "Uncertain", "Good"],
+        )
+        res = self.writes(dps)
+        assert res == [
+            StateDatapointWrite(1, 0, status_code=0),
+            StateDatapointWrite(2, 1, status_code=0x40000000),
+            StateDatapointWrite(3, 2, status_code=0),
+        ]
+
+    def test_bad_datapoints_with_missing_state_keep_their_status(self) -> None:
+        dps = self.make_dps(
+            numeric_states=[1, None],
+            string_states=["on", None],
+            status_code=[0, 0x80000000],
+            status_symbol=["Good", "Bad"],
+        )
+        res = self.writes(dps)
+        assert res == [StateDatapointWrite(1000, 1, status_code=0), StateDatapointWrite(2000, status_code=0x80000000)]
+
+    def test_missing_state_without_status_info_raises(self) -> None:
+        # E.g. retrieved with ignore_bad_datapoints=False, but without include_status=True: we no longer have any
+        # way to know the status was Bad, so we can't insert a generic 'Bad' guess; we raise instead:
+        dps = self.make_dps(numeric_states=[1, None], string_states=["on", None])
+        with pytest.raises(ValueError, match="numeric state value is missing"):
+            self.writes(dps)
+
+    @pytest.mark.parametrize(
+        "status_code, status_symbol",
+        [
+            (0, "Good"),
+            (0x40000000, "Uncertain"),
+            (0x40000000 | 0x400 | 0x100, "Uncertain, Low"),  # Uncertain with info bits / modifier flags
+            (3145728, "GoodClamped"),  # Good sub-code
+        ],
+    )
+    def test_missing_state_with_non_bad_status_raises(self, status_code: int, status_symbol: str) -> None:
+        dps = self.make_dps(
+            numeric_states=[1, None],
+            status_code=[0, status_code],
+            status_symbol=["Good", status_symbol],
+        )
+        with pytest.raises(ValueError, match="numeric state value is missing"):
+            self.writes(dps)
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("state", [2.7, math.inf, -math.inf])
+    def test_non_whole_numeric_state_raises(self, state: float) -> None:
+        import numpy as np
+
+        arr = DatapointsArray(
+            id=1,
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=np.array([1, 2], dtype="datetime64[ms]").astype("datetime64[ns]"),
+            numeric_states=np.array([1.0, state]),
+        )
+        with pytest.raises(ValueError, match=r"must be a whole number.*instantiated \(or modified\) manually"):
+            StateDatapointsInsert(self.NODE, arr)._to_datapoint_writes()
+        # Same for Datapoints (list based) with floats:
+        dps = self.make_dps(numeric_states=[1.0, state])
+        with pytest.raises(ValueError, match=r"must be a whole number.*Datapoints object"):
+            self.writes(dps)
+
+    @pytest.mark.parametrize("status_code", [0x80000000, 2153809152])  # Bad, and Bad sub-code with modifier flags
+    def test_missing_state_with_any_bad_status_is_kept(self, status_code: int) -> None:
+        dps = self.make_dps(numeric_states=[1, None], status_code=[0, status_code], status_symbol=["Good", "Bad..."])
+        assert self.writes(dps)[1] == StateDatapointWrite(2000, status_code=status_code)
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("status_code", [None, 0, 0x40000000])
+    def test_missing_state_with_non_bad_status_raises_for_datapoints_array(self, status_code: int | None) -> None:
+        import numpy as np
+
+        arr = DatapointsArray(
+            id=1,
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=np.array([1, 2], dtype="datetime64[ms]").astype("datetime64[ns]"),
+            numeric_states=np.array([1.0, np.nan]),
+            status_code=None if status_code is None else np.array([0, status_code], dtype=np.uint32),
+            status_symbol=None if status_code is None else np.array(["Good", "x"], dtype=object),
+        )
+        with pytest.raises(ValueError, match="numeric state value is missing"):
+            StateDatapointsInsert(self.NODE, arr)._to_datapoint_writes()
+
+    @pytest.mark.parametrize(
+        "kwargs, match",
+        [
+            (dict(type="numeric", value=[1.0, 2.0]), "Only datapoints from state time series"),
+            (dict(numeric_states=None, average=[1.0, 2.0]), "'numeric_states' is missing"),
+        ],
+    )
+    def test_invalid_input_raises(self, kwargs: dict[str, Any], match: str) -> None:
+        with pytest.raises(ValueError, match=match):
+            StateDatapointsInsert(self.NODE, self.make_dps(**kwargs))
+
+    @pytest.mark.parametrize(
+        "kwargs, match",
+        [
+            (dict(numeric_states=[0]), r"equal lengths.*'timestamp': 2, 'numeric_states': 1"),
+            (dict(timestamp=[1], numeric_states=[0, 1]), r"equal lengths.*'timestamp': 1, 'numeric_states': 2"),
+            (
+                dict(numeric_states=[0, 1], status_code=[0], status_symbol=["Good", "Good"]),
+                r"equal lengths.*'status_code': 1, 'status_symbol': 2",
+            ),
+            (
+                dict(numeric_states=[0, 1], status_code=[0, 0, 0], status_symbol=["Good"] * 3),
+                r"equal lengths.*'timestamp': 2.*'status_code': 3",
+            ),
+            (dict(numeric_states=[0, 1], status_code=[0, 0]), r"Got 'status_code' but 'status_symbol' is None"),
+            (dict(numeric_states=[0, 1], status_symbol=["Good"] * 2), r"Got 'status_symbol' but 'status_code' is None"),
+        ],
+    )
+    def test_inconsistent_lengths_or_partial_status_raises(self, kwargs: dict[str, Any], match: str) -> None:
+        insert = StateDatapointsInsert(self.NODE, self.make_dps(**kwargs))
+        with pytest.raises(ValueError, match=match) as exc:
+            insert._to_datapoint_writes()
+        assert "only happens when the Datapoints object has been instantiated (or modified) manually" in str(exc.value)
+
+    @pytest.mark.dsl
+    def test_inconsistent_lengths_raises_for_datapoints_array(self) -> None:
+        import numpy as np
+
+        arr = DatapointsArray(
+            id=1,
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=np.array([1, 2, 3], dtype="datetime64[ms]").astype("datetime64[ns]"),
+            numeric_states=np.array([1, 2], dtype=np.int32),
+        )
+        with pytest.raises(ValueError, match=r"equal lengths.*'timestamp': 3, 'numeric_states': 2.*DatapointsArray"):
+            StateDatapointsInsert(self.NODE, arr)._to_datapoint_writes()
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("with_bad", [False, True])
+    def test_datapoints_array_matches_list_version(self, with_bad: bool) -> None:
+        import numpy as np
+
+        # Without bad datapoints, numeric_states is int32; with them, float64 with NaN for missing:
+        states = [1, 2, 3]
+        codes, symbols = [0, 0x40000000, 0], ["Good", "Uncertain", "Good"]
+        if with_bad:
+            states[2], codes[2], symbols[2] = np.nan, 0x80000000, "Bad"  # type: ignore [call-overload]
+        arr = DatapointsArray(
+            id=1,
+            instance_id=self.NODE,
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=np.array([1, 2, 3], dtype="datetime64[ms]").astype("datetime64[ns]"),
+            numeric_states=np.array(states, dtype=np.float64 if with_bad else np.int32),  # type: ignore [arg-type]
+            string_states=np.array(["a", "b", None], dtype=object),
+            status_code=np.array(codes, dtype=np.uint32),
+            status_symbol=np.array(symbols, dtype=object),
+        )
+        dps = self.make_dps(
+            timestamp=[1, 2, 3],
+            numeric_states=[None if with_bad and i == 2 else s for i, s in enumerate(states)],
+            status_code=codes,
+            status_symbol=symbols,
+        )
+        res = self.writes(arr)
+        assert res == self.writes(dps)
+        assert res[1] == StateDatapointWrite(2, 2, status_code=0x40000000)
+        assert res[2] == (
+            StateDatapointWrite(3, status_code=0x80000000) if with_bad else StateDatapointWrite(3, 3, status_code=0)
+        )
+        assert all(isinstance(dp.timestamp, int) for dp in res)
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("kind", ["list", "array-int32", "array-float64"])
+    @pytest.mark.parametrize("include_status", [False, True])
+    def test_empty_retrieved_datapoints(self, kind: str, include_status: bool) -> None:
+        import numpy as np
+
+        # The SDK returns empty containers (not None) when a state time series has no datapoints. With
+        # ignore_bad_datapoints=False, the (empty) numeric_states array is float64 instead of int32:
+        if kind == "list":
+            status: dict[str, Any] = dict(status_code=[], status_symbol=[]) if include_status else {}
+            dps: Datapoints | DatapointsArray = self.make_dps(
+                timestamp=[], numeric_states=[], string_states=[], **status
+            )
+        else:
+            status = dict(status_code=np.array([], dtype=np.uint32), status_symbol=np.array([], dtype=object))
+            dps = DatapointsArray(
+                id=1,
+                is_string=False,
+                is_step=True,
+                type="state",
+                timestamp=np.array([], dtype="datetime64[ns]"),
+                numeric_states=np.array([], dtype=np.int32 if kind == "array-int32" else np.float64),  # type: ignore [arg-type]
+                string_states=np.array([], dtype=object),
+                **(status if include_status else {}),
+            )
+        insert = StateDatapointsInsert(self.NODE, dps)
+        assert insert._to_datapoint_writes() == []
+        assert insert.dump()["datapoints"] == []
+
+
+class TestStateDatapointWrite:
+    @pytest.mark.parametrize(
+        "kwargs, expected",
+        [
+            ({"numeric_value": 5}, {"timestamp": 1, "numericValue": 5}),  # numeric only
+            ({"string_value": "on"}, {"timestamp": 1, "stringValue": "on"}),  # string only
+            (  # both value fields:
+                {"numeric_value": -1, "string_value": "off"},
+                {"timestamp": 1, "numericValue": -1, "stringValue": "off"},
+            ),
+            ({"status_code": 0x80000000}, {"timestamp": 1, "status": {"code": 0x80000000}}),  # code only
+            ({"status_symbol": "Bad"}, {"timestamp": 1, "status": {"symbol": "Bad"}}),  # symbol only
+            (  # code + symbol:
+                {"status_code": 0x80000000, "status_symbol": "Bad"},
+                {"timestamp": 1, "status": {"code": 0x80000000, "symbol": "Bad"}},
+            ),
+            # Good (code=0/symbol="Good") is the default status and is omitted from the wire format:
+            ({"numeric_value": 1, "status_code": 0, "status_symbol": "Good"}, {"timestamp": 1, "numericValue": 1}),
+            ({"numeric_value": 1, "status_code": 0}, {"timestamp": 1, "numericValue": 1}),
+            ({"numeric_value": 1, "status_symbol": "Good"}, {"timestamp": 1, "numericValue": 1}),
+            (  # ...but a mismatch is sent as given, so that the API can reject it:
+                {"numeric_value": 1, "status_code": 0, "status_symbol": "Bad"},
+                {"timestamp": 1, "numericValue": 1, "status": {"code": 0, "symbol": "Bad"}},
+            ),
+        ],
+    )
+    def test_dump(self, kwargs: dict[str, Any], expected: dict[str, Any]) -> None:
+        assert StateDatapointWrite(timestamp=1, **kwargs).dump() == expected
+
+    def test_dump_snake_case(self) -> None:
+        dp = StateDatapointWrite(1000, numeric_value=-1, string_value="off", status_code=0, status_symbol="Good")
+        assert dp.dump(camel_case=False) == {
+            "timestamp": 1000,
+            "numeric_value": -1,
+            "string_value": "off",
+        }
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            {"numeric_value": 5},
+            {"string_value": "idle"},
+            {"numeric_value": 0, "string_value": "off"},
+            {"status_symbol": "Bad"},
+            {"status_code": 0x80000000},
+        ],
+    )
+    def test_load_dump_roundtrip(self, kwargs: dict[str, Any]) -> None:
+        obj = StateDatapointWrite(timestamp=1000, **kwargs)
+        assert StateDatapointWrite.load(obj.dump(camel_case=False)) == obj
+
+    def test_load_returns_self_if_instance(self) -> None:
+        obj = StateDatapointWrite(1000, numeric_value=0)
+        assert StateDatapointWrite.load(obj) is obj
+
+    def test_load_raises_on_invalid_type(self) -> None:
+        with pytest.raises(TypeError, match="StateDatapointWrite"):
+            StateDatapointWrite.load([1000, 0])  # type: ignore[arg-type]
+
+    @pytest.mark.parametrize(
+        "kwargs", [{}, {"status_code": 0}, {"status_code": 0x40000000}, {"status_code": 0, "status_symbol": "Bad"}]
+    )
+    def test_no_value_and_no_bad_status_raises(self, kwargs: dict[str, Any]) -> None:
+        with pytest.raises(ValueError, match="bad status"):
+            StateDatapointWrite(timestamp=1000, **kwargs)
+
+    @pytest.mark.parametrize("kwargs", [{"status_code": 0x80000000}, {"status_symbol": "Bad"}])
+    def test_status_only_without_value_is_valid(self, kwargs: dict[str, Any]) -> None:
+        dp = StateDatapointWrite(timestamp=1000, **kwargs)
+        assert dp.numeric_value is None and dp.string_value is None
+
+
+@pytest.fixture
+def state_dps_insert() -> StateDatapointsInsert:
+    return StateDatapointsInsert(
+        instance_id=NodeId("my-space", "my-ts"),
+        datapoints=[StateDatapointWrite(1000, numeric_value=0)],
+    )
+
+
+class TestStateDatapointsInsert:
+    @pytest.mark.parametrize(
+        "camel_case, expected",
+        [
+            (
+                True,
+                {
+                    "instanceId": {"space": "my-space", "externalId": "my-ts"},
+                    "datapoints": [{"timestamp": 1000, "numericValue": 0}],
+                },
+            ),
+            (
+                False,
+                {
+                    "instance_id": {"space": "my-space", "external_id": "my-ts"},
+                    "datapoints": [{"timestamp": 1000, "numeric_value": 0}],
+                },
+            ),
+        ],
+    )
+    def test_dump(self, state_dps_insert: StateDatapointsInsert, camel_case: bool, expected: dict) -> None:
+        assert state_dps_insert.dump(camel_case=camel_case) == expected
+
+    @pytest.mark.parametrize("camel_case", [True, False])
+    def test_load_dump_roundtrip(self, state_dps_insert: StateDatapointsInsert, camel_case: bool) -> None:
+        back = StateDatapointsInsert.load(state_dps_insert.dump(camel_case=camel_case))
+        assert NodeId.load(back.instance_id) == NodeId("my-space", "my-ts")
+        assert len(back.datapoints) == 1
+
+    def test_load_returns_self_if_instance(self, state_dps_insert: StateDatapointsInsert) -> None:
+        assert StateDatapointsInsert.load(state_dps_insert) is state_dps_insert
+
+    def test_load_raises_on_invalid_type(self) -> None:
+        with pytest.raises(TypeError, match="StateDatapointsInsert"):
+            StateDatapointsInsert.load("not-a-dict")  # type: ignore[arg-type]
+
+    def test_to_proto_dict(self, state_dps_insert: StateDatapointsInsert) -> None:
+        assert state_dps_insert._to_proto_dict() == {
+            "instanceId": {"space": "my-space", "externalId": "my-ts"},
+            "stateDatapoints": {"datapoints": [{"timestamp": 1000, "numericValue": 0}]},
+        }
+
+    def test_non_sequence_datapoints_raises(self) -> None:
+        with pytest.raises(TypeError, match="sequence"):
+            StateDatapointsInsert(instance_id=NodeId("sp", "xid"), datapoints="bad")  # type: ignore[arg-type]
+
+
+class TestLatestDatapointStateTimeSeries:
+    @pytest.fixture
+    def state_resource(self) -> dict[str, Any]:
+        return {
+            "id": 123,
+            "instanceId": {"space": "sp", "externalId": "xid"},
+            "type": "state",
+            "isString": False,
+            "isStep": True,
+            "datapoints": [
+                {
+                    "timestamp": 1700000000000,
+                    "numericValue": 1,
+                    "stringValue": "ON",
+                    "status": {"code": 0, "symbol": "Good"},
+                }
+            ],
+        }
+
+    def test_load_state_values(self, state_resource: dict[str, Any]) -> None:
+        dp = LatestDatapoint._load(state_resource)
+        assert dp.has_datapoint
+        assert dp.numeric_state == 1
+        assert dp.string_state == "ON"
+        assert dp.status_symbol == "Good"
+
+    def test_value_raises_for_state_time_series(self, state_resource: dict[str, Any]) -> None:
+        dp = LatestDatapoint._load(state_resource)
+        with pytest.raises(ValueError, match=r"numeric_state.*string_state"):
+            dp.value
+
+    @pytest.mark.parametrize("has_datapoint", [True, False])
+    def test_has_datapoint_and_bool_are_unaffected_by_value_raising(
+        self, state_resource: dict[str, Any], has_datapoint: bool
+    ) -> None:
+        if not has_datapoint:
+            state_resource["datapoints"] = []
+        dp = LatestDatapoint._load(state_resource)
+
+        assert dp.has_datapoint is has_datapoint
+        assert bool(dp) is has_datapoint
+        with pytest.raises(ValueError):
+            dp.value
+
+    def test_is_state_property(self, state_resource: dict[str, Any]) -> None:
+        assert LatestDatapoint._load(state_resource).is_state is True
+
+        state_resource["type"] = "numeric"
+        assert LatestDatapoint._load(state_resource).is_state is False
+
+    def test_dump_state_values(self, state_resource: dict[str, Any]) -> None:
+        dp = LatestDatapoint._load(state_resource)
+        # The dump follows the API response format (numericValue/stringValue), so it round-trips through load:
+        assert dp.dump()["datapoints"] == [
+            {
+                "timestamp": 1700000000000,
+                "value": None,
+                "numericValue": 1,
+                "stringValue": "ON",
+                "status": {"code": 0, "symbol": "Good"},
+            }
+        ]
+        (dumped_dp,) = dp.dump(camel_case=False)["datapoints"]
+        assert dumped_dp["numeric_value"] == 1 and dumped_dp["string_value"] == "ON"
+
+        reloaded = LatestDatapoint._load(dp.dump())
+        assert reloaded.numeric_state == 1 and reloaded.string_state == "ON"
+        assert reloaded.dump() == dp.dump()
+
+    def test_load_bad_status_without_state_values(self, state_resource: dict[str, Any]) -> None:
+        state_resource["datapoints"] = [{"timestamp": 1, "status": {"code": 0x80000000, "symbol": "Bad"}}]
+        dp = LatestDatapoint._load(state_resource)
+        assert dp.numeric_state is None and dp.string_state is None
+        assert dp.status_symbol == "Bad"
+
+    def test_numeric_time_series_has_no_state_keys(self) -> None:
+        dp = LatestDatapoint._load(
+            {
+                "id": 1,
+                "type": "numeric",
+                "isString": False,
+                "isStep": False,
+                "datapoints": [{"timestamp": 1, "value": 2.0}],
+            }
+        )
+        with pytest.raises(ValueError, match="use 'value' instead"):
+            dp.numeric_state
+        with pytest.raises(ValueError, match="use 'value' instead"):
+            dp.string_state
+        assert dp.dump()["datapoints"] == [{"timestamp": 1, "value": 2.0}]
+
+    @pytest.mark.dsl
+    def test_to_pandas(self, state_resource: dict[str, Any]) -> None:
+        dp = LatestDatapoint._load(state_resource)
+        df = dp.to_pandas()
+        assert df.loc["numeric_state", "value"] == 1
+        assert df.loc["string_state", "value"] == "ON"
+
+        df_lst = LatestDatapointList([dp]).to_pandas()
+        assert df_lst["numeric_state"].tolist() == [1]
+        assert df_lst["string_state"].tolist() == ["ON"]
+        assert df_lst["value"].tolist() == [None]
+        assert df_lst["numeric_state"].dtype == "Int32"
+        assert df_lst["string_state"].dtype == "category"
+
+    @pytest.mark.dsl
+    def test_to_pandas_list_numeric_state_stays_int32_when_mixed_with_non_state(
+        self, state_resource: dict[str, Any]
+    ) -> None:
+        import pandas as pd
+
+        state_dp = LatestDatapoint._load(state_resource)
+        numeric_dp = LatestDatapoint._load(
+            {
+                "id": 1,
+                "type": "numeric",
+                "isString": False,
+                "isStep": False,
+                "datapoints": [{"timestamp": 1, "value": 2.0}],
+            }
+        )
+        no_dp = LatestDatapoint._load(
+            {"id": 2, "type": "numeric", "isString": False, "isStep": False, "datapoints": []}
+        )
+
+        df = LatestDatapointList([state_dp, numeric_dp, no_dp]).to_pandas()
+        assert df["numeric_state"].dtype == "Int32"
+        assert df["numeric_state"].tolist()[0] == 1
+        assert pd.isna(df["numeric_state"].tolist()[1]) and pd.isna(df["numeric_state"].tolist()[2])
+
+        assert df["string_state"].dtype == "category"
+        assert df["string_state"].tolist()[0] == "ON"
+        assert pd.isna(df["string_state"].tolist()[1]) and pd.isna(df["string_state"].tolist()[2])
+
+        # No state items at all -> neither column should even exist:
+        df_no_state = LatestDatapointList([numeric_dp, no_dp]).to_pandas()
+        assert "numeric_state" not in df_no_state.columns
+        assert "string_state" not in df_no_state.columns

@@ -26,6 +26,7 @@ from cognite.client._sync_api.functions import SyncFunctionsAPI
 from cognite.client._sync_api.geospatial import SyncGeospatialAPI
 from cognite.client._sync_api.hosted_extractors import SyncHostedExtractorsAPI
 from cognite.client._sync_api.iam import SyncIAMAPI
+from cognite.client._sync_api.integrations import SyncIntegrationsAPI
 from cognite.client._sync_api.labels import SyncLabelsAPI
 from cognite.client._sync_api.limits import SyncLimitsAPI
 from cognite.client._sync_api.metering import SyncMeteringAPI
@@ -84,6 +85,7 @@ class CogniteClient:
         self.geospatial = SyncGeospatialAPI(async_client)
         self.hosted_extractors = SyncHostedExtractorsAPI(async_client)
         self.iam = SyncIAMAPI(async_client)
+        self.integrations = SyncIntegrationsAPI(async_client)
         self.labels = SyncLabelsAPI(async_client)
         self.limits = SyncLimitsAPI(async_client)
         self.metering = SyncMeteringAPI(async_client)

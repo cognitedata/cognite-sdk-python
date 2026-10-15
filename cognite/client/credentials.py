@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import atexit
-import inspect
 import json
 import operator
-import tempfile
 import threading
 import time
 import warnings
@@ -13,19 +11,24 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, Literal, Protocol, get_args, runtime_checkable
+from typing import Any, Literal, Protocol, get_args, runtime_checkable
 
+import httpx2
 import requests
 from msal import ConfidentialClientApplication, PublicClientApplication, SerializableTokenCache
 
 from cognite.client.exceptions import CogniteAuthError, CogniteOAuthError
 from cognite.client.utils._auxiliary import at_least_one_is_not_none, exactly_one_is_not_none, load_resource_to_dict
-
-if TYPE_CHECKING:
-    from authlib.integrations.httpx_client import OAuth2Client
-
+from cognite.client.utils._text import shorten
+from cognite.client.utils._token_cache import default_token_cache_dir, read_securely, write_securely
 
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
+
+# We previously used authlib for OAuthClientCredentials, which rejected token_custom_args clashing with the
+# parameters of its 'fetch_token'. We keep rejecting the same ones, so existing configs fail (or work) as before:
+_OAUTH_CC_RESERVED_TOKEN_CUSTOM_ARGS = frozenset({"auth", "body", "grant_type", "headers", "method", "state", "url"})
+# ...and the token_custom_args that are passed on as HTTP request options instead (as authlib used to do):
+_OAUTH_CC_TOKEN_REQUEST_HTTP_OPTIONS = frozenset({"timeout", "follow_redirects", "cookies"})
 
 # A subset of the OpenID Connect 'prompt' parameter, see OAuthInteractive for what each value does:
 InteractivePrompt = Literal["select_account", "login", "consent"]
@@ -205,24 +208,21 @@ class _WithMsalSerializableTokenCache:
     def _create_serializable_token_cache(cache_path: Path, clear_cache: bool = False) -> SerializableTokenCache:
         token_cache = SerializableTokenCache()
 
-        if cache_path.exists():
-            if clear_cache:
-                cache_path.unlink(missing_ok=True)
-            else:
-                with cache_path.open() as fh:
-                    token_cache.deserialize(fh.read())
+        if clear_cache:
+            cache_path.unlink(missing_ok=True)
+        elif (content := read_securely(cache_path)) is not None:
+            token_cache.deserialize(content)
 
         def __at_exit() -> None:
             if token_cache.has_state_changed:
-                with open(cache_path, "w+") as fh:
-                    fh.write(token_cache.serialize())
+                write_securely(cache_path, token_cache.serialize())
 
         atexit.register(__at_exit)
         return token_cache
 
     @staticmethod
     def _resolve_token_cache_path(token_cache_path: Path | None, client_id: str) -> Path:
-        return token_cache_path or Path(tempfile.gettempdir()) / f"cognitetokencache.{client_id}.bin"
+        return token_cache_path or default_token_cache_dir() / f"cognitetokencache.{client_id}.bin"
 
     def _create_client_app(
         self,
@@ -258,10 +258,9 @@ class _WithMsalSerializableTokenCache:
 
     @staticmethod
     def _get_cached_token(cache_path: Path) -> dict[str, Any]:
-        if not cache_path.exists():
+        if (content := read_securely(cache_path)) is None:
             return {}
-        token = json.loads(cache_path.read_text())
-        return token
+        return json.loads(content)
 
 
 class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerializableTokenCache):
@@ -274,7 +273,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         cdf_cluster (str | None): The CDF cluster where the CDF project is located. If provided, scopes will be set to
             ``[f"https://{cdf_cluster}.cognitedata.com/IDENTITY https://{cdf_cluster}.cognitedata.com/user_impersonation openid profile"]``.
         oauth_discovery_url (str | None): Standard OAuth discovery URL, should be where "/.well-known/openid-configuration" is found.
-        token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+        token_cache_path (Path | None): Location to store token cache, defaults to a per-user cache directory (e.g. ~/.cache/cognite-sdk-python on Linux, ~/Library/Caches/cognite-sdk-python on macOS, %LOCALAPPDATA%\\cognite-sdk-python on Windows) as cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
         clear_cache (bool): If True, the token cache will be cleared on initialization. Default: False
         mem_cache_only (bool): If True, the token cache will only be stored in memory. Default: False
@@ -455,8 +454,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
         else:
             if _app := getattr(self, f"_{type(self).__name__}__app", None):
                 if _app.token_cache.has_state_changed:
-                    with open(self._token_cache_path, "w+") as fh:
-                        fh.write(_app.token_cache.serialize())
+                    write_securely(self._token_cache_path, _app.token_cache.serialize())
             token = self._get_cached_token(self._token_cache_path)
 
         if convert_timestamps:
@@ -602,7 +600,7 @@ class OAuthDeviceCode(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSeriali
             tenant_id (str): The Azure tenant id
             client_id (str): Your app registration client id. Must have device code flow enabled.
             cdf_cluster (str): The CDF cluster where the CDF project is located.
-            token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+            token_cache_path (Path | None): Location to store token cache, defaults to a per-user cache directory (e.g. ~/.cache/cognite-sdk-python on Linux, ~/Library/Caches/cognite-sdk-python on macOS, %LOCALAPPDATA%\\cognite-sdk-python on Windows) as cognitetokencache.{client_id}.bin.
             token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
             clear_cache (bool): If True, the token cache will be cleared on initialization. Default: False
             mem_cache_only (bool): If True, the token cache will only be stored in memory. Default: False
@@ -651,7 +649,7 @@ class OAuthInteractive(_OAuthCredentialProviderWithTokenRefresh, _WithMsalSerial
         client_id (str): Your application's client id.
         scopes (list[str]): A list of scopes.
         redirect_port (int): Redirect port defaults to 53000.
-        token_cache_path (Path | None): Location to store token cache, defaults to os temp directory/cognitetokencache.{client_id}.bin.
+        token_cache_path (Path | None): Location to store token cache, defaults to a per-user cache directory (e.g. ~/.cache/cognite-sdk-python on Linux, ~/Library/Caches/cognite-sdk-python on macOS, %LOCALAPPDATA%\\cognite-sdk-python on Windows) as cognitetokencache.{client_id}.bin.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
         prompt (InteractivePrompt | None): What the browser asks you the first time you sign in, e.g. ``"select_account"`` to pick which account to use. See the note on account selection below. Default: None
         login_hint (str | None): Username (e.g. email) of the account to sign in with. See the note on account selection below. Default: None
@@ -905,7 +903,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         client_secret (str): Your application's client secret
         scopes (list[str] | None): A list of scopes.
         token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
-        **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
+        **token_custom_args (Any): Optional additional arguments to pass as form fields in the token fetch request. The exceptions are ``timeout``, ``follow_redirects`` and ``cookies``, which are used as options for the HTTP request itself.
 
     Examples:
 
@@ -936,36 +934,44 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         self.__client_secret = client_secret
         self.__scopes = scopes
         self.__token_custom_args: dict[str, Any] = token_custom_args
-        self.__oauth = self._create_oauth_client()
         self._validate_token_custom_args()
-
-    def _create_oauth_client(self) -> OAuth2Client:
-        from authlib.integrations.httpx_client import OAuth2Client
-
-        from cognite.client.config import global_config
-
-        return OAuth2Client(client_id=self.__client_id, scope=self.__scopes, verify=not global_config.disable_ssl)
+        self.__token_request_http_options, self.__token_request_data = self._prepare_token_request()
 
     def _validate_token_custom_args(self) -> None:
-        # We make sure that whatever is passed as part of 'token_custom_args' can't set or override any of the
-        # named parameters that 'fetch_token' accepts:
-        reserved = set(inspect.signature(self.__oauth.fetch_token).parameters) - {"kwargs"}
-        if bad_args := reserved.intersection(self.__token_custom_args):
+        if bad_args := _OAUTH_CC_RESERVED_TOKEN_CUSTOM_ARGS.intersection(self.__token_custom_args):
             raise TypeError(
                 f"The following reserved token custom arg(s) were passed: {sorted(bad_args)}. The full list of "
-                f"reserved custom args is: {sorted(reserved)}."
+                f"reserved custom args is: {sorted(_OAUTH_CC_RESERVED_TOKEN_CUSTOM_ARGS)}."
             )
 
-    def __getstate__(self) -> dict[str, Any]:
-        # OAuth2Client is not picklable, temporarily remove:
-        oauth_session_tmp, self.__oauth = self.__oauth, None  # type: ignore [assignment]
-        state = super().__getstate__()
-        self.__oauth = oauth_session_tmp
-        return state
+    @staticmethod
+    def _encode_token_request_value(key: str, value: Any) -> str:
+        # Matches how authlib, which we used to rely on, encoded the values it supported, e.g. True -> "True" (not "true"):
+        if isinstance(value, (bytes, bytearray)):
+            return value.decode()
+        if isinstance(value, (str, int, float)):
+            return str(value)
+        raise TypeError(
+            f"Token custom arg {key!r} must be a str, bytes, int, float or bool, not {type(value).__name__}. "
+            "Note that only 'scope' accepts a list (of scopes)."
+        )
 
-    def __setstate__(self, state: dict[str, Any]) -> None:
-        super().__setstate__(state)
-        self.__oauth = self._create_oauth_client()
+    def _prepare_token_request(self) -> tuple[dict[str, Any], dict[str, str]]:
+        custom_args = self.__token_custom_args.copy()
+        http_options = {k: custom_args.pop(k) for k in _OAUTH_CC_TOKEN_REQUEST_HTTP_OPTIONS.intersection(custom_args)}
+        # Client credentials grant, see RFC 6749, section 4.4. The client authenticates by passing its
+        # id and secret in the request body (section 2.3.1). A 'scope' custom arg overrides 'scopes':
+        data = {
+            "grant_type": "client_credentials",
+            "client_id": self.__client_id,
+            "client_secret": self.__client_secret,
+            "scope": self.__scopes,
+            **custom_args,
+        }
+        if isinstance(scope := data["scope"], (list, tuple, set)):
+            data["scope"] = " ".join(scope)
+        # Falsy values are dropped, e.g. scopes=None:
+        return http_options, {k: self._encode_token_request_value(k, v) for k, v in data.items() if v}
 
     @property
     def token_url(self) -> str:
@@ -988,17 +994,33 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         return self.__token_custom_args
 
     def _refresh_access_token(self) -> tuple[str, float]:
-        from authlib.integrations.httpx_client import OAuthError
+        from cognite.client.config import global_config
+
+        response = httpx2.post(
+            self.__token_url,
+            data=self.__token_request_data,
+            headers={"Accept": "application/json"},
+            verify=not global_config.disable_ssl,
+            **self.__token_request_http_options,
+        )
+        # TODO: Like authlib's parse_response_token (prev used), 5xx and network errors are raised as
+        # raw httpx2 exceptions. We should probably wrap these in a Cognite exception in the future:
+        if response.status_code >= 500:
+            response.raise_for_status()
 
         try:
-            credentials = self.__oauth.fetch_token(
-                url=self.__token_url, client_secret=self.__client_secret, **self.__token_custom_args
-            )
-            # Azure gives 'expires_at' directly, but it's not a part of the RFC:
-            return credentials["access_token"], time.time() + float(credentials["expires_in"])
+            credentials = response.json()
+        except ValueError as e:  # also catches JSONDecodeError
+            body = shorten(" ".join(response.text.split()), 1000)
+            raise CogniteOAuthError(
+                f"Non-JSON response (HTTP {response.status_code}) from token endpoint {self.__token_url!r}",
+                f"Is the token_url correct? Response body: {body}",
+            ) from e
 
-        except OAuthError as err:
-            raise CogniteOAuthError(err.error, err.description) from err
+        if "error" in credentials:
+            raise CogniteOAuthError(credentials["error"], credentials.get("error_description") or "")
+        # Azure gives 'expires_at' directly, but it's not a part of the RFC:
+        return credentials["access_token"], time.time() + float(credentials["expires_in"])
 
     @classmethod
     def load(cls, config: dict[str, Any] | str) -> OAuthClientCredentials:
@@ -1059,7 +1081,7 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
             client_secret (str): Your application's client secret.
             cdf_cluster (str): The CDF cluster where the CDF project is located.
             token_expiry_leeway_seconds (int): The token is refreshed at the earliest when this number of seconds is left before expiry. Default: 30 sec
-            **token_custom_args (Any): Optional additional arguments to pass as query parameters to the token fetch request.
+            **token_custom_args (Any): Optional additional arguments to pass as form fields in the token fetch request. The exceptions are ``timeout``, ``follow_redirects`` and ``cookies``, which are used as options for the HTTP request itself.
 
         Returns:
             OAuthClientCredentials: An OAuthClientCredentials instance

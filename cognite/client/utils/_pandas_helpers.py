@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import datetime
 import itertools
-import re
 import warnings
+from collections import defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass
+from functools import cache
 from inspect import signature
 from numbers import Integral
 from typing import TYPE_CHECKING, Any, Literal
@@ -14,6 +15,7 @@ from zoneinfo import ZoneInfo
 from cognite.client.data_classes.datapoint_aggregates import (
     _AGGREGATES_WITH_UNIT,
     _ALL_AGGREGATES,
+    _STATE_AGGS_SNAKE,
     INT_AGGREGATES,
     OBJECT_AGGREGATES,
 )
@@ -28,11 +30,12 @@ if TYPE_CHECKING:
     import pandas as pd
 
     from cognite.client.data_classes import Datapoints, DatapointsArray, DatapointsArrayList, DatapointsList
-    from cognite.client.data_classes._base import T_CogniteResource, T_CogniteResourceList
+    from cognite.client.data_classes._base import CogniteResource, T_CogniteResource, T_CogniteResourceList
     from cognite.client.data_classes.data_modeling.ids import NodeId
     from cognite.client.data_classes.datapoints import (
         NumpyDatetime64NSArray,
         NumpyFloat64Array,
+        NumpyInt32Array,
         NumpyInt64Array,
         NumpyObjArray,
         NumpyUInt32Array,
@@ -64,6 +67,64 @@ def pandas_major_version() -> int:
     return int(__version__.split(".")[0])
 
 
+@cache
+def is_pandas_v2_or_lower() -> bool:
+    """Pandas v2 (and lower) always defaulted to nanosecond-precision timestamps, so a lot of user code
+    (implicitly or not) relies on that. Pandas v3 instead infers precision from the input on a case-by-case
+    basis, which for us would give arbitrary/unpredictable results, so from v3 onwards we instead pin all
+    timestamp columns/indices produced by the SDK to millisecond precision, matching CDF's native resolution.
+    """
+    return pandas_major_version() < 3
+
+
+def pandas_string_array_dtype() -> Literal["object", "str"]:
+    return "object" if is_pandas_v2_or_lower() else "str"
+
+
+@cache
+def timestamp_dtype_unit() -> Literal["ns", "ms"]:
+    """The datetime64 resolution to use for all timestamp columns/indices produced by the SDK, see
+    `is_pandas_v2_or_lower` for the reasoning."""
+    return "ns" if is_pandas_v2_or_lower() else "ms"
+
+
+def to_pandas_timestamp(ms: int, tz: str | datetime.timezone | None = None) -> pd.Timestamp:
+    """Create a pandas Timestamp from milliseconds since epoch, at the resolution given by `timestamp_dtype_unit`."""
+    import pandas as pd
+
+    return pd.Timestamp(ms, unit="ms", tz=tz).as_unit(timestamp_dtype_unit())
+
+
+def to_pandas_datetime_index(
+    timestamps: list[int],
+    timezone: str | datetime.timezone | ZoneInfo | None,
+    assume_utc: bool = False,
+) -> pd.DatetimeIndex:
+    """Create a DatetimeIndex from epoch-millisecond timestamps with SDK timestamp resolution."""
+    import pandas as pd
+
+    if assume_utc or timezone is not None:
+        dt_index = pd.to_datetime(timestamps, unit="ms", utc=True)
+    else:
+        dt_index = pd.to_datetime(timestamps, unit="ms")
+
+    if timezone is not None:
+        dt_index = dt_index.tz_convert(convert_tz_for_pandas(timezone))
+    return dt_index.as_unit(timestamp_dtype_unit())
+
+
+def _to_pandas_datetime_index_from_numpy(
+    timestamps: NumpyDatetime64NSArray,
+    timezone: str | datetime.timezone | ZoneInfo | None,
+) -> pd.DatetimeIndex:
+    import pandas as pd
+
+    dt_index = pd.to_datetime(timestamps, utc=timezone is not None)
+    if timezone is not None:
+        dt_index = dt_index.tz_convert(convert_tz_for_pandas(timezone))
+    return dt_index.as_unit(timestamp_dtype_unit())
+
+
 def convert_tz_for_pandas(tz: str | datetime.timezone | ZoneInfo | None) -> str | datetime.timezone | None:
     if tz is None or isinstance(tz, (str, datetime.timezone)):
         return tz
@@ -81,6 +142,9 @@ def concat_dps_dataframe_list(
     include_granularity_name: bool,
     include_status: bool,
     include_unit: bool,
+    include_numeric_states: bool,
+    include_string_states: bool,
+    expand_state_aggregates: bool,
 ) -> pd.DataFrame:
     import pandas as pd
 
@@ -98,7 +162,16 @@ def concat_dps_dataframe_list(
         )
     # Since we use a MultiIndex for the dataframe columns, these do not join nicely in pd.concat, so we need
     # to do that manually ourselves after combining.
-    columns_lst = [_extract_column_info_from_dps_for_dataframe(dps, include_status=include_status) for dps in dps_lst]
+    columns_lst = [
+        _extract_column_info_from_dps_for_dataframe(
+            dps,
+            include_status=include_status,
+            include_numeric_states=include_numeric_states,
+            include_string_states=include_string_states,
+            expand_state_aggregates=expand_state_aggregates,
+        )
+        for dps in dps_lst
+    ]
     counter = itertools.count()  # Ensure unique column names initially
     dfs = [
         pd.DataFrame(
@@ -144,18 +217,39 @@ def convert_nullable_int_cols(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def convert_timestamp_columns_to_datetime(df: pd.DataFrame) -> pd.DataFrame:
+    """Convert CDF time-attribute columns from epoch milliseconds to pandas datetimes.
+
+    Expects a DataFrame produced from CDF resources where any columns in
+    ``TIME_ATTRIBUTES`` (for example ``created_time`` or ``last_updated_time``)
+    are integer Unix timestamps in milliseconds.
+
+    The output datetime resolution depends on pandas version:
+    ``datetime64[ns]`` for pandas <= 2 and ``datetime64[ms]`` for newer versions.
+
+    Other columns are left unchanged.
+    """
     to_convert = df.columns.intersection(TIME_ATTRIBUTES)
-    df[to_convert] = (1_000_000 * df[to_convert]).astype("datetime64[ns]")
+    if is_pandas_v2_or_lower():
+        # astype("datetime64[ns]") interprets raw ints as nanoseconds, so we need to convert first:
+        df[to_convert] = (1_000_000 * df[to_convert]).astype("datetime64[ns]")
+    else:
+        df[to_convert] = df[to_convert].astype("datetime64[ms]")
     return df
 
 
 def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.DataFrame:
     import pandas as pd
 
+    # Columns already using a pandas nullable integer extension dtype (e.g. the Int32 dtype used
+    # for numeric state datapoints) survive pd.concat's outer-join just fine (missing rows are
+    # filled with pd.NA, dtype is preserved). Only plain numpy int/uint columns need help here,
+    # since those silently upcast to float64 if the join introduces missing rows for that column:
+    # TODO: status_code is still a plain numpy uint32 column, so it always lands here and gets
+    #       blanket-cast to Int64 below. We should switch it to the nullable UInt32.
     int_cols = [
         i
         for i, dtype in enumerate(itertools.chain.from_iterable(df.dtypes for df in dfs))
-        if issubclass(dtype.type, Integral)
+        if not pd.api.types.is_extension_array_dtype(dtype) and issubclass(dtype.type, Integral)
     ]
     # TODO: Performance optimization possible: The more unique each df.index is to the rest of the dfs, the
     # slower `pd.concat` scales. A manual "union(df.index for df in dfs)" + column insertion is faster for large
@@ -164,21 +258,7 @@ def concat_dataframes_with_nullable_int_cols(dfs: Sequence[pd.DataFrame]) -> pd.
     if not int_cols:
         return df
 
-    if pandas_major_version() >= 2:
-        df.isetitem(int_cols, df.iloc[:, int_cols].astype("Int64"))
-    else:
-        # As of pandas >=1.5.0, <2, converting float cols (that used to be int) to nullable int using iloc raises FutureWarning,
-        # but the suggested code change (to use `frame.isetitem(...)`) results in the wrong dtype (object).
-        # See Github Issue: https://github.com/pandas-dev/pandas/issues/49922
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                action="ignore",
-                message=re.escape(
-                    "In a future version, `df.iloc[:, i] = newvals` will attempt to set the values inplace"
-                ),
-                category=FutureWarning,
-            )
-            df.iloc[:, int_cols] = df.iloc[:, int_cols].astype("Int64")
+    df.isetitem(int_cols, df.iloc[:, int_cols].astype("Int64"))
     return df
 
 
@@ -199,9 +279,18 @@ def convert_dps_to_dataframe(
     include_granularity_name: bool,
     include_status: bool,
     include_unit: bool,
+    include_numeric_states: bool,
+    include_string_states: bool,
+    expand_state_aggregates: bool,
 ) -> pd.DataFrame:
     pd = local_import("pandas")
-    columns = _extract_column_info_from_dps_for_dataframe(dps, include_status=include_status)
+    columns = _extract_column_info_from_dps_for_dataframe(
+        dps,
+        include_status=include_status,
+        include_numeric_states=include_numeric_states,
+        include_string_states=include_string_states,
+        expand_state_aggregates=expand_state_aggregates,
+    )
     df = pd.DataFrame(
         # We initially use integer indexing to allow duplicate column names:
         {i: col.as_array() for i, col in enumerate(columns)},
@@ -221,33 +310,82 @@ def convert_dps_to_dataframe(
 class _DpsColumnInfo:
     """
     Used when converting Datapoints/DatapointsArray/DatapointsList/DatapointsArrayList to pandas DataFrame to help
-    avoid the madness of how many columns we should end up with based on status codes/symbols, number of aggregates etc.
+    avoid the absolute madness of how many columns we should end up:
+    - the raw datapoints (easy!)
+    - the number of classic aggregates (10+, but just 1 value per granularity interval)
+    - status codes & symbols (2 extra columns, if requested)
+    - state datapoints (2 columns, numeric and string states)
+    - specialized state aggregates ("arbitrary" number of states, easily several hundrer columns)
 
-    A single Datapoints/DatapointsArray can result in 10+ columns from aggregates, and 1 or 3 columns from raw datapoints,
-    with or without the 2 extra status info columns.
+    Thus, a single Datapoints/DatapointsArray can result in anything between 1 to 300+ columns. Yey.
     """
 
     column_id: NodeId | str | int
-    data: list[float] | list[str] | list[int] | NumpyUInt32Array | NumpyInt64Array | NumpyFloat64Array | NumpyObjArray
+    data: (
+        list[float]
+        | list[str]
+        | list[str | None]
+        | list[int]
+        | NumpyUInt32Array
+        | NumpyInt32Array
+        | NumpyInt64Array
+        | NumpyFloat64Array
+        | NumpyObjArray
+    )
     is_string: bool | None = None
     is_array: bool = False
     aggregate: str | None = None
     granularity: str | None = None
     unit_xid: str | None = None
     status_info: Literal["code", "symbol"] | None = None
+    state_type: Literal["numeric", "string"] | None = None
+    state_value: int | None = None
+    state_string: str | None = None
 
     def as_multi_index_tuple(self, include_aggregate: bool, include_granularity: bool, include_unit: bool) -> tuple:
         return (
             self.column_id,
+            self.state_type,
             self.status_info,  # since these split to separate cols, they are already filtered out if not wanted
             self.aggregate if include_aggregate else None,
             self.granularity if include_granularity else None,
+            self.state_value,
+            self.state_string,
             self.unit_xid if include_unit else None,
         )
 
-    def as_array(self) -> NumpyObjArray | NumpyFloat64Array | NumpyInt64Array | NumpyUInt32Array:
-        if self.is_array:
-            return self.data  # type: ignore [return-value]
+    def as_array(
+        self,
+    ) -> (
+        NumpyObjArray
+        | NumpyFloat64Array
+        | NumpyInt64Array
+        | NumpyUInt32Array
+        | pd.arrays.IntegerArray
+        | pd.arrays.Categorical
+    ):
+        import numpy as np
+        import pandas as pd
+
+        if self.state_value is not None:
+            # A state not present in a given interval genuinely means zero (count/transitions/duration),
+            # same assumption as for the other INT_AGGREGATES. Thus we use a simple non-nullable int64.
+            # See _extract_and_expand_state_only_agg_column_info for data extraction details:
+            return np.array(self.data, dtype=np.int64)
+
+        elif self.is_array:
+            if self.state_type == "numeric":
+                # Numeric states are guaranteed to be valid 32-bit ints, but may contain missing values due to "bad status",
+                # so we always use the pandas extension dtype which is nullable (for consistency):
+                return pd.array(self.data, dtype="Int32")
+
+            elif self.state_type == "string":
+                # String states come from a small, fixed set of possible values (the state set), so we use the categorical
+                # dtype here which is dirt cheap to store and operate (no repeated string objects).
+                # It also fixes the annoying pandas v2/v3 difference between missing (None vs NaN) for 'object' and 'str'.
+                return pd.Categorical(self.data, ordered=False)
+            else:
+                return self.data
 
         elif self.aggregate is None:
             return self._convert_to_array_for_raw_dps()
@@ -256,8 +394,22 @@ class _DpsColumnInfo:
 
     def _convert_to_array_for_raw_dps(
         self,
-    ) -> npt.NDArray[np.object_] | npt.NDArray[np.float64] | npt.NDArray[np.uint32]:
+    ) -> (
+        npt.NDArray[np.object_]
+        | npt.NDArray[np.float64]
+        | npt.NDArray[np.uint32]
+        | pd.arrays.IntegerArray
+        | pd.arrays.Categorical
+    ):
         import numpy as np
+
+        if self.state_type == "numeric":
+            pd = local_import("pandas")
+            return pd.array(self.data, dtype="Int32")
+
+        if self.state_type == "string":
+            pd = local_import("pandas")
+            return pd.Categorical(self.data, ordered=False)
 
         match self.is_string, self.status_info:
             case True, None:
@@ -282,13 +434,58 @@ class _DpsColumnInfo:
 
         from cognite.client.utils._datapoints import ensure_int_numpy
 
-        if self.aggregate in OBJECT_AGGREGATES:
+        if self.aggregate in _STATE_AGGS_SNAKE:
+            # Each entry is itself a list (of distinct state entries per interval), hence we can't use the
+            # default np.array constructor:
+            return np.fromiter(self.data, dtype=np.object_, count=len(self.data))
+
+        elif self.aggregate in OBJECT_AGGREGATES:
             return np.array(self.data, dtype=np.object_)
 
         elif self.aggregate in INT_AGGREGATES:
             return ensure_int_numpy(np.array(self.data, dtype=np.float64))
         else:
             return np.array(self.data, dtype=np.float64)
+
+
+def _extract_raw_states_column_info(
+    dps: Datapoints | DatapointsArray,
+    identifier: NodeId | str | int,
+    is_array: bool,
+    include_status: bool,
+    include_numeric_states: bool,
+    include_string_states: bool,
+) -> list[_DpsColumnInfo]:
+    columns = []
+    if include_numeric_states:
+        assert dps.numeric_states is not None
+        columns.append(
+            _DpsColumnInfo(
+                identifier,
+                data=dps.numeric_states,
+                is_string=False,
+                is_array=is_array,
+                state_type="numeric",
+            )
+        )
+    if include_string_states:
+        assert dps.string_states is not None
+        columns.append(
+            _DpsColumnInfo(
+                identifier,
+                data=dps.string_states,
+                is_string=True,
+                is_array=is_array,
+                state_type="string",
+            )
+        )
+    if include_status:
+        if dps.status_code is not None:
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_code, is_array=is_array, status_info="code"))
+        if dps.status_symbol is not None:
+            columns.append(_DpsColumnInfo(identifier, data=dps.status_symbol, is_array=is_array, status_info="symbol"))
+
+    return columns
 
 
 def _extract_raw_column_info(
@@ -316,6 +513,16 @@ def _extract_raw_column_info(
     return columns
 
 
+def get_unit_for_aggregate(dps: Datapoints | DatapointsArray, aggregate: str) -> str | None:
+    # We show physical unit if the aggregate somewhat makes sense (e.g. average, but also (..)_variance).
+    # State time series have no notion of a physical unit for any of their aggregates (e.g. 'interpolation'
+    # is not well-defined for a discrete state), so we never show unit for these, regardless of the aggregate:
+    if dps.type == "state" or aggregate not in _AGGREGATES_WITH_UNIT:
+        return None
+    # Note the '... or None' is there because the API returns empty string when missing for some reason:
+    return dps.unit_external_id or None
+
+
 def _extract_aggregate_column_info_from_dps(
     dps: Datapoints | DatapointsArray, identifier: NodeId | str | int, is_array: bool
 ) -> list[_DpsColumnInfo]:
@@ -327,24 +534,90 @@ def _extract_aggregate_column_info_from_dps(
             is_array=is_array,
             aggregate=agg,
             granularity=dps.granularity,
-            # We show physical unit if the aggregate somewhat makes sense (e.g. average, but also (..)_variance).
-            # Note the '... or None' is there because the API returns empty string when missing for some reason:
-            unit_xid=dps.unit_external_id or None if agg in _AGGREGATES_WITH_UNIT else None,
+            unit_xid=get_unit_for_aggregate(dps, agg),
         )
         for agg in aggregates
     ]
 
 
+def _extract_and_expand_state_only_agg_column_info(
+    dps: Datapoints | DatapointsArray, identifier: NodeId | str | int, is_array: bool
+) -> list[_DpsColumnInfo]:
+    # Each of state_count/state_transitions/state_duration holds, per row (ie granularity interval), a *list* of entries,
+    # one per distinct state present in that particular interval. In order to expand these into one column per distinct
+    # state, we need pivot the values: for every state seen anywhere across all rows, build a column of length n_dps,
+    # filling in each row's value for that state.
+    # Note: Instead of filling missing with NaN, we use 0 (zero) as that makes sense for all these state-only aggregates.
+    # The numeric value is the column key since it's unique. The string value is added as an extra level for readability,
+    # but it is missing for states no longer part of the state set (so there can be several states with the label ""):
+    n_dps = len(dps)
+    columns: list[_DpsColumnInfo] = []
+    for attr in ("state_count", "state_transitions", "state_duration"):
+        if (state_aggregate := getattr(dps, attr)) is None:
+            continue
+        by_state: defaultdict[int, list[int]] = defaultdict(lambda: [0] * n_dps)
+        labels: dict[int, str] = {}
+        for idx in range(n_dps):
+            for entry in state_aggregate[idx]:
+                by_state[entry.numeric_value][idx] = getattr(entry, entry._agg_name)
+                if entry.string_value is not None:
+                    labels[entry.numeric_value] = entry.string_value
+
+        columns.extend(
+            _DpsColumnInfo(
+                identifier,
+                data=by_state[numeric_value],
+                is_array=is_array,
+                aggregate=attr,
+                granularity=dps.granularity,
+                state_value=numeric_value,
+                state_string=labels.get(numeric_value, ""),
+            )
+            for numeric_value in sorted(by_state)
+        )
+    return columns
+
+
+def _extract_state_only_agg_column_info(
+    dps: Datapoints | DatapointsArray, identifier: NodeId | str | int, is_array: bool
+) -> list[_DpsColumnInfo]:
+    # When the user does not want expanded columns, we treat the state-only aggregates as simple lists:
+    return [
+        _DpsColumnInfo(identifier, data=rows, is_array=is_array, aggregate=attr, granularity=dps.granularity)
+        for attr in ("state_count", "state_transitions", "state_duration")
+        if (rows := getattr(dps, attr)) is not None
+    ]
+
+
 def _extract_column_info_from_dps_for_dataframe(
-    dps: Datapoints | DatapointsArray, include_status: bool
+    dps: Datapoints | DatapointsArray,
+    include_status: bool,
+    include_numeric_states: bool,
+    include_string_states: bool,
+    expand_state_aggregates: bool,
 ) -> list[_DpsColumnInfo]:
     from cognite.client.data_classes import DatapointsArray
 
     identifier = _resolve_ts_identifier_as_df_column_name(dps)
     is_array = isinstance(dps, DatapointsArray)
-    if dps.value is not None:
+    if dps.type == "state":
+        if dps.numeric_states is None or dps.string_states is None:
+            # State time series can have both "old and simple" aggregates...:
+            simple_cols = _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
+            # ...and state-only aggregates, that we may want to expand into per-unique-state columns:
+            if expand_state_aggregates:
+                state_only_cols = _extract_and_expand_state_only_agg_column_info(dps, identifier, is_array)
+            else:
+                state_only_cols = _extract_state_only_agg_column_info(dps, identifier, is_array)
+            return simple_cols + state_only_cols
+        else:
+            return _extract_raw_states_column_info(
+                dps, identifier, is_array, include_status, include_numeric_states, include_string_states
+            )
+    elif dps.value is not None:
         return _extract_raw_column_info(dps, identifier, is_array, include_status)
-    return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
+    else:
+        return _extract_aggregate_column_info_from_dps(dps, identifier, is_array)
 
 
 def _create_multi_index_from_columns(
@@ -364,11 +637,16 @@ def _create_multi_index_from_columns(
             )
             for col in columns
         ],
-        columns=["identifier", "status", "aggregate", "granularity", "unit"],
+        columns=["identifier", "state", "status", "aggregate", "granularity", "state_value", "state_string", "unit"],
     )
+    # Ensure the numeric state values don't get upcast to float (likely None's present):
+    column_ids["state_value"] = column_ids["state_value"].astype("Int32").astype(object)
+
     # Key operation is to drop all-nan columns, which in the multi-index translates to dropping
     # the corresponding levels:
-    non_id_levels = column_ids.iloc[:, 1:].dropna(axis="columns", how="all").fillna("")
+    non_id_levels = column_ids.iloc[:, 1:].dropna(axis="columns", how="all")
+    non_id_levels = non_id_levels.where(non_id_levels.notna(), "")
+
     # When none of the extra levels survive (status/agg./gran./unit), return a plain Index so
     # columns are the bare identifiers rather than 1-tuples:
     if non_id_levels.columns.empty:
@@ -381,16 +659,44 @@ def _create_timestamp_index(
     timestamps: list[int] | NumpyDatetime64NSArray, timezone: str | datetime.timezone | ZoneInfo | None
 ) -> pd.DatetimeIndex:
     import numpy as np
-    import pandas as pd
 
-    match timestamps, timezone:
-        case list(), None:
-            return pd.to_datetime(timestamps, unit="ms")
-        case list(), _:
-            return pd.to_datetime(timestamps, unit="ms", utc=True).tz_convert(convert_tz_for_pandas(timezone))
-        case np.ndarray(), None:
-            return pd.to_datetime(timestamps)
-        case np.ndarray(), _:
-            return pd.to_datetime(timestamps, utc=True).tz_convert(convert_tz_for_pandas(timezone))
+    match timestamps:
+        case list():
+            return to_pandas_datetime_index(timestamps, timezone)
+        case np.ndarray():
+            return _to_pandas_datetime_index_from_numpy(timestamps, timezone)
         case _:
             raise TypeError("Timestamps must be either list[int] or numpy.ndarray")
+
+
+def squeeze_single_row_list_df(df: pd.DataFrame, ignore: list[str] | None) -> pd.DataFrame:
+    """Turns the single row dataframe the list-class produces back into a single-column"""
+    if ignore:
+        df = df.drop(columns=[c for c in ignore if c in df.columns])
+    # For historical reasons, we need to do an astype(object) here. It undoes pandas dtype inference
+    # (e.g. numpy.bool_ instead of bool) so values keep their native Python types:
+    return df.astype(object).iloc[0].rename("value").to_frame()
+
+
+def base_resource_to_pandas_fallback(
+    resource: CogniteResource,
+    camel_case: bool,
+    ignore: list[str] | None,
+    convert_timestamps: bool,
+    expand_metadata: bool,
+    metadata_prefix: str,
+) -> pd.DataFrame:
+    pd = local_import("pandas")
+    dumped = resource.dump(camel_case=camel_case)
+
+    for element in ignore or []:
+        dumped.pop(element, None)
+
+    if convert_timestamps:
+        for k in TIME_ATTRIBUTES.intersection(dumped):
+            dumped[k] = to_pandas_timestamp(dumped[k])
+
+    if expand_metadata and "metadata" in dumped and isinstance(dumped["metadata"], dict):
+        dumped.update({f"{metadata_prefix}{k}": v for k, v in dumped.pop("metadata").items()})
+
+    return pd.Series(dumped).to_frame(name="value")

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Function, FunctionCallLog, FunctionCallLogEntry
@@ -15,7 +15,7 @@ from cognite.client.utils._time import datetime_to_ms
 from tests.utils import get_url, jsgz_load
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
@@ -51,7 +51,7 @@ def function(async_client: AsyncCogniteClient) -> Function:
 
 @pytest.fixture
 def mock_function_call_resp(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
     response_body = {
         "items": [
@@ -65,8 +65,8 @@ def mock_function_call_resp(
         ]
     }
     url_pattern = re.compile(re.escape(get_url(async_client.functions)) + "/.+")
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
-    yield httpx_mock
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body)
+    yield httpx2_mock
 
 
 class TestFunction:
@@ -111,7 +111,8 @@ class TestFunctionCall:
 
 class TestFunctionCallLog:
     @pytest.fixture(scope="class")
-    def entries(self) -> list[tuple[datetime.datetime, str]]:
+    @classmethod
+    def entries(cls) -> list[tuple[datetime.datetime, str]]:
         start_ts = datetime.datetime(2023, 10, 4, 10, 30, 4, 123000, tzinfo=datetime.timezone.utc)
         ms_delta = datetime.timedelta(milliseconds=100)
         return [(start_ts + i * ms_delta, f"line {i}") for i in range(10)]

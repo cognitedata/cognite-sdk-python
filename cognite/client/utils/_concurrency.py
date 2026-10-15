@@ -301,7 +301,7 @@ class FileConcurrencyConfig(ConcurrencyConfig):
         self._open_files = open_files
         # open_files key is only the event loop — project is intentionally excluded. It is a bit unfortunate
         # that we can't remove the loop from the key as well, but semaphores are bound to the loop they are
-        # first used on, one of the httpx.Clients would break if we did that. We intentionally use a limit << OS fd limit.
+        # first used on, one of the httpx2.Clients would break if we did that. We intentionally use a limit << OS fd limit.
         self._open_files_cache: dict[asyncio.AbstractEventLoop, asyncio.BoundedSemaphore] = {}
 
     @property
@@ -387,7 +387,7 @@ class ConcurrencySettings:
     The total concurrency budget, i.e. the maximum number of concurrent requests in flight,
     is the sum of all categories (e.g. general) and operation types (e.g. read or write).
 
-    See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
+    See: https://cognite-sdk-python.readthedocs-hosted.com/en/stable/settings.html#concurrency-settings
 
     Note:
         Most settings apply on a per-project level, thus if you have multiple clients
@@ -440,7 +440,7 @@ class ConcurrencySettings:
             raise RuntimeError(
                 f"Cannot modify '{api_name}.{name}' after concurrency settings have been used to create semaphores. "
                 "Concurrency settings must be configured before sending any API requests. "
-                "See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings"
+                "See: https://cognite-sdk-python.readthedocs-hosted.com/en/stable/settings.html#concurrency-settings"
             )
 
     def _freeze(self) -> None:
@@ -593,6 +593,9 @@ class TasksSummary:
     def raise_compound_exception_if_failed_tasks(
         self, task_unwrap_fn: Callable = no_op, task_list_element_unwrap_fn: Callable | None = None
     ) -> None:
+        # TODO: replace task_unwrap_fn + task_list_element_unwrap_fn with an `ids` field on AsyncSDKTask itself,
+        # set at construction time (e.g. AsyncSDKTask(fn, arg, ids=[id_])). Call sites then always call
+        # raise_compound_exception_if_failed_tasks() with no args, and the two-lambda unwrap pattern goes away.
         if not (self.unknown_error or self.not_found_error or self.duplicated_error):
             return None
 

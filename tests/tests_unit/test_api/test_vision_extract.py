@@ -6,7 +6,7 @@ from copy import deepcopy
 from typing import Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.contextualization import (
@@ -71,41 +71,41 @@ def mock_get_response_body_ok() -> dict[str, Any]:
 
 
 @pytest.fixture
-def mock_post_extract(httpx_mock: HTTPXMock, mock_post_response_body: dict[str, Any]) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_post_extract(httpx2_mock: HTTPXMock, mock_post_response_body: dict[str, Any]) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=re.compile(r".*?/context/vision/extract"),
         status_code=200,
         json=mock_post_response_body,
         is_optional=True,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_get_extract(httpx_mock: HTTPXMock, mock_get_response_body_ok: dict[str, Any]) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_get_extract(httpx2_mock: HTTPXMock, mock_get_response_body_ok: dict[str, Any]) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="GET",
         url=re.compile(".*?/context/vision/extract/\\d+"),
         status_code=200,
         json=mock_get_response_body_ok,
         is_optional=True,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_get_extract_empty_predictions(httpx_mock: HTTPXMock, mock_get_response_body_ok: dict[str, Any]) -> HTTPXMock:
+def mock_get_extract_empty_predictions(httpx2_mock: HTTPXMock, mock_get_response_body_ok: dict[str, Any]) -> HTTPXMock:
     response_copy = deepcopy(mock_get_response_body_ok)
     response_copy["items"][0]["predictions"]["assetTagPredictions"] = []
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="GET",
         url=re.compile(".*?/context/vision/extract/\\d+"),
         status_code=200,
         json=response_copy,
         is_reusable=True,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class TestJobStatusEnum:
