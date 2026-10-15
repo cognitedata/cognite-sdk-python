@@ -13,6 +13,11 @@ from cognite.client.data_classes.integrations.integrations import (
     IntegrationWriteList,
     Task,
 )
+from cognite.client.data_classes.integrations.tasks import (
+    SyncResult,
+    TaskHistory,
+    TaskHistoryList,
+)
 
 __all__ = [
     "Extractor",
@@ -23,5 +28,8 @@ __all__ = [
     "IntegrationUpdate",
     "IntegrationWrite",
     "IntegrationWriteList",
+    "SyncResult",
     "Task",
+    "TaskHistory",
+    "TaskHistoryList",
 ]
