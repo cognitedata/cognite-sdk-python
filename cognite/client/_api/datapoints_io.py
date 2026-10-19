@@ -24,6 +24,7 @@ from typing_extensions import Self
 from cognite.client._api.datapoint_tasks import (
     BaseDpsFetchSubtask,
     BaseTaskOrchestrator,
+    build_static_payload_kwargs,
 )
 from cognite.client._proto.data_point_insertion_request_pb2 import (
     DataPointInsertionRequest,
@@ -350,6 +351,15 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                     ts_task.finalize_datapoints()
             await self._queue_new_subtasks(futures_dct)
 
+    @staticmethod
+    def _build_initial_payload_item(query: DatapointsQuery, limit: int) -> dict[str, Any]:
+        item = {"start": query.start, "end": query.end, "limit": limit, **build_static_payload_kwargs(query)}
+        # The first batch is fetched with a normal request (not a separate one, as in eager mode), so any
+        # outside points are returned together with it:
+        if query.is_raw_query and query.include_outside_points is True:
+            item["includeOutsidePoints"] = True
+        return item
+
     def _create_initial_tasks(
         self,
     ) -> tuple[dict[DatapointsQuery, int], dict[asyncio.Task, tuple[list[DatapointsQuery], list[DatapointsQuery]]]]:
@@ -374,8 +384,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
                 initial_query_limits.update(chunk_query_limits)
 
                 for query, limit in chunk_query_limits.items():
-                    (item := query.to_payload_item())["limit"] = limit
-                    items.append(item)
+                    items.append(self._build_initial_payload_item(query, limit))
 
             payload = {"items": items, "ignoreUnknownIds": True}
             future = asyncio.create_task(self._request_datapoints(payload))

@@ -3420,7 +3420,7 @@ class TestRetrieveAggregateDatapointsAPI:
         assert get_status_codes(eager_dps) == expected_codes
 
         # Chunking: A semaphore of 1 and two time series (the same) makes us use the chunking fetcher, which builds
-        # its initial request using DatapointsQuery.to_payload_item:
+        # its initial request separately from the other fetchers:
         with override_semaphore(1, target="datapoints"), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
             dps_lst = cognite_client.time_series.data.retrieve(id=[mixed_ts.id, mixed_ts.id], **kwargs)
         for dps in dps_lst:

@@ -748,35 +748,6 @@ class DatapointsQuery:
 
         return get_task_orchestrator(self)
 
-    def to_payload_item(self) -> dict[str, Any]:
-        payload = {
-            **self.identifier.as_dict(),
-            "start": self.start,
-            "end": self.end,
-            "limit": self.capped_limit,
-        }
-        if self.target_unit is not None:
-            payload["targetUnit"] = self.target_unit
-        elif self.target_unit_system is not None:
-            payload["targetUnitSystem"] = self.target_unit_system
-
-        if self.ignore_bad_datapoints is False:
-            payload["ignoreBadDataPoints"] = self.ignore_bad_datapoints
-        if self.treat_uncertain_as_bad is False:
-            payload["treatUncertainAsBad"] = self.treat_uncertain_as_bad
-        if self.timezone:
-            payload["timeZone"] = self.timezone
-        if self.is_raw_query:
-            if self.include_outside_points is True:
-                payload["includeOutsidePoints"] = self.include_outside_points
-            if self.include_status is True:
-                payload["includeStatus"] = self.include_status
-        else:
-            payload.update(aggregates=self.aggs_camel_case, granularity=self.granularity)
-            if self.fill is not None:
-                payload["fill"] = self.fill.dump()
-        return payload
-
 
 @dataclass(frozen=True)
 class LatestDatapointQuery:

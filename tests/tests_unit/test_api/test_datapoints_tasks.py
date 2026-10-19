@@ -10,6 +10,8 @@ import pytest
 
 from cognite.client._api.datapoint_tasks import _DpsQueryValidator, _FullDatapointsQuery
 from cognite.client.data_classes import DatapointsQuery, GapFillOptions
+from cognite.client._api.datapoints_io import ChunkingDpsFetcher
+from cognite.client.data_classes import DatapointsQuery
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils.useful_types import SequenceNotStr
 from tests.utils import random_aggregates, random_cognite_ids, random_granularity
@@ -187,7 +189,7 @@ class TestSingleTSQueryValidator:
             query_validator(all_queries)
 
 
-class TestDatapointsQueryToPayloadItem:
+class TestInitialPayloadItemChunkingFetcher:
     @pytest.mark.parametrize("agg_kwargs", ({}, {"aggregates": ["average", "min"], "granularity": "1h"}))
     @pytest.mark.parametrize(
         "unit_kwargs", ({}, {"target_unit": "temperature:deg_c"}, {"target_unit_system": "SI"}), ids=str
@@ -212,7 +214,7 @@ class TestDatapointsQueryToPayloadItem:
         flag_kwargs: dict[str, Any],
         timezone_kwargs: dict[str, Any],
     ) -> None:
-        # The chunking fetcher builds its first request using 'DatapointsQuery.to_payload_item', while everything else uses the static kwargs of the fetch subtasks.
+        # The chunking fetcher builds its first request separately from the fetch subtasks used by everything else.
         # They must send the same query parameters:
         (query,) = query_validator(
             _FullDatapointsQuery(
@@ -223,5 +225,5 @@ class TestDatapointsQueryToPayloadItem:
         # Time range, limit and cursor are specific to each request and not what we are comparing:
         not_compared = {"start", "end", "limit", "cursor"}
         expected = {k: v for k, v in subtask.get_next_payload_item().items() if k not in not_compared}
-        initial_item = query.to_payload_item()
+        initial_item = ChunkingDpsFetcher._build_initial_payload_item(query, limit=10)
         assert {k: v for k, v in initial_item.items() if k not in not_compared} == expected

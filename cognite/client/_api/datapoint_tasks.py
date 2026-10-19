@@ -365,6 +365,35 @@ class _DpsQueryValidator:
             return timestamp_to_ms(ts)
 
 
+def build_static_payload_kwargs(query: DatapointsQuery) -> dict[str, Any]:
+    """The parts of a datapoints request that stay the same across all requests made for a single query, i.e.
+    everything except the time range, limit and cursor. This is the one place that maps a (validated)
+    DatapointsQuery to API parameters, so that all fetch strategies send the same query."""
+    kwargs = query.identifier.as_dict()
+    if not query.is_raw_query:
+        kwargs.update(aggregates=query.aggs_camel_case, granularity=query.granularity)
+
+    if query.target_unit is not None:
+        kwargs["targetUnit"] = query.target_unit
+    elif query.target_unit_system is not None:
+        kwargs["targetUnitSystem"] = query.target_unit_system
+
+    if query.ignore_bad_datapoints is False:
+        kwargs["ignoreBadDataPoints"] = query.ignore_bad_datapoints
+    if query.treat_uncertain_as_bad is False:
+        kwargs["treatUncertainAsBad"] = query.treat_uncertain_as_bad
+
+    if query.include_status is True:
+        kwargs["includeStatus"] = query.include_status
+
+    if query.timezone:
+        kwargs["timeZone"] = query.timezone
+
+    if query.fill is not None:
+        kwargs["fill"] = query.fill.dump()
+    return kwargs
+
+
 class BaseDpsFetchSubtask:
     def __init__(self, start: int, end: int, parent: BaseTaskOrchestrator) -> None:
         self.start = start
@@ -374,28 +403,7 @@ class BaseDpsFetchSubtask:
         self.is_done = False
         self.n_dps_fetched = 0
 
-        self.static_kwargs = query.identifier.as_dict()
-        if not query.is_raw_query:
-            self.static_kwargs.update(aggregates=query.aggs_camel_case, granularity=query.granularity)
-
-        if query.target_unit is not None:
-            self.static_kwargs["targetUnit"] = query.target_unit
-        elif query.target_unit_system is not None:
-            self.static_kwargs["targetUnitSystem"] = query.target_unit_system
-
-        if query.ignore_bad_datapoints is False:
-            self.static_kwargs["ignoreBadDataPoints"] = query.ignore_bad_datapoints
-        if query.treat_uncertain_as_bad is False:
-            self.static_kwargs["treatUncertainAsBad"] = query.treat_uncertain_as_bad
-
-        if query.include_status is True:
-            self.static_kwargs["includeStatus"] = query.include_status
-
-        if query.fill is not None:
-            self.static_kwargs["fill"] = query.fill.dump()
-
-        if query.timezone:
-            self.static_kwargs["timeZone"] = query.timezone
+        self.static_kwargs = build_static_payload_kwargs(query)
 
     @abstractmethod
     def get_next_payload_item(self) -> dict[str, Any]: ...
