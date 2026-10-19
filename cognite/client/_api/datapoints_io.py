@@ -24,7 +24,6 @@ from typing_extensions import Self
 from cognite.client._api.datapoint_tasks import (
     BaseDpsFetchSubtask,
     BaseTaskOrchestrator,
-    build_static_payload_kwargs,
 )
 from cognite.client._proto.data_point_insertion_request_pb2 import (
     DataPointInsertionRequest,
@@ -353,7 +352,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
     @staticmethod
     def _build_initial_payload_item(query: DatapointsQuery, limit: int) -> dict[str, Any]:
-        item = {"start": query.start, "end": query.end, "limit": limit, **build_static_payload_kwargs(query)}
+        item = {"start": query.start, "end": query.end, "limit": limit, **BaseDpsFetchSubtask.static_kwargs_for(query)}
         # The first batch is fetched with a normal request (not a separate one, as in eager mode), so any
         # outside points are returned together with it:
         if query.is_raw_query and query.include_outside_points is True:

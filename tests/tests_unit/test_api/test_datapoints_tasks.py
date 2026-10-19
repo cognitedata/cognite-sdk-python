@@ -9,9 +9,8 @@ from typing import Any
 import pytest
 
 from cognite.client._api.datapoint_tasks import _DpsQueryValidator, _FullDatapointsQuery
-from cognite.client.data_classes import DatapointsQuery, GapFillOptions
 from cognite.client._api.datapoints_io import ChunkingDpsFetcher
-from cognite.client.data_classes import DatapointsQuery
+from cognite.client.data_classes import DatapointsQuery, GapFillOptions
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils.useful_types import SequenceNotStr
 from tests.utils import random_aggregates, random_cognite_ids, random_granularity
