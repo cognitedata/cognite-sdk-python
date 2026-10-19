@@ -73,7 +73,6 @@ def _snowflake_write(**kwargs: Any) -> SnowflakeExternalDataSourceWrite:
 
 
 class TestSnowflake:
-    # This test pins the format and validates snowflake specific write schema
     def test_write_dump_shape(self) -> None:
         assert _snowflake_write(name="n").dump() == {
             "externalId": "snowflake-analytics-prod",
@@ -90,7 +89,6 @@ class TestSnowflake:
             },
         }
 
-    # This is a negative test for a required field
     def test_write_requires_expiry_time(self) -> None:
         with pytest.raises(TypeError, match="expiry_time"):
             SnowflakeExternalDataSourceWrite(  # type: ignore[call-arg]
@@ -98,7 +96,6 @@ class TestSnowflake:
                 settings=_snowflake_write().settings,
             )
 
-    # This is a negative test for a required field
     def test_write_load_requires_expiry_time(self) -> None:
         dumped = _snowflake_write().dump()
         del dumped["expiryTime"]
@@ -106,7 +103,6 @@ class TestSnowflake:
         with pytest.raises(KeyError, match="expiryTime"):
             ExternalDataSourceWrite._load(dumped)
 
-    # This test verifies instance type
     def test_write_load_roundtrip(self) -> None:
         dumped = _snowflake_write(name="n", data_set_id=1).dump()
 
