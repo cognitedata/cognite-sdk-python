@@ -7,7 +7,7 @@ import math
 from abc import abstractmethod
 from collections import ChainMap, defaultdict
 from collections.abc import Iterator, MutableSequence, Sequence, Sized
-from dataclasses import InitVar, dataclass, fields
+from dataclasses import InitVar, dataclass, field, fields
 from enum import IntEnum
 from functools import cached_property, partial
 from itertools import zip_longest
@@ -53,8 +53,10 @@ from cognite.client.utils._time import (
     convert_and_isoformat_timestamp,
     convert_timezone_to_str,
     datetime_to_ms,
+    granularity_to_ms,
     ms_to_datetime,
     parse_str_timezone,
+    split_granularity_into_quantity_and_normalized_unit,
     timestamp_to_ms,
 )
 from cognite.client.utils.useful_types import is_sequence_not_str
@@ -563,9 +565,28 @@ class GapFillOptions:
     """
 
     limit: str
+    _api_limit: str = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.limit, str):
+            raise TypeError(f"Expected `limit` to be of type `str`, not {type(self.limit)}")
+        try:
+            quantity, unit = split_granularity_into_quantity_and_normalized_unit(self.limit)
+        except ValueError:
+            raise ValueError(
+                f"Invalid `limit` format: `{self.limit}`. Must be on format <quantity><unit>, e.g. 30m, 6h or 1d."
+            ) from None
+        if unit == "mo":
+            raise ValueError("`limit` does not support month-based units (month, quarter or year).")
+        # We accept more formats than the API, e.g. weeks, so we store the normalized limit to send:
+        object.__setattr__(self, "_api_limit", f"{quantity}{unit}")
+
+    @property
+    def limit_ms(self) -> int:
+        return granularity_to_ms(self._api_limit)
 
     def dump(self) -> dict[str, Any]:
-        return {"limit": self.limit}
+        return {"limit": self._api_limit}
 
 
 @dataclass

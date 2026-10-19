@@ -94,9 +94,7 @@ class TestSingleTSQueryValidator:
             ("4h", ["min"], True, None, ValueError, 5),
             (None, None, None, GapFillOptions(limit="1h"), ValueError, 6),
             ("1h", ["min"], None, "1h", TypeError, 7),
-            ("1h", ["min"], None, GapFillOptions(limit="foo"), ValueError, 8),
-            ("1h", ["min"], None, GapFillOptions(limit="1month"), ValueError, 9),
-            ("1h", ["min"], None, GapFillOptions(limit="30m"), ValueError, 10),
+            ("1h", ["min"], None, GapFillOptions(limit="30m"), ValueError, 8),
         ),
     )
     def test_function_validate_and_create_query(
@@ -118,8 +116,6 @@ class TestSingleTSQueryValidator:
             "'Include outside points' is not supported for aggregates.",
             "'fill' is only supported for aggregate queries.",
             f"Expected `fill` to be of type `GapFillOptions` or None, not {type(fill)}",
-            "Invalid `fill.limit` format: `foo`.",
-            "'fill.limit' does not support month-based units (month, quarter or year).",
             "'fill.limit' (30m) must be greater than or equal to the granularity (1h).",
         ]
         queries = _FullDatapointsQuery(

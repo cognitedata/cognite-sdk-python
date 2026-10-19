@@ -223,7 +223,7 @@ class _DpsQueryValidator:
                 query.timezone, query.is_raw_query
             )
             query.granularity, query.is_calendar_query = self._verify_and_convert_granularity(query.granularity)
-            query.fill = self._verify_and_convert_fill(query)
+            self._verify_fill(query)
             query.start, query.end = self._verify_time_range(query, frozen_time_now)
             if query.is_raw_query:
                 query.max_query_limit = self.dps_limit_raw
@@ -307,29 +307,15 @@ class _DpsQueryValidator:
         return f"{quantity}{unit}", unit == "mo"
 
     @staticmethod
-    def _verify_and_convert_fill(query: DatapointsQuery) -> GapFillOptions | None:
+    def _verify_fill(query: DatapointsQuery) -> None:
         if (fill := query.fill) is None:
-            return None
+            return
         elif not isinstance(fill, GapFillOptions):
             raise TypeError(f"Expected `fill` to be of type `GapFillOptions` or None, not {type(fill)}")
-        elif not isinstance(fill.limit, str):
-            raise TypeError(f"Expected `fill.limit` to be of type `str`, not {type(fill.limit)}")
-        try:
-            quantity, unit = split_granularity_into_quantity_and_normalized_unit(fill.limit)
-        except ValueError:
-            raise ValueError(
-                f"Invalid `fill.limit` format: `{fill.limit}`. Must be on format <quantity><unit>, e.g. 30m, 6h or 1d."
-            ) from None
-        if unit == "mo":
-            raise ValueError("'fill.limit' does not support month-based units (month, quarter or year).")
-        fill = GapFillOptions(limit=f"{quantity}{unit}")
-        if query.is_calendar_query:
-            return fill
-        if granularity_to_ms(fill.limit) < granularity_to_ms(cast(str, query.granularity)):
+        elif not query.is_calendar_query and fill.limit_ms < granularity_to_ms(cast(str, query.granularity)):
             raise ValueError(
                 f"'fill.limit' ({fill.limit}) must be greater than or equal to the granularity ({query.granularity})."
             )
-        return fill
 
     @staticmethod
     def _verify_and_convert_limit(limit: int | None) -> int | None:
