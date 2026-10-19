@@ -514,7 +514,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             Let's say you want different aggregates and end-times for a few time series (when only fetching a single aggregate, you may pass
             the string directly for convenience):
 
-                >>> from cognite.client.data_classes import DatapointsQuery, GapFillOptions
+                >>> from cognite.client.data_classes import DatapointsQuery
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     id=[
                 ...         DatapointsQuery(id=42, end="1d-ago", aggregates="average"),
@@ -613,6 +613,7 @@ class SyncDatapointsAPI(SyncAPIClient):
             datapoints of up to this size are interpolated, and the last datapoint is extrapolated forward for the same duration.
             Like most other parameters, it can also be set per time series using ``DatapointsQuery``:
 
+                >>> from cognite.client.data_classes import GapFillOptions
                 >>> dps_lst = client.time_series.data.retrieve(
                 ...     instance_id=[
                 ...         NodeId("my-space", "foo"),
