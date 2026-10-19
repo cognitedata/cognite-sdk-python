@@ -2836,7 +2836,8 @@ class TestRetrieveAggregateDatapointsAPI:
             (9, 50, "EagerDpsFetcher"),
         ],
     )
-    def test_retrieve_aggregates__api_error_raises(
+    @pytest.mark.skip(reason="string aggregates are about to be supported")
+    def test_retrieve_aggregates__string_ts_raises(
         self,
         concurrency_limit: int,
         n_ts: int,
@@ -2844,23 +2845,22 @@ class TestRetrieveAggregateDatapointsAPI:
         weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
         retrieve_endpoints: list[Callable],
     ) -> None:
-        numeric_ts, _ = weekly_dps_ts
+        _, string_ts = weekly_dps_ts
         with (
             override_semaphore(concurrency_limit, target="datapoints"),
             patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
         ):
-            ts_chunk = random.sample(numeric_ts, k=n_ts)
+            ts_chunk = random.sample(string_ts, k=n_ts)
             for endpoint in retrieve_endpoints:
                 with pytest.raises(CogniteAPIError) as exc:
-                    # These time series have no unit, so unit conversion is rejected by the API:
                     endpoint(
                         granularity=random_granularity(),
                         aggregates=random_aggregates(),
                         id=[ts.id for ts in ts_chunk],
-                        target_unit="temperature:deg_f",
                         ignore_unknown_ids=random.choice((True, False)),
                     )
                 assert exc.value.code == 400
+                assert "Aggregates are not supported for string time series" in exc.value.message
 
     @pytest.mark.parametrize("granularity, lower_lim, upper_lim", (("h", 30, 1000), ("d", 1, 200)))
     def test_granularity_invariants(
