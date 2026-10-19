@@ -28,6 +28,7 @@ from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
     DatapointsList,
+    GapFillOptions,
     LatestDatapointQuery,
     StateDatapointsInsert,
     StateDatapointWrite,
@@ -417,7 +418,7 @@ class TestInsertDatapoints:
 
 
 class TestRetrieveWithGapFilling:
-    def test_fill_limit_is_sent_and_warns(
+    def test_fill_is_sent_and_warns(
         self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
         httpx2_mock.add_response(
@@ -428,7 +429,12 @@ class TestRetrieveWithGapFilling:
         )
         with pytest.warns(FeaturePreviewWarning, match="gap filling"):
             cognite_client.time_series.data.retrieve(
-                id=1, start=0, end=24 * 3_600_000, aggregates="average", granularity="1h", fill_limit="2h"
+                id=1,
+                start=0,
+                end=24 * 3_600_000,
+                aggregates="average",
+                granularity="1h",
+                fill=GapFillOptions(limit="2h"),
             )
 
         (item,) = jsgz_load(httpx2_mock.get_requests()[0].content)["items"]

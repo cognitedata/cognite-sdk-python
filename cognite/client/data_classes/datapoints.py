@@ -554,6 +554,20 @@ def _load_state_only_aggregate_entries(
     return [val if isinstance(val, state_cls) else state_cls._load(val) for val in values]  # type: ignore [arg-type]
 
 
+@dataclass(frozen=True)
+class GapFillOptions:
+    """Options for `gap filling <https://docs.cognite.com/dev/concepts/aggregation/gap_filling>`_ in aggregate datapoints queries.
+
+    Args:
+        limit (str): The maximum gap between raw datapoints to interpolate across. The last datapoint is also extrapolated forward this long. Uses the granularity format, e.g. '30m' or '6h', but not month-based units. Must be greater than or equal to the granularity.
+    """
+
+    limit: str
+
+    def dump(self) -> dict[str, Any]:
+        return {"limit": self.limit}
+
+
 @dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
@@ -574,7 +588,7 @@ class DatapointsQuery:
             "include_status": False,
             "ignore_bad_datapoints": True,
             "treat_uncertain_as_bad": True,
-            "fill_limit": None,
+            "fill": None,
         }
     )
     id: InitVar[int | None] = None
@@ -593,7 +607,7 @@ class DatapointsQuery:
     include_status: bool = _NOT_SET  # type: ignore [assignment]
     ignore_bad_datapoints: bool = _NOT_SET  # type: ignore [assignment]
     treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
-    fill_limit: str | None = _NOT_SET  # type: ignore [assignment]
+    fill: GapFillOptions | None = _NOT_SET  # type: ignore [assignment]
 
     def __post_init__(
         self, id: int | None, external_id: str | None, instance_id: NodeId | tuple[str, str] | None
@@ -698,7 +712,7 @@ class DatapointsQuery:
         return min(self.limit, self.max_query_limit)
 
     def __repr__(self) -> str:
-        return json.dumps(self.dump(), indent=4)
+        return json.dumps(self.dump(), indent=4, default=str)
 
     def dump(self) -> dict[str, Any]:
         # We need to dump only those fields specifically passed by the user:
