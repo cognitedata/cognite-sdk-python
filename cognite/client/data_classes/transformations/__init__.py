@@ -51,6 +51,27 @@ if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
 
 
+def _warn_if_oidc_credentials_set(
+    source_oidc_credentials: OidcCredentials | None,
+    destination_oidc_credentials: OidcCredentials | None,
+) -> None:
+    deprecated = [
+        name
+        for name, value in (
+            ("source_oidc_credentials", source_oidc_credentials),
+            ("destination_oidc_credentials", destination_oidc_credentials),
+        )
+        if value is not None
+    ]
+    if deprecated:
+        replacement = ", ".join(name.replace("oidc_credentials", "nonce") for name in deprecated)
+        warnings.warn(
+            f"Setting {', '.join(deprecated)} is deprecated. Use {replacement} instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
+
 class SessionDetails:
     """Details of a source session.
 
@@ -246,6 +267,7 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
         destination_session: SessionDetails | None = None,
         tags: list[str] | None = None,
     ) -> None:
+        _warn_if_oidc_credentials_set(source_oidc_credentials, destination_oidc_credentials)
         self.external_id = external_id
         self.name = name
         self.ignore_null_fields = ignore_null_fields
@@ -458,6 +480,7 @@ class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _Tran
         destination_nonce: NonceCredentials | None = None,
         tags: list[str] | None = None,
     ) -> None:
+        _warn_if_oidc_credentials_set(source_oidc_credentials, destination_oidc_credentials)
         self.external_id = external_id
         self.name = name
         self.ignore_null_fields = ignore_null_fields
