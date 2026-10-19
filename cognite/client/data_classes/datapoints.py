@@ -752,6 +752,8 @@ class DatapointsQuery:
                 payload["includeStatus"] = self.include_status
         else:
             payload.update(aggregates=self.aggs_camel_case, granularity=self.granularity)
+            if self.fill is not None:
+                payload["fill"] = self.fill.dump()
         return payload
 
 

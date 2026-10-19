@@ -38,7 +38,14 @@ from cognite.client.data_classes.datapoints import LatestDatapoint, LatestDatapo
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._time import datetime_to_ms
-from tests.utils import PANDAS_TS_UNIT, get_or_raise, get_url, jsgz_load, random_gamma_dist_integer
+from tests.utils import (
+    PANDAS_TS_UNIT,
+    get_or_raise,
+    get_url,
+    jsgz_load,
+    override_semaphore,
+    random_gamma_dist_integer,
+)
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -418,18 +425,21 @@ class TestInsertDatapoints:
 
 
 class TestRetrieveWithGapFilling:
+    # With a semaphore of 1, a single time series is fetched eagerly, while two use the chunking fetcher:
+    @pytest.mark.parametrize("ids", ([1], [1, 2]))
     def test_fill_is_sent_and_warns(
-        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+        self, ids: list[int], cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
         httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.time_series.data, "/timeseries/data/list"),
             status_code=200,
-            content=DataPointListResponse(items=[DataPointListItem(id=1)]).SerializeToString(),
+            content=DataPointListResponse(items=[DataPointListItem(id=i) for i in ids]).SerializeToString(),
+            is_reusable=True,
         )
-        with pytest.warns(FeaturePreviewWarning, match="gap filling"):
+        with override_semaphore(1, target="datapoints"), pytest.warns(FeaturePreviewWarning, match="gap filling"):
             cognite_client.time_series.data.retrieve(
-                id=1,
+                id=ids,
                 start=0,
                 end=24 * 3_600_000,
                 aggregates="average",
@@ -437,8 +447,9 @@ class TestRetrieveWithGapFilling:
                 fill=GapFillOptions(limit="2h"),
             )
 
-        (item,) = jsgz_load(httpx2_mock.get_requests()[0].content)["items"]
-        assert item["fill"] == {"limit": "2h"}
+        items = [item for req in httpx2_mock.get_requests() for item in jsgz_load(req.content)["items"]]
+        assert items
+        assert all(item["fill"] == {"limit": "2h"} for item in items)
 
 
 class TestFetchAllDoesNotLeakTaskExceptions:

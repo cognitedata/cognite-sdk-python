@@ -3354,7 +3354,13 @@ class TestRetrieveAggregateDatapointsAPI:
         "Test inserts datapoints; DatapointsAPI._insert_datapoints holds the semaphore via outer "
         "'async with' and passes None to _post to avoid double-acquiring."
     )
-    def test_retrieve_with_fill(self, cognite_client: CogniteClient) -> None:
+    # Two queries with a concurrency of 1 use the chunking fetcher, with 2 the eager fetcher:
+    @pytest.mark.parametrize(
+        "concurrency_limit, mock_out_eager_or_chunk", [(1, "EagerDpsFetcher"), (2, "ChunkingDpsFetcher")]
+    )
+    def test_retrieve_with_fill(
+        self, concurrency_limit: int, mock_out_eager_or_chunk: str, cognite_client: CogniteClient
+    ) -> None:
         ts = cognite_client.time_series.create(TimeSeriesWrite(external_id=f"gap-filling-{random_string(10)}"))
         try:
             t0, hour = ts_to_ms("2023-01-01"), 3_600_000
@@ -3362,13 +3368,17 @@ class TestRetrieveAggregateDatapointsAPI:
             cognite_client.time_series.data.insert(
                 [(t0 + hour, 1.0), (t0 + 3 * hour, 3.0), (t0 + 8 * hour, 8.0)], id=ts.id
             )
-            no_fill, with_fill = cognite_client.time_series.data.retrieve(
-                id=[DatapointsQuery(id=ts.id), DatapointsQuery(id=ts.id, fill=GapFillOptions(limit="3h"))],
-                start=t0,
-                end=t0 + 11 * hour,
-                aggregates="interpolation",
-                granularity="1h",
-            )
+            with (
+                override_semaphore(concurrency_limit, target="datapoints"),
+                patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
+            ):
+                no_fill, with_fill = cognite_client.time_series.data.retrieve(
+                    id=[DatapointsQuery(id=ts.id), DatapointsQuery(id=ts.id, fill=GapFillOptions(limit="3h"))],
+                    start=t0,
+                    end=t0 + 11 * hour,
+                    aggregates="interpolation",
+                    granularity="1h",
+                )
             assert no_fill.timestamp == [t0 + hour, t0 + 3 * hour, t0 + 8 * hour]
             assert no_fill.interpolation == [1.0, 3.0, 8.0]
             assert with_fill.timestamp == [t0 + h * hour for h in (1, 2, 3, 8, 9, 10)]
