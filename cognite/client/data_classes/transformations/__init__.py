@@ -595,10 +595,20 @@ class TransformationUpdate(CogniteUpdate):
 
     @property
     def source_oidc_credentials(self) -> _PrimitiveTransformationUpdate:
+        warnings.warn(
+            "Setting source_oidc_credentials is deprecated. Use source_nonce instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "sourceOidcCredentials")
 
     @property
     def destination_oidc_credentials(self) -> _PrimitiveTransformationUpdate:
+        warnings.warn(
+            "Setting destination_oidc_credentials is deprecated. Use destination_nonce instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationOidcCredentials")
 
     @property
