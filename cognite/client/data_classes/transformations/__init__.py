@@ -65,10 +65,12 @@ def _warn_if_oidc_credentials_set(
     ]
     if deprecated:
         replacement = ", ".join(name.replace("oidc_credentials", "nonce") for name in deprecated)
+        # Todo: Remove this warning in the next major version of the SDK.
         warnings.warn(
-            f"Setting {', '.join(deprecated)} is deprecated. Use {replacement} instead.",
+            f"Setting {', '.join(deprecated)} is deprecated. Use {replacement} instead."
+            f"This will be removed in the next major version of the SDK.",
             DeprecationWarning,
-            stacklevel=2,
+            stacklevel=3,
         )
 
 
@@ -595,8 +597,10 @@ class TransformationUpdate(CogniteUpdate):
 
     @property
     def source_oidc_credentials(self) -> _PrimitiveTransformationUpdate:
+        # Todo: Remove this warning in the next major version of the SDK.
         warnings.warn(
-            "Setting source_oidc_credentials is deprecated. Use source_nonce instead.",
+            "Setting source_oidc_credentials is deprecated. Use source_nonce instead. "
+            "This will be removed in the next major version of the SDK.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -604,11 +608,14 @@ class TransformationUpdate(CogniteUpdate):
 
     @property
     def destination_oidc_credentials(self) -> _PrimitiveTransformationUpdate:
+        # Todo: Remove this warning in the next major version of the SDK.
         warnings.warn(
-            "Setting destination_oidc_credentials is deprecated. Use destination_nonce instead.",
+            "Setting destination_oidc_credentials is deprecated. Use destination_nonce instead."
+            " This will be removed in the next major version of the SDK.",
             DeprecationWarning,
             stacklevel=2,
         )
+
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationOidcCredentials")
 
     @property
