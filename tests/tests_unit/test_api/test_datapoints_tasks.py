@@ -185,3 +185,43 @@ class TestSingleTSQueryValidator:
         all_queries = full_query.parse_into_queries()
         with pytest.raises(ValueError, match=r"'Include outside points' is not supported for aggregates\."):
             query_validator(all_queries)
+
+
+class TestDatapointsQueryToPayloadItem:
+    @pytest.mark.parametrize("agg_kwargs", ({}, {"aggregates": ["average", "min"], "granularity": "1h"}))
+    @pytest.mark.parametrize(
+        "unit_kwargs", ({}, {"target_unit": "temperature:deg_c"}, {"target_unit_system": "SI"}), ids=str
+    )
+    @pytest.mark.parametrize(
+        "flag_kwargs",
+        (
+            {},
+            {"include_status": True},
+            {"ignore_bad_datapoints": False},
+            {"treat_uncertain_as_bad": False},
+            {"include_status": True, "ignore_bad_datapoints": False, "treat_uncertain_as_bad": False},
+        ),
+        ids=str,
+    )
+    @pytest.mark.parametrize("timezone_kwargs", ({}, {"timezone": "Europe/Oslo"}), ids=str)
+    def test_matches_what_eager_fetcher_sends(
+        self,
+        query_validator: _DpsQueryValidator,
+        agg_kwargs: dict[str, Any],
+        unit_kwargs: dict[str, Any],
+        flag_kwargs: dict[str, Any],
+        timezone_kwargs: dict[str, Any],
+    ) -> None:
+        # The chunking fetcher builds its first request using 'DatapointsQuery.to_payload_item', while everything else uses the static kwargs of the fetch subtasks.
+        # They must send the same query parameters:
+        (query,) = query_validator(
+            _FullDatapointsQuery(
+                id=1, **agg_kwargs, **unit_kwargs, **flag_kwargs, **timezone_kwargs
+            ).parse_into_queries()
+        )
+        subtask = query.task_orchestrator(query=query, eager_mode=True, use_numpy=False).split_into_subtasks(1, 1)[0]
+        # Time range, limit and cursor are specific to each request and not what we are comparing:
+        not_compared = {"start", "end", "limit", "cursor"}
+        expected = {k: v for k, v in subtask.get_next_payload_item().items() if k not in not_compared}
+        initial_item = query.to_payload_item()
+        assert {k: v for k, v in initial_item.items() if k not in not_compared} == expected
