@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 
 from cognite.client._api.datapoint_tasks import _DpsQueryValidator, _FullDatapointsQuery
-from cognite.client.data_classes import DatapointsQuery
+from cognite.client.data_classes import DatapointsQuery, GapFillOptions
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.utils.useful_types import SequenceNotStr
 from tests.utils import random_aggregates, random_cognite_ids, random_granularity
@@ -84,14 +84,17 @@ class TestSingleTSQueryValidator:
             query_validator(query.parse_into_queries())
 
     @pytest.mark.parametrize(
-        "granularity, aggregates, outside, exp_err, exp_err_msg_idx",
+        "granularity, aggregates, outside, fill, exp_err, exp_err_msg_idx",
         (
-            (4000, ["min"], None, TypeError, 0),
-            ("4h", {"min"}, None, TypeError, 1),
-            ("4h", None, None, ValueError, 2),
-            ("4h", [], None, ValueError, 3),
-            (None, ["min"], None, ValueError, 4),
-            ("4h", ["min"], True, ValueError, 5),
+            (4000, ["min"], None, None, TypeError, 0),
+            ("4h", {"min"}, None, None, TypeError, 1),
+            ("4h", None, None, None, ValueError, 2),
+            ("4h", [], None, None, ValueError, 3),
+            (None, ["min"], None, None, ValueError, 4),
+            ("4h", ["min"], True, None, ValueError, 5),
+            (None, None, None, GapFillOptions(limit="1h"), ValueError, 6),
+            ("1h", ["min"], None, "1h", TypeError, 7),
+            ("1h", ["min"], None, GapFillOptions(limit="30m"), ValueError, 8),
         ),
     )
     def test_function_validate_and_create_query(
@@ -99,6 +102,7 @@ class TestSingleTSQueryValidator:
         granularity: str | None,
         aggregates: Iterable[str] | None,
         outside: bool | None,
+        fill: Any,
         exp_err: type[Exception],
         exp_err_msg_idx: int,
         query_validator: _DpsQueryValidator,
@@ -110,12 +114,16 @@ class TestSingleTSQueryValidator:
             "Empty list of `aggregates` passed, expected at least one!",
             "When passing `aggregates`, argument `granularity` is also required.",
             "'Include outside points' is not supported for aggregates.",
+            "'fill' is only supported for aggregate queries.",
+            f"Expected `fill` to be of type `GapFillOptions` or None, not {type(fill)}",
+            "'fill.limit' (30m) must be greater than or equal to the granularity (1h).",
         ]
         queries = _FullDatapointsQuery(
             id=1,
             granularity=granularity,
             aggregates=aggregates,  # type: ignore[arg-type]
             include_outside_points=outside,  # type: ignore[arg-type]
+            fill=fill,
         ).parse_into_queries()
         with pytest.raises(exp_err, match=re.escape(err_msgs[exp_err_msg_idx])):
             query_validator(queries)

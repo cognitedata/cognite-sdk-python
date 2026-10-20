@@ -22,11 +22,13 @@ from pytest_httpx2 import HTTPXMock
 import cognite.client._api.datapoints_io as dps_io  # for mocking
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.datapoints_io import StateDatapointsPoster, _InsertDatapoint
+from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes import (
     Datapoint,
     Datapoints,
     DatapointsArray,
     DatapointsList,
+    GapFillOptions,
     LatestDatapointQuery,
     StateDatapointsInsert,
     StateDatapointWrite,
@@ -34,8 +36,16 @@ from cognite.client.data_classes import (
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import LatestDatapoint, LatestDatapointList
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._time import datetime_to_ms
-from tests.utils import PANDAS_TS_UNIT, get_or_raise, get_url, jsgz_load, random_gamma_dist_integer
+from tests.utils import (
+    PANDAS_TS_UNIT,
+    get_or_raise,
+    get_url,
+    jsgz_load,
+    override_semaphore,
+    random_gamma_dist_integer,
+)
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
@@ -412,6 +422,34 @@ class TestInsertDatapoints:
 
         assert len(dump_sem_held) == 50
         assert all(dump_sem_held), "dp.dump() was called outside the semaphore context"
+
+
+class TestRetrieveWithGapFilling:
+    # With a semaphore of 1, a single time series is fetched eagerly, while two use the chunking fetcher:
+    @pytest.mark.parametrize("ids", ([1], [1, 2]))
+    def test_fill_is_sent_and_warns(
+        self, ids: list[int], cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST",
+            url=get_url(async_client.time_series.data, "/timeseries/data/list"),
+            status_code=200,
+            content=DataPointListResponse(items=[DataPointListItem(id=i) for i in ids]).SerializeToString(),
+            is_reusable=True,
+        )
+        with override_semaphore(1, target="datapoints"), pytest.warns(FeaturePreviewWarning, match="gap filling"):
+            cognite_client.time_series.data.retrieve(
+                id=ids,
+                start=0,
+                end=24 * 3_600_000,
+                aggregates="average",
+                granularity="1h",
+                fill=GapFillOptions(limit="2h"),
+            )
+
+        items = [item for req in httpx2_mock.get_requests() for item in jsgz_load(req.content)["items"]]
+        assert items
+        assert all(item["fill"] == {"limit": "2h"} for item in items)
 
 
 class TestFetchAllDoesNotLeakTaskExceptions:
