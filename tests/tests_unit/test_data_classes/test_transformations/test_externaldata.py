@@ -9,8 +9,6 @@ from cognite.client.data_classes._base import UnknownCogniteResource
 from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSource,
     ExternalDataSourceList,
-    ExternalDataSourceRotatedKeys,
-    ExternalDataSourceRotateKeys,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
     OneLakeCredentialsWrite,
