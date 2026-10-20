@@ -8,7 +8,13 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from cognite.client.data_classes import Datapoint, DatapointsArray, StateDatapointsInsert, StateDatapointWrite
+from cognite.client.data_classes import (
+    Datapoint,
+    DatapointsArray,
+    GapFillOptions,
+    StateDatapointsInsert,
+    StateDatapointWrite,
+)
 from cognite.client.data_classes._base import CogniteResourceList
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import (
@@ -25,6 +31,26 @@ from cognite.client.data_classes.datapoints import (
 from cognite.client.utils._datapoints import create_object_array_from_container
 from cognite.client.utils._text import to_camel_case
 from tests.utils import PANDAS_TS_UNIT
+
+
+class TestGapFillOptions:
+    @pytest.mark.parametrize("limit, exp_dumped", [("30m", "30m"), ("6hours", "6h"), ("2w", "14d")])
+    def test_limit_is_normalized_when_dumped(self, limit: str, exp_dumped: str) -> None:
+        fill = GapFillOptions(limit=limit)
+        assert fill.limit == limit
+        assert fill.dump() == {"limit": exp_dumped}
+
+    @pytest.mark.parametrize(
+        "limit, exp_err, exp_msg",
+        [
+            (3, TypeError, "Expected `limit` to be of type `str`"),
+            ("foo", ValueError, "Invalid `limit` format: `foo`"),
+            ("1month", ValueError, "`limit` does not support month-based units"),
+        ],
+    )
+    def test_invalid_limit_raises(self, limit: Any, exp_err: type[Exception], exp_msg: str) -> None:
+        with pytest.raises(exp_err, match=exp_msg):
+            GapFillOptions(limit=limit)
 
 
 class TestDatapoint:

@@ -35,6 +35,7 @@ from cognite.client.data_classes.datapoints import (
     Datapoints,
     DatapointsArray,
     DatapointsQuery,
+    GapFillOptions,
 )
 from cognite.client.utils._auxiliary import exactly_one_is_not_none, is_non_negative_int, is_unlimited
 from cognite.client.utils._datapoints import (
@@ -109,6 +110,7 @@ class _FullDatapointsQuery:
     include_status: bool = False
     ignore_bad_datapoints: bool = True
     treat_uncertain_as_bad: bool = True
+    fill: GapFillOptions | None = None
 
     @property
     def is_single_identifier(self) -> bool:
@@ -138,6 +140,7 @@ class _FullDatapointsQuery:
             include_status=self.include_status,
             ignore_bad_datapoints=self.ignore_bad_datapoints,
             treat_uncertain_as_bad=self.treat_uncertain_as_bad,
+            fill=self.fill,
         )
 
     def parse_into_queries(self) -> list[DatapointsQuery]:
@@ -220,6 +223,7 @@ class _DpsQueryValidator:
                 query.timezone, query.is_raw_query
             )
             query.granularity, query.is_calendar_query = self._verify_and_convert_granularity(query.granularity)
+            self._verify_fill(query)
             query.start, query.end = self._verify_time_range(query, frozen_time_now)
             if query.is_raw_query:
                 query.max_query_limit = self.dps_limit_raw
@@ -250,6 +254,8 @@ class _DpsQueryValidator:
                         "yield 5, 6 or 7. It's a feature, not a bug ;)",
                         UserWarning,
                     )
+                if query.fill is not None:
+                    raise ValueError("'fill' is only supported for aggregate queries.")
                 return True
             raise ValueError("When passing `granularity`, argument `aggregates` is also required.")
 
@@ -299,6 +305,17 @@ class _DpsQueryValidator:
             return None, False
         quantity, unit = split_granularity_into_quantity_and_normalized_unit(granularity)
         return f"{quantity}{unit}", unit == "mo"
+
+    @staticmethod
+    def _verify_fill(query: DatapointsQuery) -> None:
+        if (fill := query.fill) is None:
+            return
+        elif not isinstance(fill, GapFillOptions):
+            raise TypeError(f"Expected `fill` to be of type `GapFillOptions` or None, not {type(fill)}")
+        elif not query.is_calendar_query and fill.limit_ms < granularity_to_ms(cast(str, query.granularity)):
+            raise ValueError(
+                f"'fill.limit' ({fill.limit}) must be greater than or equal to the granularity ({query.granularity})."
+            )
 
     @staticmethod
     def _verify_and_convert_limit(limit: int | None) -> int | None:
@@ -373,6 +390,9 @@ class BaseDpsFetchSubtask:
 
         if query.include_status is True:
             self.static_kwargs["includeStatus"] = query.include_status
+
+        if query.fill is not None:
+            self.static_kwargs["fill"] = query.fill.dump()
 
         if query.timezone:
             self.static_kwargs["timeZone"] = query.timezone
