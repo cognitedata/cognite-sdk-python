@@ -76,7 +76,7 @@ def _warn_if_oidc_credentials_set(
         replacement = ", ".join(name.replace("oidc_credentials", "nonce") for name in deprecated)
         # Todo: Remove this warning in the next major version of the SDK.
         warnings.warn(
-            f"Setting {', '.join(deprecated)} is deprecated. Use {replacement} instead."
+            f"Setting {', '.join(deprecated)} is deprecated. Use {replacement} instead. "
             f"This will be removed in the next major version of the SDK.",
             DeprecationWarning,
             stacklevel=3,
