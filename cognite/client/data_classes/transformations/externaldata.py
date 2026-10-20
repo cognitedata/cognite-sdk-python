@@ -272,6 +272,7 @@ class SnowflakeSettingsWrite(CogniteResource):
         output[key] = self.location_description.dump(camel_case=camel_case)
         return output
 
+
 class ExternalDataSourceWrite(CogniteResource, ABC):
     """Write model for an external data source to create in CDF.
 
