@@ -3386,6 +3386,46 @@ class TestRetrieveAggregateDatapointsAPI:
         finally:
             cognite_client.time_series.delete(id=ts.id)
 
+    def test_object_aggregates_with_status_same_for_eager_and_chunking_fetcher(
+        self, cognite_client: CogniteClient, ts_status_codes: TimeSeriesList
+    ) -> None:
+        # From 7.74.0 (when the object aggregates 'min_datapoint' and 'max_datapoint' were added) to 8.22.0, when
+        # fetching in "chunking mode" with include_status=True, the status codes of these were lost in the first batch
+        # of datapoints: 'includeStatus' was only sent for raw queries in the initial request.
+        mixed_ts, *_ = ts_status_codes
+        kwargs: dict[str, Any] = dict(
+            start=ts_to_ms("2023"),
+            end=ts_to_ms("2025"),
+            aggregates=list(_OBJECT_AGGREGATES_CAMEL),
+            granularity="1mo",
+            include_status=True,
+            treat_uncertain_as_bad=False,
+            limit=2,  # Everything is returned by the initial request (no follow-ups)
+        )
+
+        def get_status_codes(dps: Datapoints) -> list[int]:
+            assert dps.min_datapoint is not None and dps.max_datapoint is not None
+            codes = []
+            for dp in (*dps.min_datapoint, *dps.max_datapoint):
+                # Prev these would not be "-WithStatus":
+                assert isinstance(dp, (MinDatapointWithStatus, MaxDatapointWithStatus))
+                codes.append(dp.status_code)
+            return codes
+
+        # Eager: One time series fits within the semaphore, so it will be used:
+        with override_semaphore(5, target="datapoints"), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+            (eager_dps,) = cognite_client.time_series.data.retrieve(id=[mixed_ts.id], **kwargs)
+
+        expected_codes = [1073741824, 1084489728, 1084489728, 1086062592]
+        assert get_status_codes(eager_dps) == expected_codes
+
+        # Chunking: A semaphore of 1 and two time series (the same) makes us use the chunking fetcher, which builds
+        # its initial request separately from the other fetchers:
+        with override_semaphore(1, target="datapoints"), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+            dps_lst = cognite_client.time_series.data.retrieve(id=[mixed_ts.id, mixed_ts.id], **kwargs)
+        for dps in dps_lst:
+            assert get_status_codes(dps) == expected_codes
+
 
 class TestRetrieveMixedRawAndAgg:
     def test_multiple_settings_for_ignore_unknown_ids(

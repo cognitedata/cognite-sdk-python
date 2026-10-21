@@ -374,28 +374,33 @@ class BaseDpsFetchSubtask:
         self.is_done = False
         self.n_dps_fetched = 0
 
-        self.static_kwargs = query.identifier.as_dict()
+        self.static_kwargs = self.static_kwargs_for(query)
+
+    @staticmethod
+    def static_kwargs_for(query: DatapointsQuery) -> dict[str, Any]:
+        kwargs = query.identifier.as_dict()
         if not query.is_raw_query:
-            self.static_kwargs.update(aggregates=query.aggs_camel_case, granularity=query.granularity)
+            kwargs.update(aggregates=query.aggs_camel_case, granularity=query.granularity)
 
         if query.target_unit is not None:
-            self.static_kwargs["targetUnit"] = query.target_unit
+            kwargs["targetUnit"] = query.target_unit
         elif query.target_unit_system is not None:
-            self.static_kwargs["targetUnitSystem"] = query.target_unit_system
+            kwargs["targetUnitSystem"] = query.target_unit_system
 
         if query.ignore_bad_datapoints is False:
-            self.static_kwargs["ignoreBadDataPoints"] = query.ignore_bad_datapoints
+            kwargs["ignoreBadDataPoints"] = query.ignore_bad_datapoints
         if query.treat_uncertain_as_bad is False:
-            self.static_kwargs["treatUncertainAsBad"] = query.treat_uncertain_as_bad
+            kwargs["treatUncertainAsBad"] = query.treat_uncertain_as_bad
 
         if query.include_status is True:
-            self.static_kwargs["includeStatus"] = query.include_status
-
-        if query.fill is not None:
-            self.static_kwargs["fill"] = query.fill.dump()
+            kwargs["includeStatus"] = query.include_status
 
         if query.timezone:
-            self.static_kwargs["timeZone"] = query.timezone
+            kwargs["timeZone"] = query.timezone
+
+        if query.fill is not None:
+            kwargs["fill"] = query.fill.dump()
+        return kwargs
 
     @abstractmethod
     def get_next_payload_item(self) -> dict[str, Any]: ...
