@@ -1,0 +1,47 @@
+from __future__ import annotations
+
+import re
+
+import pytest
+from pytest_httpx2 import HTTPXMock
+
+from cognite.client import AsyncCogniteClient, CogniteClient
+from cognite.client.data_classes.integrations.tasks import SyncResult
+from tests.utils import get_url
+
+TASK_HISTORY_RESPONSE = {
+    "externalId": "my-integration",
+    "taskName": "poll",
+    "startTime": 100,
+    "endTime": 200,
+    "errorCount": 0,
+    "warningCount": 0,
+    "fatalCount": 0,
+}
+
+
+class TestIntegrationHistory:
+    def test_sync(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
+        url_pattern = re.compile(
+            re.escape(get_url(async_client.integrations.history, "/integrations/sync")) + r"(?:\?.*)?$"
+        )
+        httpx2_mock.add_response(
+            method="GET",
+            url=url_pattern,
+            json={"nextCursor": "abc", "moreData": False, "history": [TASK_HISTORY_RESPONSE]},
+        )
+
+        res = cognite_client.integrations.history.sync(external_id="my-integration", include_task_updates=True)
+
+        assert isinstance(res, SyncResult)
+        assert res.next_cursor == "abc"
+        assert res.more_data is False
+        assert res.history is not None
+        assert res.history[0].task_name == "poll"
+        assert res.errors is None
+
+    def test_sync_requires_include_errors_or_include_task_updates(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(ValueError, match="'include_errors' or 'include_task_updates'"):
+            cognite_client.integrations.history.sync(external_id="my-integration")

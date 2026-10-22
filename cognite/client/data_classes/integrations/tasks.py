@@ -13,14 +13,14 @@ class TaskHistory(CogniteResource):
     """A single start/stop event of a task, reported by the extractor.
 
     Args:
-        external_id (str): External id of the integration the task belongs to.
+        external_id (str): Unique external id of this history entry, assigned by the API (not the external id of the integration).
         task_name (str): Name of the task.
         start_time (int): Time the task started, in milliseconds since epoch.
-        end_time (int | None): Time the task ended, in milliseconds since epoch. Not set while the task is still running.
-        message (str | None): Optional message reported when the task started or ended.
         error_count (int): Number of errors reported for this task run.
         warning_count (int): Number of warnings reported for this task run.
         fatal_count (int): Number of fatal errors reported for this task run.
+        end_time (int | None): Time the task ended, in milliseconds since epoch. Not set while the task is still running.
+        message (str | None): Optional message reported when the task started or ended.
         active_config_revision (ActiveConfigRevision | None): The config revision (or "local") active at the time of this task run.
         sources (list[str] | None): Lineage: URIs of the systems/resources this task read from.
         targets (list[str] | None): Lineage: URIs of the CDF (or other) resources this task wrote to.
@@ -31,11 +31,11 @@ class TaskHistory(CogniteResource):
         external_id: str,
         task_name: str,
         start_time: int,
+        error_count: int,
+        warning_count: int,
+        fatal_count: int,
         end_time: int | None = None,
         message: str | None = None,
-        error_count: int = 0,
-        warning_count: int = 0,
-        fatal_count: int = 0,
         active_config_revision: ActiveConfigRevision | None = None,
         sources: list[str] | None = None,
         targets: list[str] | None = None,
@@ -60,9 +60,9 @@ class TaskHistory(CogniteResource):
             start_time=resource["startTime"],
             end_time=resource.get("endTime"),
             message=resource.get("message"),
-            error_count=resource.get("errorCount", 0),
-            warning_count=resource.get("warningCount", 0),
-            fatal_count=resource.get("fatalCount", 0),
+            error_count=resource["errorCount"],
+            warning_count=resource["warningCount"],
+            fatal_count=resource["fatalCount"],
             active_config_revision=resource.get("activeConfigRevision"),
             sources=resource.get("sources"),
             targets=resource.get("targets"),
