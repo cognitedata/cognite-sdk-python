@@ -6,7 +6,7 @@ import pytest
 from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
-from cognite.client.data_classes.integrations.tasks import SyncResult
+from cognite.client.data_classes.integrations.tasks import TaskHistoryList
 from tests.utils import get_url
 
 TASK_HISTORY_RESPONSE = {
@@ -21,27 +21,24 @@ TASK_HISTORY_RESPONSE = {
 
 
 class TestIntegrationHistory:
-    def test_sync(
+    def test_list(
         self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
     ) -> None:
         url_pattern = re.compile(
-            re.escape(get_url(async_client.integrations.history, "/integrations/sync")) + r"(?:\?.*)?$"
+            re.escape(get_url(async_client.integrations.history, "/integrations/history")) + r"(?:\?.*)?$"
         )
-        httpx2_mock.add_response(
-            method="GET",
-            url=url_pattern,
-            json={"nextCursor": "abc", "moreData": False, "history": [TASK_HISTORY_RESPONSE]},
-        )
+        httpx2_mock.add_response(method="GET", url=url_pattern, json={"items": [TASK_HISTORY_RESPONSE]})
 
-        res = cognite_client.integrations.history.sync(external_id="my-integration", include_task_updates=True)
+        res = cognite_client.integrations.history.list(external_id="my-integration", task_name="poll")
 
-        assert isinstance(res, SyncResult)
-        assert res.next_cursor == "abc"
-        assert res.more_data is False
-        assert res.history is not None
-        assert res.history[0].task_name == "poll"
-        assert res.errors is None
+        assert isinstance(res, TaskHistoryList)
+        assert len(res) == 1
+        assert res[0].task_name == "poll"
 
-    def test_sync_requires_include_errors_or_include_task_updates(self, cognite_client: CogniteClient) -> None:
-        with pytest.raises(ValueError, match="'include_errors' or 'include_task_updates'"):
-            cognite_client.integrations.history.sync(external_id="my-integration")
+        request = httpx2_mock.get_requests()[0]
+        assert "externalId=my-integration" in str(request.url)
+        assert "taskName=poll" in str(request.url)
+
+    def test_list_task_name_without_external_id_raises(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(ValueError, match="'task_name' requires 'external_id'"):
+            cognite_client.integrations.history.list(task_name="poll")

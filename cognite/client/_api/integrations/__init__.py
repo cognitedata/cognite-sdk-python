@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, overload
 
 from cognite.client._api.integrations.errors import IntegrationErrorsAPI
 from cognite.client._api.integrations.history import IntegrationHistoryAPI
-from cognite.client._api.integrations.tasks import IntegrationTasksAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.integrations.integrations import (
@@ -14,6 +13,8 @@ from cognite.client.data_classes.integrations.integrations import (
     IntegrationUpdate,
     IntegrationWrite,
 )
+from cognite.client.data_classes.integrations.tasks import SyncResult
+from cognite.client.utils._auxiliary import drop_none_values
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -28,7 +29,6 @@ class IntegrationsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        self.tasks = IntegrationTasksAPI(config, api_version, cognite_client)
         self.history = IntegrationHistoryAPI(config, api_version, cognite_client)
         self.errors = IntegrationErrorsAPI(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Integrations")
@@ -239,3 +239,74 @@ class IntegrationsAPI(APIClient):
             extra_body_fields={"ignoreUnknownIds": ignore_unknown_ids},
             headers=self._beta_version_header(),
         )
+
+    async def sync(
+        self,
+        external_id: str,
+        task_name: str | None = None,
+        include_errors: bool = False,
+        include_task_updates: bool = False,
+        start_time: int | None = None,
+        cursor: str | None = None,
+        limit: int | None = DEFAULT_LIMIT_READ,
+    ) -> SyncResult:
+        """`Sync integration history <https://api-docs.cognite.com/20230101-beta/tag/Integration-Tasks/operation/sync_integration_history>`_
+
+        Incrementally fetch task history and/or errors for an integration since a previous sync call. This is more
+        efficient than repeatedly listing task history/errors when polling for updates, e.g. for dashboards or
+        alerting. At least one of `include_errors` and `include_task_updates` must be True.
+
+        Args:
+            external_id (str): Only return history for the integration with this external id.
+            task_name (str | None): Only return history for the task with this name.
+            include_errors (bool): Include errors reported since the last sync.
+            include_task_updates (bool): Include task history entries reported since the last sync.
+            start_time (int | None): Only return items reported at or after this time, in milliseconds since epoch. Only used on the first call, pass the returned cursor on subsequent calls instead.
+            cursor (str | None): Cursor returned from a previous call to this method, to continue syncing from where you left off.
+            limit (int | None): Maximum number of items to return in this page. Defaults to 25.
+
+        Raises:
+            ValueError: If both `include_errors` and `include_task_updates` are False.
+
+        Returns:
+            SyncResult: A single page of results. Inspect `more_data` to see whether you should immediately call this method again with the returned `next_cursor`, or back off before doing so.
+
+        Examples:
+
+            Sync task history and errors for an integration:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.integrations.sync(
+                ...     external_id="my-integration", include_errors=True, include_task_updates=True
+                ... )
+                >>> while res.more_data:
+                ...     res = client.integrations.sync(
+                ...         external_id="my-integration",
+                ...         include_errors=True,
+                ...         include_task_updates=True,
+                ...         cursor=res.next_cursor,
+                ...     )
+        """
+        if not include_errors and not include_task_updates:
+            raise ValueError("At least one of 'include_errors' or 'include_task_updates' must be True.")
+
+        self._warning.warn()
+        response = await self._get(
+            url_path=f"{self._RESOURCE_PATH}/sync",
+            params=drop_none_values(
+                {
+                    "externalId": external_id,
+                    "taskName": task_name,
+                    "includeErrors": include_errors,
+                    "includeTaskUpdates": include_task_updates,
+                    "startTime": start_time,
+                    "cursor": cursor,
+                    "limit": limit,
+                }
+            ),
+            headers=self._beta_version_header(),
+            semaphore=self._get_semaphore("read"),
+        )
+        return SyncResult._load(response.json())
