@@ -274,7 +274,7 @@ class StreamTemplateInfo(CogniteResource):
 
     Args:
         name (str): Name of the template, used when creating a stream (see :class:`StreamTemplate`).
-        type (Literal["Immutable", "Mutable"]): The type of streams created from the template.
+        type (Literal['Immutable', 'Mutable']): The type of streams created from the template.
         max_streams (int): Number of streams that can be provisioned from this template.
         settings (StreamTemplateSettings): Limits and lifecycle settings of streams created from the template.
     """
