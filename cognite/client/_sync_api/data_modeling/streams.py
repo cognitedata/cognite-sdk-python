@@ -11,7 +11,12 @@ from typing import overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes.data_modeling.streams import Stream, StreamList, StreamWrite
+from cognite.client.data_classes.data_modeling.streams import (
+    Stream,
+    StreamList,
+    StreamTemplateInfoList,
+    StreamWrite,
+)
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -82,6 +87,30 @@ class SyncStreamsAPI(SyncAPIClient):
                 >>> res = client.data_modeling.streams.list()
         """
         return run_sync(self.__async_client.data_modeling.streams.list())
+
+    def list_templates(self) -> StreamTemplateInfoList:
+        """
+        `List stream templates <https://api-docs.cognite.com/20230101/tag/Streams/operation/listStreamTemplates>`_.
+
+        Lists the stream templates streams can be created from in the project, together with their limits
+        and lifecycle settings. Templates with no streams provisioned are not included.
+
+        Note:
+            This endpoint is in alpha, and is called with the alpha ``cdf-version`` header.
+
+        Returns:
+            StreamTemplateInfoList: The available stream templates, sorted by name.
+
+        Examples:
+
+            List the stream templates available in the project:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.data_modeling.streams.list_templates()
+        """
+        return run_sync(self.__async_client.data_modeling.streams.list_templates())
 
     def retrieve(self, external_id: str, include_statistics: bool | None = None) -> Stream | None:
         """

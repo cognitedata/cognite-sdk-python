@@ -7,6 +7,8 @@ from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.streams import (
     Stream,
     StreamList,
+    StreamTemplateInfo,
+    StreamTemplateInfoList,
     StreamWrite,
 )
 from cognite.client.utils._experimental import FeaturePreviewWarning
@@ -94,6 +96,36 @@ class StreamsAPI(APIClient):
         """
         self._warning.warn()
         return await self._list(method="GET", list_cls=StreamList, resource_cls=Stream)
+
+    async def list_templates(self) -> StreamTemplateInfoList:
+        """`List stream templates <https://api-docs.cognite.com/20230101/tag/Streams/operation/listStreamTemplates>`_.
+
+        Lists the stream templates streams can be created from in the project, together with their limits
+        and lifecycle settings. Templates with no streams provisioned are not included.
+
+        Note:
+            This endpoint is in alpha, and is called with the alpha ``cdf-version`` header.
+
+        Returns:
+            StreamTemplateInfoList: The available stream templates, sorted by name.
+
+        Examples:
+
+            List the stream templates available in the project:
+
+                >>> from cognite.client import CogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.data_modeling.streams.list_templates()
+        """
+        self._warning.warn()
+        return await self._list(
+            method="GET",
+            list_cls=StreamTemplateInfoList,
+            resource_cls=StreamTemplateInfo,
+            resource_path=self._RESOURCE_PATH + "/templates",
+            headers=self._alpha_version_header(),
+        )
 
     async def retrieve(self, external_id: str, include_statistics: bool | None = None) -> Stream | None:
         """`Retrieve a stream <https://api-docs.cognite.com/20230101/tag/Streams/operation/getStream>`_.
