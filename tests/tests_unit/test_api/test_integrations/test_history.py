@@ -36,6 +36,7 @@ class TestIntegrationHistory:
         assert res[0].task_name == "poll"
 
         request = httpx2_mock.get_requests()[0]
+        assert request.headers["cdf-version"] == "20230101-beta"
         assert "externalId=my-integration" in str(request.url)
         assert "taskName=poll" in str(request.url)
 

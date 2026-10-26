@@ -251,6 +251,11 @@ class TestIntegrations:
         assert res.history[0].task_name == "poll"
         assert res.errors is None
 
+        request = httpx2_mock.get_requests()[0]
+        assert request.headers["cdf-version"] == "20230101-beta"
+        assert "externalId=my-integration" in str(request.url)
+        assert "includeTaskUpdates=true" in str(request.url)
+
     def test_sync_requires_include_errors_or_include_task_updates(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError, match="'include_errors' or 'include_task_updates'"):
             cognite_client.integrations.sync(external_id="my-integration")
