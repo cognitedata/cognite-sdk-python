@@ -26,7 +26,7 @@ class SyncIterator(Iterator[_T]):
     def __next__(self) -> _T:
         async def get_next() -> _T:
             try:
-                return await anext(self._async_iter)
+                return await self._async_iter.__anext__()
             except StopAsyncIteration:
                 # A coroutine can not raise StopIteration:
                 return _SENTINEL  # type: ignore[return-value]

@@ -49,10 +49,9 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - uses: ./.github/actions/setup
-      # TODO: Enable linkcheck again once the docs team have fixed the broken links
-      # - name: Run docs linkcheck
-      #   working-directory: ./docs
-      #   run: uv run make linkcheck SPHINXOPTS="-W"
+      - name: Run docs linkcheck
+        working-directory: ./docs
+        run: uv run make linkcheck SPHINXOPTS="-W"
       - name: Build docs
         working-directory: ./docs
         run: uv run make html SPHINXOPTS="-W"
