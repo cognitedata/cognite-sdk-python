@@ -5,25 +5,22 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 """
 
 from __future__ import annotations
-from collections.abc import AsyncIterator, Sequence
-from typing import TYPE_CHECKING, overload
-from cognite.client._sync_api.integrations.errors import SyncIntegrationErrorsAPI
-from cognite.client._api_client import APIClient
-from cognite.client._constants import DEFAULT_LIMIT_READ
-from cognite.client.data_classes.integrations.integrations import Integration, IntegrationList, IntegrationUpdate, IntegrationWrite
-from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._identifier import IdentifierSequence
-from cognite.client.utils.useful_types import SequenceNotStr
-from cognite.client import AsyncCogniteClient
-from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.utils._async_helpers import SyncIterator, run_sync
-from cognite.client.utils._concurrency import _get_event_loop_executor
-from typing import Any, Iterator, TYPE_CHECKING, overload
-from collections.abc import Coroutine
 
-if TYPE_CHECKING:
-    import pandas as pd
-    from cognite.client.config import ClientConfig
+from collections.abc import Iterator, Sequence
+from typing import overload
+
+from cognite.client import AsyncCogniteClient
+from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._sync_api.integrations.errors import SyncIntegrationErrorsAPI
+from cognite.client._sync_api_client import SyncAPIClient
+from cognite.client.data_classes.integrations.integrations import (
+    Integration,
+    IntegrationList,
+    IntegrationUpdate,
+    IntegrationWrite,
+)
+from cognite.client.utils._async_helpers import SyncIterator, run_sync
+from cognite.client.utils.useful_types import SequenceNotStr
 
 
 class SyncIntegrationsAPI(SyncAPIClient):
@@ -32,13 +29,16 @@ class SyncIntegrationsAPI(SyncAPIClient):
     def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
         self.errors = SyncIntegrationErrorsAPI(async_client)
-    @overload
-    def __call__(self, chunk_size: None=None, limit: int | None=None) -> Iterator[Integration]: ...
 
     @overload
-    def __call__(self, chunk_size: int, limit: int | None=None) -> Iterator[IntegrationList]: ...
+    def __call__(self, chunk_size: None = None, limit: int | None = None) -> Iterator[Integration]: ...
 
-    def __call__(self, chunk_size: int | None=None, limit: int | None=None) -> Iterator[Integration] | Iterator[IntegrationList]:
+    @overload
+    def __call__(self, chunk_size: int, limit: int | None = None) -> Iterator[IntegrationList]: ...
+
+    def __call__(
+        self, chunk_size: int | None = None, limit: int | None = None
+    ) -> Iterator[Integration] | Iterator[IntegrationList]:
         """
         Iterate over integrations
 
@@ -53,7 +53,7 @@ class SyncIntegrationsAPI(SyncAPIClient):
         """  # noqa: DOC404
         yield from SyncIterator(self.__async_client.integrations(chunk_size=chunk_size, limit=limit))  # type: ignore [misc]
 
-    def list(self, limit: int | None=DEFAULT_LIMIT_READ) -> IntegrationList:
+    def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> IntegrationList:
         """
         `List integrations <https://api-docs.cognite.com/20230101-beta/tag/Integrations#operation/list_integrations>`_
 
@@ -111,12 +111,14 @@ class SyncIntegrationsAPI(SyncAPIClient):
         return run_sync(self.__async_client.integrations.create(integration=integration))
 
     @overload
-    def retrieve(self, external_id: str, ignore_unknown_ids: bool=False) -> Integration | None: ...
+    def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> Integration | None: ...
 
     @overload
-    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool=False) -> IntegrationList: ...
+    def retrieve(self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False) -> IntegrationList: ...
 
-    def retrieve(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool=False) -> Integration | IntegrationList | None:
+    def retrieve(
+        self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> Integration | IntegrationList | None:
         """
         `Retrieve one or more integrations by external id <https://api-docs.cognite.com/20230101-beta/tag/Integrations#operation/retrieve_integrations>`_
 
@@ -136,7 +138,9 @@ class SyncIntegrationsAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.integrations.retrieve("my-integration")
         """
-        return run_sync(self.__async_client.integrations.retrieve(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids))
+        return run_sync(
+            self.__async_client.integrations.retrieve(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)
+        )
 
     @overload
     def update(self, item: Integration | IntegrationWrite | IntegrationUpdate) -> Integration: ...
@@ -144,7 +148,13 @@ class SyncIntegrationsAPI(SyncAPIClient):
     @overload
     def update(self, item: Sequence[Integration | IntegrationWrite | IntegrationUpdate]) -> IntegrationList: ...
 
-    def update(self, item: Integration | IntegrationWrite | IntegrationUpdate | Sequence[Integration | IntegrationWrite | IntegrationUpdate]) -> Integration | IntegrationList:
+    def update(
+        self,
+        item: Integration
+        | IntegrationWrite
+        | IntegrationUpdate
+        | Sequence[Integration | IntegrationWrite | IntegrationUpdate],
+    ) -> Integration | IntegrationList:
         """
         `Update one or more integrations <https://api-docs.cognite.com/20230101-beta/tag/Integrations#operation/update_integrations>`_
 
@@ -167,7 +177,7 @@ class SyncIntegrationsAPI(SyncAPIClient):
         """
         return run_sync(self.__async_client.integrations.update(item=item))
 
-    def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool=False) -> None:
+    def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """
         `Delete one or more integrations <https://api-docs.cognite.com/20230101-beta/tag/Integrations#operation/delete_integrations>`_
 
@@ -184,4 +194,6 @@ class SyncIntegrationsAPI(SyncAPIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.integrations.delete(external_id=["my-integration"])
         """
-        return run_sync(self.__async_client.integrations.delete(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids))
+        return run_sync(
+            self.__async_client.integrations.delete(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)
+        )
