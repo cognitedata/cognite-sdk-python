@@ -38,7 +38,7 @@ class SyncRecordsAPI(SyncAPIClient):
         self, items: RecordId | Sequence[RecordId], *, stream_id: str, ignore_unknown_ids: Literal[True] = True
     ) -> None:
         """
-        `Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/deleteRecords>`_.
+        `Delete records from a stream <https://api-docs.cognite.com/20230101/tag/Records#operation/deleteRecords>`_.
 
         Only valid for mutable streams (returns 422 on immutable). Unknown
         ``space + externalId`` pairs are silently ignored.
@@ -71,7 +71,7 @@ class SyncRecordsAPI(SyncAPIClient):
 
     def ingest(self, items: RecordWrite | Sequence[RecordWrite], *, stream_id: str) -> None:
         """
-        `Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/ingestRecords>`_.
+        `Ingest records into a stream <https://api-docs.cognite.com/20230101/tag/Records#operation/ingestRecords>`_.
 
         Creates new records. For immutable streams, duplicate records (identical
         ``space``, ``externalId``, and all property values) are silently discarded.
@@ -124,7 +124,7 @@ class SyncRecordsAPI(SyncAPIClient):
         self, items: RecordWrite | Sequence[RecordWrite], *, stream_id: str, upsert_mode: Literal["replace"] = "replace"
     ) -> None:
         """
-        `Upsert records into a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/upsertRecords>`_.
+        `Upsert records into a stream <https://api-docs.cognite.com/20230101/tag/Records#operation/upsertRecords>`_.
 
         Creates or fully updates records. Only valid for mutable streams (returns 422 on
         immutable). When a record with the same ``space + externalId`` already exists it is
@@ -178,7 +178,7 @@ class SyncRecordsAPI(SyncAPIClient):
         include_typing: bool = False,
     ) -> RecordsAggregation:
         """
-        `Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_.
+        `Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records#operation/aggregateRecords>`_.
 
         Aggregate properties may reference multiple containers or a single view, but cannot
         mix views and containers. This restriction does not apply to filters or target units.
@@ -317,7 +317,7 @@ class SyncRecordsAPI(SyncAPIClient):
         include_typing: bool = False,
     ) -> RecordList:
         """
-        `Filter records in a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/filterRecords>`_.
+        `Filter records in a stream <https://api-docs.cognite.com/20230101/tag/Records#operation/filterRecords>`_.
 
         Returns records matching the given filters, sorted by ``lastUpdatedTime`` unless a custom
         ``sort`` is given.
@@ -401,7 +401,7 @@ class SyncRecordsAPI(SyncAPIClient):
         include_typing: bool = False,
     ) -> Iterator[SyncRecordList]:
         """
-        `Sync records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/syncRecords>`_.
+        `Sync records from a stream <https://api-docs.cognite.com/20230101/tag/Records#operation/syncRecords>`_.
 
         Iterate over the change feed (new, updated and deleted records), yielding one chunk of
         records per request until the feed is exhausted (``has_next`` is False). Pass exactly one of

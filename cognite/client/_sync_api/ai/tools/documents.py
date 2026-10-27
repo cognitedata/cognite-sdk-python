@@ -26,7 +26,7 @@ class SyncAIDocumentsAPI(SyncAPIClient):
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> Summary:
         """
-        `Summarize a document using a Large Language Model <https://api-docs.cognite.com/20230101/tag/Document-AI/operation/document_questioning_ai_tools_documents_ask_post>`_.
+        `Summarize a document using a Large Language Model <https://api-docs.cognite.com/20230101/tag/Document-AI#operation/document_questioning_ai_tools_documents_ask_post>`_.
 
         Note:
             Currently only supports summarizing a single document at a time, but
@@ -85,7 +85,7 @@ class SyncAIDocumentsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> Answer:
         """
-        `Ask a question about one or more documents using a Large Language Model <https://api-docs.cognite.com/20230101/tag/Document-AI/operation/document_questioning_ai_tools_documents_ask_post>`_.
+        `Ask a question about one or more documents using a Large Language Model <https://api-docs.cognite.com/20230101/tag/Document-AI#operation/document_questioning_ai_tools_documents_ask_post>`_.
 
         Supports up to 100 documents at a time.
 

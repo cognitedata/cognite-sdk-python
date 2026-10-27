@@ -166,7 +166,7 @@ class SyncAssetsAPI(SyncAPIClient):
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
         """
-        `Retrieve a single asset by id <https://api-docs.cognite.com/20230101/tag/Assets/operation/getAsset>`_.
+        `Retrieve a single asset by id <https://api-docs.cognite.com/20230101/tag/Assets#operation/getAsset>`_.
 
         Args:
             id (int | None): ID
@@ -197,7 +197,7 @@ class SyncAssetsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> AssetList:
         """
-        `Retrieve multiple assets by id <https://api-docs.cognite.com/20230101/tag/Assets/operation/byIdsAssets>`_.
+        `Retrieve multiple assets by id <https://api-docs.cognite.com/20230101/tag/Assets#operation/byIdsAssets>`_.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -235,7 +235,7 @@ class SyncAssetsAPI(SyncAPIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Count of assets matching the specified filters <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
+        `Count of assets matching the specified filters <https://api-docs.cognite.com/20230101/tag/Assets#operation/aggregateAssets>`_.
 
         Args:
             property (AssetPropertyLike | None): If specified, get an approximate number of asset with a specific property (property is not null) and matching the filters.
@@ -275,7 +275,7 @@ class SyncAssetsAPI(SyncAPIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Find approximate property count for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
+        `Find approximate property count for assets <https://api-docs.cognite.com/20230101/tag/Assets#operation/aggregateAssets>`_.
 
         Args:
             property (AssetPropertyLike): The property to count the cardinality of.
@@ -318,7 +318,7 @@ class SyncAssetsAPI(SyncAPIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Find approximate paths count for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
+        `Find approximate paths count for assets <https://api-docs.cognite.com/20230101/tag/Assets#operation/aggregateAssets>`_.
 
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -353,7 +353,7 @@ class SyncAssetsAPI(SyncAPIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """
-        `Get unique properties with counts for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
+        `Get unique properties with counts for assets <https://api-docs.cognite.com/20230101/tag/Assets#operation/aggregateAssets>`_.
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner.
@@ -425,7 +425,7 @@ class SyncAssetsAPI(SyncAPIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """
-        `Get unique paths with counts for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
+        `Get unique paths with counts for assets <https://api-docs.cognite.com/20230101/tag/Assets#operation/aggregateAssets>`_.
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner.
@@ -464,7 +464,7 @@ class SyncAssetsAPI(SyncAPIClient):
 
     def create(self, asset: Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]) -> Asset | AssetList:
         """
-        `Create one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/createAssets>`_.
+        `Create one or more assets <https://api-docs.cognite.com/20230101/tag/Assets#operation/createAssets>`_.
 
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
         When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.
@@ -632,7 +632,7 @@ class SyncAssetsAPI(SyncAPIClient):
         ignore_unknown_ids: bool = False,
     ) -> None:
         """
-        `Delete one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/deleteAssets>`_.
+        `Delete one or more assets <https://api-docs.cognite.com/20230101/tag/Assets#operation/deleteAssets>`_.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -675,7 +675,7 @@ class SyncAssetsAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Asset | AssetList:
         """
-        `Update one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/updateAssets>`_.
+        `Update one or more assets <https://api-docs.cognite.com/20230101/tag/Assets#operation/updateAssets>`_.
 
         Labels can be added, removed or replaced (set). Note that set operation deletes all the existing labels and adds the new specified labels.
 
@@ -782,7 +782,7 @@ class SyncAssetsAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """
-        `Search for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/searchAssets>`_.
+        `Search for assets <https://api-docs.cognite.com/20230101/tag/Assets#operation/searchAssets>`_.
 
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
@@ -870,7 +870,7 @@ class SyncAssetsAPI(SyncAPIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> AssetList:
         """
-        `List assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/listAssets>`_.
+        `List assets <https://api-docs.cognite.com/20230101/tag/Assets#operation/listAssets>`_.
 
         Args:
             name (str | None): Name of asset. Often referred to as tag.

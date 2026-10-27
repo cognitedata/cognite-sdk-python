@@ -53,7 +53,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
 
     def create(self, subscription: DataPointSubscriptionWrite) -> DatapointSubscription:
         """
-        `Create a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/postSubscriptions>`_.
+        `Create a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions#operation/postSubscriptions>`_.
 
         Create a subscription that can be used to listen for changes in data points for a set of time series.
 
@@ -118,7 +118,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
 
     def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """
-        `Delete subscription(s) <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/deleteSubscriptions>`_.
+        `Delete subscription(s) <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions#operation/deleteSubscriptions>`_.
 
         This operation cannot be undone.
 
@@ -143,7 +143,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
 
     def retrieve(self, external_id: str) -> DatapointSubscription | None:
         """
-        `Retrieve one subscription by external ID <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/getSubscriptionsByIds>`_.
+        `Retrieve one subscription by external ID <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions#operation/getSubscriptionsByIds>`_.
 
         Args:
             external_id (str): External ID of the subscription to retrieve.
@@ -164,7 +164,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
 
     def list_member_time_series(self, external_id: str, limit: int | None = DEFAULT_LIMIT_READ) -> TimeSeriesIDList:
         """
-        `List time series in a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/listSubscriptionMembers>`_.
+        `List time series in a subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions#operation/listSubscriptionMembers>`_.
 
         Retrieve a list of time series (IDs) that the subscription is currently retrieving updates from
 
@@ -196,7 +196,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> DatapointSubscription:
         """
-        `Update a subscriptions <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/updateSubscriptions>`_.
+        `Update a subscriptions <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions#operation/updateSubscriptions>`_.
 
         Update a subscription. Note that Fields that are not included in the request are not changed.
         Furthermore, the subscription partition cannot be changed.
@@ -243,7 +243,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
         treat_uncertain_as_bad: bool = True,
     ) -> Iterator[DatapointSubscriptionBatch]:
         """
-        `Iterate over data from a given subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/listSubscriptionData>`_.
+        `Iterate over data from a given subscription <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions#operation/listSubscriptionData>`_.
 
         Data can be ingested datapoints and time ranges where data is deleted. This endpoint will also return changes to
         the subscription itself, that is, if time series are added or removed from the subscription.
@@ -324,7 +324,7 @@ class SyncDatapointsSubscriptionAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> DatapointSubscriptionList:
         """
-        `List data point subscriptions <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions/operation/listSubscriptions>`_.
+        `List data point subscriptions <https://api-docs.cognite.com/20230101/tag/Data-point-subscriptions#operation/listSubscriptions>`_.
 
         Args:
             limit (int | None): Maximum number of subscriptions to return. Defaults to 25. Set to -1, float("inf") or None to return all items.

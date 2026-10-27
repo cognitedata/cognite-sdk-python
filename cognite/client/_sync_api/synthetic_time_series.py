@@ -72,7 +72,7 @@ class SyncSyntheticDatapointsAPI(SyncAPIClient):
         timezone: str | datetime.timezone | ZoneInfo | None = None,
     ) -> SyntheticDatapoints | SyntheticDatapointsList:
         """
-        `Calculate the result of a function on time series <https://api-docs.cognite.com/20230101/tag/Synthetic-Time-Series/operation/querySyntheticTimeseries>`_.
+        `Calculate the result of a function on time series <https://api-docs.cognite.com/20230101/tag/Synthetic-Time-Series#operation/querySyntheticTimeseries>`_.
 
         Info:
             You can read the guide to synthetic time series in our `documentation <https://docs.cognite.com/api-reference/concepts/20230101/synthetic-time-series>`_.

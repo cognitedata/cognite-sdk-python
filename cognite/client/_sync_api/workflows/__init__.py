@@ -62,7 +62,7 @@ class SyncWorkflowAPI(SyncAPIClient):
         self, workflow: WorkflowUpsert | Sequence[WorkflowUpsert], mode: Literal["replace"] = "replace"
     ) -> Workflow | WorkflowList:
         """
-        `Create one or more workflow(s) <https://api-docs.cognite.com/20230101/tag/Workflows/operation/CreateOrUpdateWorkflow>`_.
+        `Create one or more workflow(s) <https://api-docs.cognite.com/20230101/tag/Workflows#operation/CreateOrUpdateWorkflow>`_.
 
         Note this is an upsert endpoint, so workflows that already exist will be updated, and new ones will be created.
 
@@ -101,7 +101,7 @@ class SyncWorkflowAPI(SyncAPIClient):
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> Workflow | WorkflowList | None:
         """
-        `Retrieve one or more workflows <https://api-docs.cognite.com/20230101/tag/Workflows/operation/fetchWorkflowDetails>`_.
+        `Retrieve one or more workflows <https://api-docs.cognite.com/20230101/tag/Workflows#operation/fetchWorkflowDetails>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): Identifier (or sequence of identifiers) for a Workflow. Must be unique.
@@ -129,7 +129,7 @@ class SyncWorkflowAPI(SyncAPIClient):
 
     def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """
-        `Delete one or more workflows with versions <https://api-docs.cognite.com/20230101/tag/Workflows/operation/DeleteWorkflows>`_.
+        `Delete one or more workflows with versions <https://api-docs.cognite.com/20230101/tag/Workflows#operation/DeleteWorkflows>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): External id or list of external ids to delete.
@@ -150,7 +150,7 @@ class SyncWorkflowAPI(SyncAPIClient):
 
     def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> WorkflowList:
         """
-        `List workflows in the project <https://api-docs.cognite.com/20230101/tag/Workflows/operation/FetchAllWorkflows>`_.
+        `List workflows in the project <https://api-docs.cognite.com/20230101/tag/Workflows#operation/FetchAllWorkflows>`_.
 
         Args:
             limit (int | None): Maximum number of results to return. Defaults to 25. Set to -1, float("inf") or None

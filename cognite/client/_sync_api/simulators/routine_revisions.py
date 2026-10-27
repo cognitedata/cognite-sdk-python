@@ -127,7 +127,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         self, *, ids: int | Sequence[int] | None = None, external_ids: str | SequenceNotStr[str] | None = None
     ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionList | None:
         """
-        `Retrieve simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
+        `Retrieve simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines#operation/retrieve_simulator_routine_revisions_simulators_routines_revisions_byids_post>`_
 
         Retrieve simulator routine revisions by ID or External Id.
 
@@ -164,7 +164,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         self, items: SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite]
     ) -> SimulatorRoutineRevision | SimulatorRoutineRevisionList:
         """
-        `Create simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/create_simulator_routine_revision_simulators_routines_revisions_post>`_
+        `Create simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines#operation/create_simulator_routine_revision_simulators_routines_revisions_post>`_
 
         Args:
             items (SimulatorRoutineRevisionWrite | Sequence[SimulatorRoutineRevisionWrite]): Simulator routine revisions to create.
@@ -292,7 +292,7 @@ class SyncSimulatorRoutineRevisionsAPI(SyncAPIClient):
         sort: PropertySort | None = None,
     ) -> SimulatorRoutineRevisionList:
         """
-        `Filter simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines/operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
+        `Filter simulator routine revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Routines#operation/filter_simulator_routine_revisions_simulators_routines_revisions_list_post>`_
 
         Retrieves a list of simulator routine revisions that match the given criteria.
 

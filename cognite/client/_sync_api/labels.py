@@ -96,7 +96,7 @@ class SyncLabelsAPI(SyncAPIClient):
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> LabelDefinition | LabelDefinitionList | None:
         """
-        `Retrieve one or more label definitions by external id <https://api-docs.cognite.com/20230101/tag/Labels/operation/byIdsLabels>`_.
+        `Retrieve one or more label definitions by external id <https://api-docs.cognite.com/20230101/tag/Labels#operation/byIdsLabels>`_.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids
@@ -130,7 +130,7 @@ class SyncLabelsAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> LabelDefinitionList:
         """
-        `List Labels <https://api-docs.cognite.com/20230101/tag/Labels/operation/listLabels>`_.
+        `List Labels <https://api-docs.cognite.com/20230101/tag/Labels#operation/listLabels>`_.
 
         Args:
             name (str | None): returns the label definitions matching that name
@@ -181,7 +181,7 @@ class SyncLabelsAPI(SyncAPIClient):
         self, label: LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]
     ) -> LabelDefinition | LabelDefinitionList:
         """
-        `Create one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/createLabelDefinitions>`_.
+        `Create one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels#operation/createLabelDefinitions>`_.
 
         Args:
             label (LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]): The label definition(s) to create.
@@ -212,7 +212,7 @@ class SyncLabelsAPI(SyncAPIClient):
 
     def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:
         """
-        `Delete one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/deleteLabels>`_.
+        `Delete one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels#operation/deleteLabels>`_.
 
         Args:
             external_id (str | SequenceNotStr[str] | None): One or more label external ids

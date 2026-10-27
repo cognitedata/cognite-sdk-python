@@ -40,7 +40,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
         last_updated_time: TimestampRange | None = None,
     ) -> SimulatorModelRevisionList:
         """
-        `Filter simulator model revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
+        `Filter simulator model revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Models#operation/filter_simulator_model_revisions_simulators_models_revisions_list_post>`_
 
         Retrieves a list of simulator model revisions that match the given criteria.
 
@@ -101,7 +101,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
         self, *, ids: int | Sequence[int] | None = None, external_ids: str | SequenceNotStr[str] | None = None
     ) -> SimulatorModelRevision | SimulatorModelRevisionList | None:
         """
-        `Retrieve simulator model revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
+        `Retrieve simulator model revisions <https://api-docs.cognite.com/20230101/tag/Simulator-Models#operation/retrieve_simulator_model_revisions_simulators_models_revisions_byids_post>`_
 
         Retrieve one or more simulator model revisions by ID(s) or external ID(s).
 
@@ -213,7 +213,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
         self, items: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite], delete_oldest: bool = False
     ) -> SimulatorModelRevision | SimulatorModelRevisionList:
         """
-        `Create simulator model revisions <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
+        `Create simulator model revisions <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models#operation/create_simulator_model_revision_simulators_models_revisions_post>`_
 
         Args:
             items (SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]): The model revision(s) to create.
@@ -264,7 +264,7 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
 
     def retrieve_data(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
         """
-        `Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models/operation/retrieve_simulator_model_revision_data>`_
+        `Filter simulator model revision data <https://api-docs.cognite.com/20230101-alpha/tag/Simulator-Models#operation/retrieve_simulator_model_revision_data>`_
 
         Retrieves a list of simulator model revisions data that match the given criteria.
 

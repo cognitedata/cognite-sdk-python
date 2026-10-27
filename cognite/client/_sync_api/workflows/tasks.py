@@ -27,7 +27,7 @@ class SyncWorkflowTaskAPI(SyncAPIClient):
         output: dict | None = None,
     ) -> WorkflowTaskExecution:
         """
-        `Update status of async task <https://api-docs.cognite.com/20230101/tag/Tasks/operation/UpdateTaskStatus>`_.
+        `Update status of async task <https://api-docs.cognite.com/20230101/tag/Tasks#operation/UpdateTaskStatus>`_.
 
         For tasks that has been marked with 'is_async = True', the status must be updated by calling this endpoint with either 'completed', 'failed' or 'failed_with_terminal_error'.
 

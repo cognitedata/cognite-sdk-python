@@ -25,7 +25,7 @@ class SyncTransformationSchemaAPI(SyncAPIClient):
         self, destination: TransformationDestination, conflict_mode: str | None = None
     ) -> TransformationSchemaColumnList:
         """
-        `Get expected schema for a transformation destination <https://api-docs.cognite.com/20230101/tag/Schema/operation/getTransformationSchema>`_.
+        `Get expected schema for a transformation destination <https://api-docs.cognite.com/20230101/tag/Schema#operation/getTransformationSchema>`_.
 
         Args:
             destination (TransformationDestination): destination for which the schema is requested.

@@ -23,7 +23,7 @@ class SyncDocumentPreviewAPI(SyncAPIClient):
 
     def download_page_as_png_bytes(self, id: int, page_number: int = 1) -> bytes:
         """
-        `Downloads an image preview for a specific page of the specified document <https://api-docs.cognite.com/20230101/tag/Document-preview/operation/documentsPreviewImagePage>`_.
+        `Downloads an image preview for a specific page of the specified document <https://api-docs.cognite.com/20230101/tag/Document-preview#operation/documentsPreviewImagePage>`_.
 
         Args:
             id (int): The server-generated ID for the document you want to retrieve the preview of.
@@ -57,7 +57,7 @@ class SyncDocumentPreviewAPI(SyncAPIClient):
         self, path: Path | str | IO, id: int, page_number: int = 1, overwrite: bool = False
     ) -> None:
         """
-        `Downloads an image preview for a specific page of the specified document <https://api-docs.cognite.com/20230101/tag/Document-preview/operation/documentsPreviewImagePage>`_.
+        `Downloads an image preview for a specific page of the specified document <https://api-docs.cognite.com/20230101/tag/Document-preview#operation/documentsPreviewImagePage>`_.
 
         Args:
             path (Path | str | IO): The path to save the png preview of the document. If the path is a directory, the file name will be '[id]_page[page_number].png'.
@@ -82,7 +82,7 @@ class SyncDocumentPreviewAPI(SyncAPIClient):
 
     def download_document_as_pdf_bytes(self, id: int) -> bytes:
         """
-        `Downloads a pdf preview of the specified document <https://api-docs.cognite.com/20230101/tag/Document-preview/operation/documentsPreviewPdf>`_.
+        `Downloads a pdf preview of the specified document <https://api-docs.cognite.com/20230101/tag/Document-preview#operation/documentsPreviewPdf>`_.
 
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
@@ -105,7 +105,7 @@ class SyncDocumentPreviewAPI(SyncAPIClient):
 
     def download_document_as_pdf(self, path: Path | str | IO, id: int, overwrite: bool = False) -> None:
         """
-        `Downloads a pdf preview of the specified document <https://api-docs.cognite.com/20230101/tag/Document-preview/operation/documentsPreviewPdf>`_.
+        `Downloads a pdf preview of the specified document <https://api-docs.cognite.com/20230101/tag/Document-preview#operation/documentsPreviewPdf>`_.
 
         Previews will be rendered if necessary during the request. Be prepared for the request to take a few seconds to complete.
 
@@ -129,7 +129,7 @@ class SyncDocumentPreviewAPI(SyncAPIClient):
 
     def retrieve_pdf_link(self, id: int) -> TemporaryLink:
         """
-        `Retrieve a Temporary link to download pdf preview <https://api-docs.cognite.com/20230101/tag/Document-preview/operation/documentsPreviewPdfTemporaryLink>`_.
+        `Retrieve a Temporary link to download pdf preview <https://api-docs.cognite.com/20230101/tag/Document-preview#operation/documentsPreviewPdfTemporaryLink>`_.
 
         Args:
             id (int): The server-generated ID for the document you want to retrieve the preview of.

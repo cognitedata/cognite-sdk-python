@@ -32,7 +32,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
 
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> EntityMatchingModel | None:
         """
-        `Retrieve model <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingRetrieve>`_.
+        `Retrieve model <https://api-docs.cognite.com/20230101/tag/Entity-matching#operation/entityMatchingRetrieve>`_.
 
         Args:
             id (int | None): id of the model to retrieve.
@@ -53,7 +53,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         self, ids: Sequence[int] | None = None, external_ids: SequenceNotStr[str] | None = None
     ) -> EntityMatchingModelList:
         """
-        `Retrieve models <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingRetrieve>`_.
+        `Retrieve models <https://api-docs.cognite.com/20230101/tag/Entity-matching#operation/entityMatchingRetrieve>`_.
 
         Args:
             ids (Sequence[int] | None): ids of the model to retrieve.
@@ -78,7 +78,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> EntityMatchingModelList | EntityMatchingModel:
         """
-        `Update model <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingUpdate>`_.
+        `Update model <https://api-docs.cognite.com/20230101/tag/Entity-matching#operation/entityMatchingUpdate>`_.
 
         Args:
             item (EntityMatchingModel | EntityMatchingModelUpdate | Sequence[EntityMatchingModel | EntityMatchingModelUpdate]): Model(s) to update
@@ -106,7 +106,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> EntityMatchingModelList:
         """
-        `List models <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingModels>`_.
+        `List models <https://api-docs.cognite.com/20230101/tag/Entity-matching#operation/entityMatchingModels>`_.
 
         Args:
             name (str | None): Optional user-defined name of model.
@@ -149,9 +149,9 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         self, id: int | Sequence[int] | None = None, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
         """
-        `Delete models <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingDelete>`_.
+        `Delete models <https://api-docs.cognite.com/20230101/tag/Entity-matching#operation/entityMatchingDelete>`_.
 
-        https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingDelete
+        https://api-docs.cognite.com/20230101/tag/Entity-matching#operation/entityMatchingDelete
 
 
         Args:
@@ -240,7 +240,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         external_id: str | None = None,
     ) -> EntityMatchingPredictionResult:
         """
-        `Predict entity matching <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingPredict>`_.
+        `Predict entity matching <https://api-docs.cognite.com/20230101/tag/Entity-matching#operation/entityMatchingPredict>`_.
 
         Warning:
             Blocks and waits for the model to be ready if it has been recently created.
@@ -289,7 +289,7 @@ class SyncEntityMatchingAPI(SyncAPIClient):
         external_id: str | None = None,
     ) -> EntityMatchingModel:
         """
-        `Re-fits an entity matching model, using the combination of the old and new true matches <https://api-docs.cognite.com/20230101/tag/Entity-matching/operation/entityMatchingReFit>`_.
+        `Re-fits an entity matching model, using the combination of the old and new true matches <https://api-docs.cognite.com/20230101/tag/Entity-matching#operation/entityMatchingReFit>`_.
 
         Note:
             All users on this CDF subscription with assets read-all and entitymatching read-all and write-all

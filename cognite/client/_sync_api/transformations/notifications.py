@@ -95,7 +95,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
         | Sequence[TransformationNotificationWrite],
     ) -> TransformationNotification | TransformationNotificationList:
         """
-        `Subscribe for notifications on the transformation errors <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications/operation/createTransformationNotifications>`_.
+        `Subscribe for notifications on the transformation errors <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications#operation/createTransformationNotifications>`_.
 
         Args:
             notification (TransformationNotification | TransformationNotificationWrite | Sequence[TransformationNotification] | Sequence[TransformationNotificationWrite]): Notification or list of notifications to create.
@@ -124,7 +124,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TransformationNotificationList:
         """
-        `List notification subscriptions <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications/operation/getTransformationNotifications>`_.
+        `List notification subscriptions <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications#operation/getTransformationNotifications>`_.
 
         Args:
             transformation_id (int | None): Filter by transformation internal numeric ID.
@@ -162,7 +162,7 @@ class SyncTransformationNotificationsAPI(SyncAPIClient):
 
     def delete(self, id: int | Sequence[int] | None = None) -> None:
         """
-        `Deletes the specified notification subscriptions on the transformation <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications/operation/deleteTransformationNotifications>`_.
+        `Deletes the specified notification subscriptions on the transformation <https://api-docs.cognite.com/20230101/tag/Transformation-Notifications#operation/deleteTransformationNotifications>`_.
 
         Does nothing when the subscriptions already don't exist.
 

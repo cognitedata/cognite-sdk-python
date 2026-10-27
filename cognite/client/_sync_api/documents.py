@@ -80,7 +80,7 @@ class SyncDocumentsAPI(SyncAPIClient):
 
     def aggregate_count(self, query: str | None = None, filter: Filter | dict[str, Any] | None = None) -> int:
         """
-        `Count of documents matching the specified filters and search <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_.
+        `Count of documents matching the specified filters and search <https://api-docs.cognite.com/20230101/tag/Documents#operation/documentsAggregate>`_.
 
         Args:
             query (str | None): The free text search query, for details see the documentation referenced above.
@@ -125,7 +125,7 @@ class SyncDocumentsAPI(SyncAPIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Find approximate property count for documents <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_.
+        `Find approximate property count for documents <https://api-docs.cognite.com/20230101/tag/Documents#operation/documentsAggregate>`_.
 
         Args:
             property (DocumentProperty | SourceFileProperty | list[str] | str): The property to count the cardinality of.
@@ -179,7 +179,7 @@ class SyncDocumentsAPI(SyncAPIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> int:
         """
-        `Find approximate paths count for documents <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_.
+        `Find approximate paths count for documents <https://api-docs.cognite.com/20230101/tag/Documents#operation/documentsAggregate>`_.
 
         Args:
             path (SourceFileProperty | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["sourceFile", "metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -214,7 +214,7 @@ class SyncDocumentsAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
         """
-        `Get unique properties with counts for documents <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_.
+        `Get unique properties with counts for documents <https://api-docs.cognite.com/20230101/tag/Documents#operation/documentsAggregate>`_.
 
         Args:
             property (DocumentProperty | SourceFileProperty | list[str] | str): The property to group by.
@@ -273,7 +273,7 @@ class SyncDocumentsAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> UniqueResultList:
         """
-        `Get unique paths with counts for documents <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsAggregate>`_.
+        `Get unique paths with counts for documents <https://api-docs.cognite.com/20230101/tag/Documents#operation/documentsAggregate>`_.
 
         Args:
             path (DocumentProperty | SourceFileProperty | list[str] | str): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -305,7 +305,7 @@ class SyncDocumentsAPI(SyncAPIClient):
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> bytes:
         """
-        `Retrieve document content <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsContentPost>`_.
+        `Retrieve document content <https://api-docs.cognite.com/20230101/tag/Documents#operation/documentsContentPost>`_.
 
         Returns extracted textual information for the given document.
 
@@ -349,7 +349,7 @@ class SyncDocumentsAPI(SyncAPIClient):
         self, buffer: BinaryIO, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> None:
         """
-        `Retrieve document content into buffer <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsContentPost>`_.
+        `Retrieve document content into buffer <https://api-docs.cognite.com/20230101/tag/Documents#operation/documentsContentPost>`_.
 
         Returns extracted textual information for the given document.
 
@@ -415,7 +415,7 @@ class SyncDocumentsAPI(SyncAPIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> DocumentList | DocumentHighlightList:
         """
-        `Search documents <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsSearch>`_.
+        `Search documents <https://api-docs.cognite.com/20230101/tag/Documents#operation/documentsSearch>`_.
 
         This endpoint lets you search for documents by using advanced filters and free text queries.
         Free text queries are matched against the documents' filenames and contents. For more information, see
@@ -474,7 +474,7 @@ class SyncDocumentsAPI(SyncAPIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> DocumentList:
         """
-        `List documents <https://api-docs.cognite.com/20230101/tag/Documents/operation/documentsList>`_.
+        `List documents <https://api-docs.cognite.com/20230101/tag/Documents#operation/documentsList>`_.
 
         You can use filters to narrow down the list. Unlike the search method, list does not restrict the number
         of documents to return, meaning that setting the limit to -1 will return all the documents in your

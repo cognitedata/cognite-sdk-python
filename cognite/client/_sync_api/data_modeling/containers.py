@@ -90,7 +90,7 @@ class SyncContainersAPI(SyncAPIClient):
 
     def retrieve(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> Container | ContainerList | None:
         """
-        `Retrieve one or more container by id(s) <https://api-docs.cognite.com/20230101/tag/Containers/operation/byExternalIdsContainers>`_.
+        `Retrieve one or more container by id(s) <https://api-docs.cognite.com/20230101/tag/Containers#operation/byExternalIdsContainers>`_.
 
         Args:
             ids (ContainerIdentifier | Sequence[ContainerIdentifier]): Identifier for container(s).
@@ -116,7 +116,7 @@ class SyncContainersAPI(SyncAPIClient):
 
     def delete(self, ids: ContainerIdentifier | Sequence[ContainerIdentifier]) -> list[ContainerId]:
         """
-        `Delete one or more containers <https://api-docs.cognite.com/20230101/tag/Containers/operation/deleteContainers>`_.
+        `Delete one or more containers <https://api-docs.cognite.com/20230101/tag/Containers#operation/deleteContainers>`_.
 
         Args:
             ids (ContainerIdentifier | Sequence[ContainerIdentifier]): The container identifier(s).
@@ -135,7 +135,7 @@ class SyncContainersAPI(SyncAPIClient):
 
     def delete_constraints(self, ids: Sequence[ConstraintIdentifier]) -> list[ConstraintIdentifier]:
         """
-        `Delete one or more constraints <https://api-docs.cognite.com/20230101/tag/Containers/operation/deleteContainerConstraints>`_.
+        `Delete one or more constraints <https://api-docs.cognite.com/20230101/tag/Containers#operation/deleteContainerConstraints>`_.
 
         Args:
             ids (Sequence[ConstraintIdentifier]): The constraint identifier(s).
@@ -156,7 +156,7 @@ class SyncContainersAPI(SyncAPIClient):
 
     def delete_indexes(self, ids: Sequence[IndexIdentifier]) -> list[IndexIdentifier]:
         """
-        `Delete one or more indexes <https://api-docs.cognite.com/20230101/tag/Containers/operation/deleteContainerIndexes>`_.
+        `Delete one or more indexes <https://api-docs.cognite.com/20230101/tag/Containers#operation/deleteContainerIndexes>`_.
 
         Args:
             ids (Sequence[IndexIdentifier]): The index identifier(s).
@@ -183,7 +183,7 @@ class SyncContainersAPI(SyncAPIClient):
         used_for: ContainerUsedFor | Sequence[ContainerUsedFor] | None = None,
     ) -> ContainerList:
         """
-        `List containers <https://api-docs.cognite.com/20230101/tag/Containers/operation/listContainers>`_.
+        `List containers <https://api-docs.cognite.com/20230101/tag/Containers#operation/listContainers>`_.
 
         Args:
             space (str | None): The space to query
@@ -237,7 +237,7 @@ class SyncContainersAPI(SyncAPIClient):
 
     def apply(self, container: ContainerApply | Sequence[ContainerApply]) -> Container | ContainerList:
         """
-        `Add or update (upsert) containers <https://api-docs.cognite.com/20230101/tag/Containers/operation/ApplyContainers>`_.
+        `Add or update (upsert) containers <https://api-docs.cognite.com/20230101/tag/Containers#operation/ApplyContainers>`_.
 
         Args:
             container (ContainerApply | Sequence[ContainerApply]): Container(s) to create or update.

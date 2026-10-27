@@ -141,7 +141,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         sort: SimulationRunsSort | None = None,
     ) -> SimulationRunList:
         """
-        `Filter simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
+        `Filter simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs#operation/filter_simulation_runs_simulators_runs_list_post>`_
 
         Retrieves a list of simulation runs that match the given criteria.
 
@@ -210,7 +210,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
     def retrieve(self, ids: int | Sequence[int]) -> SimulationRun | SimulationRunList | None:
         """
-        `Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_by_id>`_
+        `Retrieve simulation runs by ID <https://api-docs.cognite.com/20230101/tag/Simulation-Runs#operation/retrieve_simulation_run_by_id>`_
 
         Args:
             ids (int | Sequence[int]): The ID(s) of the simulation run(s) to retrieve.
@@ -235,7 +235,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
     def create(self, items: SimulationRunWrite | Sequence[SimulationRunWrite]) -> SimulationRun | SimulationRunList:
         """
-        `Create simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/run_simulation_simulators_run_post>`_
+        `Create simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs#operation/run_simulation_simulators_run_post>`_
 
         Args:
             items (SimulationRunWrite | Sequence[SimulationRunWrite]): The simulation run(s) to execute.
@@ -262,7 +262,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
 
     def list_run_data(self, run_id: int) -> SimulationRunDataList:
         """
-        `Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/retrieve_simulation_run_data>`_
+        `Get simulation run data <https://api-docs.cognite.com/20230101/tag/Simulation-Runs#operation/retrieve_simulation_run_data>`_
 
         Retrieve data associated with a simulation run by ID.
 

@@ -38,7 +38,7 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
         sort: PropertySort | None = None,
     ) -> SimulatorModelList:
         """
-        `Filter simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/filter_simulator_models_simulators_models_list_post>`_
+        `Filter simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models#operation/filter_simulator_models_simulators_models_list_post>`_
 
         Retrieves a list of simulator models that match the given criteria.
 
@@ -90,7 +90,7 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
         self, *, ids: int | Sequence[int] | None = None, external_ids: str | SequenceNotStr[str] | None = None
     ) -> SimulatorModel | SimulatorModelList | None:
         """
-        `Retrieve simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/retrieve_simulator_model_simulators_models_byids_post>`_
+        `Retrieve simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models#operation/retrieve_simulator_model_simulators_models_byids_post>`_
 
         Retrieve one or more simulator models by ID(s) or external ID(s).
 
@@ -178,7 +178,7 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
 
     def create(self, items: SimulatorModelWrite | Sequence[SimulatorModelWrite]) -> SimulatorModel | SimulatorModelList:
         """
-        `Create simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/create_simulator_model_simulators_models_post>`_
+        `Create simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models#operation/create_simulator_model_simulators_models_post>`_
 
         Args:
             items (SimulatorModelWrite | Sequence[SimulatorModelWrite]): The model(s) to create.
@@ -216,7 +216,7 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
         self, ids: int | Sequence[int] | None = None, external_ids: str | SequenceNotStr[str] | None = None
     ) -> None:
         """
-        `Delete simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/delete_simulator_model_simulators_models_delete_post>`_
+        `Delete simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models#operation/delete_simulator_model_simulators_models_delete_post>`_
 
         Args:
             ids (int | Sequence[int] | None): id (or sequence of ids) for the model(s) to delete.
@@ -247,7 +247,7 @@ class SyncSimulatorModelsAPI(SyncAPIClient):
         | Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate],
     ) -> SimulatorModel | SimulatorModelList:
         """
-        `Update simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models/operation/update_simulator_model_simulators_models_update_post>`_
+        `Update simulator models <https://api-docs.cognite.com/20230101/tag/Simulator-Models#operation/update_simulator_model_simulators_models_update_post>`_
 
         Args:
             items (SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate | Sequence[SimulatorModel | SimulatorModelWrite | SimulatorModelUpdate]): The model to update.
