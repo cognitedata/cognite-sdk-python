@@ -29,6 +29,8 @@ from cognite.client.data_classes.transformations.common import (
 from cognite.client.data_classes.transformations.externaldata import (  # noqa: F401
     ExternalDataSource,
     ExternalDataSourceList,
+    ExternalDataSourceRotatedKeys,
+    ExternalDataSourceRotateKeys,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
     ExternalDataSourceWriteList,
@@ -39,6 +41,13 @@ from cognite.client.data_classes.transformations.externaldata import (  # noqa: 
     OneLakeLocationDescription,
     OneLakeSettings,
     OneLakeSettingsWrite,
+    SnowflakeCredentials,
+    SnowflakeCredentialsWrite,
+    SnowflakeExternalDataSource,
+    SnowflakeExternalDataSourceWrite,
+    SnowflakeLocationDescription,
+    SnowflakeSettings,
+    SnowflakeSettingsWrite,
 )
 from cognite.client.data_classes.transformations.jobs import TransformationJob, TransformationJobList
 from cognite.client.data_classes.transformations.schedules import TransformationSchedule
@@ -49,6 +58,29 @@ from cognite.client.utils._text import convert_all_keys_to_camel_case, copy_doc_
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
+
+
+def _warn_if_oidc_credentials_set(
+    source_oidc_credentials: OidcCredentials | None,
+    destination_oidc_credentials: OidcCredentials | None,
+) -> None:
+    deprecated = [
+        name
+        for name, value in (
+            ("source_oidc_credentials", source_oidc_credentials),
+            ("destination_oidc_credentials", destination_oidc_credentials),
+        )
+        if value is not None
+    ]
+    if deprecated:
+        replacement = ", ".join(name.replace("oidc_credentials", "nonce") for name in deprecated)
+        # Todo: Remove this warning in the next major version of the SDK.
+        warnings.warn(
+            f"Setting {', '.join(deprecated)} is deprecated. Use {replacement} instead. "
+            f"This will be removed in the next major version of the SDK.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
 
 class SessionDetails:
@@ -246,6 +278,7 @@ class Transformation(WriteableCogniteResourceWithClientRef["TransformationWrite"
         destination_session: SessionDetails | None = None,
         tags: list[str] | None = None,
     ) -> None:
+        _warn_if_oidc_credentials_set(source_oidc_credentials, destination_oidc_credentials)
         self.external_id = external_id
         self.name = name
         self.ignore_null_fields = ignore_null_fields
@@ -458,6 +491,7 @@ class TransformationWrite(WriteableCogniteResource["TransformationWrite"], _Tran
         destination_nonce: NonceCredentials | None = None,
         tags: list[str] | None = None,
     ) -> None:
+        _warn_if_oidc_credentials_set(source_oidc_credentials, destination_oidc_credentials)
         self.external_id = external_id
         self.name = name
         self.ignore_null_fields = ignore_null_fields
@@ -572,10 +606,25 @@ class TransformationUpdate(CogniteUpdate):
 
     @property
     def source_oidc_credentials(self) -> _PrimitiveTransformationUpdate:
+        # Todo: Remove this warning in the next major version of the SDK.
+        warnings.warn(
+            "Setting source_oidc_credentials is deprecated. Use source_nonce instead. "
+            "This will be removed in the next major version of the SDK.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "sourceOidcCredentials")
 
     @property
     def destination_oidc_credentials(self) -> _PrimitiveTransformationUpdate:
+        # Todo: Remove this warning in the next major version of the SDK.
+        warnings.warn(
+            "Setting destination_oidc_credentials is deprecated. Use destination_nonce instead."
+            " This will be removed in the next major version of the SDK.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         return TransformationUpdate._PrimitiveTransformationUpdate(self, "destinationOidcCredentials")
 
     @property

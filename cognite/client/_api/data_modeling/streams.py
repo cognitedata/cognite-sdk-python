@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, overload
 
+from cognite.client._api.data_modeling.stream_templates import StreamTemplatesAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.streams import (
     Stream,
@@ -23,6 +24,7 @@ class StreamsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self.templates = StreamTemplatesAPI(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1
         self._warning = FeaturePreviewWarning(

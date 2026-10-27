@@ -11,6 +11,7 @@ from cognite.client.data_classes.data_modeling.streams import (
     Stream,
     StreamList,
     StreamTemplate,
+    StreamTemplateInfoList,
     StreamWrite,
     StreamWriteSettings,
 )
@@ -66,6 +67,47 @@ class TestStreamsAPI:
         out = cognite_client.data_modeling.streams.list()
         assert isinstance(out, StreamList)
         assert out[0].external_id == "st1"
+
+    def test_templates_list_parses_items_and_sends_alpha_header(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        streams_base_url: str,
+    ) -> None:
+        response = {
+            "items": [
+                {
+                    "name": "ImmutableTestStream",
+                    "type": "Immutable",
+                    "maxStreams": {"provisioned": 2},
+                    "settings": {
+                        "limits": {
+                            "maxRecordsTotal": {
+                                "type": "fixed",
+                                "name": "Maximum total number of records",
+                                "value": 1000,
+                            },
+                        },
+                        "lifecycle": {
+                            "retainedAfterSoftDelete": {"type": "fixed", "name": "Soft delete", "value": "PT168H"},
+                            "dataDeletedAfter": {"type": "fixed", "name": "Data retention", "value": "infinity"},
+                        },
+                    },
+                }
+            ]
+        }
+        httpx2_mock.add_response(
+            method="GET", url=re.compile(re.escape(streams_base_url + "/templates") + r"(?:\?.+)?$"), json=response
+        )
+        out = cognite_client.data_modeling.streams.templates.list()
+        assert isinstance(out, StreamTemplateInfoList)
+        assert out[0].name == "ImmutableTestStream"
+        assert out[0].max_streams == 2
+        assert out[0].settings.limits["maxRecordsTotal"].value == 1000
+        assert out[0].settings.lifecycle["retainedAfterSoftDelete"].value == "PT168H"
+        assert out.dump() == response["items"]
+        (request,) = httpx2_mock.get_requests()
+        assert request.headers["cdf-version"] == "20230101-alpha"
 
     def test_retrieve_include_statistics_query(
         self,

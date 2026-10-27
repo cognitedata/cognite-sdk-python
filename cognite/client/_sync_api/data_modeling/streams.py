@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from typing import overload
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._sync_api.data_modeling.stream_templates import SyncStreamTemplatesAPI
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.data_modeling.streams import Stream, StreamList, StreamWrite
 from cognite.client.utils._async_helpers import run_sync
@@ -21,6 +22,7 @@ class SyncStreamsAPI(SyncAPIClient):
 
     def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
+        self.templates = SyncStreamTemplatesAPI(async_client)
 
     @overload
     def create(self, items: StreamWrite) -> Stream: ...

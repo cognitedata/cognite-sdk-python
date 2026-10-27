@@ -14,6 +14,18 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.22.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.21.0...v8.22.0) (2026-10-15)
+
+
+### Features
+
+* **agents:** support userSession actions in agent chat ([#2883](https://github.com/cognitedata/cognite-sdk-python/issues/2883)) ([0a86981](https://github.com/cognitedata/cognite-sdk-python/commit/0a8698111ef8ae4885751e220c7669e39aae4ef8))
+
+
+### Bug Fixes
+
+* **PrincipalsAPI:** pick CogIdP auth URL from org prefix, fix sync-client deadlock ([#2894](https://github.com/cognitedata/cognite-sdk-python/issues/2894)) ([33fe33a](https://github.com/cognitedata/cognite-sdk-python/commit/33fe33a9dbb33017fe0556aaa1d1207503faf8a7))
+
 ## [8.21.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.20.0...v8.21.0) (2026-10-13)
 
 

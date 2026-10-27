@@ -19,6 +19,7 @@ from msal import ConfidentialClientApplication, PublicClientApplication, Seriali
 
 from cognite.client.exceptions import CogniteAuthError, CogniteOAuthError
 from cognite.client.utils._auxiliary import at_least_one_is_not_none, exactly_one_is_not_none, load_resource_to_dict
+from cognite.client.utils._text import shorten
 from cognite.client.utils._token_cache import default_token_cache_dir, read_securely, write_securely
 
 _TOKEN_EXPIRY_LEEWAY_SECONDS_DEFAULT = 30  # Do not change without also updating all the docstrings using it
@@ -1007,7 +1008,15 @@ class OAuthClientCredentials(_OAuthCredentialProviderWithTokenRefresh):
         if response.status_code >= 500:
             response.raise_for_status()
 
-        credentials = response.json()
+        try:
+            credentials = response.json()
+        except ValueError as e:  # also catches JSONDecodeError
+            body = shorten(" ".join(response.text.split()), 1000)
+            raise CogniteOAuthError(
+                f"Non-JSON response (HTTP {response.status_code}) from token endpoint {self.__token_url!r}",
+                f"Is the token_url correct? Response body: {body}",
+            ) from e
+
         if "error" in credentials:
             raise CogniteOAuthError(credentials["error"], credentials.get("error_description") or "")
         # Azure gives 'expires_at' directly, but it's not a part of the RFC:

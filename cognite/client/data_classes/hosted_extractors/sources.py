@@ -1061,13 +1061,12 @@ class AuthCertificate(CogniteResource):
 
 
 _SOURCE_WRITE_CLASS_BY_TYPE: dict[str, type[SourceWrite]] = {
-    subclass._type: subclass  # type: ignore[misc, attr-defined]
+    subclass._type: subclass
     for subclass in itertools.chain(SourceWrite.__subclasses__(), _MQTTSourceWrite.__subclasses__())
 }
 
 _SOURCE_CLASS_BY_TYPE: dict[str, type[Source]] = {
-    subclass._type: subclass  # type: ignore[misc, attr-defined]
-    for subclass in itertools.chain(Source.__subclasses__(), _MQTTSource.__subclasses__())
+    subclass._type: subclass for subclass in itertools.chain(Source.__subclasses__(), _MQTTSource.__subclasses__())
 }
 
 _SOURCE_UPDATE_BY_TYPE: dict[str, type[SourceUpdate]] = {
@@ -1076,11 +1075,9 @@ _SOURCE_UPDATE_BY_TYPE: dict[str, type[SourceUpdate]] = {
 }
 
 _AUTHENTICATION_WRITE_CLASS_BY_TYPE: dict[str, type[AuthenticationWrite]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
-    for subclass in AuthenticationWrite.__subclasses__()
+    subclass._type: subclass for subclass in AuthenticationWrite.__subclasses__()
 }
 
 _AUTHENTICATION_CLASS_BY_TYPE: dict[str, type[Authentication]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
-    for subclass in Authentication.__subclasses__()
+    subclass._type: subclass for subclass in Authentication.__subclasses__()
 }

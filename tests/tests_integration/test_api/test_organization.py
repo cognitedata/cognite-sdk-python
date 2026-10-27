@@ -13,13 +13,14 @@ def org_api(async_client_cog_idp: AsyncCogniteClient) -> OrgAPIClient:
 
 
 class TestOrganizationAPI:
-    def test_get_organization(self, org_api: OrgAPIClient) -> None:
-        organization = org_api._organization
+    async def test_get_organization(self, org_api: OrgAPIClient) -> None:
+        organization = await org_api._get_organization()
         assert isinstance(organization, str)
         assert organization != ""
         if org_api._config.project in {"python-sdk-contributor", "python-sdk-test", "python-sdk-test-prod"}:
             assert organization == "cog-python-sdk"
 
     async def test_get_request_org_endpoint(self, org_api: OrgAPIClient) -> None:
+        await org_api._get_organization()
         response = await org_api._get("/principals", semaphore=None)
         assert response.status_code == 200

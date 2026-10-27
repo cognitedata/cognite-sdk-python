@@ -812,6 +812,5 @@ class SimulatorRoutineOutputList(UserList[SimulatorRoutineOutput]):
 
 
 _INPUT_CLASS_BY_TYPE: dict[str, type[SimulatorRoutineInput]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
-    for subclass in itertools.chain(SimulatorRoutineInput.__subclasses__())
+    subclass._type: subclass for subclass in itertools.chain(SimulatorRoutineInput.__subclasses__())
 }

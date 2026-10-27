@@ -7,7 +7,7 @@
   "packageRules": [
     {
       "enabled": false,
-      "matchManagers": ["poetry"]
+      "matchManagers": ["pep621"]
     },
     {
       "enabled": false,

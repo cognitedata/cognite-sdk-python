@@ -7,7 +7,7 @@ import math
 from abc import abstractmethod
 from collections import ChainMap, defaultdict
 from collections.abc import Iterator, MutableSequence, Sequence, Sized
-from dataclasses import InitVar, dataclass, fields
+from dataclasses import InitVar, dataclass, field, fields
 from enum import IntEnum
 from functools import cached_property, partial
 from itertools import zip_longest
@@ -53,8 +53,10 @@ from cognite.client.utils._time import (
     convert_and_isoformat_timestamp,
     convert_timezone_to_str,
     datetime_to_ms,
+    granularity_to_ms,
     ms_to_datetime,
     parse_str_timezone,
+    split_granularity_into_quantity_and_normalized_unit,
     timestamp_to_ms,
 )
 from cognite.client.utils.useful_types import is_sequence_not_str
@@ -554,6 +556,39 @@ def _load_state_only_aggregate_entries(
     return [val if isinstance(val, state_cls) else state_cls._load(val) for val in values]  # type: ignore [arg-type]
 
 
+@dataclass(frozen=True)
+class GapFillOptions:
+    """Options for `gap filling <https://docs.cognite.com/dev/concepts/aggregation/gap_filling>`_ in aggregate datapoints queries.
+
+    Args:
+        limit (str): The maximum gap between raw datapoints to interpolate across. The last datapoint is also extrapolated forward this long. Uses the granularity format, e.g. '30m' or '6h', but not month-based units. Must be greater than or equal to the granularity.
+    """
+
+    limit: str
+    _api_limit: str = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.limit, str):
+            raise TypeError(f"Expected `limit` to be of type `str`, not {type(self.limit)}")
+        try:
+            quantity, unit = split_granularity_into_quantity_and_normalized_unit(self.limit)
+        except ValueError:
+            raise ValueError(
+                f"Invalid `limit` format: `{self.limit}`. Must be on format <quantity><unit>, e.g. 30m, 6h or 1d."
+            ) from None
+        if unit == "mo":
+            raise ValueError("`limit` does not support month-based units (month, quarter or year).")
+        # We accept more formats than the API, e.g. weeks, so we store the normalized limit to send:
+        object.__setattr__(self, "_api_limit", f"{quantity}{unit}")
+
+    @property
+    def limit_ms(self) -> int:
+        return granularity_to_ms(self._api_limit)
+
+    def dump(self) -> dict[str, Any]:
+        return {"limit": self._api_limit}
+
+
 @dataclass
 class DatapointsQuery:
     """Represent a user request for datapoints for a single time series"""
@@ -574,6 +609,7 @@ class DatapointsQuery:
             "include_status": False,
             "ignore_bad_datapoints": True,
             "treat_uncertain_as_bad": True,
+            "fill": None,
         }
     )
     id: InitVar[int | None] = None
@@ -592,6 +628,7 @@ class DatapointsQuery:
     include_status: bool = _NOT_SET  # type: ignore [assignment]
     ignore_bad_datapoints: bool = _NOT_SET  # type: ignore [assignment]
     treat_uncertain_as_bad: bool = _NOT_SET  # type: ignore [assignment]
+    fill: GapFillOptions | None = _NOT_SET  # type: ignore [assignment]
 
     def __post_init__(
         self, id: int | None, external_id: str | None, instance_id: NodeId | tuple[str, str] | None
@@ -696,7 +733,7 @@ class DatapointsQuery:
         return min(self.limit, self.max_query_limit)
 
     def __repr__(self) -> str:
-        return json.dumps(self.dump(), indent=4)
+        return json.dumps(self.dump(), indent=4, default=str)
 
     def dump(self) -> dict[str, Any]:
         # We need to dump only those fields specifically passed by the user:
@@ -710,33 +747,6 @@ class DatapointsQuery:
         from cognite.client._api.datapoint_tasks import get_task_orchestrator
 
         return get_task_orchestrator(self)
-
-    def to_payload_item(self) -> dict[str, Any]:
-        payload = {
-            **self.identifier.as_dict(),
-            "start": self.start,
-            "end": self.end,
-            "limit": self.capped_limit,
-        }
-        if self.target_unit is not None:
-            payload["targetUnit"] = self.target_unit
-        elif self.target_unit_system is not None:
-            payload["targetUnitSystem"] = self.target_unit_system
-
-        if self.ignore_bad_datapoints is False:
-            payload["ignoreBadDataPoints"] = self.ignore_bad_datapoints
-        if self.treat_uncertain_as_bad is False:
-            payload["treatUncertainAsBad"] = self.treat_uncertain_as_bad
-        if self.timezone:
-            payload["timeZone"] = self.timezone
-        if self.is_raw_query:
-            if self.include_outside_points is True:
-                payload["includeOutsidePoints"] = self.include_outside_points
-            if self.include_status is True:
-                payload["includeStatus"] = self.include_status
-        else:
-            payload.update(aggregates=self.aggs_camel_case, granularity=self.granularity)
-        return payload
 
 
 @dataclass(frozen=True)

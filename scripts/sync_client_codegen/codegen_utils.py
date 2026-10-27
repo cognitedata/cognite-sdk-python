@@ -217,7 +217,7 @@ def run_ruff(file_paths: list[Path], verbose: bool = False) -> None:
     if not file_paths:
         return
     # We exit nonzero if ruff fixes anything, so we run with check=False to not raise:
-    base = f"poetry run pre-commit run ruff-{{}} --files {shlex.join(map(str, file_paths))}"
+    base = f"uv run pre-commit run ruff-{{}} --files {shlex.join(map(str, file_paths))}"
     command = shlex.split(base.format("check"))
     if verbose:
         print("Now running command\n", shlex.join(command))
@@ -253,8 +253,8 @@ def run_ruff_direct(file_path: Path) -> None:
 
     This is needed for temp files outside the repo, where pre-commit hooks don't apply.
     """
-    subprocess.run(["poetry", "run", "ruff", "check", "--fix", str(file_path)], check=False, capture_output=True)
-    subprocess.run(["poetry", "run", "ruff", "format", str(file_path)], check=False, capture_output=True)
+    subprocess.run(["uv", "run", "ruff", "check", "--fix", str(file_path)], check=False, capture_output=True)
+    subprocess.run(["uv", "run", "ruff", "format", str(file_path)], check=False, capture_output=True)
 
 
 def get_dot_path_lookup(async_client: AsyncCogniteClient) -> tuple[dict[str, str], dict[str, str]]:

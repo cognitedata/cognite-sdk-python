@@ -12,3 +12,14 @@ jobs:
       - uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825 # v5
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Reject Jira ticket IDs in PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if printf '%s\n' "$PR_TITLE" | grep -qE '\b[A-Z]{2,}-[0-9]+\b'; then
+            echo "❌ PR title contains a Jira ticket ID: \"$PR_TITLE\""
+            echo "Describe the change so that it's suitable for the release notes on https://github.com/cognitedata/cognite-sdk-python/releases"
+            echo "E.g.: feat(containers): add used_for filter parameter to containers"
+            exit 1
+          fi

@@ -36,6 +36,7 @@ from cognite.client.data_classes import (
     DatapointsArrayList,
     DatapointsList,
     DatapointsQuery,
+    GapFillOptions,
     LatestDatapoint,
     LatestDatapointList,
     LatestDatapointQuery,
@@ -3348,6 +3349,82 @@ class TestRetrieveAggregateDatapointsAPI:
                                 min_or_max.status_code
                             with pytest.raises(AttributeError):
                                 min_or_max.status_symbol
+
+    @pytest.mark.allow_no_semaphore(
+        "Test inserts datapoints; DatapointsAPI._insert_datapoints holds the semaphore via outer "
+        "'async with' and passes None to _post to avoid double-acquiring."
+    )
+    # Two queries with a concurrency of 1 use the chunking fetcher, with 2 the eager fetcher:
+    @pytest.mark.parametrize(
+        "concurrency_limit, mock_out_eager_or_chunk", [(1, "EagerDpsFetcher"), (2, "ChunkingDpsFetcher")]
+    )
+    def test_retrieve_with_fill(
+        self, concurrency_limit: int, mock_out_eager_or_chunk: str, cognite_client: CogniteClient
+    ) -> None:
+        ts = cognite_client.time_series.create(TimeSeriesWrite(external_id=f"gap-filling-{random_string(10)}"))
+        try:
+            t0, hour = ts_to_ms("2023-01-01"), 3_600_000
+            # A 2h gap (within the limit), followed by a 5h gap (exceeding it):
+            cognite_client.time_series.data.insert(
+                [(t0 + hour, 1.0), (t0 + 3 * hour, 3.0), (t0 + 8 * hour, 8.0)], id=ts.id
+            )
+            with (
+                override_semaphore(concurrency_limit, target="datapoints"),
+                patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
+            ):
+                no_fill, with_fill = cognite_client.time_series.data.retrieve(
+                    id=[DatapointsQuery(id=ts.id), DatapointsQuery(id=ts.id, fill=GapFillOptions(limit="3h"))],
+                    start=t0,
+                    end=t0 + 11 * hour,
+                    aggregates="interpolation",
+                    granularity="1h",
+                )
+            assert no_fill.timestamp == [t0 + hour, t0 + 3 * hour, t0 + 8 * hour]
+            assert no_fill.interpolation == [1.0, 3.0, 8.0]
+            assert with_fill.timestamp == [t0 + h * hour for h in (1, 2, 3, 8, 9, 10)]
+            assert with_fill.interpolation == [1.0, 2.0, 3.0, 8.0, 8.0, 8.0]
+        finally:
+            cognite_client.time_series.delete(id=ts.id)
+
+    def test_object_aggregates_with_status_same_for_eager_and_chunking_fetcher(
+        self, cognite_client: CogniteClient, ts_status_codes: TimeSeriesList
+    ) -> None:
+        # From 7.74.0 (when the object aggregates 'min_datapoint' and 'max_datapoint' were added) to 8.22.0, when
+        # fetching in "chunking mode" with include_status=True, the status codes of these were lost in the first batch
+        # of datapoints: 'includeStatus' was only sent for raw queries in the initial request.
+        mixed_ts, *_ = ts_status_codes
+        kwargs: dict[str, Any] = dict(
+            start=ts_to_ms("2023"),
+            end=ts_to_ms("2025"),
+            aggregates=list(_OBJECT_AGGREGATES_CAMEL),
+            granularity="1mo",
+            include_status=True,
+            treat_uncertain_as_bad=False,
+            limit=2,  # Everything is returned by the initial request (no follow-ups)
+        )
+
+        def get_status_codes(dps: Datapoints) -> list[int]:
+            assert dps.min_datapoint is not None and dps.max_datapoint is not None
+            codes = []
+            for dp in (*dps.min_datapoint, *dps.max_datapoint):
+                # Prev these would not be "-WithStatus":
+                assert isinstance(dp, (MinDatapointWithStatus, MaxDatapointWithStatus))
+                codes.append(dp.status_code)
+            return codes
+
+        # Eager: One time series fits within the semaphore, so it will be used:
+        with override_semaphore(5, target="datapoints"), patch(DATAPOINTS_API.format("ChunkingDpsFetcher")):
+            (eager_dps,) = cognite_client.time_series.data.retrieve(id=[mixed_ts.id], **kwargs)
+
+        expected_codes = [1073741824, 1084489728, 1084489728, 1086062592]
+        assert get_status_codes(eager_dps) == expected_codes
+
+        # Chunking: A semaphore of 1 and two time series (the same) makes us use the chunking fetcher, which builds
+        # its initial request separately from the other fetchers:
+        with override_semaphore(1, target="datapoints"), patch(DATAPOINTS_API.format("EagerDpsFetcher")):
+            dps_lst = cognite_client.time_series.data.retrieve(id=[mixed_ts.id, mixed_ts.id], **kwargs)
+        for dps in dps_lst:
+            assert get_status_codes(dps) == expected_codes
 
 
 class TestRetrieveMixedRawAndAgg:
