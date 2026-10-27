@@ -74,7 +74,7 @@ class DataModelingTimeSeriesAPI(APIClient):
         *,
         source: View | ViewId | tuple[str, str, str] = COGNITE_TIME_SERIES_VIEW_ID,
     ) -> Node | NodeList[Node] | None:
-        """`Retrieve one or more time series by instance ID <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_.
+        """`Retrieve one or more time series by instance ID <https://api-docs.cognite.com/20230101/tag/Instances#operation/byExternalIdsInstances>`_.
 
         Only nodes that are time series (i.e. have data in the CogniteTimeSeries view) will be returned.
         If a single instance ID is requested and it is not found, ``None`` is returned.
@@ -129,7 +129,7 @@ class DataModelingTimeSeriesAPI(APIClient):
         time_series_type: TimeSeriesType | Sequence[TimeSeriesType] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> NodeList[Node]:
-        """`List time series nodes <https://api-docs.cognite.com/20230101/tag/Instances/operation/advancedListInstance>`_.
+        """`List time series nodes <https://api-docs.cognite.com/20230101/tag/Instances#operation/advancedListInstance>`_.
 
         Only time series nodes will be returned, regardless of the source passed.
 

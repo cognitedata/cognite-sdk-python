@@ -32,7 +32,7 @@ class SimulatorLogsAPI(APIClient):
     ) -> SimulatorLogList | None: ...
 
     async def retrieve(self, ids: int | Sequence[int]) -> SimulatorLogList | SimulatorLog | None:
-        """`Retrieve simulator logs <https://api-docs.cognite.com/20230101/tag/Simulator-Logs/operation/retrieve_simulator_logs>`_
+        """`Retrieve simulator logs <https://api-docs.cognite.com/20230101/tag/Simulator-Logs#operation/retrieve_simulator_logs>`_
 
         Simulator logs track what happens during simulation runs, model parsing, and generic connector logic.
         They provide valuable information for monitoring, debugging, and auditing.

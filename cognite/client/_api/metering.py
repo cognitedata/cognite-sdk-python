@@ -71,7 +71,7 @@ class MeteringAPI(APIClient):
         end: int | str | datetime.datetime | None = None,
         number_of_datapoints: int | None = None,
     ) -> MeteringData | MeteringDataList | None:
-        """`Retrieve one or more meters by id <https://api-docs.cognite.com/20230101-alpha/tag/Metering/operation/fetchConsumptionDataById/>`_.
+        """`Retrieve one or more meters by id <https://api-docs.cognite.com/20230101-alpha/tag/Metering#operation/fetchConsumptionDataById/>`_.
 
         Retrieves consumption data by ``meterId``. Pass a single string to get one meter,
         or a list of strings to get multiple meters at once.
@@ -125,7 +125,7 @@ class MeteringAPI(APIClient):
         end: int | str | datetime.datetime | None = None,
         number_of_datapoints: int | None = None,
     ) -> MeteringDataList:
-        """`List all meters <https://api-docs.cognite.com/20230101-alpha/tag/Metering/operation/listConsumptionData/>`_.
+        """`List all meters <https://api-docs.cognite.com/20230101-alpha/tag/Metering#operation/listConsumptionData/>`_.
 
         Lists all available meters for a specific project. Optionally filter by meter ID prefix using a ``Prefix`` filter.
 

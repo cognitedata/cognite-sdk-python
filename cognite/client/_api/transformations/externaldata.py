@@ -61,7 +61,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
             yield item
 
     async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> ExternalDataSourceList:
-        """`List external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/listExternalDataSources>`_.
+        """`List external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources#operation/listExternalDataSources>`_.
 
         Args:
             limit (int | None): Maximum number of data sources to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -105,7 +105,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
     async def create(
         self, data_source: ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]
     ) -> ExternalDataSource | ExternalDataSourceList:
-        """`Create external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/createExternalDataSources>`_.
+        """`Create external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources#operation/createExternalDataSources>`_.
 
         Fails with a 409 if any external ID in the request already exists for the project; no items
         are created in that case. To modify an existing data source, delete it and create a replacement.
@@ -160,7 +160,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
         )
 
     async def delete(self, external_id: str | SequenceNotStr[str]) -> None:
-        """`Delete external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/deleteExternalDataSources>`_.
+        """`Delete external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources#operation/deleteExternalDataSources>`_.
 
         Transformations that still reference a deleted data source fail when they next run.
 
@@ -185,7 +185,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
         )
 
     async def verify_usability(self, external_id: str) -> ExternalDataSourceUsability:
-        """`Verify external data source usability <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/verifyExternalDataSourceUsability>`_.
+        """`Verify external data source usability <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources#operation/verifyExternalDataSourceUsability>`_.
 
         Args:
             external_id (str): External ID of the data source to check.

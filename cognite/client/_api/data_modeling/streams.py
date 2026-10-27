@@ -38,7 +38,7 @@ class StreamsAPI(APIClient):
     async def create(self, items: Sequence[StreamWrite]) -> StreamList: ...
 
     async def create(self, items: StreamWrite | Sequence[StreamWrite]) -> Stream | StreamList:
-        """`Create streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/createStream>`_.
+        """`Create streams <https://api-docs.cognite.com/20230101/tag/Streams#operation/createStream>`_.
 
         Args:
             items (StreamWrite | Sequence[StreamWrite]): One or more streams to create.
@@ -76,7 +76,7 @@ class StreamsAPI(APIClient):
         )
 
     async def list(self) -> StreamList:
-        """`List streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/listStreams>`_.
+        """`List streams <https://api-docs.cognite.com/20230101/tag/Streams#operation/listStreams>`_.
 
         Note:
             There is no paging limit parameter: the endpoint returns all streams in the project
@@ -98,7 +98,7 @@ class StreamsAPI(APIClient):
         return await self._list(method="GET", list_cls=StreamList, resource_cls=Stream)
 
     async def retrieve(self, external_id: str, include_statistics: bool | None = None) -> Stream | None:
-        """`Retrieve a stream <https://api-docs.cognite.com/20230101/tag/Streams/operation/getStream>`_.
+        """`Retrieve a stream <https://api-docs.cognite.com/20230101/tag/Streams#operation/getStream>`_.
 
         Args:
             external_id (str): External ID of the stream to retrieve.
@@ -132,7 +132,7 @@ class StreamsAPI(APIClient):
         )
 
     async def delete(self, external_id: str | SequenceNotStr[str]) -> None:
-        """`Delete streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/deleteStreams>`_.
+        """`Delete streams <https://api-docs.cognite.com/20230101/tag/Streams#operation/deleteStreams>`_.
 
         Note:
             Deletion is a soft delete that retains capacity for an extended period;

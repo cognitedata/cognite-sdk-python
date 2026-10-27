@@ -30,7 +30,7 @@ class DiagramsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
-        # https://api-docs.cognite.com/20230101/tag/Engineering-diagrams/operation/diagramDetect
+        # https://api-docs.cognite.com/20230101/tag/Engineering-diagrams#operation/diagramDetect
         self._DETECT_API_FILE_LIMIT = 50
         self._DETECT_API_STATUS_JOB_LIMIT = 1000
         self._detect_beta_params_warning = FeaturePreviewWarning(
@@ -130,7 +130,7 @@ class DiagramsAPI(APIClient):
         *,
         multiple_jobs: bool = False,
     ) -> DiagramDetectResults | tuple[DetectJobBundle, list[dict[str, Any]]]:
-        """`Detect annotations in engineering diagrams <https://api-docs.cognite.com/20230101/tag/Engineering-diagrams/operation/diagramDetect>`_.
+        """`Detect annotations in engineering diagrams <https://api-docs.cognite.com/20230101/tag/Engineering-diagrams#operation/diagramDetect>`_.
 
         Note:
             All users on this CDF subscription with assets read-all and files read-all capabilities in the project,
@@ -146,7 +146,7 @@ class DiagramsAPI(APIClient):
             file_instance_ids (NodeId | Sequence[NodeId] | None): Files to detect in, specified by instance id.
             file_references (list[FileReference] | FileReference | None): File references (id, external_id or instance_id), and first_page and last_page to specify page ranges per file. Each reference can specify up to 50 pages. Providing a page range will also make the page count of the document a part of the response.
             pattern_mode (bool | None): If True, entities must be provided with a sample field. This enables detecting tags that are similar to the sample, but not necessarily identical. Defaults to None.
-            configuration (DiagramDetectConfig | None): Additional configuration for the detect algorithm. See `DiagramDetectConfig` class documentation and `beta API docs <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams/operation/diagramDetect/#!path=configuration&t=request>`_.
+            configuration (DiagramDetectConfig | None): Additional configuration for the detect algorithm. See `DiagramDetectConfig` class documentation and `beta API docs <https://api-docs.cognite.com/20230101-beta/tag/Engineering-diagrams#operation/diagramDetect/#!path=configuration&t=request>`_.
             multiple_jobs (bool): Enables you to publish multiple jobs. If True the method returns a tuple of DetectJobBundle and list of potentially unposted files. If False it will return a single DiagramDetectResults. Defaults to False.
         Returns:
             DiagramDetectResults | tuple[DetectJobBundle, list[dict[str, Any]]]: Resulting queued job or a bundle of jobs and a list of unposted files. Note that the .result property of the job or job bundle will block waiting for results.

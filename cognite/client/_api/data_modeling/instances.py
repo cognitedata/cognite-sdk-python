@@ -376,7 +376,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> EdgeList[T_Edge] | T_Edge | Edge | None:
-        """`Retrieve one or more edges by id(s) <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_.
+        """`Retrieve one or more edges by id(s) <https://api-docs.cognite.com/20230101/tag/Instances#operation/byExternalIdsInstances>`_.
 
         Note:
             This method should be used for retrieving edges with a custom edge class. You can use it
@@ -494,7 +494,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> NodeList[T_Node] | T_Node | Node | None:
-        """`Retrieve one or more nodes by id(s) <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_.
+        """`Retrieve one or more nodes by id(s) <https://api-docs.cognite.com/20230101/tag/Instances#operation/byExternalIdsInstances>`_.
 
         Note:
             This method should be used for retrieving nodes with a custom node class. You can use it
@@ -575,7 +575,7 @@ class InstancesAPI(APIClient):
         sources: Source | Sequence[Source] | None = None,
         include_typing: bool = False,
     ) -> InstancesResult[Node, Edge]:
-        """`Retrieve one or more instance by id(s) <https://api-docs.cognite.com/20230101/tag/Instances/operation/byExternalIdsInstances>`_.
+        """`Retrieve one or more instance by id(s) <https://api-docs.cognite.com/20230101/tag/Instances#operation/byExternalIdsInstances>`_.
 
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
@@ -732,7 +732,7 @@ class InstancesAPI(APIClient):
         nodes: NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
         edges: EdgeId | Sequence[EdgeId] | tuple[str, str] | Sequence[tuple[str, str]] | None = None,
     ) -> InstancesDeleteResult:
-        """`Delete one or more instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/deleteBulk>`_.
+        """`Delete one or more instances <https://api-docs.cognite.com/20230101/tag/Instances#operation/deleteBulk>`_.
 
         Args:
             nodes (NodeId | Sequence[NodeId] | tuple[str, str] | Sequence[tuple[str, str]] | None): Node ids
@@ -787,7 +787,7 @@ class InstancesAPI(APIClient):
         involved_views: InvolvedViews | None = None,
         involved_containers: InvolvedContainers | None = None,
     ) -> InstanceInspectResults:
-        """`Reverse lookup for instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/instanceInspect>`_.
+        """`Reverse lookup for instances <https://api-docs.cognite.com/20230101/tag/Instances#operation/instanceInspect>`_.
 
         This method will return the involved views and containers for the given nodes and edges.
 
@@ -1008,7 +1008,7 @@ class InstancesAPI(APIClient):
         skip_on_version_conflict: bool = False,
         replace: bool = False,
     ) -> InstancesApplyResult:
-        """`Add or update (upsert) instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/applyNodeAndEdges>`_.
+        """`Add or update (upsert) instances <https://api-docs.cognite.com/20230101/tag/Instances#operation/applyNodeAndEdges>`_.
 
         Args:
             nodes (NodeApply | Sequence[NodeApply] | None): Nodes to apply
@@ -1229,7 +1229,7 @@ class InstancesAPI(APIClient):
         sort: Sequence[InstanceSort | dict] | InstanceSort | dict | None = None,
         operator: Literal["AND", "OR"] = "AND",
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
-        """`Search instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/searchInstances>`_.
+        """`Search instances <https://api-docs.cognite.com/20230101/tag/Instances#operation/searchInstances>`_.
 
         Args:
             view (ViewId): View to search in.
@@ -1392,7 +1392,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> AggregatedNumberedValue | list[AggregatedNumberedValue] | InstanceAggregationResultList:
-        """`Aggregate data across nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/aggregateInstances>`_.
+        """`Aggregate data across nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances#operation/aggregateInstances>`_.
 
         Args:
             view (ViewId): View to aggregate over.
@@ -1505,7 +1505,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         limit: int = DEFAULT_LIMIT_READ,
     ) -> HistogramValue | list[HistogramValue]:
-        """`Produces histograms for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/aggregateInstances>`_.
+        """`Produces histograms for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances#operation/aggregateInstances>`_.
 
         Args:
             view (ViewId): View to to aggregate over.
@@ -1574,7 +1574,7 @@ class InstancesAPI(APIClient):
     async def query(
         self, query: Query, include_typing: bool = False, debug: DebugParameters | None = None
     ) -> QueryResult:
-        """`Advanced query interface for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/queryContent>`_.
+        """`Advanced query interface for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances#operation/queryContent>`_.
 
         The Data Modelling API exposes an advanced query interface. The query interface supports parameterization,
         recursive edge traversal, chaining of result sets, and granular property selection.
@@ -1668,7 +1668,7 @@ class InstancesAPI(APIClient):
     async def sync(
         self, query: QuerySync, include_typing: bool = False, debug: DebugParameters | None = None
     ) -> QueryResult:
-        """`Subscription to changes for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances/operation/syncContent>`_.
+        """`Subscription to changes for nodes/edges <https://api-docs.cognite.com/20230101/tag/Instances#operation/syncContent>`_.
 
         Subscribe to changes for nodes and edges in a project, matching a supplied filter.
 
@@ -1989,7 +1989,7 @@ class InstancesAPI(APIClient):
         filter: Filter | dict[str, Any] | None = None,
         debug: DebugParameters | None = None,
     ) -> NodeList[T_Node] | EdgeList[T_Edge]:
-        """`List instances <https://api-docs.cognite.com/20230101/tag/Instances/operation/advancedListInstance>`_.
+        """`List instances <https://api-docs.cognite.com/20230101/tag/Instances#operation/advancedListInstance>`_.
 
         Args:
             instance_type (Literal['node', 'edge'] | type[T_Node] | type[T_Edge]): Whether to query for nodes or edges. You can also pass a custom typed node (or edge class) inheriting from TypedNode (or TypedEdge). See apply, retrieve_nodes or retrieve_edges for an example.
