@@ -322,7 +322,6 @@ class TransformationExternalDataSourcesAPI(APIClient):
                 >>> new_public_key = res.public_key
         """
         self._warning.warn()
-        is_single = isinstance(rotation, ExternalDataSourceRotateKeys)
         items = [rotation] if isinstance(rotation, ExternalDataSourceRotateKeys) else list(rotation)
         if len(items) > self._ROTATE_KEYS_LIMIT:
             raise ValueError(
@@ -335,7 +334,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
             semaphore=self._get_semaphore("write"),
         )
         rotated = ExternalDataSourceRotatedKeysList._load(res.json()["items"])
-        return rotated[0] if is_single else rotated
+        return rotated[0] if isinstance(rotation, ExternalDataSourceRotateKeys) else rotated
 
     async def verify_usability(self, external_id: str) -> ExternalDataSourceUsability:
         """`Verify external data source usability <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/verifyExternalDataSourceUsability>`_.
