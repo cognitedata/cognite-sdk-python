@@ -16,6 +16,9 @@ from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSource,
     ExternalDataSourceFormat,
     ExternalDataSourceList,
+    ExternalDataSourceRotatedKeys,
+    ExternalDataSourceRotatedKeysList,
+    ExternalDataSourceRotateKeys,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
 )
