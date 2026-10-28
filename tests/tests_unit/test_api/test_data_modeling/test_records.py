@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date, datetime, timedelta, timezone
 from types import MappingProxyType
 
 import pytest
@@ -205,6 +206,27 @@ class TestRecordsAPIIngest:
                 }
             ]
         }
+
+    def test_ingest_serializes_datetime_properties(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        mock_ingest: None,
+        stream_id: str,
+    ) -> None:
+        record = RecordWrite(
+            space="sp",
+            external_id="rec-1",
+            sources=[
+                RecordSource(
+                    ContainerId("sp", "container-x"),
+                    {"event_time": datetime(2026, 1, 2, 3, 4, 5, 678901, tzinfo=timezone.utc)},
+                )
+            ],
+        )
+        cognite_client.data_modeling.records.ingest(record, stream_id=stream_id)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
+        assert body["items"][0]["sources"][0]["properties"] == {"event_time": "2026-01-02T03:04:05.678+00:00"}
 
     def test_ingest_chunks_over_1000(
         self,
@@ -1149,6 +1171,39 @@ class TestRecordDTOs:
     def test_time_range_dump_omits_none(self) -> None:
         assert TimeRange(gte=1, lt=5).dump() == {"gte": 1, "lt": 5}
         assert TimeRange().dump() == {}
+
+    def test_time_range_converts_aware_datetime_to_ms(self) -> None:
+        cet = timezone(timedelta(hours=1))
+        time_range = TimeRange(
+            gte=datetime(2026, 1, 1, tzinfo=timezone.utc), lt=datetime(2026, 1, 1, 1, 0, 0, 999999, tzinfo=cet)
+        )
+        assert time_range.dump() == {"gte": 1767225600000, "lt": 1767225600999}
+
+    def test_time_range_interprets_naive_datetime_as_local_time(self) -> None:
+        naive = datetime(2026, 1, 1, 12)
+        assert TimeRange(gt=naive).dump() == {"gt": int(1000 * naive.astimezone().timestamp())}
+
+    def test_time_range_passes_strings_through(self) -> None:
+        assert TimeRange(gt="2026-01-01T00:00:00.000Z").dump() == {"gt": "2026-01-01T00:00:00.000Z"}
+
+    def test_record_source_dump_serializes_datetime_and_date(self) -> None:
+        when = datetime(2026, 1, 2, 3, 4, 5, 678901, tzinfo=timezone.utc)
+        source = RecordSource(
+            ContainerId("sp", "c"),
+            {"event_time": when, "day": date(2026, 1, 2), "times": [when, when], "temp": 22.5},
+        )
+        assert source.dump()["properties"] == {
+            "event_time": "2026-01-02T03:04:05.678+00:00",
+            "day": "2026-01-02",
+            "times": ["2026-01-02T03:04:05.678+00:00", "2026-01-02T03:04:05.678+00:00"],
+            "temp": 22.5,
+        }
+
+    def test_record_source_dump_does_not_share_nested_values(self) -> None:
+        payload = {"key": ["value"]}
+        source = RecordSource(ContainerId("sp", "c"), {"json_prop": payload})
+        source.dump()["properties"]["json_prop"]["key"].append("mutated")
+        assert payload == {"key": ["value"]}
 
     def test_record_source_selector_dump(self) -> None:
         selector = RecordSourceSelector(ContainerId(space="sp", external_id="c"), ["temp", "pressure"])
