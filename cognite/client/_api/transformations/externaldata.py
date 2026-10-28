@@ -333,6 +333,8 @@ class TransformationExternalDataSourcesAPI(APIClient):
         """
         self._rotate_keys_warning.warn()
         items = [rotation] if isinstance(rotation, ExternalDataSourceRotateKeys) else list(rotation)
+        if not items:
+            return ExternalDataSourceRotatedKeysList([])
         if len(items) > self._ROTATE_KEYS_LIMIT:
             raise ValueError(
                 f"At most {self._ROTATE_KEYS_LIMIT} data sources can be rotated per call (the operation is atomic "
