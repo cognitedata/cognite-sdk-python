@@ -16,6 +16,9 @@ from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSource,
     ExternalDataSourceFormat,
     ExternalDataSourceList,
+    ExternalDataSourceRotatedKeys,
+    ExternalDataSourceRotatedKeysList,
+    ExternalDataSourceRotateKeys,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
 )
@@ -256,6 +259,50 @@ class SyncTransformationExternalDataSourcesAPI(SyncAPIClient):
                 ... )
         """
         return run_sync(self.__async_client.transformations.external_data_sources.delete(external_id=external_id))
+
+    @overload
+    def rotate_keys(self, rotation: ExternalDataSourceRotateKeys) -> ExternalDataSourceRotatedKeys: ...
+
+    @overload
+    def rotate_keys(self, rotation: Sequence[ExternalDataSourceRotateKeys]) -> ExternalDataSourceRotatedKeysList: ...
+
+    def rotate_keys(
+        self, rotation: ExternalDataSourceRotateKeys | Sequence[ExternalDataSourceRotateKeys]
+    ) -> ExternalDataSourceRotatedKeys | ExternalDataSourceRotatedKeysList:
+        """
+        `Rotate the keys of Snowflake external data sources <https://api-docs.cognite.com/20230101-alpha/tag/Transformation-External-Data-Sources/operation/rotateExternalDataSourceKeys>`_.
+
+        The server generates a new key pair for each data source and returns the new public key, which you must
+        register with the Snowflake user. Only Snowflake data sources support this. The operation is atomic: if any
+        item fails, no keys are rotated. At most 10 data sources can be rotated per call, with unique external IDs.
+
+        Args:
+            rotation (ExternalDataSourceRotateKeys | Sequence[ExternalDataSourceRotateKeys]): The rotation(s) to perform. Each ``expiry_time`` must be in the future and at most one year from now.
+
+        Returns:
+            ExternalDataSourceRotatedKeys | ExternalDataSourceRotatedKeysList: The new public key and expiry time of each rotated data source.
+
+        Raises:
+            ValueError: If more than 10 rotations are passed.
+
+        Examples:
+
+            Rotate the keys of a Snowflake data source, valid for 30 days:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.transformations.externaldata import (
+                ...     ExternalDataSourceRotateKeys,
+                ... )
+                >>> from cognite.client.utils._time import timestamp_to_ms
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> expiry_time = timestamp_to_ms("now") + 30 * 24 * 3600 * 1000
+                >>> res = client.transformations.external_data_sources.rotate_keys(
+                ...     ExternalDataSourceRotateKeys("snowflake-analytics-prod", expiry_time)
+                ... )
+                >>> new_public_key = res.public_key
+        """
+        return run_sync(self.__async_client.transformations.external_data_sources.rotate_keys(rotation=rotation))
 
     def verify_usability(self, external_id: str) -> ExternalDataSourceUsability:
         """

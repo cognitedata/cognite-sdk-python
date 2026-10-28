@@ -30,6 +30,7 @@ from cognite.client.data_classes.transformations.externaldata import (  # noqa: 
     ExternalDataSource,
     ExternalDataSourceList,
     ExternalDataSourceRotatedKeys,
+    ExternalDataSourceRotatedKeysList,
     ExternalDataSourceRotateKeys,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
