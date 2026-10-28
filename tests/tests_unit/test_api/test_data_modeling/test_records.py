@@ -651,6 +651,45 @@ class TestRecordsAPIFilter:
         body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["sort"] == [{"property": ["sp", "container-x", "temp"], "direction": "descending"}]
 
+    def test_list_target_units_properties_body_shape(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        mock_filter: None,
+        stream_id: str,
+    ) -> None:
+        cognite_client.data_modeling.records.filter(
+            stream_id=stream_id,
+            target_units=[RecordTargetUnit(["sp", "container-x", "temp"], UnitReference("temperature:deg_f"))],
+        )
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
+        assert body["targetUnits"] == {
+            "properties": [{"property": ["sp", "container-x", "temp"], "unit": {"externalId": "temperature:deg_f"}}]
+        }
+
+    def test_list_target_units_unit_system_body_shape(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        mock_filter: None,
+        stream_id: str,
+    ) -> None:
+        cognite_client.data_modeling.records.filter(
+            stream_id=stream_id, target_units=RecordTargetUnits(unit_system_name="Imperial")
+        )
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
+        assert body["targetUnits"] == {"unitSystemName": "Imperial"}
+
+    def test_list_target_units_rejects_multiple_request_modes(
+        self, cognite_client: CogniteClient, stream_id: str
+    ) -> None:
+        expected_err = "Provide exactly one of 'properties' or 'unit_system_name'."
+        with pytest.raises(ValueError, match=expected_err):
+            cognite_client.data_modeling.records.filter(
+                stream_id=stream_id,
+                target_units=RecordTargetUnits(properties=[], unit_system_name="Imperial"),
+            )
+
     def test_list_include_typing(
         self,
         cognite_client: CogniteClient,

@@ -19,10 +19,12 @@ from cognite.client.data_classes.data_modeling import (
     Text,
 )
 from cognite.client.data_classes.data_modeling.aggregates import Average, Count, MetricResult
+from cognite.client.data_classes.data_modeling.data_types import UnitReference
 from cognite.client.data_classes.data_modeling.records import (
     RecordContainerId,
     RecordSource,
     RecordSourceSelector,
+    RecordTargetUnit,
     RecordWrite,
     TimeRange,
 )
@@ -83,6 +85,9 @@ def record_container(cognite_client: CogniteClient, integration_test_space: Spac
             "name": ContainerPropertyApply(type=Text(is_list=False), nullable=False),
             "value": ContainerPropertyApply(type=Float64(is_list=False), nullable=False),
             "processed": ContainerPropertyApply(type=Boolean(is_list=False), nullable=False),
+            "temperature": ContainerPropertyApply(
+                type=Float64(is_list=False, unit=UnitReference("temperature:deg_c")), nullable=True
+            ),
         },
     )
     cognite_client.data_modeling.containers.apply(container)
@@ -139,7 +144,12 @@ def ingested_records(
             sources=[
                 RecordSource(
                     source=container_ref,
-                    properties={"name": tag, "value": float(i), "processed": i % 2 == 0},
+                    properties={
+                        "name": tag,
+                        "value": float(i),
+                        "processed": i % 2 == 0,
+                        "temperature": 10.0 * i,
+                    },
                 )
             ],
         )
@@ -192,6 +202,29 @@ class TestRecordsIntegration:
         )
         assert len(result) == len(ingested_records.records)
         assert {record.external_id for record in result} == {r.external_id for r in ingested_records.records}
+
+    def test_filter_converts_to_target_units(
+        self,
+        cognite_client: CogniteClient,
+        mutable_stream: Stream,
+        container_ref: RecordContainerId,
+        sources: list[RecordSourceSelector],
+        ingested_records: RecordTestBatch,
+    ) -> None:
+        temperature = [container_ref.space, container_ref.external_id, "temperature"]
+        result = cognite_client.data_modeling.records.filter(
+            stream_id=mutable_stream.external_id,
+            last_updated_time=TimeRange(gt=an_hour_ago()),
+            sources=sources,
+            filter=ingested_records.filter,
+            target_units=[RecordTargetUnit(temperature, UnitReference("temperature:deg_f"))],
+        )
+        converted = sorted(
+            record.properties[container_ref.space][container_ref.external_id]["temperature"]
+            for record in result
+            if record.properties
+        )
+        assert converted == pytest.approx([32.0, 50.0, 68.0])  # 0, 10 and 20 degrees Celsius
 
     def test_aggregate_over_ingested_records(
         self,
