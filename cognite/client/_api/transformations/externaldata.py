@@ -9,9 +9,6 @@ from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSource,
     ExternalDataSourceFormat,
     ExternalDataSourceList,
-    ExternalDataSourceRotatedKeys,
-    ExternalDataSourceRotatedKeysList,
-    ExternalDataSourceRotateKeys,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
 )
@@ -26,7 +23,6 @@ if TYPE_CHECKING:
 
 class TransformationExternalDataSourcesAPI(APIClient):
     _RESOURCE_PATH = "/transformations/externaldata"
-    _ROTATE_KEYS_LIMIT = 10
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)

@@ -56,7 +56,6 @@ Operation                                 Action
 ``retrieve_multiple()``                   ``READ``
 ``create()``                              ``WRITE``
 ``delete()``                              ``WRITE``
-``rotate_keys()``                         ``WRITE``
 ``verify_usability()``                    ``USE``
 ========================================= ==========
 
