@@ -9,9 +9,6 @@ from pytest_httpx2 import HTTPXMock
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSourceList,
-    ExternalDataSourceRotatedKeys,
-    ExternalDataSourceRotatedKeysList,
-    ExternalDataSourceRotateKeys,
     OneLakeCredentialsWrite,
     OneLakeExternalDataSource,
     OneLakeExternalDataSourceWrite,
@@ -419,55 +416,3 @@ class TestTransformationExternalDataSourcesAPI:
         assert item["format"] == "snowflake"
         assert item["expiryTime"] == 1700000000000
         assert "publicKey" not in item["settings"]["credentials"]
-
-    def test_rotate_keys_single(
-        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, external_data_url: str
-    ) -> None:
-        httpx2_mock.add_response(
-            method="POST",
-            url=external_data_url + "/rotatekeys",
-            status_code=200,
-            json={"items": [{"externalId": "src", "publicKey": "pk", "expiryTime": 123}]},
-        )
-
-        result = cognite_client.transformations.external_data_sources.rotate_keys(
-            ExternalDataSourceRotateKeys("src", 123)
-        )
-
-        assert isinstance(result, ExternalDataSourceRotatedKeys)
-        assert result.public_key == "pk"
-        assert jsgz_load(httpx2_mock.get_requests()[-1].content) == {
-            "items": [{"externalId": "src", "expiryTime": 123}]
-        }
-
-    def test_rotate_keys_multiple(
-        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, external_data_url: str
-    ) -> None:
-        httpx2_mock.add_response(
-            method="POST",
-            url=external_data_url + "/rotatekeys",
-            status_code=200,
-            json={
-                "items": [
-                    {"externalId": "a", "publicKey": "pk-a", "expiryTime": 1},
-                    {"externalId": "b", "publicKey": "pk-b", "expiryTime": 2},
-                ]
-            },
-        )
-
-        result = cognite_client.transformations.external_data_sources.rotate_keys(
-            [ExternalDataSourceRotateKeys("a", 1), ExternalDataSourceRotateKeys("b", 2)]
-        )
-
-        assert isinstance(result, ExternalDataSourceRotatedKeysList)
-        assert result.as_external_ids() == ["a", "b"]
-
-    def test_rotate_keys_over_limit_raises_without_request(
-        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock
-    ) -> None:
-        too_many = [ExternalDataSourceRotateKeys(f"src-{no}", 1) for no in range(11)]
-
-        with pytest.raises(ValueError, match="At most 10"):
-            cognite_client.transformations.external_data_sources.rotate_keys(too_many)
-
-        assert httpx2_mock.get_requests() == []

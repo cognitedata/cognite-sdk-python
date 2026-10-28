@@ -9,9 +9,6 @@ from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSource,
     ExternalDataSourceFormat,
     ExternalDataSourceList,
-    ExternalDataSourceRotatedKeys,
-    ExternalDataSourceRotatedKeysList,
-    ExternalDataSourceRotateKeys,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
 )
@@ -26,7 +23,6 @@ if TYPE_CHECKING:
 
 class TransformationExternalDataSourcesAPI(APIClient):
     _RESOURCE_PATH = "/transformations/externaldata"
-    _ROTATE_KEYS_LIMIT = 10
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -37,11 +33,6 @@ class TransformationExternalDataSourcesAPI(APIClient):
             api_maturity="alpha",
             sdk_maturity="alpha",
             feature_name="Retrieving Transformation External Data Sources by external ID",
-        )
-        self._rotate_keys_warning = FeaturePreviewWarning(
-            api_maturity="alpha",
-            sdk_maturity="alpha",
-            feature_name="Rotating keys of Transformation External Data Sources",
         )
         self._RETRIEVE_LIMIT = 100  # ExternalDataSource.ByIds.maxItemsPerRequest
 
@@ -287,66 +278,6 @@ class TransformationExternalDataSourcesAPI(APIClient):
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
         )
-
-    @overload
-    async def rotate_keys(self, rotation: ExternalDataSourceRotateKeys) -> ExternalDataSourceRotatedKeys: ...
-
-    @overload
-    async def rotate_keys(
-        self, rotation: Sequence[ExternalDataSourceRotateKeys]
-    ) -> ExternalDataSourceRotatedKeysList: ...
-
-    async def rotate_keys(
-        self, rotation: ExternalDataSourceRotateKeys | Sequence[ExternalDataSourceRotateKeys]
-    ) -> ExternalDataSourceRotatedKeys | ExternalDataSourceRotatedKeysList:
-        """`Rotate the keys of Snowflake external data sources <https://api-docs.cognite.com/20230101-alpha/tag/Transformation-External-Data-Sources/operation/rotateExternalDataSourceKeys>`_.
-
-        The server generates a new key pair for each data source and returns the new public key, which you must
-        register with the Snowflake user. Only Snowflake data sources support this. The operation is atomic: if any
-        item fails, no keys are rotated. At most 10 data sources can be rotated per call, with unique external IDs.
-
-        Args:
-            rotation (ExternalDataSourceRotateKeys | Sequence[ExternalDataSourceRotateKeys]): The rotation(s) to perform. Each ``expiry_time`` must be in the future and at most one year from now.
-
-        Returns:
-            ExternalDataSourceRotatedKeys | ExternalDataSourceRotatedKeysList: The new public key and expiry time of each rotated data source.
-
-        Raises:
-            ValueError: If more than 10 rotations are passed.
-
-        Examples:
-
-            Rotate the keys of a Snowflake data source, valid for 30 days:
-
-                >>> from cognite.client import CogniteClient, AsyncCogniteClient
-                >>> from cognite.client.data_classes.transformations.externaldata import (
-                ...     ExternalDataSourceRotateKeys,
-                ... )
-                >>> from cognite.client.utils._time import timestamp_to_ms
-                >>> client = CogniteClient()
-                >>> # async_client = AsyncCogniteClient()  # another option
-                >>> expiry_time = timestamp_to_ms("now") + 30 * 24 * 3600 * 1000
-                >>> res = client.transformations.external_data_sources.rotate_keys(
-                ...     ExternalDataSourceRotateKeys("snowflake-analytics-prod", expiry_time)
-                ... )
-                >>> new_public_key = res.public_key
-        """
-        self._rotate_keys_warning.warn()
-        items = [rotation] if isinstance(rotation, ExternalDataSourceRotateKeys) else list(rotation)
-        if not items:
-            return ExternalDataSourceRotatedKeysList([])
-        if len(items) > self._ROTATE_KEYS_LIMIT:
-            raise ValueError(
-                f"At most {self._ROTATE_KEYS_LIMIT} data sources can be rotated per call (the operation is atomic "
-                f"and cannot be split), got {len(items)}"
-            )
-        res = await self._post(
-            url_path=self._RESOURCE_PATH + "/rotatekeys",
-            json={"items": [item.dump(camel_case=True) for item in items]},
-            semaphore=self._get_semaphore("write"),
-        )
-        rotated = ExternalDataSourceRotatedKeysList._load(res.json()["items"])
-        return rotated[0] if isinstance(rotation, ExternalDataSourceRotateKeys) else rotated
 
     async def verify_usability(self, external_id: str) -> ExternalDataSourceUsability:
         """`Verify external data source usability <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/verifyExternalDataSourceUsability>`_.
