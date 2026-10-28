@@ -377,6 +377,7 @@ class RecordsAPI(APIClient):
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,
         sort: Sequence[InstanceSort] | InstanceSort | None = None,
+        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
         limit: int = 10,
         include_typing: bool = False,
     ) -> RecordList:
@@ -392,6 +393,8 @@ class RecordsAPI(APIClient):
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
             sources (Sequence[RecordSourceSelector] | None): Which container or view properties to return.
             sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
+            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
+                to another unit.
             limit (int): Maximum number of records to return (1-1000). This endpoint returns a single
                 page and does not paginate, so a larger limit is an error rather than a silent cap.
             include_typing (bool): If True, include property type information on the returned
@@ -412,6 +415,20 @@ class RecordsAPI(APIClient):
                 ...     last_updated_time=TimeRange(gt=1705341600000),
                 ...     limit=100,
                 ... )
+
+            Return temperatures converted to degrees Fahrenheit:
+
+                >>> from cognite.client.data_classes.data_modeling.data_types import UnitReference
+                >>> from cognite.client.data_classes.data_modeling.records import RecordTargetUnit
+                >>> res = client.data_modeling.records.filter(
+                ...     stream_id="my-stream",
+                ...     target_units=[
+                ...         RecordTargetUnit(
+                ...             ["my-space", "my-container", "temperature"],
+                ...             UnitReference("temperature:deg_f"),
+                ...         )
+                ...     ],
+                ... )
         """
         self._warning.warn()
         _validate_filter_limit(limit)
@@ -423,6 +440,8 @@ class RecordsAPI(APIClient):
         if sort is not None:
             sort_list = [sort] if isinstance(sort, InstanceSort) else list(sort)
             other_params["sort"] = [spec.dump() for spec in sort_list]
+        if target_units is not None:
+            other_params["targetUnits"] = self._dump_target_units(target_units)
         if include_typing:
             other_params["includeTyping"] = True
 
