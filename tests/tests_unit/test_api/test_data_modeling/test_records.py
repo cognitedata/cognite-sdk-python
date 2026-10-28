@@ -28,9 +28,9 @@ from cognite.client.data_classes.data_modeling.aggregates import (
     UniqueValuesResult,
     UnknownResult,
 )
-from cognite.client.data_classes.data_modeling.data_types import UnitReference
-from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, PropertyPath, ViewId
-from cognite.client.data_classes.data_modeling.instances import InstanceSort, TypeInformation
+from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference, UnitReference
+from cognite.client.data_classes.data_modeling.ids import ContainerId, NodeId, PropertyId, PropertyPath, ViewId
+from cognite.client.data_classes.data_modeling.instances import InstanceSort, PropertyValueWrite, TypeInformation
 from cognite.client.data_classes.data_modeling.records import (
     Record,
     RecordContainerId,
@@ -1172,16 +1172,15 @@ class TestRecordDTOs:
         assert TimeRange(gte=1, lt=5).dump() == {"gte": 1, "lt": 5}
         assert TimeRange().dump() == {}
 
-    def test_time_range_converts_aware_datetime_to_ms(self) -> None:
+    def test_time_range_serializes_aware_datetime_as_iso_with_milliseconds(self) -> None:
         cet = timezone(timedelta(hours=1))
         time_range = TimeRange(
             gte=datetime(2026, 1, 1, tzinfo=timezone.utc), lt=datetime(2026, 1, 1, 1, 0, 0, 999999, tzinfo=cet)
         )
-        assert time_range.dump() == {"gte": 1767225600000, "lt": 1767225600999}
+        assert time_range.dump() == {"gte": "2026-01-01T00:00:00.000+00:00", "lt": "2026-01-01T01:00:00.999+01:00"}
 
-    def test_time_range_interprets_naive_datetime_as_local_time(self) -> None:
-        naive = datetime(2026, 1, 1, 12)
-        assert TimeRange(gt=naive).dump() == {"gt": int(1000 * naive.astimezone().timestamp())}
+    def test_time_range_serializes_naive_datetime_without_timezone(self) -> None:
+        assert TimeRange(gt=datetime(2026, 1, 1, 12)).dump() == {"gt": "2026-01-01T12:00:00.000"}
 
     def test_time_range_passes_strings_through(self) -> None:
         assert TimeRange(gt="2026-01-01T00:00:00.000Z").dump() == {"gt": "2026-01-01T00:00:00.000Z"}
@@ -1197,6 +1196,36 @@ class TestRecordDTOs:
             "day": "2026-01-02",
             "times": ["2026-01-02T03:04:05.678+00:00", "2026-01-02T03:04:05.678+00:00"],
             "temp": 22.5,
+        }
+
+    def test_record_source_dump_serializes_direct_relations(self) -> None:
+        # The API rejects any key besides 'space' and 'externalId' in a direct relation value
+        many: list[NodeId | DirectRelationReference] = [NodeId("sp", "n1"), DirectRelationReference("sp", "n2")]
+        source = RecordSource(
+            ContainerId("sp", "c"),
+            {
+                "single": NodeId("sp", "n1"),
+                "reference": DirectRelationReference("sp", "n2"),
+                "many": many,
+            },
+        )
+        assert source.dump()["properties"] == {
+            "single": {"space": "sp", "externalId": "n1"},
+            "reference": {"space": "sp", "externalId": "n2"},
+            "many": [{"space": "sp", "externalId": "n1"}, {"space": "sp", "externalId": "n2"}],
+        }
+
+    def test_record_source_dump_keeps_property_keys_and_other_values(self) -> None:
+        properties: dict[str, PropertyValueWrite] = {
+            "__________reserved": 1,
+            "pair": ("a", "b"),
+            "json": {"when": "2026-01-02"},
+        }
+        source = RecordSource(ContainerId("sp", "c"), properties)
+        assert source.dump()["properties"] == {
+            "__________reserved": 1,
+            "pair": ["a", "b"],
+            "json": {"when": "2026-01-02"},
         }
 
     def test_record_source_dump_does_not_share_nested_values(self) -> None:
