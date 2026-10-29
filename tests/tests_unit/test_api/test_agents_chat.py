@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import json
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
@@ -11,12 +12,15 @@ from pytest_httpx2 import HTTPXMock
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.agents import ImageContent, Message
 from cognite.client.data_classes.agents.chat import (
+    AgentChatProgress,
     AgentChatResponse,
+    AgentChatResponseChunk,
     AgentDataItem,
     AgentMessage,
     AgentReasoningItem,
     TextContent,
     ToolCallReasoningDataItem,
+    UnknownAgentChatStreamEvent,
 )
 from tests.utils import get_url, jsgz_load
 
@@ -399,3 +403,58 @@ class TestMultimodalMessage:
         assert content[0].text == "I see a pump in the image."
         assert content[1].data == "aGVsbG8="
         assert content[1].media_type == "image/png"
+
+
+def _sse(*events: dict | str) -> bytes:
+    return "".join(f"data: {e if isinstance(e, str) else json.dumps(e)}\n\n" for e in events).encode()
+
+
+class TestAgentChatStream:
+    @pytest.fixture
+    def stream_url(self, async_client: AsyncCogniteClient) -> str:
+        return get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat")
+
+    def test_chat_stream_yields_typed_events(
+        self, httpx2_mock: HTTPXMock, cognite_client: CogniteClient, stream_url: str, chat_response_body: dict
+    ) -> None:
+        envelope = {"agentId": "my_agent", "agentExternalId": "my_agent"}
+        body = _sse(
+            {**envelope, "response": {"type": "progress", "content": "Searching knowledge graph..."}},
+            {**envelope, "response": {"type": "responseChunk", "content": "Hello "}},
+            {**envelope, "response": {"type": "responseChunk", "content": "world"}},
+            {**envelope, "response": {"type": "somethingNew", "content": "?"}},
+            chat_response_body,
+            "[DONE]",
+        )
+        httpx2_mock.add_response(method="POST", url=stream_url, status_code=200, content=body)
+
+        events = list(
+            cognite_client.agents.chat_stream(agent_external_id="my_agent", messages=Message("Hi"), cursor="c1")
+        )
+
+        request = httpx2_mock.get_requests()[0]
+        assert request.headers["accept"] == "text/event-stream"
+        payload = json.loads(request.content)
+        assert payload["stream"] is True
+        assert payload["cursor"] == "c1"
+        assert payload["agentExternalId"] == "my_agent"
+
+        assert len(events) == 5
+        assert events[0] == AgentChatProgress(content="Searching knowledge graph...")
+        assert events[1:3] == [AgentChatResponseChunk(content="Hello "), AgentChatResponseChunk(content="world")]
+        assert isinstance(events[3], UnknownAgentChatStreamEvent)
+        assert events[3].type == "somethingNew"
+        assert isinstance(events[4], AgentChatResponse)
+        assert events[4].cursor == "cursor_12345"
+
+    def test_chat_stream_handles_multiline_data_and_missing_trailing_blank_line(
+        self, httpx2_mock: HTTPXMock, cognite_client: CogniteClient, stream_url: str
+    ) -> None:
+        event = {"agentExternalId": "my_agent", "response": {"type": "responseChunk", "content": "a"}}
+        first, second = json.dumps(event, indent=1).split("\n", 1)
+        second = second.replace("\n", " ")
+        body = f": comment\ndata: {first}\ndata: {second}\n\ndata: {json.dumps(event)}".encode()
+        httpx2_mock.add_response(method="POST", url=stream_url, status_code=200, content=body)
+
+        events = list(cognite_client.agents.chat_stream(agent_external_id="my_agent", messages=Message("Hi")))
+        assert events == [AgentChatResponseChunk(content="a"), AgentChatResponseChunk(content="a")]
