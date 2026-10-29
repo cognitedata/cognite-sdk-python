@@ -22,7 +22,7 @@ Rows
    AsyncCogniteClient.sequences.data
 
 Sequence Data classes
-^^^^^^^^^^^^^^^^^^^^^
+---------------------
 .. automodule:: cognite.client.data_classes.sequences
     :members:
     :show-inheritance:
