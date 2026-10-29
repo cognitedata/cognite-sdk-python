@@ -21,7 +21,6 @@ from cognite.client.data_classes.data_modeling.records import (
     TimeRange,
 )
 from cognite.client.data_classes.filters import Filter
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._url import interpolate_and_url_encode
 
 if TYPE_CHECKING:
@@ -47,9 +46,6 @@ class RecordsAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._SYNC_LIMIT = 1000  # Maximum page size of the sync endpoint
-        self._warning = FeaturePreviewWarning(
-            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Records"
-        )
 
     def _get_semaphore(self, operation: Any) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
@@ -103,7 +99,6 @@ class RecordsAPI(APIClient):
                 ...     ],
                 ... )
         """
-        self._warning.warn()
         await self._delete_multiple(
             identifiers=RecordIdSequence.load(items),
             wrap_ids=True,
@@ -163,7 +158,6 @@ class RecordsAPI(APIClient):
                 >>> record = RecordWrite("my-space", "rec-2", sources=[source])
                 >>> client.data_modeling.records.ingest(record, stream_id="my-stream")
         """
-        self._warning.warn()
         item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
         await self._create_multiple(
             items=item_list,
@@ -217,7 +211,6 @@ class RecordsAPI(APIClient):
                 ...     stream_id="my-stream",
                 ... )
         """
-        self._warning.warn()
         item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
         await self._create_multiple(
             items=item_list,
@@ -351,7 +344,6 @@ class RecordsAPI(APIClient):
                 ...     },
                 ... )
         """
-        self._warning.warn()
         body: dict[str, Any] = {"aggregates": _dump_aggregate_value(aggregates)}
         if last_updated_time is not None:
             body["lastUpdatedTime"] = last_updated_time.dump()
@@ -430,7 +422,6 @@ class RecordsAPI(APIClient):
                 ...     ],
                 ... )
         """
-        self._warning.warn()
         _validate_filter_limit(limit)
         other_params: dict[str, Any] = {}
         if last_updated_time is not None:
@@ -556,7 +547,6 @@ class RecordsAPI(APIClient):
                 >>> first_chunk = next(feed)
                 >>> second_chunk = next(feed)
         """
-        self._warning.warn()
         if (initialize_cursor is None) == (cursor is None):
             raise ValueError("Pass exactly one of 'initialize_cursor' or 'cursor'.")
         if not (isinstance(chunk_size, int) and 1 <= chunk_size <= self._SYNC_LIMIT):

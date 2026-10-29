@@ -132,7 +132,7 @@ class TestViewsApiForRecordViews:
         assert error.value.failed == [record_view]
         assert error.value.code == 400
 
-    def test_apply_mixed_batch_warns(
+    def test_apply_mixed_batch(
         self,
         cognite_client: CogniteClient,
         httpx2_mock: HTTPXMock,
@@ -147,28 +147,13 @@ class TestViewsApiForRecordViews:
             json={"items": [VIEW_RESPONSE, RECORD_VIEW_RESPONSE]},
         )
 
-        with pytest.warns(FutureWarning, match="Views for Records"):
-            cognite_client.data_modeling.views.apply([plain_view, record_view])
+        cognite_client.data_modeling.views.apply([plain_view, record_view])
 
         request = httpx2_mock.get_requests()[0]
         body = jsgz_load(request.content)
         assert body["items"][1]["streamId"] == ["my-stream"]
 
-    def test_apply_plain_views_does_not_warn(
-        self,
-        cognite_client: CogniteClient,
-        httpx2_mock: HTTPXMock,
-        views_url_pattern: re.Pattern,
-        recwarn: pytest.WarningsRecorder,
-    ) -> None:
-        plain_view = ViewApply(space="sp", external_id="v", version="v1")
-        httpx2_mock.add_response(method="POST", url=views_url_pattern, status_code=200, json={"items": [VIEW_RESPONSE]})
-
-        cognite_client.data_modeling.views.apply(plain_view)
-
-        assert not any("Views for Records" in str(w.message) for w in recwarn.list)
-
-    def test_list_used_for_mixed_warns(
+    def test_list_used_for_mixed(
         self,
         cognite_client: CogniteClient,
         httpx2_mock: HTTPXMock,
@@ -176,25 +161,22 @@ class TestViewsApiForRecordViews:
     ) -> None:
         httpx2_mock.add_response(method="GET", url=views_url_pattern, status_code=200, json={"items": []})
 
-        with pytest.warns(FutureWarning, match="Views for Records"):
-            cognite_client.data_modeling.views.list(used_for=["node", "record"])
+        cognite_client.data_modeling.views.list(used_for=["node", "record"])
 
         request = httpx2_mock.get_requests()[0]
         qs = parse_qs(urlparse(str(request.url)).query)
         assert qs.get("usedFor") == ["node", "record"]
 
-    def test_list_default_does_not_warn(
+    def test_list_default_omits_used_for(
         self,
         cognite_client: CogniteClient,
         httpx2_mock: HTTPXMock,
         views_url_pattern: re.Pattern,
-        recwarn: pytest.WarningsRecorder,
     ) -> None:
         httpx2_mock.add_response(method="GET", url=views_url_pattern, status_code=200, json={"items": []})
 
         cognite_client.data_modeling.views.list()
 
-        assert not any("Views for Records" in str(w.message) for w in recwarn.list)
         request = httpx2_mock.get_requests()[0]
         qs = parse_qs(urlparse(str(request.url)).query)
         assert "usedFor" not in qs
