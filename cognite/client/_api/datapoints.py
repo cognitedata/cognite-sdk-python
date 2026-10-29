@@ -75,8 +75,6 @@ PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
 _T = TypeVar("_T")
 
 
-
-
 class DatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/data"
 
@@ -1851,7 +1849,7 @@ class DatapointsAPI(APIClient):
                 identifiers.append(
                     Identifier.load(
                         id=id_value if isinstance(id_value, int) else None,
-                        external_id=external_id_value if isinstance(external_id_value, str) else None
+                        external_id=external_id_value if isinstance(external_id_value, str) else None,
                     )
                 )
 
