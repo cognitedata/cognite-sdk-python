@@ -4,6 +4,8 @@ import warnings
 from collections.abc import Sequence
 from typing import overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -18,6 +20,12 @@ from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._url import interpolate_and_url_encode
 from cognite.client.utils._validation import assert_type
 
+_THREE_D_ASSET_MAPPING_DEPRECATION_MESSAGE = (
+    "Asset-centric 3D contextualization (3D asset mappings) is deprecated. "
+    "Contextualize 3D models in a data modeling project with the 3D contextualization APIs. "
+    "See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+)
+
 
 class ThreeDAssetMappingAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions/{}/mappings"
@@ -25,11 +33,12 @@ class ThreeDAssetMappingAPI(APIClient):
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "Asset-centric 3D contextualization (3D asset mappings) is deprecated. Contextualize 3D models in a data modeling project with the 3D contextualization APIs. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _THREE_D_ASSET_MAPPING_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
 
+    @deprecated(_THREE_D_ASSET_MAPPING_DEPRECATION_MESSAGE, category=None)
     async def list(
         self,
         model_id: int,
@@ -99,6 +108,7 @@ class ThreeDAssetMappingAPI(APIClient):
         asset_mapping: Sequence[ThreeDAssetMapping] | Sequence[ThreeDAssetMappingWrite],
     ) -> ThreeDAssetMappingList: ...
 
+    @deprecated(_THREE_D_ASSET_MAPPING_DEPRECATION_MESSAGE, category=None)
     async def create(
         self,
         model_id: int,
@@ -144,6 +154,7 @@ class ThreeDAssetMappingAPI(APIClient):
             input_resource_cls=ThreeDAssetMappingWrite,
         )
 
+    @deprecated(_THREE_D_ASSET_MAPPING_DEPRECATION_MESSAGE, category=None)
     async def delete(
         self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | Sequence[ThreeDAssetMapping]
     ) -> None:

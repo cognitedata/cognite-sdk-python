@@ -5,6 +5,8 @@ from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import Annotation, AnnotationFilter, AnnotationList, AnnotationUpdate
@@ -22,13 +24,20 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 
+_ANNOTATIONS_DEPRECATION_MESSAGE = (
+    "The Annotations API is deprecated and is scheduled for removal on 2027-12-31. "
+    "Move annotations to CogniteAnnotation in the core data model. "
+    "See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+)
+
+
 class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
 
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _ANNOTATIONS_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
@@ -45,6 +54,7 @@ class AnnotationsAPI(APIClient):
     @overload
     async def create(self, annotations: Sequence[Annotation | AnnotationWrite]) -> AnnotationList: ...
 
+    @deprecated(_ANNOTATIONS_DEPRECATION_MESSAGE, category=None)
     async def create(
         self, annotations: Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]
     ) -> Annotation | AnnotationList:
@@ -76,6 +86,7 @@ class AnnotationsAPI(APIClient):
     @overload
     async def suggest(self, annotations: Sequence[Annotation] | Sequence[AnnotationWrite]) -> AnnotationList: ...
 
+    @deprecated(_ANNOTATIONS_DEPRECATION_MESSAGE, category=None)
     async def suggest(
         self, annotations: Annotation | AnnotationWrite | Sequence[Annotation] | Sequence[AnnotationWrite]
     ) -> Annotation | AnnotationList:
@@ -147,6 +158,7 @@ class AnnotationsAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> AnnotationList: ...
 
+    @deprecated(_ANNOTATIONS_DEPRECATION_MESSAGE, category=None)
     async def update(
         self,
         item: Annotation
@@ -171,6 +183,7 @@ class AnnotationsAPI(APIClient):
             list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item, mode=mode
         )
 
+    @deprecated(_ANNOTATIONS_DEPRECATION_MESSAGE, category=None)
     async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsDelete>`_.
 
@@ -183,6 +196,7 @@ class AnnotationsAPI(APIClient):
         self._deprecation_warning()
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
+    @deprecated(_ANNOTATIONS_DEPRECATION_MESSAGE, category=None)
     async def retrieve_multiple(self, ids: Sequence[int]) -> AnnotationList:
         """`Retrieve annotations by IDs <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsByids>`_.
 
@@ -199,6 +213,7 @@ class AnnotationsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=ids, external_ids=None)
         return await self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
+    @deprecated(_ANNOTATIONS_DEPRECATION_MESSAGE, category=None)
     async def retrieve(self, id: int) -> Annotation | None:
         """`Retrieve an annotation by id <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsGet>`_.
 
@@ -215,6 +230,7 @@ class AnnotationsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
         return await self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
+    @deprecated(_ANNOTATIONS_DEPRECATION_MESSAGE, category=None)
     async def reverse_lookup(
         self, filter: AnnotationReverseLookupFilter, limit: int | None = None
     ) -> ResourceReferenceList:
@@ -255,6 +271,7 @@ class AnnotationsAPI(APIClient):
             api_subversion="beta",
         )
 
+    @deprecated(_ANNOTATIONS_DEPRECATION_MESSAGE, category=None)
     async def list(self, filter: AnnotationFilter | dict, limit: int | None = DEFAULT_LIMIT_READ) -> AnnotationList:
         """`List annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsFilter>`_.
 

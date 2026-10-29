@@ -4,11 +4,19 @@ import warnings
 from collections.abc import Sequence
 from typing import Literal, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import SecurityCategory, SecurityCategoryList
 from cognite.client.data_classes.iam import SecurityCategoryWrite
 from cognite.client.utils._identifier import IdentifierSequence
+
+_SECURITY_CATEGORIES_DEPRECATION_MESSAGE = (
+    "The Security Categories API is deprecated and is scheduled for removal on 2027-12-31. "
+    "Replace security categories with data products and granular access control. "
+    "See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+)
 
 
 class SecurityCategoriesAPI(APIClient):
@@ -17,11 +25,12 @@ class SecurityCategoriesAPI(APIClient):
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "The Security Categories API is deprecated and is scheduled for removal on 2027-12-31. Replace security categories with data products and granular access control. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _SECURITY_CATEGORIES_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
 
+    @deprecated(_SECURITY_CATEGORIES_DEPRECATION_MESSAGE, category=None)
     async def list(
         self, limit: int | None = DEFAULT_LIMIT_READ, sort: Literal["ASC", "DESC"] = "ASC"
     ) -> SecurityCategoryList:
@@ -63,6 +72,7 @@ class SecurityCategoriesAPI(APIClient):
         self, security_category: Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]
     ) -> SecurityCategoryList: ...
 
+    @deprecated(_SECURITY_CATEGORIES_DEPRECATION_MESSAGE, category=None)
     async def create(
         self,
         security_category: SecurityCategory
@@ -100,6 +110,7 @@ class SecurityCategoriesAPI(APIClient):
             input_resource_cls=SecurityCategoryWrite,
         )
 
+    @deprecated(_SECURITY_CATEGORIES_DEPRECATION_MESSAGE, category=None)
     async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more security categories <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/deleteSecurityCategories>`_.
 

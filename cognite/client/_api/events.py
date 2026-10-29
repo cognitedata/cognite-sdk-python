@@ -4,6 +4,8 @@ import warnings
 from collections.abc import AsyncIterator, Sequence
 from typing import Any, Literal, TypeAlias, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -33,13 +35,16 @@ SortSpec: TypeAlias = (
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 
+_EVENTS_DEPRECATION_MESSAGE = "The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+
+
 class EventsAPI(APIClient):
     _RESOURCE_PATH = "/events"
 
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _EVENTS_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
@@ -94,6 +99,7 @@ class EventsAPI(APIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
     ) -> AsyncIterator[EventList]: ...
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def __call__(
         self,
         chunk_size: int | None = None,
@@ -185,6 +191,7 @@ class EventsAPI(APIClient):
         ):
             yield item
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
         """`Retrieve a single event by id <https://api-docs.cognite.com/20230101/tag/Events/operation/getEventByInternalId>`_.
 
@@ -215,6 +222,7 @@ class EventsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return await self._retrieve_multiple(list_cls=EventList, resource_cls=Event, identifiers=identifiers)
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
@@ -253,6 +261,7 @@ class EventsAPI(APIClient):
             list_cls=EventList, resource_cls=Event, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def aggregate_unique_values(
         self,
         filter: EventFilter | dict[str, Any] | None = None,
@@ -325,6 +334,7 @@ class EventsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def aggregate_count(
         self,
         property: EventPropertyLike | None = None,
@@ -370,6 +380,7 @@ class EventsAPI(APIClient):
             advanced_filter=advanced_filter,
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def aggregate_cardinality_values(
         self,
         property: EventPropertyLike,
@@ -421,6 +432,7 @@ class EventsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def aggregate_cardinality_properties(
         self,
         path: EventPropertyLike,
@@ -463,6 +475,7 @@ class EventsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def aggregate_unique_properties(
         self,
         path: EventPropertyLike,
@@ -512,6 +525,7 @@ class EventsAPI(APIClient):
     @overload
     async def create(self, event: Event | EventWrite) -> Event: ...
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def create(self, event: Event | EventWrite | Sequence[Event] | Sequence[EventWrite]) -> Event | EventList:
         """`Create one or more events <https://api-docs.cognite.com/20230101/tag/Events/operation/createEvents>`_.
 
@@ -540,6 +554,7 @@ class EventsAPI(APIClient):
             list_cls=EventList, resource_cls=Event, items=event, input_resource_cls=EventWrite
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def delete(
         self,
         id: int | Sequence[int] | None = None,
@@ -586,6 +601,7 @@ class EventsAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Event: ...
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def update(
         self,
         item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate],
@@ -629,6 +645,7 @@ class EventsAPI(APIClient):
             list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item, mode=mode
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def search(
         self,
         description: str | None = None,
@@ -672,6 +689,7 @@ class EventsAPI(APIClient):
     @overload
     async def upsert(self, item: Event | EventWrite, mode: Literal["patch", "replace"] = "patch") -> Event: ...
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def upsert(
         self, item: Event | EventWrite | Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch"
     ) -> Event | EventList:
@@ -718,6 +736,7 @@ class EventsAPI(APIClient):
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     async def list(
         self,
         start_time: dict[str, Any] | TimestampRange | None = None,

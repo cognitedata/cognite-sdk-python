@@ -6,6 +6,8 @@ import warnings
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING, Any, NoReturn, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes import (
     SequenceRows,
@@ -23,13 +25,20 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 
+_SEQUENCES_DEPRECATION_MESSAGE = (
+    "The Sequences API is deprecated and is scheduled for removal on 2027-12-31. "
+    "Use files in data modeling (for whole-table downloads) or records (for row-level queries). "
+    "See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+)
+
+
 class SequencesDataAPI(APIClient):
     _RESOURCE_PATH = "/sequences/data"
 
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _SEQUENCES_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
@@ -40,6 +49,7 @@ class SequencesDataAPI(APIClient):
         self._SEQ_POST_LIMIT_VALUES = 100_000
         self._SEQ_RETRIEVE_LIMIT = 10_000
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def insert(
         self,
         rows: SequenceRows
@@ -135,6 +145,7 @@ class SequencesDataAPI(APIClient):
         summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks()
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def insert_dataframe(
         self, dataframe: pd.DataFrame, id: int | None = None, external_id: str | None = None, dropna: bool = True
     ) -> None:
@@ -174,6 +185,7 @@ class SequencesDataAPI(APIClient):
     async def _insert_data(self, task: dict[str, Any]) -> None:
         await self._post(url_path=self._RESOURCE_PATH, json={"items": [task]}, semaphore=self._get_semaphore("write"))
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def delete(self, rows: typing.Sequence[int], id: int | None = None, external_id: str | None = None) -> None:
         """`Delete rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_.
 
@@ -204,6 +216,7 @@ class SequencesDataAPI(APIClient):
             semaphore=self._get_semaphore("delete"),
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def delete_range(
         self, start: int, end: int | None, id: int | None = None, external_id: str | None = None
     ) -> None:
@@ -305,6 +318,7 @@ class SequencesDataAPI(APIClient):
         limit: int | None = None,
     ) -> SequenceRowsList: ...
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def retrieve(
         self,
         external_id: str | SequenceNotStr[str] | None = None,
@@ -371,6 +385,7 @@ class SequencesDataAPI(APIClient):
         else:
             return SequenceRowsList(results)
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def retrieve_last_row(
         self,
         id: int | None = None,
@@ -410,6 +425,7 @@ class SequencesDataAPI(APIClient):
         )
         return SequenceRows._load(res.json())
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def retrieve_dataframe(
         self,
         start: int,

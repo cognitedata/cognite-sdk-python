@@ -18,6 +18,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client._basic_api_client import FailedRequestHandler
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -69,13 +71,16 @@ SortSpec: TypeAlias = (
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 
+_ASSETS_DEPRECATION_MESSAGE = "The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+
+
 class AssetsAPI(APIClient):
     _RESOURCE_PATH = "/assets"
 
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _ASSETS_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
@@ -130,6 +135,7 @@ class AssetsAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> AsyncIterator[AssetList]: ...
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def __call__(
         self,
         chunk_size: int | None = None,
@@ -222,6 +228,7 @@ class AssetsAPI(APIClient):
         ):
             yield item
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
         """`Retrieve a single asset by id <https://api-docs.cognite.com/20230101/tag/Assets/operation/getAsset>`_.
 
@@ -252,6 +259,7 @@ class AssetsAPI(APIClient):
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return await self._retrieve_multiple(list_cls=AssetList, resource_cls=Asset, identifiers=identifier)
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
@@ -292,6 +300,7 @@ class AssetsAPI(APIClient):
             list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def aggregate_count(
         self,
         property: AssetPropertyLike | None = None,
@@ -337,6 +346,7 @@ class AssetsAPI(APIClient):
             advanced_filter=advanced_filter,
         )
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def aggregate_cardinality_values(
         self,
         property: AssetPropertyLike,
@@ -386,6 +396,7 @@ class AssetsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def aggregate_cardinality_properties(
         self,
         path: AssetPropertyLike,
@@ -427,6 +438,7 @@ class AssetsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def aggregate_unique_values(
         self,
         property: AssetPropertyLike,
@@ -506,6 +518,7 @@ class AssetsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def aggregate_unique_properties(
         self,
         path: AssetPropertyLike,
@@ -557,6 +570,7 @@ class AssetsAPI(APIClient):
     @overload
     async def create(self, asset: Asset | AssetWrite) -> Asset: ...
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def create(self, asset: Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]) -> Asset | AssetList:
         """`Create one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/createAssets>`_.
 
@@ -596,6 +610,7 @@ class AssetsAPI(APIClient):
             list_cls=AssetList, resource_cls=Asset, items=asset, input_resource_cls=AssetWrite
         )
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def create_hierarchy(
         self,
         assets: Sequence[AssetWrite] | AssetHierarchy,
@@ -734,6 +749,7 @@ class AssetsAPI(APIClient):
 
         return await _AssetHierarchyCreator(assets, assets_api=self).create(upsert, upsert_mode)
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def delete(
         self,
         id: int | Sequence[int] | None = None,
@@ -782,6 +798,7 @@ class AssetsAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Asset: ...
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def update(
         self,
         item: Asset | AssetWrite | AssetUpdate | Sequence[Asset | AssetWrite | AssetUpdate],
@@ -858,6 +875,7 @@ class AssetsAPI(APIClient):
     @overload
     async def upsert(self, item: Asset | AssetWrite, mode: Literal["patch", "replace"] = "patch") -> Asset: ...
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def upsert(
         self, item: Asset | AssetWrite | Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch"
     ) -> Asset | AssetList:
@@ -906,6 +924,7 @@ class AssetsAPI(APIClient):
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def search(
         self,
         name: str | None = None,
@@ -967,6 +986,7 @@ class AssetsAPI(APIClient):
             limit=limit,
         )
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def retrieve_subtree(
         self, id: int | None = None, external_id: str | None = None, depth: int | None = None
     ) -> AssetList:
@@ -1013,6 +1033,7 @@ class AssetsAPI(APIClient):
             return {}
         return {"aggregatedProperties": [to_camel_case(prop) for prop in agg_props]}
 
+    @deprecated(_ASSETS_DEPRECATION_MESSAGE, category=None)
     async def list(
         self,
         name: str | None = None,

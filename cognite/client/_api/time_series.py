@@ -4,6 +4,8 @@ import warnings
 from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api_client import APIClient
@@ -43,13 +45,16 @@ SortSpec: TypeAlias = (
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 
+_TIME_SERIES_DEPRECATION_MESSAGE = "The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+
+
 class TimeSeriesAPI(APIClient):
     _RESOURCE_PATH = "/timeseries"
 
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _TIME_SERIES_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
@@ -109,6 +114,7 @@ class TimeSeriesAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> AsyncIterator[TimeSeriesList]: ...
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def __call__(
         self,
         chunk_size: int | None = None,
@@ -204,6 +210,7 @@ class TimeSeriesAPI(APIClient):
         ):
             yield item
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> TimeSeries | None:
@@ -241,6 +248,7 @@ class TimeSeriesAPI(APIClient):
             identifiers=identifiers,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
@@ -284,6 +292,7 @@ class TimeSeriesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_count(
         self,
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -330,6 +339,7 @@ class TimeSeriesAPI(APIClient):
             advanced_filter=advanced_filter,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_cardinality_values(
         self,
         property: TimeSeriesProperty | str | list[str],
@@ -388,6 +398,7 @@ class TimeSeriesAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_cardinality_properties(
         self,
         path: TimeSeriesProperty | str | list[str],
@@ -434,6 +445,7 @@ class TimeSeriesAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_unique_values(
         self,
         property: TimeSeriesProperty | str | list[str],
@@ -512,6 +524,7 @@ class TimeSeriesAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_unique_properties(
         self,
         path: TimeSeriesProperty | str | list[str],
@@ -563,6 +576,7 @@ class TimeSeriesAPI(APIClient):
     @overload
     async def create(self, time_series: TimeSeries | TimeSeriesWrite) -> TimeSeries: ...
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def create(
         self, time_series: TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]
     ) -> TimeSeries | TimeSeriesList:
@@ -597,6 +611,7 @@ class TimeSeriesAPI(APIClient):
             input_resource_cls=TimeSeriesWrite,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def delete(
         self,
         id: int | Sequence[int] | None = None,
@@ -643,6 +658,7 @@ class TimeSeriesAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TimeSeries: ...
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def update(
         self,
         item: TimeSeries
@@ -719,6 +735,7 @@ class TimeSeriesAPI(APIClient):
         self, item: TimeSeries | TimeSeriesWrite, mode: Literal["patch", "replace"] = "patch"
     ) -> TimeSeries: ...
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def upsert(
         self,
         item: TimeSeries | TimeSeriesWrite | Sequence[TimeSeries | TimeSeriesWrite],
@@ -769,6 +786,7 @@ class TimeSeriesAPI(APIClient):
             mode=mode,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def search(
         self,
         name: str | None = None,
@@ -823,6 +841,7 @@ class TimeSeriesAPI(APIClient):
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     async def list(
         self,
         name: str | None = None,

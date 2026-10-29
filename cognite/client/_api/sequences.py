@@ -6,6 +6,8 @@ import warnings
 from collections.abc import AsyncIterator, Mapping
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api.sequence_data import SequencesDataAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -52,13 +54,16 @@ SortSpec: TypeAlias = (
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 
+_SEQUENCES_DEPRECATION_MESSAGE = "The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+
+
 class SequencesAPI(APIClient):
     _RESOURCE_PATH = "/sequences"
 
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _SEQUENCES_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
@@ -114,6 +119,7 @@ class SequencesAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> AsyncIterator[SequenceList]: ...
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def __call__(
         self,
         chunk_size: int | None = None,
@@ -187,6 +193,7 @@ class SequencesAPI(APIClient):
         ):
             yield item
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
         """`Retrieve a single sequence by id <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceById>`_.
 
@@ -217,6 +224,7 @@ class SequencesAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return await self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def retrieve_multiple(
         self,
         ids: typing.Sequence[int] | None = None,
@@ -255,6 +263,7 @@ class SequencesAPI(APIClient):
             list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_count(
         self,
         advanced_filter: Filter | dict[str, Any] | None = None,
@@ -298,6 +307,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_cardinality_values(
         self,
         property: SequenceProperty | str | list[str],
@@ -355,6 +365,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_cardinality_properties(
         self,
         path: SequenceProperty | str | list[str],
@@ -397,6 +408,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_unique_values(
         self,
         property: SequenceProperty | str | list[str],
@@ -481,6 +493,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_unique_properties(
         self,
         path: SequenceProperty | str | list[str],
@@ -529,6 +542,7 @@ class SequencesAPI(APIClient):
     @overload
     async def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList: ...
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def create(
         self, sequence: Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]
     ) -> Sequence | SequenceList:
@@ -575,6 +589,7 @@ class SequencesAPI(APIClient):
             list_cls=SequenceList, resource_cls=Sequence, items=sequence, input_resource_cls=SequenceWrite
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def delete(
         self,
         id: int | typing.Sequence[int] | None = None,
@@ -621,6 +636,7 @@ class SequencesAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> SequenceList: ...
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def update(
         self,
         item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
@@ -737,6 +753,7 @@ class SequencesAPI(APIClient):
     @overload
     async def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence: ...
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def upsert(
         self,
         item: Sequence | SequenceWrite | typing.Sequence[Sequence | SequenceWrite],
@@ -875,6 +892,7 @@ class SequencesAPI(APIClient):
             update_obj["update"]["columns"]["modify"] = modify_list
         return update_obj
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def search(
         self,
         name: str | None = None,
@@ -920,6 +938,7 @@ class SequencesAPI(APIClient):
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def list(
         self,
         name: str | None = None,

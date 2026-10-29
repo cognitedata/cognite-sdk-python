@@ -5,6 +5,8 @@ import warnings
 from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -27,13 +29,20 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 
+_RELATIONSHIPS_DEPRECATION_MESSAGE = (
+    "The Relationships API is deprecated and is scheduled for removal on 2027-12-31. "
+    "Model connections as edges or direct relations in the data modeling service. "
+    "See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+)
+
+
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
 
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _RELATIONSHIPS_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
@@ -84,6 +93,7 @@ class RelationshipsAPI(APIClient):
         fetch_resources: bool = False,
     ) -> AsyncIterator[RelationshipList]: ...
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     async def __call__(
         self,
         chunk_size: int | None = None,
@@ -106,7 +116,7 @@ class RelationshipsAPI(APIClient):
         """Iterate over relationships
 
         .. deprecated:: 8.22.0
-            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges or direct relations in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
@@ -164,6 +174,7 @@ class RelationshipsAPI(APIClient):
         ):
             yield item
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     async def retrieve(self, external_id: str, fetch_resources: bool = False) -> Relationship | None:
         """Retrieve a single relationship by external id.
 
@@ -195,6 +206,7 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     async def retrieve_multiple(
         self, external_ids: SequenceNotStr[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
     ) -> RelationshipList:
@@ -231,6 +243,7 @@ class RelationshipsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     async def list(
         self,
         source_external_ids: SequenceNotStr[str] | None = None,
@@ -369,6 +382,7 @@ class RelationshipsAPI(APIClient):
     @overload
     async def create(self, relationship: Sequence[Relationship | RelationshipWrite]) -> RelationshipList: ...
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     async def create(
         self, relationship: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]
     ) -> Relationship | RelationshipList:
@@ -437,6 +451,7 @@ class RelationshipsAPI(APIClient):
         self, item: Sequence[Relationship | RelationshipWrite | RelationshipUpdate]
     ) -> RelationshipList: ...
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     async def update(
         self,
         item: Relationship
@@ -509,6 +524,7 @@ class RelationshipsAPI(APIClient):
         self, item: Relationship | RelationshipWrite, mode: Literal["patch", "replace"] = "patch"
     ) -> Relationship: ...
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     async def upsert(
         self,
         item: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite],
@@ -562,6 +578,7 @@ class RelationshipsAPI(APIClient):
             mode=mode,
         )
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     async def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more relationships <https://api-docs.cognite.com/20230101/tag/Relationships/operation/deleteRelationships>`_.
 

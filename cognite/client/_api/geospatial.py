@@ -7,6 +7,8 @@ from collections.abc import AsyncIterator, Sequence
 from pathlib import Path
 from typing import Any, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.geospatial import (
@@ -31,6 +33,8 @@ from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
+_GEOSPATIAL_DEPRECATION_MESSAGE = "The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+
 
 class GeospatialAPI(APIClient):
     _RESOURCE_PATH = "/geospatial"
@@ -38,7 +42,7 @@ class GeospatialAPI(APIClient):
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _GEOSPATIAL_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
@@ -66,6 +70,7 @@ class GeospatialAPI(APIClient):
         self, feature_type: Sequence[FeatureType] | Sequence[FeatureTypeWrite]
     ) -> FeatureTypeList: ...
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def create_feature_types(
         self, feature_type: FeatureType | FeatureTypeWrite | Sequence[FeatureType] | Sequence[FeatureTypeWrite]
     ) -> FeatureType | FeatureTypeList:
@@ -107,6 +112,7 @@ class GeospatialAPI(APIClient):
             input_resource_cls=FeatureTypeWrite,
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def delete_feature_types(self, external_id: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """`Delete one or more feature type <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/GeospatialDeleteFeatureTypes>`_.
 
@@ -135,6 +141,7 @@ class GeospatialAPI(APIClient):
             extra_body_fields=extra_body_fields,
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def list_feature_types(self) -> FeatureTypeList:
         """`List feature types <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listFeatureTypes>`_.
 
@@ -168,6 +175,7 @@ class GeospatialAPI(APIClient):
     @overload
     async def retrieve_feature_types(self, external_id: list[str]) -> FeatureTypeList: ...
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def retrieve_feature_types(self, external_id: str | list[str]) -> FeatureType | FeatureTypeList:
         """`Retrieve feature types <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getFeatureTypesByIds>`_.
 
@@ -198,6 +206,7 @@ class GeospatialAPI(APIClient):
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def patch_feature_types(self, patch: FeatureTypePatch | Sequence[FeatureTypePatch]) -> FeatureTypeList:
         """`Patch feature types <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/updateFeatureTypes>`_.
 
@@ -279,6 +288,7 @@ class GeospatialAPI(APIClient):
         chunk_size: int | None = None,
     ) -> FeatureList: ...
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def create_features(
         self,
         feature_type_external_id: str,
@@ -343,6 +353,7 @@ class GeospatialAPI(APIClient):
             input_resource_cls=FeatureWrite,
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def delete_features(
         self, feature_type_external_id: str, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
@@ -388,6 +399,7 @@ class GeospatialAPI(APIClient):
         properties: dict[str, Any] | None = None,
     ) -> FeatureList: ...
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def retrieve_features(
         self,
         feature_type_external_id: str,
@@ -447,6 +459,7 @@ class GeospatialAPI(APIClient):
         chunk_size: int | None = None,
     ) -> FeatureList: ...
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def update_features(
         self,
         feature_type_external_id: str,
@@ -502,6 +515,7 @@ class GeospatialAPI(APIClient):
             limit=chunk_size,
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def list_features(
         self,
         feature_type_external_id: str,
@@ -584,6 +598,7 @@ class GeospatialAPI(APIClient):
             },
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def search_features(
         self,
         feature_type_external_id: str,
@@ -723,6 +738,7 @@ class GeospatialAPI(APIClient):
         )
         return FeatureList._load(res.json()["items"])
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def stream_features(
         self,
         feature_type_external_id: str,
@@ -791,6 +807,7 @@ class GeospatialAPI(APIClient):
             async for line in response.aiter_lines():
                 yield Feature._load(_json.loads(line))
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def aggregate_features(
         self,
         feature_type_external_id: str,
@@ -853,6 +870,7 @@ class GeospatialAPI(APIClient):
         )
         return FeatureAggregateList._load(res.json()["items"])
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def get_coordinate_reference_systems(self, srids: int | Sequence[int]) -> CoordinateReferenceSystemList:
         """`Get Coordinate Reference Systems <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getCoordinateReferenceSystem>`_.
 
@@ -887,6 +905,7 @@ class GeospatialAPI(APIClient):
         )
         return CoordinateReferenceSystemList._load(res.json()["items"])
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def list_coordinate_reference_systems(self, only_custom: bool = False) -> CoordinateReferenceSystemList:
         """`List Coordinate Reference Systems <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listGeospatialCoordinateReferenceSystems>`_.
 
@@ -916,6 +935,7 @@ class GeospatialAPI(APIClient):
         )
         return CoordinateReferenceSystemList._load(res.json()["items"])
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def create_coordinate_reference_systems(
         self,
         crs: CoordinateReferenceSystem
@@ -992,6 +1012,7 @@ class GeospatialAPI(APIClient):
         )
         return CoordinateReferenceSystemList._load(res.json()["items"])
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def delete_coordinate_reference_systems(self, srids: int | Sequence[int]) -> None:
         """`Delete Coordinate Reference System <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteGeospatialCoordinateReferenceSystems>`_.
 
@@ -1022,6 +1043,7 @@ class GeospatialAPI(APIClient):
             semaphore=self._get_semaphore("delete"),
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def put_raster(
         self,
         feature_type_external_id: str,
@@ -1094,6 +1116,7 @@ class GeospatialAPI(APIClient):
         )
         return RasterMetadata.load(res.json())
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def delete_raster(
         self,
         feature_type_external_id: str,
@@ -1130,6 +1153,7 @@ class GeospatialAPI(APIClient):
             semaphore=self._get_semaphore("delete"),
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def get_raster(
         self,
         feature_type_external_id: str,
@@ -1195,6 +1219,7 @@ class GeospatialAPI(APIClient):
         )
         return response.content
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     async def compute(
         self,
         output: dict[str, GeospatialComputeFunction],

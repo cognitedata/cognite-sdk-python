@@ -4,6 +4,8 @@ import warnings
 from collections.abc import AsyncIterator, Sequence
 from typing import Literal, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -17,6 +19,12 @@ from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils._validation import process_data_set_ids
 from cognite.client.utils.useful_types import SequenceNotStr
 
+_LABELS_DEPRECATION_MESSAGE = (
+    "The Labels API is deprecated and is scheduled for removal on 2027-12-31. "
+    "There is no direct replacement; model labels as a concept in your data model. "
+    "See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+)
+
 
 class LabelsAPI(APIClient):
     _RESOURCE_PATH = "/labels"
@@ -24,7 +32,7 @@ class LabelsAPI(APIClient):
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _LABELS_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
@@ -51,6 +59,7 @@ class LabelsAPI(APIClient):
         data_set_external_ids: str | SequenceNotStr[str] | None = None,
     ) -> AsyncIterator[LabelDefinitionList]: ...
 
+    @deprecated(_LABELS_DEPRECATION_MESSAGE, category=None)
     async def __call__(
         self,
         chunk_size: int | None = None,
@@ -104,6 +113,7 @@ class LabelsAPI(APIClient):
         self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> LabelDefinitionList: ...
 
+    @deprecated(_LABELS_DEPRECATION_MESSAGE, category=None)
     async def retrieve(
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> LabelDefinition | LabelDefinitionList | None:
@@ -143,6 +153,7 @@ class LabelsAPI(APIClient):
             return result[0] if result else None
         return result
 
+    @deprecated(_LABELS_DEPRECATION_MESSAGE, category=None)
     async def list(
         self,
         name: str | None = None,
@@ -201,6 +212,7 @@ class LabelsAPI(APIClient):
     @overload
     async def create(self, label: Sequence[LabelDefinition | LabelDefinitionWrite]) -> LabelDefinitionList: ...
 
+    @deprecated(_LABELS_DEPRECATION_MESSAGE, category=None)
     async def create(
         self, label: LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]
     ) -> LabelDefinition | LabelDefinitionList:
@@ -243,6 +255,7 @@ class LabelsAPI(APIClient):
 
         return await self._create_multiple(list_cls=LabelDefinitionList, resource_cls=LabelDefinition, items=label)
 
+    @deprecated(_LABELS_DEPRECATION_MESSAGE, category=None)
     async def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:
         """`Delete one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/deleteLabels>`_.
 

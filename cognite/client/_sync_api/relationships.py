@@ -94,7 +94,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
         Iterate over relationships
 
         .. deprecated:: 8.22.0
-            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges or direct relations in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
@@ -402,7 +402,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.remove("PUMP")
                 >>> res = client.relationships.update(my_update)
         """
-        return run_sync(self.__async_client.relationships.update(item=item, mode=mode))  # type: ignore [call-overload]
+        return run_sync(self.__async_client.relationships.update(item=item, mode=mode))  # type: ignore[call-overload]
 
     @overload
     def upsert(

@@ -4,6 +4,8 @@ import warnings
 from collections.abc import AsyncIterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -22,13 +24,20 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 
+_DATA_SETS_DEPRECATION_MESSAGE = (
+    "The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. "
+    "Scope data with spaces and govern consumption with data products. "
+    "See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+)
+
+
 class DataSetsAPI(APIClient):
     _RESOURCE_PATH = "/datasets"
 
     @staticmethod
     def _deprecation_warning() -> None:
         warnings.warn(
-            "The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            _DATA_SETS_DEPRECATION_MESSAGE,
             DeprecationWarning,
             stacklevel=3,
         )
@@ -61,6 +70,7 @@ class DataSetsAPI(APIClient):
         limit: int | None = None,
     ) -> AsyncIterator[DataSetList]: ...
 
+    @deprecated(_DATA_SETS_DEPRECATION_MESSAGE, category=None)
     async def __call__(
         self,
         chunk_size: int | None = None,
@@ -109,6 +119,7 @@ class DataSetsAPI(APIClient):
     @overload
     async def create(self, data_set: DataSet | DataSetWrite) -> DataSet: ...
 
+    @deprecated(_DATA_SETS_DEPRECATION_MESSAGE, category=None)
     async def create(
         self, data_set: DataSet | DataSetWrite | Sequence[DataSet] | Sequence[DataSetWrite]
     ) -> DataSet | DataSetList:
@@ -139,6 +150,7 @@ class DataSetsAPI(APIClient):
             list_cls=DataSetList, resource_cls=DataSet, items=data_set, input_resource_cls=DataSetWrite
         )
 
+    @deprecated(_DATA_SETS_DEPRECATION_MESSAGE, category=None)
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> DataSet | None:
         """`Retrieve a single data set by id <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/getDataSets>`_.
 
@@ -169,6 +181,7 @@ class DataSetsAPI(APIClient):
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return await self._retrieve_multiple(list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers)
 
+    @deprecated(_DATA_SETS_DEPRECATION_MESSAGE, category=None)
     async def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
@@ -209,6 +222,7 @@ class DataSetsAPI(APIClient):
             list_cls=DataSetList, resource_cls=DataSet, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
+    @deprecated(_DATA_SETS_DEPRECATION_MESSAGE, category=None)
     async def aggregate_count(self, filter: DataSetFilter | dict[str, Any] | None = None) -> int:
         """`Aggregate data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/aggregateDataSets>`_.
 
@@ -249,6 +263,7 @@ class DataSetsAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> DataSetList: ...
 
+    @deprecated(_DATA_SETS_DEPRECATION_MESSAGE, category=None)
     async def update(
         self,
         item: DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate],
@@ -290,6 +305,7 @@ class DataSetsAPI(APIClient):
             list_cls=DataSetList, resource_cls=DataSet, update_cls=DataSetUpdate, items=item, mode=mode
         )
 
+    @deprecated(_DATA_SETS_DEPRECATION_MESSAGE, category=None)
     async def list(
         self,
         metadata: dict[str, str] | None = None,
