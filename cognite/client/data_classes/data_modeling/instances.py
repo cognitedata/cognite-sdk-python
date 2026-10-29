@@ -1863,12 +1863,20 @@ class _PropertyValueSerializer:
     def serialize_values(cls, props: Mapping[str, Any], camel_case: bool = True) -> dict[str, PropertyValue]:
         properties: dict[str, Any] = {}
         for key, value in props.items():
-            key = PropertyOptions.resolve_property(key)
-            if is_sequence_not_str(value):
-                properties[key] = [cls._serialize_value(v, camel_case) for v in value]
-            else:
-                properties[key] = cls._serialize_value(value, camel_case)
+            properties[PropertyOptions.resolve_property(key)] = cls.serialize_value(value, camel_case)
         return properties
+
+    @classmethod
+    def serialize_value(cls, value: PropertyValueWrite, camel_case: bool = True) -> PropertyValue | list[PropertyValue]:
+        """Serialize a single property value, or a list of them, to its API representation.
+
+        Also used for record property values, which share the property types and wire formats of node
+        and edge properties. Keep instance-only behaviour, like resolving reserved property names, out
+        of this method.
+        """
+        if is_sequence_not_str(value):
+            return [cls._serialize_value(v, camel_case) for v in value]
+        return cls._serialize_value(value, camel_case)
 
     @staticmethod
     def _serialize_value(value: Any, camel_case: bool) -> PropertyValue:

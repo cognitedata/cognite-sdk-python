@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any, Literal, TypeAlias
 
 from typing_extensions import Self
@@ -17,7 +18,11 @@ from cognite.client.data_classes.data_modeling import aggregates as aggs
 from cognite.client.data_classes.data_modeling._validation import validate_property_path
 from cognite.client.data_classes.data_modeling.data_types import UnitReference, UnitSystemReference
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyPath, ViewId
-from cognite.client.data_classes.data_modeling.instances import TypeInformation
+from cognite.client.data_classes.data_modeling.instances import (
+    PropertyValueWrite,
+    TypeInformation,
+    _PropertyValueSerializer,
+)
 from cognite.client.utils._identifier import IdentifierSequenceCore
 from cognite.client.utils._identifier import RecordId as RecordId  # explicit re-export
 from cognite.client.utils.useful_types import SequenceNotStr
@@ -102,13 +107,15 @@ class RecordSource(CogniteResource):
 
     Args:
         source (RecordSourceIdentifier): Container ID, view ID, or a (space, external_id[, version]) tuple.
-        properties (dict[str, Any]): The data to write to the source container or view.
+        properties (dict[str, PropertyValueWrite]): The data to write to the source container or view. ``datetime``
+            values are serialized to ISO 8601 with millisecond precision, ``date`` to ``YYYY-MM-DD``, and
+            ``NodeId``/``DirectRelationReference`` to ``{space, externalId}``.
     """
 
     def __init__(
         self,
         source: RecordSourceIdentifier,
-        properties: dict[str, Any],
+        properties: dict[str, PropertyValueWrite],
     ) -> None:
         self.source = _load_record_source_id(source)
         self.properties = properties
@@ -123,7 +130,12 @@ class RecordSource(CogniteResource):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "source": self.source.dump(camel_case=camel_case),
-            "properties": deepcopy(self.properties),
+            "properties": deepcopy(
+                {
+                    key: _PropertyValueSerializer.serialize_value(value, camel_case)
+                    for key, value in self.properties.items()
+                }
+            ),
         }
 
 
@@ -296,26 +308,34 @@ class RecordList(WriteableCogniteResourceList[RecordWrite, Record]):
         return cls(resources, typing)
 
 
+def _serialize_time_bound(value: int | str | datetime | None) -> int | str | None:
+    # Same format as datetime property values on instances
+    # a naive datetime is sent without a timezone (read as UTC)
+    return value.isoformat(timespec="milliseconds") if isinstance(value, datetime) else value
+
+
 class TimeRange(CogniteResource):
     """A time range filter on ``lastUpdatedTime``.
 
-    Bounds are either milliseconds since the Unix epoch (int) or an ISO-8601 string. At least a
-    lower bound (``gte`` or ``gt``) is required for immutable streams; specifying two lower or two
-    upper bounds is not allowed.
+    Bounds are milliseconds since the Unix epoch (int), a datetime, or an ISO-8601 string with at most
+    millisecond precision. A datetime is sent as an ISO-8601 string with millisecond precision, the same as
+    datetime property values (a naive datetime has no timezone and is read as UTC); strings are passed to
+    the API unchanged. At least a lower bound (``gte`` or ``gt``) is required for immutable streams;
+    specifying two lower or two upper bounds is not allowed.
 
     Args:
-        gte (int | str | None): Greater than or equal to.
-        gt (int | str | None): Greater than.
-        lte (int | str | None): Less than or equal to.
-        lt (int | str | None): Less than.
+        gte (int | str | datetime | None): Greater than or equal to.
+        gt (int | str | datetime | None): Greater than.
+        lte (int | str | datetime | None): Less than or equal to.
+        lt (int | str | datetime | None): Less than.
     """
 
     def __init__(
         self,
-        gte: int | str | None = None,
-        gt: int | str | None = None,
-        lte: int | str | None = None,
-        lt: int | str | None = None,
+        gte: int | str | datetime | None = None,
+        gt: int | str | datetime | None = None,
+        lte: int | str | datetime | None = None,
+        lt: int | str | datetime | None = None,
     ) -> None:
         self.gte = gte
         self.gt = gt
@@ -328,7 +348,7 @@ class TimeRange(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            key: value
+            key: _serialize_time_bound(value)
             for key, value in {"gte": self.gte, "gt": self.gt, "lte": self.lte, "lt": self.lt}.items()
             if value is not None
         }

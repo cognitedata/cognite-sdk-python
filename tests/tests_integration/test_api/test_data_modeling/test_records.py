@@ -42,13 +42,12 @@ CONTAINER_EXTERNAL_ID = "PythonSdkIntegrationTestRecords"
 CONSISTENCY_TIMEOUT = 60.0
 
 
-def an_hour_ago() -> str:
+def an_hour_ago() -> datetime:
     """A lower bound for 'lastUpdatedTime'.
 
-    TimeRange forwards its bounds to the API untouched, and the API only accepts ISO-8601 there -
-    not the "1h-ago" shorthand that the rest of the SDK understands.
+    The API does not understand the "1h-ago" shorthand that the rest of the SDK accepts, so use a datetime.
     """
-    return (datetime.now(timezone.utc) - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc) - timedelta(hours=1)
 
 
 def assert_eventually(assertion: Callable[[], None]) -> None:
