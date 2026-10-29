@@ -402,7 +402,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.remove("PUMP")
                 >>> res = client.relationships.update(my_update)
         """
-        return run_sync(self.__async_client.relationships.update(item=item, mode=mode))
+        return run_sync(self.__async_client.relationships.update(item=item, mode=mode))  # type: ignore [call-overload]
 
     @overload
     def upsert(

@@ -121,7 +121,7 @@ class SyncLabelsAPI(SyncAPIClient):
                 >>> res = client.labels.retrieve(external_id="my_label", ignore_unknown_ids=True)
         """
         return run_sync(
-            self.__async_client.labels.retrieve(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)
+            self.__async_client.labels.retrieve(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)  # type: ignore[arg-type]
         )
 
     def list(
