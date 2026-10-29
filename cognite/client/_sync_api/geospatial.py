@@ -699,7 +699,7 @@ class SyncGeospatialAPI(SyncAPIClient):
                 allow_crs_transformation=allow_crs_transformation,
                 allow_dimensionality_mismatch=allow_dimensionality_mismatch,
             )
-        )  # type: ignore [misc]
+        )
 
     def aggregate_features(
         self,
