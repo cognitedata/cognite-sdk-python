@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 from typing import Literal, overload
 
@@ -13,10 +14,21 @@ from cognite.client.utils._identifier import IdentifierSequence
 class SecurityCategoriesAPI(APIClient):
     _RESOURCE_PATH = "/securitycategories"
 
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            "The Security Categories API is deprecated and is scheduled for removal on 2027-12-31. Replace security categories with data products and granular access control. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+
     async def list(
         self, limit: int | None = DEFAULT_LIMIT_READ, sort: Literal["ASC", "DESC"] = "ASC"
     ) -> SecurityCategoryList:
         """`List security categories <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/getSecurityCategories>`_.
+
+        .. deprecated:: 8.22.0
+            The Security Categories API is deprecated and is scheduled for removal on 2027-12-31. Replace security categories with data products and granular access control. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             limit (int | None): Max number of security categories to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
@@ -34,6 +46,7 @@ class SecurityCategoriesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.iam.security_categories.list()
         """
+        self._deprecation_warning()
         return await self._list(
             list_cls=SecurityCategoryList,
             resource_cls=SecurityCategory,
@@ -59,6 +72,9 @@ class SecurityCategoriesAPI(APIClient):
     ) -> SecurityCategory | SecurityCategoryList:
         """`Create one or more security categories <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/createSecurityCategories>`_.
 
+        .. deprecated:: 8.22.0
+            The Security Categories API is deprecated and is scheduled for removal on 2027-12-31. Replace security categories with data products and granular access control. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             security_category (SecurityCategory | SecurityCategoryWrite | Sequence[SecurityCategory] | Sequence[SecurityCategoryWrite]): Security category or list of categories to create.
 
@@ -76,6 +92,7 @@ class SecurityCategoriesAPI(APIClient):
                 >>> my_category = SecurityCategoryWrite(name="My Category")
                 >>> res = client.iam.security_categories.create(my_category)
         """
+        self._deprecation_warning()
         return await self._create_multiple(
             list_cls=SecurityCategoryList,
             resource_cls=SecurityCategory,
@@ -85,6 +102,9 @@ class SecurityCategoriesAPI(APIClient):
 
     async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more security categories <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/deleteSecurityCategories>`_.
+
+        .. deprecated:: 8.22.0
+            The Security Categories API is deprecated and is scheduled for removal on 2027-12-31. Replace security categories with data products and granular access control. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | Sequence[int]): ID or list of IDs of security categories to delete.
@@ -98,4 +118,5 @@ class SecurityCategoriesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.iam.security_categories.delete(1)
         """
+        self._deprecation_warning()
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=False)

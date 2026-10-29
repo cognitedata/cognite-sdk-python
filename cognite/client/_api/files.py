@@ -53,6 +53,14 @@ from cognite.client.utils.useful_types import SequenceNotStr
 class FilesAPI(APIClient):
     _RESOURCE_PATH = "/files"
 
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            "The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+
     def _get_semaphore(
         self, operation: Literal["read", "write", "delete", "upload", "download", "open_files"]
     ) -> asyncio.BoundedSemaphore:
@@ -262,6 +270,9 @@ class FilesAPI(APIClient):
     ) -> FileMetadata | None:
         """`Retrieve a single file metadata by id <https://api-docs.cognite.com/20230101/tag/Files/operation/getFileByInternalId>`_.
 
+        .. deprecated:: 8.22.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | None): ID
             external_id (str | None): External ID
@@ -287,6 +298,7 @@ class FilesAPI(APIClient):
 
                 >>> res = client.files.retrieve(external_id="1")
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
         return await self._retrieve_multiple(
             list_cls=FileMetadataList, resource_cls=FileMetadata, identifiers=identifiers
@@ -300,6 +312,9 @@ class FilesAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> FileMetadataList:
         """`Retrieve multiple file metadatas by id <https://api-docs.cognite.com/20230101/tag/Files/operation/byIdsFiles>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -329,6 +344,7 @@ class FilesAPI(APIClient):
 
                 >>> res = client.files.retrieve_multiple(external_ids=["abc", "def"])
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
         return await self._retrieve_multiple(
             list_cls=FileMetadataList,
@@ -339,6 +355,9 @@ class FilesAPI(APIClient):
 
     async def aggregate_count(self, filter: FileMetadataFilter | dict[str, Any] | None = None) -> int:
         """`Aggregate files <https://api-docs.cognite.com/20230101/tag/Files/operation/aggregateFiles>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             filter (FileMetadataFilter | dict[str, Any] | None): Filter on file metadata filter with exact match
@@ -355,6 +374,7 @@ class FilesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> aggregate_uploaded = client.files.aggregate_count(filter={"uploaded": True})
         """
+        self._deprecation_warning()
         return await self._aggregate_count(filter=filter)
 
     async def delete(
@@ -364,6 +384,9 @@ class FilesAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete files <https://api-docs.cognite.com/20230101/tag/Files/operation/deleteFiles>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -379,6 +402,7 @@ class FilesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.files.delete(id=[1, 2, 3], external_id="3")
         """
+        self._deprecation_warning()
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
@@ -408,6 +432,9 @@ class FilesAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> FileMetadata | FileMetadataList:
         """`Update files <https://api-docs.cognite.com/20230101/tag/Files/operation/updateFiles>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
@@ -449,6 +476,7 @@ class FilesAPI(APIClient):
                 >>> my_update = FileMetadataUpdate(id=1).labels.remove("PUMP")
                 >>> res = client.files.update(my_update)
         """
+        self._deprecation_warning()
         return await self._update_multiple(
             list_cls=FileMetadataList,
             resource_cls=FileMetadata,
@@ -465,6 +493,9 @@ class FilesAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> FileMetadataList:
         """`Search for files <https://api-docs.cognite.com/20230101/tag/Files/operation/searchFiles>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
@@ -492,6 +523,7 @@ class FilesAPI(APIClient):
                 ...     name="xyz", filter=FileMetadataFilter(labels=my_label_filter)
                 ... )
         """
+        self._deprecation_warning()
         return await self._search(list_cls=FileMetadataList, search={"name": name}, filter=filter or {}, limit=limit)
 
     async def upload_content(
@@ -940,6 +972,9 @@ class FilesAPI(APIClient):
     ) -> FileMultipartUploadSession:
         """Begin uploading a file in multiple parts.
 
+        .. deprecated:: 8.22.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         This allows uploading files larger than 5GiB.
         Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
         must be greater than 5MiB.
@@ -982,6 +1017,7 @@ class FilesAPI(APIClient):
                 ...     session.upload_part(0, "hello" * 1_200_000)
                 ...     session.upload_part(1, " world")
         """
+        self._deprecation_warning()
         file_metadata = FileMetadataWrite(
             name=name,
             external_id=external_id,

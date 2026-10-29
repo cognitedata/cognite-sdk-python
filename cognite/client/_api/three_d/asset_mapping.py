@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Sequence
 from typing import overload
 
@@ -21,6 +22,14 @@ from cognite.client.utils._validation import assert_type
 class ThreeDAssetMappingAPI(APIClient):
     _RESOURCE_PATH = "/3d/models/{}/revisions/{}/mappings"
 
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            "Asset-centric 3D contextualization (3D asset mappings) is deprecated. Contextualize 3D models in a data modeling project with the 3D contextualization APIs. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+
     async def list(
         self,
         model_id: int,
@@ -31,6 +40,9 @@ class ThreeDAssetMappingAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> ThreeDAssetMappingList:
         """`List 3D node asset mappings <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/get3DMappings>`_.
+
+        .. deprecated:: 8.22.0
+            Asset-centric 3D contextualization (3D asset mappings) is deprecated. Contextualize 3D models in a data modeling project with the 3D contextualization APIs. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             model_id (int): Id of the model.
@@ -60,6 +72,7 @@ class ThreeDAssetMappingAPI(APIClient):
                 ...     model_id=1, revision_id=1, intersects_bounding_box=bbox
                 ... )
         """
+        self._deprecation_warning()
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         flt: dict[str, str | int | None] = {"nodeId": node_id, "assetId": asset_id}
         if intersects_bounding_box:
@@ -97,6 +110,9 @@ class ThreeDAssetMappingAPI(APIClient):
     ) -> ThreeDAssetMapping | ThreeDAssetMappingList:
         """`Create 3d node asset mappings <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/create3DMappings>`_.
 
+        .. deprecated:: 8.22.0
+            Asset-centric 3D contextualization (3D asset mappings) is deprecated. Contextualize 3D models in a data modeling project with the 3D contextualization APIs. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
@@ -118,6 +134,7 @@ class ThreeDAssetMappingAPI(APIClient):
                 ...     model_id=1, revision_id=1, asset_mapping=my_mapping
                 ... )
         """
+        self._deprecation_warning()
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         return await self._create_multiple(
             list_cls=ThreeDAssetMappingList,
@@ -131,6 +148,9 @@ class ThreeDAssetMappingAPI(APIClient):
         self, model_id: int, revision_id: int, asset_mapping: ThreeDAssetMapping | Sequence[ThreeDAssetMapping]
     ) -> None:
         """`Delete 3d node asset mappings <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/delete3DMappings>`_.
+
+        .. deprecated:: 8.22.0
+            Asset-centric 3D contextualization (3D asset mappings) is deprecated. Contextualize 3D models in a data modeling project with the 3D contextualization APIs. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             model_id (int): Id of the model.
@@ -149,6 +169,7 @@ class ThreeDAssetMappingAPI(APIClient):
                 ...     model_id=1, revision_id=1, asset_mapping=mapping_to_delete
                 ... )
         """
+        self._deprecation_warning()
         path = interpolate_and_url_encode(self._RESOURCE_PATH, model_id, revision_id)
         assert_type(asset_mapping, "asset_mapping", [Sequence, ThreeDAssetMapping])
         if isinstance(asset_mapping, ThreeDAssetMapping):

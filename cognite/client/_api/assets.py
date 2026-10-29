@@ -5,6 +5,7 @@ import functools
 import heapq
 import itertools
 import math
+import warnings
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator, Sequence
 from functools import cached_property
 from types import MappingProxyType
@@ -70,6 +71,14 @@ _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 class AssetsAPI(APIClient):
     _RESOURCE_PATH = "/assets"
+
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            "The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     @overload
     def __call__(
@@ -146,6 +155,9 @@ class AssetsAPI(APIClient):
     ) -> AsyncIterator[Asset] | AsyncIterator[AssetList]:
         """Iterate over assets
 
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
 
         Args:
@@ -173,6 +185,7 @@ class AssetsAPI(APIClient):
         Yields:
             Asset | AssetList: yields Asset one by one if chunk_size is not specified, else AssetList objects.
         """  # noqa: DOC404
+        self._deprecation_warning()
         agg_props = self._process_aggregated_props(aggregated_properties)
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
@@ -212,6 +225,9 @@ class AssetsAPI(APIClient):
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Asset | None:
         """`Retrieve a single asset by id <https://api-docs.cognite.com/20230101/tag/Assets/operation/getAsset>`_.
 
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | None): ID
             external_id (str | None): External ID
@@ -232,6 +248,7 @@ class AssetsAPI(APIClient):
 
                 >>> res = client.assets.retrieve(external_id="1")
         """
+        self._deprecation_warning()
         identifier = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return await self._retrieve_multiple(list_cls=AssetList, resource_cls=Asset, identifiers=identifier)
 
@@ -242,6 +259,9 @@ class AssetsAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> AssetList:
         """`Retrieve multiple assets by id <https://api-docs.cognite.com/20230101/tag/Assets/operation/byIdsAssets>`_.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -266,6 +286,7 @@ class AssetsAPI(APIClient):
                 ...     external_ids=["abc", "def"], ignore_unknown_ids=True
                 ... )
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return await self._retrieve_multiple(
             list_cls=AssetList, resource_cls=Asset, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
@@ -278,6 +299,9 @@ class AssetsAPI(APIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Count of assets matching the specified filters <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (AssetPropertyLike | None): If specified, get an approximate number of asset with a specific property (property is not null) and matching the filters.
@@ -304,6 +328,7 @@ class AssetsAPI(APIClient):
             >>> asset_count = client.assets.aggregate_count(advanced_filter=has_timezone)
 
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return await self._advanced_aggregate(
             "count",
@@ -320,6 +345,9 @@ class AssetsAPI(APIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate property count for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (AssetPropertyLike): The property to count the cardinality of.
@@ -348,6 +376,7 @@ class AssetsAPI(APIClient):
                 ...     AssetProperty.metadata_key("timezone"), advanced_filter=is_critical
                 ... )
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return await self._advanced_aggregate(
             "cardinalityValues",
@@ -365,6 +394,9 @@ class AssetsAPI(APIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate paths count for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             path (AssetPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -385,6 +417,7 @@ class AssetsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> key_count = client.assets.aggregate_cardinality_properties(AssetProperty.metadata)
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return await self._advanced_aggregate(
             "cardinalityProperties",
@@ -402,6 +435,9 @@ class AssetsAPI(APIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique properties with counts for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner.
@@ -460,6 +496,7 @@ class AssetsAPI(APIClient):
             >>> print(result.unique)
 
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return await self._advanced_aggregate(
             aggregate="uniqueValues",
@@ -477,6 +514,9 @@ class AssetsAPI(APIClient):
         filter: AssetFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique paths with counts for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Note:
             In the case of text fields, the values are aggregated in a case-insensitive manner.
@@ -501,6 +541,7 @@ class AssetsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.assets.aggregate_unique_properties(AssetProperty.metadata)
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return await self._advanced_aggregate(
             aggregate="uniqueProperties",
@@ -518,6 +559,9 @@ class AssetsAPI(APIClient):
 
     async def create(self, asset: Asset | AssetWrite | Sequence[Asset] | Sequence[AssetWrite]) -> Asset | AssetList:
         """`Create one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/createAssets>`_.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
         When specifying parent-child relation between assets using `parentExternalId` the link will be resvoled into an internal ID and stored as `parentId`.
@@ -545,6 +589,7 @@ class AssetsAPI(APIClient):
                 >>> asset = AssetWrite(name="my_pump", labels=[Label(external_id="PUMP")])
                 >>> res = client.assets.create(asset)
         """
+        self._deprecation_warning()
         assert_type(asset, "asset", [Asset, AssetWrite, Sequence])
 
         return await self._create_multiple(
@@ -559,6 +604,9 @@ class AssetsAPI(APIClient):
         upsert_mode: Literal["patch", "replace"] = "patch",
     ) -> AssetList:
         """Create an asset hierarchy with validation.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This helper function makes it easy to insert large asset hierarchies. It solves the problem of topological
         insertion order, i.e. a parent asset must exist before it can be referenced by any 'children' assets.
@@ -676,6 +724,7 @@ class AssetsAPI(APIClient):
                 ... else:
                 ...     hierarchy.validate_and_report(output_file=Path("report.txt"))
         """
+        self._deprecation_warning()
         if upsert and upsert_mode not in ("patch", "replace"):
             raise ValueError(f"'upsert_mode' must be either 'patch' or 'replace', not {upsert_mode!r}")
 
@@ -694,6 +743,9 @@ class AssetsAPI(APIClient):
     ) -> None:
         """`Delete one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/deleteAssets>`_.
 
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
@@ -709,6 +761,7 @@ class AssetsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.assets.delete(id=[1, 2, 3], external_id="3")
         """
+        self._deprecation_warning()
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
@@ -735,6 +788,9 @@ class AssetsAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Asset | AssetList:
         """`Update one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/updateAssets>`_.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Labels can be added, removed or replaced (set). Note that set operation deletes all the existing labels and adds the new specified labels.
 
@@ -789,6 +845,7 @@ class AssetsAPI(APIClient):
                 >>> my_update = AssetUpdate(id=1).labels.set("PUMP")
                 >>> res = client.assets.update(my_update)
         """
+        self._deprecation_warning()
         return await self._update_multiple(
             list_cls=AssetList, resource_cls=Asset, update_cls=AssetUpdate, items=item, mode=mode
         )
@@ -805,6 +862,9 @@ class AssetsAPI(APIClient):
         self, item: Asset | AssetWrite | Sequence[Asset | AssetWrite], mode: Literal["patch", "replace"] = "patch"
     ) -> Asset | AssetList:
         """Upsert assets, i.e., update if it exists, and create if it does not exist.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
@@ -833,6 +893,7 @@ class AssetsAPI(APIClient):
                 ... )
                 >>> res = client.assets.upsert([existing_asset, new_asset], mode="replace")
         """
+        self._deprecation_warning()
         return await self._upsert_multiple(
             item,
             list_cls=AssetList,
@@ -854,6 +915,9 @@ class AssetsAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> AssetList:
         """`Search for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/searchAssets>`_.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
@@ -895,6 +959,7 @@ class AssetsAPI(APIClient):
                 >>> my_label_filter = LabelFilter(contains_all=["PUMP"])
                 >>> res = client.assets.search(name="xyz", filter=AssetFilter(labels=my_label_filter))
         """
+        self._deprecation_warning()
         return await self._search(
             list_cls=AssetList,
             search={"name": name, "description": description, "query": query},
@@ -907,6 +972,9 @@ class AssetsAPI(APIClient):
     ) -> AssetList:
         """Retrieve the subtree for this asset up to a specified depth.
 
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | None): Id of the root asset in the subtree.
             external_id (str | None): External id of the root asset in the subtree.
@@ -915,6 +983,7 @@ class AssetsAPI(APIClient):
         Returns:
             AssetList: The requested assets or empty AssetList if asset does not exist.
         """
+        self._deprecation_warning()
         asset = await self.retrieve(id=id, external_id=external_id)
         if asset is None:
             return AssetList([])
@@ -968,6 +1037,9 @@ class AssetsAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> AssetList:
         """`List assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/listAssets>`_.
+
+        .. deprecated:: 8.22.0
+            The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             name (str | None): Name of asset. Often referred to as tag.
@@ -1057,6 +1129,7 @@ class AssetsAPI(APIClient):
                 ... )
 
         """
+        self._deprecation_warning()
         agg_props = self._process_aggregated_props(aggregated_properties)
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)

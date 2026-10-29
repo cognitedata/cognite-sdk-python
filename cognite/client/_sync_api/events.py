@@ -110,6 +110,9 @@ class SyncEventsAPI(SyncAPIClient):
         """
         Iterate over events
 
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
 
         Args:
@@ -166,6 +169,9 @@ class SyncEventsAPI(SyncAPIClient):
         """
         `Retrieve a single event by id <https://api-docs.cognite.com/20230101/tag/Events/operation/getEventByInternalId>`_.
 
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | None): ID
             external_id (str | None): External ID
@@ -196,6 +202,9 @@ class SyncEventsAPI(SyncAPIClient):
     ) -> EventList:
         """
         `Retrieve multiple events by id <https://api-docs.cognite.com/20230101/tag/Events/operation/byIdsEvents>`_.
+
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -233,6 +242,9 @@ class SyncEventsAPI(SyncAPIClient):
     ) -> UniqueResultList:
         """
         `Get unique properties with counts for events <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_.
+
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
@@ -298,6 +310,9 @@ class SyncEventsAPI(SyncAPIClient):
         """
         `Count of event matching the specified filters <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_.
 
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             property (EventPropertyLike | None): If specified, Get an approximate number of Events with a specific property
                 (property is not null) and matching the filters.
@@ -338,6 +353,9 @@ class SyncEventsAPI(SyncAPIClient):
     ) -> int:
         """
         `Find approximate property count for events <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_.
+
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (EventPropertyLike): The property to count the cardinality of.
@@ -382,6 +400,9 @@ class SyncEventsAPI(SyncAPIClient):
         """
         `Find approximate paths count for events <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_.
 
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
                 It means to aggregate only metadata properties (aka keys).
@@ -416,6 +437,9 @@ class SyncEventsAPI(SyncAPIClient):
     ) -> UniqueResultList:
         """
         `Get unique paths with counts for events <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_.
+
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -454,6 +478,9 @@ class SyncEventsAPI(SyncAPIClient):
         """
         `Create one or more events <https://api-docs.cognite.com/20230101/tag/Events/operation/createEvents>`_.
 
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             event (Event | EventWrite | Sequence[Event] | Sequence[EventWrite]): Event or list of events to create.
 
@@ -481,6 +508,9 @@ class SyncEventsAPI(SyncAPIClient):
     ) -> None:
         """
         `Delete one or more events <https://api-docs.cognite.com/20230101/tag/Events/operation/deleteEvents>`_.
+
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -522,6 +552,9 @@ class SyncEventsAPI(SyncAPIClient):
         """
         `Update one or more events <https://api-docs.cognite.com/20230101/tag/Events/operation/updateEvents>`_.
 
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             item (Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]): Event(s) to update
             mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Event or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
@@ -561,6 +594,9 @@ class SyncEventsAPI(SyncAPIClient):
         """
         `Search for events <https://api-docs.cognite.com/20230101/tag/Events/operation/searchEvents>`_.
 
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -593,6 +629,9 @@ class SyncEventsAPI(SyncAPIClient):
     ) -> Event | EventList:
         """
         Upsert events, i.e., update if it exists, and create if it does not exist.
+
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
@@ -646,6 +685,9 @@ class SyncEventsAPI(SyncAPIClient):
     ) -> EventList:
         """
         `List events <https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents>`_.
+
+        .. deprecated:: 8.22.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.

@@ -26,6 +26,14 @@ if TYPE_CHECKING:
 class SequencesDataAPI(APIClient):
     _RESOURCE_PATH = "/sequences/data"
 
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            "The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._SEQ_POST_LIMIT_ROWS = 10_000
@@ -43,6 +51,9 @@ class SequencesDataAPI(APIClient):
         external_id: str | None = None,
     ) -> None:
         """`Insert rows into a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             rows (SequenceRows | dict[int, typing.Sequence[int | float | str]] | typing.Sequence[tuple[int, typing.Sequence[int | float | str]]] | typing.Sequence[dict[str, Any]]):  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
@@ -88,6 +99,7 @@ class SequencesDataAPI(APIClient):
                 >>> data = client.sequences.data.retrieve(id=2, start=0, end=10)
                 >>> client.sequences.data.insert(rows=data, id=1, columns=None)
         """
+        self._deprecation_warning()
         match rows:
             case SequenceRows():
                 columns = rows.column_external_ids
@@ -128,6 +140,9 @@ class SequencesDataAPI(APIClient):
     ) -> None:
         """`Insert a Pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
         The sequence and columns must already exist.
 
@@ -147,6 +162,7 @@ class SequencesDataAPI(APIClient):
                 >>> df = pd.DataFrame({"col_a": [1, 2, 3], "col_b": [4, 5, 6]}, index=[1, 2, 3])
                 >>> client.sequences.data.insert_dataframe(df, id=123)
         """
+        self._deprecation_warning()
         if dropna:
             # These will be rejected by the API, hence we remove them by default:
             dataframe = dataframe.dropna(how="all")
@@ -160,6 +176,9 @@ class SequencesDataAPI(APIClient):
 
     async def delete(self, rows: typing.Sequence[int], id: int | None = None, external_id: str | None = None) -> None:
         """`Delete rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             rows (typing.Sequence[int]): List of row numbers.
@@ -175,6 +194,7 @@ class SequencesDataAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.data.delete(id=1, rows=[1, 2, 42])
         """
+        self._deprecation_warning()
         post_obj = Identifier.of_either(id, external_id).as_dict()
         post_obj["rows"] = rows
 
@@ -188,6 +208,9 @@ class SequencesDataAPI(APIClient):
         self, start: int, end: int | None, id: int | None = None, external_id: str | None = None
     ) -> None:
         """`Delete a range of rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Note this operation is potentially slow, as retrieves each row before deleting.
 
@@ -204,6 +227,7 @@ class SequencesDataAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.data.delete_range(id=1, start=0, end=None)
         """
+        self._deprecation_warning()
         sequence = await self._cognite_client.sequences.retrieve(external_id=external_id, id=id)
         assert sequence is not None
         post_obj = Identifier.of_either(id, external_id).as_dict()
@@ -292,6 +316,9 @@ class SequencesDataAPI(APIClient):
     ) -> SequenceRows | SequenceRowsList:
         """`Retrieve data from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             external_id (str | SequenceNotStr[str] | None): The external id of the sequence to retrieve from.
             id (int | typing.Sequence[int] | None): The internal if the sequence to retrieve from.
@@ -318,6 +345,7 @@ class SequencesDataAPI(APIClient):
                 ... )  # ... get the array of values for a specific column,
                 >>> df = res.to_pandas()  # ... or convert the result to a dataframe
         """
+        self._deprecation_warning()
         ident_sequence = IdentifierSequence.load(id, external_id)
 
         async def _fetch_sequence(post_obj: dict[str, Any]) -> SequenceRows:
@@ -352,6 +380,9 @@ class SequencesDataAPI(APIClient):
     ) -> SequenceRows:
         """`Retrieves the last row (i.e the row with the highest row number) in a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getLatestSequenceRow>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | None): Id or list of ids.
             external_id (str | None): External id or list of external ids.
@@ -370,6 +401,7 @@ class SequencesDataAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.data.retrieve_last_row(id=1, before=1000)
         """
+        self._deprecation_warning()
         identifier = Identifier.of_either(id, external_id).as_dict()
         res = await self._post(
             self._RESOURCE_PATH + "/latest",
@@ -390,6 +422,9 @@ class SequencesDataAPI(APIClient):
     ) -> pd.DataFrame:
         """`Retrieve data from a sequence as a pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             start (int): (inclusive) row number to start from.
             end (int | None): (exclusive) upper limit on the row number. Set to None or -1 to get all rows until end of sequence.
@@ -408,6 +443,7 @@ class SequencesDataAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> df = client.sequences.data.retrieve_dataframe(id=1, start=0, end=None)
         """
+        self._deprecation_warning()
         warnings.warn("This method is deprecated. Use retrieve(...).to_pandas(..) instead.", DeprecationWarning)
         # TODO(doctrino): type annotation does not mention list?
         if isinstance(external_id, list) or isinstance(id, list) or (id is not None and external_id is not None):

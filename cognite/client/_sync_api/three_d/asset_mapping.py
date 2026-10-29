@@ -39,6 +39,9 @@ class Sync3DAssetMappingAPI(SyncAPIClient):
         """
         `List 3D node asset mappings <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/get3DMappings>`_.
 
+        .. deprecated:: 8.22.0
+            Asset-centric 3D contextualization (3D asset mappings) is deprecated. Contextualize 3D models in a data modeling project with the 3D contextualization APIs. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
@@ -103,6 +106,9 @@ class Sync3DAssetMappingAPI(SyncAPIClient):
         """
         `Create 3d node asset mappings <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/create3DMappings>`_.
 
+        .. deprecated:: 8.22.0
+            Asset-centric 3D contextualization (3D asset mappings) is deprecated. Contextualize 3D models in a data modeling project with the 3D contextualization APIs. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             model_id (int): Id of the model.
             revision_id (int): Id of the revision.
@@ -135,6 +141,9 @@ class Sync3DAssetMappingAPI(SyncAPIClient):
     ) -> None:
         """
         `Delete 3d node asset mappings <https://api-docs.cognite.com/20230101/tag/3D-Asset-Mapping/operation/delete3DMappings>`_.
+
+        .. deprecated:: 8.22.0
+            Asset-centric 3D contextualization (3D asset mappings) is deprecated. Contextualize 3D models in a data modeling project with the 3D contextualization APIs. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             model_id (int): Id of the model.

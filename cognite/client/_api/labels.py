@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import AsyncIterator, Sequence
 from typing import Literal, overload
 
@@ -19,6 +20,14 @@ from cognite.client.utils.useful_types import SequenceNotStr
 
 class LabelsAPI(APIClient):
     _RESOURCE_PATH = "/labels"
+
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            "The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     @overload
     def __call__(
@@ -53,6 +62,9 @@ class LabelsAPI(APIClient):
     ) -> AsyncIterator[LabelDefinition] | AsyncIterator[LabelDefinitionList]:
         """Iterate over Labels
 
+        .. deprecated:: 8.22.0
+            The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             chunk_size (int | None): Number of Labels to return in each chunk. Defaults to yielding one Label a time.
             name (str | None): returns the label definitions matching that name
@@ -64,6 +76,7 @@ class LabelsAPI(APIClient):
         Yields:
             LabelDefinition | LabelDefinitionList: yields Labels one by one or in chunks.
         """  # noqa: DOC404
+        self._deprecation_warning()
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         flt = LabelDefinitionFilter(
@@ -96,6 +109,9 @@ class LabelsAPI(APIClient):
     ) -> LabelDefinition | LabelDefinitionList | None:
         """`Retrieve one or more label definitions by external id <https://api-docs.cognite.com/20230101/tag/Labels/operation/byIdsLabels>`_.
 
+        .. deprecated:: 8.22.0
+            The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids
             ignore_unknown_ids (bool): If True, ignore IDs and external IDs that are not found rather than throw an exception.
@@ -113,6 +129,7 @@ class LabelsAPI(APIClient):
                 >>> res = client.labels.retrieve(external_id="my_label", ignore_unknown_ids=True)
 
         """
+        self._deprecation_warning()
         is_single = isinstance(external_id, str)
         external_ids = [external_id] if is_single else external_id
         identifiers = IdentifierSequence.load(external_ids=external_ids)  # type: ignore[arg-type]
@@ -135,6 +152,9 @@ class LabelsAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> LabelDefinitionList:
         """`List Labels <https://api-docs.cognite.com/20230101/tag/Labels/operation/listLabels>`_.
+
+        .. deprecated:: 8.22.0
+            The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             name (str | None): returns the label definitions matching that name
@@ -165,6 +185,7 @@ class LabelsAPI(APIClient):
                 >>> for label_list in client.labels(chunk_size=2500):
                 ...     label_list  # do something with the type definitions
         """
+        self._deprecation_warning()
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
         filter = LabelDefinitionFilter(
@@ -184,6 +205,9 @@ class LabelsAPI(APIClient):
         self, label: LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]
     ) -> LabelDefinition | LabelDefinitionList:
         """`Create one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/createLabelDefinitions>`_.
+
+        .. deprecated:: 8.22.0
+            The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             label (LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]): The label definition(s) to create.
@@ -210,6 +234,7 @@ class LabelsAPI(APIClient):
                 ... ]
                 >>> res = client.labels.create(labels)
         """
+        self._deprecation_warning()
         if isinstance(label, Sequence):
             if len(label) > 0 and not isinstance(label[0], LabelDefinitionCore):
                 raise TypeError("'label' must be of type LabelDefinitionWrite or Sequence[LabelDefinitionWrite]")
@@ -220,6 +245,9 @@ class LabelsAPI(APIClient):
 
     async def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:
         """`Delete one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/deleteLabels>`_.
+
+        .. deprecated:: 8.22.0
+            The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             external_id (str | SequenceNotStr[str] | None): One or more label external ids
@@ -233,4 +261,5 @@ class LabelsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.labels.delete(external_id=["big_pump", "small_pump"])
         """
+        self._deprecation_warning()
         await self._delete_multiple(identifiers=IdentifierSequence.load(external_ids=external_id), wrap_ids=True)

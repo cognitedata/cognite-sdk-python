@@ -93,6 +93,9 @@ class SyncRelationshipsAPI(SyncAPIClient):
         """
         Iterate over relationships
 
+        .. deprecated:: 8.22.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
         Args:
@@ -141,6 +144,9 @@ class SyncRelationshipsAPI(SyncAPIClient):
         """
         Retrieve a single relationship by external id.
 
+        .. deprecated:: 8.22.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             external_id (str): External ID
             fetch_resources (bool): If true, will try to return the full resources referenced by the relationship in the source and target fields.
@@ -166,6 +172,9 @@ class SyncRelationshipsAPI(SyncAPIClient):
     ) -> RelationshipList:
         """
         `Retrieve multiple relationships by external id <https://api-docs.cognite.com/20230101/tag/Relationships/operation/byidsRelationships>`_.
+
+        .. deprecated:: 8.22.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             external_ids (SequenceNotStr[str]): External IDs
@@ -212,6 +221,9 @@ class SyncRelationshipsAPI(SyncAPIClient):
     ) -> RelationshipList:
         """
         `Lists relationships stored in the project based on a query filter given in the payload of this request <https://api-docs.cognite.com/20230101/tag/Relationships/operation/listRelationships>`_.
+
+        .. deprecated:: 8.22.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Up to 1000 relationships can be retrieved in one operation.
 
@@ -283,6 +295,9 @@ class SyncRelationshipsAPI(SyncAPIClient):
         """
         `Create one or more relationships <https://api-docs.cognite.com/20230101/tag/Relationships/operation/createRelationships>`_.
 
+        .. deprecated:: 8.22.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             relationship (Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]): Relationship or list of relationships to create.
 
@@ -340,6 +355,9 @@ class SyncRelationshipsAPI(SyncAPIClient):
         """
         `Update one or more relationships <https://api-docs.cognite.com/20230101/tag/Relationships/operation/updateRelationships>`_.
 
+        .. deprecated:: 8.22.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
         Args:
@@ -384,7 +402,7 @@ class SyncRelationshipsAPI(SyncAPIClient):
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.remove("PUMP")
                 >>> res = client.relationships.update(my_update)
         """
-        return run_sync(self.__async_client.relationships.update(item=item, mode=mode))  # type: ignore [call-overload]
+        return run_sync(self.__async_client.relationships.update(item=item, mode=mode))
 
     @overload
     def upsert(
@@ -403,6 +421,9 @@ class SyncRelationshipsAPI(SyncAPIClient):
     ) -> Relationship | RelationshipList:
         """
         Upsert relationships, i.e., update if it exists, and create if it does not exist.
+
+        .. deprecated:: 8.22.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
@@ -442,6 +463,9 @@ class SyncRelationshipsAPI(SyncAPIClient):
     def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """
         `Delete one or more relationships <https://api-docs.cognite.com/20230101/tag/Relationships/operation/deleteRelationships>`_.
+
+        .. deprecated:: 8.22.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Literal, cast, overload
@@ -24,6 +25,14 @@ if TYPE_CHECKING:
 class AnnotationsAPI(APIClient):
     _RESOURCE_PATH = "/annotations"
 
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            "The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+            DeprecationWarning,
+            stacklevel=3,
+        )
+
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._reverse_lookup_warning = FeaturePreviewWarning(
@@ -41,12 +50,16 @@ class AnnotationsAPI(APIClient):
     ) -> Annotation | AnnotationList:
         """`Create annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsCreate>`_.
 
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             annotations (Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]): Annotation(s) to create
 
         Returns:
             Annotation | AnnotationList: Created annotation(s)
         """
+        self._deprecation_warning()
         assert_type(annotations, "annotations", [AnnotationCore, Sequence])
 
         return await self._create_multiple(
@@ -68,12 +81,16 @@ class AnnotationsAPI(APIClient):
     ) -> Annotation | AnnotationList:
         """`Suggest annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsSuggest>`_.
 
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             annotations (Annotation | AnnotationWrite | Sequence[Annotation] | Sequence[AnnotationWrite]): annotation(s) to suggest. They must have status set to "suggested".
 
         Returns:
             Annotation | AnnotationList: suggested annotation(s)
         """
+        self._deprecation_warning()
         assert_type(annotations, "annotations", [Annotation, AnnotationWrite, Sequence])
         # Deal with status fields in both cases: Single item and list of items
         items: list[dict[str, Any]] | dict[str, Any] = (
@@ -140,12 +157,16 @@ class AnnotationsAPI(APIClient):
     ) -> Annotation | AnnotationList:
         """`Update annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsUpdate>`_.
 
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             item (Annotation | AnnotationWrite | AnnotationUpdate | Sequence[Annotation | AnnotationWrite | AnnotationUpdate]): Annotation or list of annotations to update (or patch or list of patches to apply)
             mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Annotation or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
 
         Returns:
             Annotation | AnnotationList: No description."""
+        self._deprecation_warning()
         return await self._update_multiple(
             list_cls=AnnotationList, resource_cls=Annotation, update_cls=AnnotationUpdate, items=item, mode=mode
         )
@@ -153,13 +174,20 @@ class AnnotationsAPI(APIClient):
     async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsDelete>`_.
 
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | Sequence[int]): ID or list of IDs to be deleted
         """
+        self._deprecation_warning()
         await self._delete_multiple(identifiers=IdentifierSequence.load(ids=id), wrap_ids=True)
 
     async def retrieve_multiple(self, ids: Sequence[int]) -> AnnotationList:
         """`Retrieve annotations by IDs <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsByids>`_.
+
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (Sequence[int]): list of IDs to be retrieved
@@ -167,11 +195,15 @@ class AnnotationsAPI(APIClient):
         Returns:
             AnnotationList: list of annotations
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=ids, external_ids=None)
         return await self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
     async def retrieve(self, id: int) -> Annotation | None:
         """`Retrieve an annotation by id <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsGet>`_.
+
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int): id of the annotation to be retrieved
@@ -179,6 +211,7 @@ class AnnotationsAPI(APIClient):
         Returns:
             Annotation | None: annotation requested
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=id, external_ids=None).as_singleton()
         return await self._retrieve_multiple(list_cls=AnnotationList, resource_cls=Annotation, identifiers=identifiers)
 
@@ -186,6 +219,9 @@ class AnnotationsAPI(APIClient):
         self, filter: AnnotationReverseLookupFilter, limit: int | None = None
     ) -> ResourceReferenceList:
         """Reverse lookup annotated resources based on having annotations matching the filter.
+
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             filter (AnnotationReverseLookupFilter): Filter to apply
@@ -205,6 +241,7 @@ class AnnotationsAPI(APIClient):
                 >>> flt = AnnotationReverseLookupFilter(annotated_resource_type="file")
                 >>> res = client.annotations.reverse_lookup(flt, limit=100)
         """
+        self._deprecation_warning()
         self._reverse_lookup_warning.warn()
         assert_type(filter, "filter", types=[AnnotationReverseLookupFilter], allow_none=False)
 
@@ -220,6 +257,9 @@ class AnnotationsAPI(APIClient):
 
     async def list(self, filter: AnnotationFilter | dict, limit: int | None = DEFAULT_LIMIT_READ) -> AnnotationList:
         """`List annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsFilter>`_.
+
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Note:
             Passing a filter with both 'annotated_resource_type' and 'annotated_resource_ids' is always required.
@@ -244,6 +284,7 @@ class AnnotationsAPI(APIClient):
                 ... )
                 >>> res = client.annotations.list(flt, limit=None)
         """
+        self._deprecation_warning()
         assert_type(filter, "filter", [AnnotationFilter, dict], allow_none=False)
 
         if isinstance(filter, AnnotationFilter):
