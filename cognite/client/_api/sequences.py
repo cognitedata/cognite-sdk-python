@@ -6,6 +6,8 @@ import warnings
 from collections.abc import AsyncIterator, Mapping
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api.sequence_data import SequencesDataAPI
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -52,8 +54,19 @@ SortSpec: TypeAlias = (
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 
+_SEQUENCES_DEPRECATION_MESSAGE = "The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+
+
 class SequencesAPI(APIClient):
     _RESOURCE_PATH = "/sequences"
+
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            _SEQUENCES_DEPRECATION_MESSAGE,
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -106,6 +119,7 @@ class SequencesAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> AsyncIterator[SequenceList]: ...
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def __call__(
         self,
         chunk_size: int | None = None,
@@ -124,6 +138,9 @@ class SequencesAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> AsyncIterator[Sequence] | AsyncIterator[SequenceList]:
         """Iterate over sequences
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
 
@@ -146,6 +163,7 @@ class SequencesAPI(APIClient):
         Yields:
             Sequence | SequenceList: yields Sequence one by one if chunk_size is not specified, else SequenceList objects.
         """  # noqa: DOC404
+        self._deprecation_warning()
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -175,8 +193,12 @@ class SequencesAPI(APIClient):
         ):
             yield item
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> Sequence | None:
         """`Retrieve a single sequence by id <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceById>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | None): ID
@@ -198,9 +220,11 @@ class SequencesAPI(APIClient):
 
                 >>> res = client.sequences.retrieve()
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return await self._retrieve_multiple(list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers)
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def retrieve_multiple(
         self,
         ids: typing.Sequence[int] | None = None,
@@ -208,6 +232,9 @@ class SequencesAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> SequenceList:
         """`Retrieve multiple sequences by id <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceById>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (typing.Sequence[int] | None): IDs
@@ -230,17 +257,22 @@ class SequencesAPI(APIClient):
 
                 >>> res = client.sequences.retrieve_multiple(external_ids=["abc", "def"])
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return await self._retrieve_multiple(
             list_cls=SequenceList, resource_cls=Sequence, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_count(
         self,
         advanced_filter: Filter | dict[str, Any] | None = None,
         filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Count of sequences matching the specified filters and search <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count.
@@ -266,6 +298,7 @@ class SequencesAPI(APIClient):
                 >>> count = client.sequences.aggregate_count(advanced_filter=is_mapping)
 
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return await self._advanced_aggregate(
             "count",
@@ -274,6 +307,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_cardinality_values(
         self,
         property: SequenceProperty | str | list[str],
@@ -282,6 +316,9 @@ class SequencesAPI(APIClient):
         filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate property count for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (SequenceProperty | str | list[str]): The property to count the cardinality of.
@@ -317,6 +354,7 @@ class SequencesAPI(APIClient):
                 ...     aggregate_filter=not_america,
                 ... )
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return await self._advanced_aggregate(
             "cardinalityValues",
@@ -327,6 +365,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_cardinality_properties(
         self,
         path: SequenceProperty | str | list[str],
@@ -335,6 +374,9 @@ class SequencesAPI(APIClient):
         filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate paths count for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -355,6 +397,7 @@ class SequencesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> count = client.sequences.aggregate_cardinality_values(SequenceProperty.metadata)
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return await self._advanced_aggregate(
             "cardinalityProperties",
@@ -365,6 +408,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_unique_values(
         self,
         property: SequenceProperty | str | list[str],
@@ -373,6 +417,9 @@ class SequencesAPI(APIClient):
         filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique paths with counts for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (SequenceProperty | str | list[str]): The property to group by.
@@ -426,6 +473,7 @@ class SequencesAPI(APIClient):
                 ... )
                 >>> print(result.unique)
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         if property == ["metadata"] or property is SequenceProperty.metadata:
             return await self._advanced_aggregate(
@@ -445,6 +493,7 @@ class SequencesAPI(APIClient):
             api_subversion="beta",
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def aggregate_unique_properties(
         self,
         path: SequenceProperty | str | list[str],
@@ -453,6 +502,9 @@ class SequencesAPI(APIClient):
         filter: SequenceFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Find approximate unique sequence properties <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -473,6 +525,7 @@ class SequencesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> result = client.sequences.aggregate_unique_properties(SequenceProperty.metadata)
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return await self._advanced_aggregate(
             aggregate="uniqueProperties",
@@ -489,10 +542,14 @@ class SequencesAPI(APIClient):
     @overload
     async def create(self, sequence: typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]) -> SequenceList: ...
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def create(
         self, sequence: Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]
     ) -> Sequence | SequenceList:
         """`Create one or more sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/createSequence>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             sequence (Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]): Sequence or list of Sequence to create. The Sequence columns parameter is a list of objects with fields `externalId` (external id of the column, when omitted, they will be given ids of 'column0, column1, ...'), `valueType` (data type of the column, either STRING, LONG, or DOUBLE, with default DOUBLE), `name`, `description`, `metadata` (optional fields to describe and store information about the data in the column). Other fields will be removed automatically, so a columns definition from a different sequence object can be passed here.
@@ -525,12 +582,14 @@ class SequencesAPI(APIClient):
                 ... )
 
         """
+        self._deprecation_warning()
         assert_type(sequence, "sequences", [typing.Sequence, Sequence, SequenceWrite])
 
         return await self._create_multiple(
             list_cls=SequenceList, resource_cls=Sequence, items=sequence, input_resource_cls=SequenceWrite
         )
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def delete(
         self,
         id: int | typing.Sequence[int] | None = None,
@@ -538,6 +597,9 @@ class SequencesAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | typing.Sequence[int] | None): Id or list of ids
@@ -553,6 +615,7 @@ class SequencesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> client.sequences.delete(id=[1, 2, 3], external_id="3")
         """
+        self._deprecation_warning()
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
@@ -573,12 +636,16 @@ class SequencesAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> SequenceList: ...
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def update(
         self,
         item: Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Sequence | SequenceList:
         """`Update one or more sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/updateSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             item (Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]): Sequences to update
@@ -667,6 +734,7 @@ class SequencesAPI(APIClient):
                 >>> my_update = SequenceUpdate(id=1).columns.modify(column_updates)
                 >>> res = client.sequences.update(my_update)
         """
+        self._deprecation_warning()
         cdf_item_by_id = await self._get_cdf_item_by_id(item, "updating")
         return await self._update_multiple(
             list_cls=SequenceList,
@@ -685,12 +753,16 @@ class SequencesAPI(APIClient):
     @overload
     async def upsert(self, item: Sequence | SequenceWrite, mode: Literal["patch", "replace"] = "patch") -> Sequence: ...
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def upsert(
         self,
         item: Sequence | SequenceWrite | typing.Sequence[Sequence | SequenceWrite],
         mode: Literal["patch", "replace"] = "patch",
     ) -> Sequence | SequenceList:
         """Upsert sequences, i.e., update if it exists, and create if it does not exist.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
@@ -721,6 +793,7 @@ class SequencesAPI(APIClient):
                 ... )
                 >>> res = client.sequences.upsert([existing_sequence, new_sequence], mode="replace")
         """
+        self._deprecation_warning()
 
         cdf_item_by_id = await self._get_cdf_item_by_id(item, "upserting")
         return await self._upsert_multiple(
@@ -819,6 +892,7 @@ class SequencesAPI(APIClient):
             update_obj["update"]["columns"]["modify"] = modify_list
         return update_obj
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def search(
         self,
         name: str | None = None,
@@ -828,6 +902,9 @@ class SequencesAPI(APIClient):
         limit: int = DEFAULT_LIMIT_READ,
     ) -> SequenceList:
         """`Search for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/searchSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
@@ -850,6 +927,7 @@ class SequencesAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.sequences.search(name="some name")
         """
+        self._deprecation_warning()
         return await self._search(
             list_cls=SequenceList,
             search={"name": name, "description": description, "query": query},
@@ -860,6 +938,7 @@ class SequencesAPI(APIClient):
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
+    @deprecated(_SEQUENCES_DEPRECATION_MESSAGE, category=None)
     async def list(
         self,
         name: str | None = None,
@@ -878,6 +957,9 @@ class SequencesAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> SequenceList:
         """`List sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/advancedListSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             name (str | None): Filter out sequences that do not have this *exact* name.
@@ -959,6 +1041,7 @@ class SequencesAPI(APIClient):
                 ... )
 
         """
+        self._deprecation_warning()
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 

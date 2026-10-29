@@ -36,6 +36,9 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         `Create annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsCreate>`_.
 
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             annotations (Annotation | AnnotationWrite | Sequence[Annotation | AnnotationWrite]): Annotation(s) to create
 
@@ -55,6 +58,9 @@ class SyncAnnotationsAPI(SyncAPIClient):
     ) -> Annotation | AnnotationList:
         """
         `Suggest annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsSuggest>`_.
+
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             annotations (Annotation | AnnotationWrite | Sequence[Annotation] | Sequence[AnnotationWrite]): annotation(s) to suggest. They must have status set to "suggested".
@@ -89,6 +95,9 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         `Update annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsUpdate>`_.
 
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             item (Annotation | AnnotationWrite | AnnotationUpdate | Sequence[Annotation | AnnotationWrite | AnnotationUpdate]): Annotation or list of annotations to update (or patch or list of patches to apply)
             mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (Annotation or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
@@ -102,6 +111,9 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         `Delete annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsDelete>`_.
 
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | Sequence[int]): ID or list of IDs to be deleted
         """
@@ -110,6 +122,9 @@ class SyncAnnotationsAPI(SyncAPIClient):
     def retrieve_multiple(self, ids: Sequence[int]) -> AnnotationList:
         """
         `Retrieve annotations by IDs <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsByids>`_.
+
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (Sequence[int]): list of IDs to be retrieved
@@ -123,6 +138,9 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         `Retrieve an annotation by id <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsGet>`_.
 
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int): id of the annotation to be retrieved
 
@@ -134,6 +152,9 @@ class SyncAnnotationsAPI(SyncAPIClient):
     def reverse_lookup(self, filter: AnnotationReverseLookupFilter, limit: int | None = None) -> ResourceReferenceList:
         """
         Reverse lookup annotated resources based on having annotations matching the filter.
+
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             filter (AnnotationReverseLookupFilter): Filter to apply
@@ -158,6 +179,9 @@ class SyncAnnotationsAPI(SyncAPIClient):
     def list(self, filter: AnnotationFilter | dict, limit: int | None = DEFAULT_LIMIT_READ) -> AnnotationList:
         """
         `List annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsFilter>`_.
+
+        .. deprecated:: 8.22.0
+            The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Note:
             Passing a filter with both 'annotated_resource_type' and 'annotated_resource_ids' is always required.

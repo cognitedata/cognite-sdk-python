@@ -61,6 +61,9 @@ class SyncLabelsAPI(SyncAPIClient):
         """
         Iterate over Labels
 
+        .. deprecated:: 8.22.0
+            The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             chunk_size (int | None): Number of Labels to return in each chunk. Defaults to yielding one Label a time.
             name (str | None): returns the label definitions matching that name
@@ -98,6 +101,9 @@ class SyncLabelsAPI(SyncAPIClient):
         """
         `Retrieve one or more label definitions by external id <https://api-docs.cognite.com/20230101/tag/Labels/operation/byIdsLabels>`_.
 
+        .. deprecated:: 8.22.0
+            The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids
             ignore_unknown_ids (bool): If True, ignore IDs and external IDs that are not found rather than throw an exception.
@@ -115,10 +121,7 @@ class SyncLabelsAPI(SyncAPIClient):
                 >>> res = client.labels.retrieve(external_id="my_label", ignore_unknown_ids=True)
         """
         return run_sync(
-            self.__async_client.labels.retrieve(
-                external_id=external_id,  # type: ignore [arg-type]
-                ignore_unknown_ids=ignore_unknown_ids,
-            )
+            self.__async_client.labels.retrieve(external_id=external_id, ignore_unknown_ids=ignore_unknown_ids)  # type: ignore[arg-type]
         )
 
     def list(
@@ -131,6 +134,9 @@ class SyncLabelsAPI(SyncAPIClient):
     ) -> LabelDefinitionList:
         """
         `List Labels <https://api-docs.cognite.com/20230101/tag/Labels/operation/listLabels>`_.
+
+        .. deprecated:: 8.22.0
+            The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             name (str | None): returns the label definitions matching that name
@@ -183,6 +189,9 @@ class SyncLabelsAPI(SyncAPIClient):
         """
         `Create one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/createLabelDefinitions>`_.
 
+        .. deprecated:: 8.22.0
+            The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             label (LabelDefinition | LabelDefinitionWrite | Sequence[LabelDefinition | LabelDefinitionWrite]): The label definition(s) to create.
 
@@ -213,6 +222,9 @@ class SyncLabelsAPI(SyncAPIClient):
     def delete(self, external_id: str | SequenceNotStr[str] | None = None) -> None:
         """
         `Delete one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/deleteLabels>`_.
+
+        .. deprecated:: 8.22.0
+            The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             external_id (str | SequenceNotStr[str] | None): One or more label external ids

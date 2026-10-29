@@ -55,6 +55,9 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Creates feature types <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createFeatureTypes>`_.
 
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             feature_type (FeatureType | FeatureTypeWrite | Sequence[FeatureType] | Sequence[FeatureTypeWrite]): feature type definition or list of feature type definitions to create.
 
@@ -85,6 +88,9 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Delete one or more feature type <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/GeospatialDeleteFeatureTypes>`_.
 
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids
             recursive (bool): if `true` the features will also be dropped
@@ -105,6 +111,9 @@ class SyncGeospatialAPI(SyncAPIClient):
     def list_feature_types(self) -> FeatureTypeList:
         """
         `List feature types <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listFeatureTypes>`_.
+
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Returns:
             FeatureTypeList: List of feature types
@@ -131,6 +140,9 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Retrieve feature types <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getFeatureTypesByIds>`_.
 
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             external_id (str | list[str]): External ID
 
@@ -151,6 +163,9 @@ class SyncGeospatialAPI(SyncAPIClient):
     def patch_feature_types(self, patch: FeatureTypePatch | Sequence[FeatureTypePatch]) -> FeatureTypeList:
         """
         `Patch feature types <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/updateFeatureTypes>`_.
+
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             patch (FeatureTypePatch | Sequence[FeatureTypePatch]): the patch to apply
@@ -221,6 +236,9 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Creates features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createFeatures>`_.
 
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             feature_type_external_id (str): Feature type definition for the features to create.
             feature (Feature | FeatureWrite | Sequence[Feature] | Sequence[FeatureWrite] | FeatureList | FeatureWriteList): one feature or a list of features to create or a FeatureList object
@@ -270,6 +288,9 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Delete one or more feature <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteFeatures>`_.
 
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             feature_type_external_id (str): No description.
             external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
@@ -306,6 +327,9 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> FeatureList | Feature:
         """
         `Retrieve features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getFeaturesByIds>`_.
+
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type_external_id (str): No description.
@@ -360,6 +384,9 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Update features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/updateFeatures>`_.
 
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             feature_type_external_id (str): No description.
             feature (Feature | FeatureWrite | Sequence[Feature] | Sequence[FeatureWrite]): feature or list of features.
@@ -404,6 +431,9 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> FeatureList:
         """
         `List features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listFeatures>`_.
+
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This method allows to filter all features.
 
@@ -482,6 +512,9 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> FeatureList:
         """
         `Search for features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/searchFeatures>`_.
+
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This method allows to order the result by one or more of the properties of the feature type.
         However, the number of items returned is limited to 1000 and there is no support for cursors yet.
@@ -613,6 +646,9 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Stream features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/searchFeaturesStreaming>`_.
 
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         This method allows to return any number of items until the underlying
         api calls times out. The order of the result items is not deterministic.
         If you need to order the results, use the `search_features(...)` method instead.
@@ -676,6 +712,9 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Aggregate filtered features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/aggregateFeatures>`_.
 
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             feature_type_external_id (str): the feature type to filter features from
             filter (dict[str, Any] | None): the search filter
@@ -724,6 +763,9 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Get Coordinate Reference Systems <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getCoordinateReferenceSystem>`_.
 
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             srids (int | Sequence[int]): (Union[int, Sequence[int]]): SRID or list of SRIDs
 
@@ -744,6 +786,9 @@ class SyncGeospatialAPI(SyncAPIClient):
     def list_coordinate_reference_systems(self, only_custom: bool = False) -> CoordinateReferenceSystemList:
         """
         `List Coordinate Reference Systems <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listGeospatialCoordinateReferenceSystems>`_.
+
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             only_custom (bool): list only custom CRSs or not
@@ -771,6 +816,9 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> CoordinateReferenceSystemList:
         """
         `Create Coordinate Reference System <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createGeospatialCoordinateReferenceSystems>`_.
+
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             crs (CoordinateReferenceSystem | CoordinateReferenceSystemWrite | Sequence[CoordinateReferenceSystem] | Sequence[CoordinateReferenceSystemWrite]): a CoordinateReferenceSystem or a list of CoordinateReferenceSystem
@@ -827,6 +875,9 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Delete Coordinate Reference System <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteGeospatialCoordinateReferenceSystems>`_.
 
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             srids (int | Sequence[int]): (Union[int, Sequence[int]]): SRID or list of SRIDs
 
@@ -855,6 +906,9 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> RasterMetadata:
         """
         `Put raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/putRaster>`_.
+
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type_external_id (str): No description.
@@ -907,6 +961,9 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Delete raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteRaster>`_.
 
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             feature_type_external_id (str): No description.
             feature_external_id (str): one feature or a list of features to create
@@ -948,6 +1005,9 @@ class SyncGeospatialAPI(SyncAPIClient):
     ) -> bytes:
         """
         `Get raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getRaster>`_.
+
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type_external_id (str): Feature type definition for the features to create.
@@ -998,6 +1058,9 @@ class SyncGeospatialAPI(SyncAPIClient):
     def compute(self, output: dict[str, GeospatialComputeFunction]) -> GeospatialComputedResponse:
         """
         `Compute <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/compute>`_.
+
+        .. deprecated:: 8.22.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             output (dict[str, GeospatialComputeFunction]): No description.

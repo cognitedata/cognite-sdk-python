@@ -111,6 +111,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         Iterate over time series
 
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
@@ -173,6 +176,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `Retrieve a single time series by id <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getTimeSeriesByIds>`_.
 
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | None): ID
             external_id (str | None): External ID
@@ -207,6 +213,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> TimeSeriesList:
         """
         `Retrieve multiple time series by id <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getTimeSeriesByIds>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -243,6 +252,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> int:
         """
         `Count of time series matching the specified filters and search <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count.
@@ -282,6 +294,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> int:
         """
         `Find approximate property count for time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (TimeSeriesProperty | str | list[str]): The property to count the cardinality of.
@@ -334,6 +349,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `Find approximate paths count for time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_.
 
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
@@ -373,6 +391,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> UniqueResultList:
         """
         `Get unique properties with counts for time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (TimeSeriesProperty | str | list[str]): The property to group by.
@@ -446,6 +467,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `Get unique paths with counts for time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_.
 
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
@@ -487,6 +511,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `Create one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/postTimeSeries>`_.
 
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             time_series (TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]): TimeSeries or list of TimeSeries to create.
 
@@ -515,6 +542,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> None:
         """
         `Delete one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/deleteTimeSeries>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -560,6 +590,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> TimeSeries | TimeSeriesList:
         """
         `Update one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/alterTimeSeries>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             item (TimeSeries | TimeSeriesWrite | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]): Time series to update
@@ -623,6 +656,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         Upsert time series, i.e., update if it exists, and create if it does not exist.
 
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
 
@@ -664,6 +700,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> TimeSeriesList:
         """
         `Search for time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/searchTimeSeries>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
@@ -725,6 +764,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> TimeSeriesList:
         """
         `List time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/listTimeSeries>`_.
+
+        .. deprecated:: 8.22.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             name (str | None): Name of the time series. Often referred to as tag.

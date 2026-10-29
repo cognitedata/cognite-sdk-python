@@ -38,6 +38,9 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Insert rows into a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             rows (SequenceRows | dict[int, typing.Sequence[int | float | str]] | typing.Sequence[tuple[int, typing.Sequence[int | float | str]]] | typing.Sequence[dict[str, Any]]):  The rows you wish to insert. Can either be a list of tuples, a list of {"rowNumber":... ,"values": ...} objects, a dictionary of rowNumber: data, or a SequenceData object. See examples below.
             columns (SequenceNotStr[str] | None): List of external id for the columns of the sequence.
@@ -92,6 +95,9 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Insert a Pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
         The sequence and columns must already exist.
 
@@ -121,6 +127,9 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Delete rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             rows (typing.Sequence[int]): List of row numbers.
             id (int | None): Id of sequence to delete rows from.
@@ -140,6 +149,9 @@ class SyncSequencesDataAPI(SyncAPIClient):
     def delete_range(self, start: int, end: int | None, id: int | None = None, external_id: str | None = None) -> None:
         """
         `Delete a range of rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Note this operation is potentially slow, as retrieves each row before deleting.
 
@@ -229,6 +241,9 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Retrieve data from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             external_id (str | SequenceNotStr[str] | None): The external id of the sequence to retrieve from.
             id (int | typing.Sequence[int] | None): The internal if the sequence to retrieve from.
@@ -271,6 +286,9 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Retrieves the last row (i.e the row with the highest row number) in a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getLatestSequenceRow>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | None): Id or list of ids.
             external_id (str | None): External id or list of external ids.
@@ -307,6 +325,9 @@ class SyncSequencesDataAPI(SyncAPIClient):
     ) -> pd.DataFrame:
         """
         `Retrieve data from a sequence as a pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             start (int): (inclusive) row number to start from.

@@ -92,6 +92,9 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         Iterate over sequences
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
@@ -136,6 +139,9 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Retrieve a single sequence by id <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceById>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | None): ID
             external_id (str | None): External ID
@@ -166,6 +172,9 @@ class SyncSequencesAPI(SyncAPIClient):
     ) -> SequenceList:
         """
         `Retrieve multiple sequences by id <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceById>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (typing.Sequence[int] | None): IDs
@@ -202,6 +211,9 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Count of sequences matching the specified filters and search <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count.
             filter (SequenceFilter | dict[str, Any] | None): The filter to narrow down sequences to count requiring exact match.
@@ -236,6 +248,9 @@ class SyncSequencesAPI(SyncAPIClient):
     ) -> int:
         """
         `Find approximate property count for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (SequenceProperty | str | list[str]): The property to count the cardinality of.
@@ -287,6 +302,9 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Find approximate paths count for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
@@ -321,6 +339,9 @@ class SyncSequencesAPI(SyncAPIClient):
     ) -> UniqueResultList:
         """
         `Get unique paths with counts for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (SequenceProperty | str | list[str]): The property to group by.
@@ -390,6 +411,9 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Find approximate unique sequence properties <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             path (SequenceProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the sequences to count cardinality.
@@ -426,6 +450,9 @@ class SyncSequencesAPI(SyncAPIClient):
     ) -> Sequence | SequenceList:
         """
         `Create one or more sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/createSequence>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             sequence (Sequence | SequenceWrite | typing.Sequence[Sequence] | typing.Sequence[SequenceWrite]): Sequence or list of Sequence to create. The Sequence columns parameter is a list of objects with fields `externalId` (external id of the column, when omitted, they will be given ids of 'column0, column1, ...'), `valueType` (data type of the column, either STRING, LONG, or DOUBLE, with default DOUBLE), `name`, `description`, `metadata` (optional fields to describe and store information about the data in the column). Other fields will be removed automatically, so a columns definition from a different sequence object can be passed here.
@@ -468,6 +495,9 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Delete one or more sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequences>`_.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | typing.Sequence[int] | None): Id or list of ids
             external_id (str | SequenceNotStr[str] | None): External ID or list of external ids
@@ -507,6 +537,9 @@ class SyncSequencesAPI(SyncAPIClient):
     ) -> Sequence | SequenceList:
         """
         `Update one or more sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/updateSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             item (Sequence | SequenceWrite | SequenceUpdate | typing.Sequence[Sequence | SequenceWrite | SequenceUpdate]): Sequences to update
@@ -613,6 +646,9 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         Upsert sequences, i.e., update if it exists, and create if it does not exist.
 
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
 
@@ -654,6 +690,9 @@ class SyncSequencesAPI(SyncAPIClient):
     ) -> SequenceList:
         """
         `Search for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/searchSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
@@ -701,6 +740,9 @@ class SyncSequencesAPI(SyncAPIClient):
     ) -> SequenceList:
         """
         `List sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/advancedListSequences>`_.
+
+        .. deprecated:: 8.22.0
+            The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             name (str | None): Filter out sequences that do not have this *exact* name.
