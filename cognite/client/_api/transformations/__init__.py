@@ -300,6 +300,7 @@ class TransformationsAPI(APIClient):
         data_set_external_ids: str | list[str] | None = None,
         tags: TagsFilter | None = None,
         limit: int | None = DEFAULT_LIMIT_READ,
+        data_domain_external_ids: str | list[str] | None = None,
     ) -> TransformationList:
         """`List all transformations <https://api-docs.cognite.com/20230101/tag/Transformations/operation/filterTransformations>`_.
 
@@ -317,6 +318,7 @@ class TransformationsAPI(APIClient):
             data_set_external_ids (str | list[str] | None): Return only transformations in the specified data sets with these external id(s).
             tags (TagsFilter | None): Return only the resource matching the specified tags constraints. It only supports ContainsAny as of now.
             limit (int | None): Limits the number of results to be returned. To retrieve all results use limit=-1, default limit is 25.
+            data_domain_external_ids (str | list[str] | None): Return only transformations belonging to one of the specified data domain(s).
 
         Returns:
             TransformationList: List of transformations
@@ -331,6 +333,9 @@ class TransformationsAPI(APIClient):
                 >>> transformations_list = client.transformations.list()
         """
         ds_ids = IdentifierSequence.load(data_set_ids, data_set_external_ids, id_name="data_set").as_dicts()
+        domain_external_ids = (
+            [data_domain_external_ids] if isinstance(data_domain_external_ids, str) else data_domain_external_ids
+        ) or None
 
         filter = TransformationFilter(
             include_public=include_public,
@@ -344,6 +349,7 @@ class TransformationsAPI(APIClient):
             last_updated_time=last_updated_time,
             tags=tags,
             data_set_ids=ds_ids or None,
+            data_domain_external_ids=domain_external_ids,
         ).dump(camel_case=True)
 
         return await self._list(
