@@ -130,10 +130,12 @@ class RecordSource(CogniteResource):
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
             "source": self.source.dump(camel_case=camel_case),
-            "properties": {
-                key: _PropertyValueSerializer.serialize_value(value, camel_case)
-                for key, value in deepcopy(self.properties).items()
-            },
+            "properties": deepcopy(
+                {
+                    key: _PropertyValueSerializer.serialize_value(value, camel_case)
+                    for key, value in self.properties.items()
+                }
+            ),
         }
 
 
@@ -335,10 +337,10 @@ class TimeRange(CogniteResource):
         lte: int | str | datetime | None = None,
         lt: int | str | datetime | None = None,
     ) -> None:
-        self.gte = _serialize_time_bound(gte)
-        self.gt = _serialize_time_bound(gt)
-        self.lte = _serialize_time_bound(lte)
-        self.lt = _serialize_time_bound(lt)
+        self.gte = gte
+        self.gt = gt
+        self.lte = lte
+        self.lt = lt
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -346,7 +348,7 @@ class TimeRange(CogniteResource):
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         return {
-            key: value
+            key: _serialize_time_bound(value)
             for key, value in {"gte": self.gte, "gt": self.gt, "lte": self.lte, "lt": self.lt}.items()
             if value is not None
         }

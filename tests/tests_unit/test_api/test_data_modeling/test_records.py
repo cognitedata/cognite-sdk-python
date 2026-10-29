@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 from datetime import date, datetime, timedelta, timezone
 from types import MappingProxyType
@@ -1181,6 +1182,16 @@ class TestRecordDTOs:
 
     def test_time_range_serializes_naive_datetime_without_timezone(self) -> None:
         assert TimeRange(gt=datetime(2026, 1, 1, 12)).dump() == {"gt": "2026-01-01T12:00:00.000"}
+
+    def test_time_range_serializes_datetime_assigned_after_init(self) -> None:
+        time_range = TimeRange(gte=1)
+        time_range.lte = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        assert time_range.dump() == {"gte": 1, "lte": "2026-01-01T00:00:00.000+00:00"}
+        json.dumps(time_range.dump())  # must not raise
+
+    def test_time_range_keeps_datetime_attribute(self) -> None:
+        when = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        assert TimeRange(gte=when).gte == when
 
     def test_time_range_passes_strings_through(self) -> None:
         assert TimeRange(gt="2026-01-01T00:00:00.000Z").dump() == {"gt": "2026-01-01T00:00:00.000Z"}
