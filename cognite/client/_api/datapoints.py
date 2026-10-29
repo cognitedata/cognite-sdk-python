@@ -5,6 +5,7 @@ import datetime
 import functools
 import itertools
 import math
+import warnings
 from collections.abc import AsyncIterator, Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
@@ -74,6 +75,8 @@ PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
 _T = TypeVar("_T")
 
 
+
+
 class DatapointsAPI(APIClient):
     _RESOURCE_PATH = "/timeseries/data"
 
@@ -103,6 +106,18 @@ class DatapointsAPI(APIClient):
     def _maybe_warn_if_gap_filling_is_used(self, queries: Iterable[DatapointsQuery]) -> None:
         if any(query.fill is not None for query in queries):
             self._gap_filling_warning.warn()
+
+    @staticmethod
+    def _maybe_warn_deprecated_identifier(identifiers: Iterable[Identifier]) -> None:
+        # Identifying datapoints by 'id' or 'external_id' is deprecated; only 'instance_id' is future-proof.
+        if any(identifier.is_id or identifier.is_external_id for identifier in identifiers):
+            warnings.warn(
+                "Identifying time series by 'id' or 'external_id' when working with datapoints is deprecated and is scheduled "
+                "for removal on 2027-12-31. Identify time series by 'instance_id' instead (as CogniteTimeSeries instances in "
+                "the core data model). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
 
     def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
@@ -257,6 +272,7 @@ class DatapointsAPI(APIClient):
             )
 
         user_queries = [queries] if (is_single := isinstance(queries, DatapointsQuery)) else queries
+        self._maybe_warn_deprecated_identifier(uq.identifier for uq in user_queries)
         dps_lst_cls: type[DatapointsArrayList | DatapointsList] = (
             DatapointsArrayList if return_arrays else DatapointsList
         )
@@ -810,6 +826,7 @@ class DatapointsAPI(APIClient):
         )
         self.query_validator(parsed_queries := query.parse_into_queries())
         self._maybe_warn_if_gap_filling_is_used(parsed_queries)
+        self._maybe_warn_deprecated_identifier(q.identifier for q in parsed_queries)
         dps_lst = await self._select_dps_fetch_strategy(parsed_queries)(self, parsed_queries).fetch_all_datapoints()
 
         if not query.is_single_identifier:
@@ -1068,6 +1085,7 @@ class DatapointsAPI(APIClient):
         )
         self.query_validator(parsed_queries := query.parse_into_queries())
         self._maybe_warn_if_gap_filling_is_used(parsed_queries)
+        self._maybe_warn_deprecated_identifier(q.identifier for q in parsed_queries)
         dps_lst = await self._select_dps_fetch_strategy(parsed_queries)(
             self, parsed_queries
         ).fetch_all_datapoints_numpy()
@@ -1226,6 +1244,7 @@ class DatapointsAPI(APIClient):
         )
         self.query_validator(parsed_queries := query.parse_into_queries())
         self._maybe_warn_if_gap_filling_is_used(parsed_queries)
+        self._maybe_warn_deprecated_identifier(q.identifier for q in parsed_queries)
         fetcher = self._select_dps_fetch_strategy(parsed_queries)(self, parsed_queries)
 
         if not uniform_index:
@@ -1595,6 +1614,11 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
             dps_client=self,
         )
+        self._maybe_warn_deprecated_identifier(
+            Identifier.load(id=dct.get("id"), external_id=dct.get("externalId"))
+            for dct in fetcher._all_identifiers
+            if "id" in dct or "externalId" in dct
+        )
         res = await fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
             return LatestDatapointList._load(res)
@@ -1707,7 +1731,9 @@ class DatapointsAPI(APIClient):
                 >>> client.time_series.data.insert(data, external_id="foo")
         """
 
-        post_dps_object = Identifier.of_either(id, external_id, instance_id).as_dict()
+        identifier = Identifier.of_either(id, external_id, instance_id)
+        self._maybe_warn_deprecated_identifier([identifier])
+        post_dps_object = identifier.as_dict()
         post_dps_object["datapoints"] = datapoints
         await DatapointsPoster(self).insert([post_dps_object])
 
@@ -1815,6 +1841,21 @@ class DatapointsAPI(APIClient):
         """
         if not isinstance(datapoints, Sequence):
             raise TypeError("Input to 'insert_multiple' must be a list of dictionaries")
+        identifiers: list[Identifier] = []
+        for dct in datapoints:
+            if not isinstance(dct, dict):
+                continue
+            id_value = dct.get("id")
+            external_id_value = dct.get("external_id") or dct.get("externalId")
+            if isinstance(id_value, int) or isinstance(external_id_value, str):
+                identifiers.append(
+                    Identifier.load(
+                        id=id_value if isinstance(id_value, int) else None,
+                        external_id=external_id_value if isinstance(external_id_value, str) else None
+                    )
+                )
+
+        self._maybe_warn_deprecated_identifier(identifiers)
         await DatapointsPoster(self).insert(datapoints)
 
     async def insert_states(self, items: StateDatapointsInsert | Sequence[StateDatapointsInsert]) -> None:
@@ -1986,8 +2027,9 @@ class DatapointsAPI(APIClient):
         if end_ms <= start_ms:
             raise ValueError(f"{end=} must be larger than {start=}")
 
-        identifier = Identifier.of_either(id, external_id, instance_id).as_dict()
-        delete_dps_object = {**identifier, "inclusiveBegin": start_ms, "exclusiveEnd": end_ms}
+        identifier = Identifier.of_either(id, external_id, instance_id)
+        self._maybe_warn_deprecated_identifier([identifier])
+        delete_dps_object = {**identifier.as_dict(), "inclusiveBegin": start_ms, "exclusiveEnd": end_ms}
         await self._delete_datapoints_ranges([delete_dps_object])
 
     async def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
@@ -2010,14 +2052,17 @@ class DatapointsAPI(APIClient):
                 >>> client.time_series.data.delete_ranges(ranges)
         """
         valid_ranges = []
+        identifiers = []
         for time_range in ranges:
             identifier = validate_user_input_dict_with_identifier(time_range, required_keys={"start", "end"})
+            identifiers.append(identifier)
             valid_range = dict(
                 **identifier.as_dict(),
                 inclusiveBegin=timestamp_to_ms(time_range["start"]),
                 exclusiveEnd=timestamp_to_ms(time_range["end"]),
             )
             valid_ranges.append(valid_range)
+        self._maybe_warn_deprecated_identifier(identifiers)
         await self._delete_datapoints_ranges(valid_ranges)
 
     async def _delete_datapoints_ranges(self, delete_range_objects: list[dict]) -> None:
