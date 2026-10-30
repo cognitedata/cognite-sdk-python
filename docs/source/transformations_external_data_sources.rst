@@ -53,7 +53,7 @@ Every operation is governed by ``transformationsExternalDataSourcesAcl``, availa
 Operation                                 Action
 ========================================= ==========
 ``list()``                                ``READ``
-``retrieve_multiple()``                   ``READ``
+``retrieve()``                            ``READ``
 ``create()``                              ``WRITE``
 ``delete()``                              ``WRITE``
 ``verify_usability()``                    ``USE``
@@ -239,13 +239,14 @@ to read the format-specific location fields:
         elif isinstance(data_source, SnowflakeExternalDataSource):
             print(data_source.external_id, "Snowflake", data_source.settings.location_description.warehouse_name)
 
-Filter on format (``one_lake`` or ``snowflake``), and retrieve data sources by external ID. A data source you do not have access to counts as missing: ``retrieve_multiple()`` raises for it unless you pass ``ignore_unknown_ids=True``:
+Filter on format (``one_lake`` or ``snowflake``), and retrieve data sources by external ID. A data source you do not have access to counts as missing: for a list of external IDs, ``retrieve()`` raises unless you pass ``ignore_unknown_ids=True``, and for a single external ID it returns ``None``:
 
 .. code-block:: python
 
     onelake_sources = client.transformations.external_data_sources.list(format="one_lake")
     snowflake_sources = client.transformations.external_data_sources.list(format="snowflake")
-    data_sources = client.transformations.external_data_sources.retrieve_multiple(
+    data_source = client.transformations.external_data_sources.retrieve("snowflake-analytics-prod")
+    data_sources = client.transformations.external_data_sources.retrieve(
         ["snowflake-analytics-prod", "fabric-lakehouse-prod"], ignore_unknown_ids=True
     )
 
