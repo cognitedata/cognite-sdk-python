@@ -6,33 +6,40 @@ External Data Sources
 
 An external data source is a reusable, named connection that lets a transformation read from storage
 outside Cognite Data Fusion (CDF). You configure the credentials and the location once, then reference the
-source from transformation SQL by its external ID. Microsoft Fabric OneLake is currently the supported
-system.
+source from transformation SQL by its external ID. Microsoft Fabric OneLake and Snowflake are the supported
+systems.
 
-Using this API requires the Fabric connector to be enabled for the project. Contact
+Using this API for OneLake requires the Fabric connector to be enabled for the project. Contact
 `Cognite Support <https://support.cognite.com/>`_ to have it enabled.
 
 .. warning::
-    Store the client secret securely, for example in an environment variable or a secret manager. All the
-    examples below read it from the environment rather than hard-coding it.
+    For OneLake, store the client secret securely, for example in an environment variable or a secret manager.
+    The examples below read it from the environment rather than hard-coding it.
 
 Concepts
 --------
 
-* **Format** — the external system the source connects to. ``one_lake`` is the supported value, and each
-  format has its own pair of data classes:
-  :class:`~cognite.client.data_classes.transformations.externaldata.OneLakeExternalDataSourceWrite` for
-  writing and :class:`~cognite.client.data_classes.transformations.externaldata.OneLakeExternalDataSource`
-  for reading.
+* **Format** — the external system the source connects to. ``one_lake`` and ``snowflake`` are the supported
+  values, and each format has its own pair of data classes:
+  :class:`~cognite.client.data_classes.transformations.externaldata.OneLakeExternalDataSourceWrite` and
+  :class:`~cognite.client.data_classes.transformations.externaldata.SnowflakeExternalDataSourceWrite` for
+  writing, :class:`~cognite.client.data_classes.transformations.externaldata.OneLakeExternalDataSource` and
+  :class:`~cognite.client.data_classes.transformations.externaldata.SnowflakeExternalDataSource` for reading.
 * **Credentials** — the Microsoft Entra ID application credentials, held by
-  :class:`~cognite.client.data_classes.transformations.externaldata.OneLakeCredentialsWrite`. The client
-  secret is write-only: it is stored encrypted and never returned when you read a data source, which is why
-  the read model, :class:`~cognite.client.data_classes.transformations.externaldata.OneLakeCredentials`, has
-  no ``client_secret``.
+  :class:`~cognite.client.data_classes.transformations.externaldata.OneLakeCredentialsWrite`. For OneLake, you
+  supply the client secret when you create the data source. It is stored encrypted and never returned when you
+  read a data source, which is why the read model,
+  :class:`~cognite.client.data_classes.transformations.externaldata.OneLakeCredentials`, has no
+  ``client_secret``. The API does not manage or rotate OneLake credentials after creation; the Entra ID
+  application and its secret remain in your Azure tenant.
 * **Location** — where in OneLake the source points, held by
   :class:`~cognite.client.data_classes.transformations.externaldata.OneLakeLocationDescription`. Both IDs
   are GUIDs from the Fabric portal: the workspace ID under *Workspace settings > Workspace ID* and the
   lakehouse ID under *Lakehouse settings > Item ID*.
+* **Snowflake keys** — for Snowflake, you send no keys. The server generates a key pair and returns only
+  the public key, which you register with the Snowflake user (``ALTER USER ... SET RSA_PUBLIC_KEY``).
+  ``expiry_time`` (milliseconds since epoch) is required for Snowflake, must be within one year from now,
+  and is not allowed for OneLake.
 * **Data set scoping** — an optional ``data_set_id`` that scopes access to the data source through CDF data
   set permissions.
 
@@ -46,6 +53,7 @@ Every operation is governed by ``transformationsExternalDataSourcesAcl``, availa
 Operation                                 Action
 ========================================= ==========
 ``list()``                                ``READ``
+``retrieve()``                            ``READ``
 ``create()``                              ``WRITE``
 ``delete()``                              ``WRITE``
 ``verify_usability()``                    ``USE``
@@ -59,7 +67,7 @@ Register a data source
 
 Creating a data source requires a unique external ID. If an external ID you submit already exists for
 the project, the request is rejected with a 409 and no items are created — there is no in-place update.
-To modify an existing data source, delete it and create a replacement (see `Rotate credentials`_):
+To modify an existing data source, delete it and create a replacement (see `Change OneLake credentials`_):
 
 .. code-block:: python
 
@@ -93,6 +101,32 @@ To modify an existing data source, delete it and create a replacement (see `Rota
     )
     registered = client.transformations.external_data_sources.create(data_source)
 
+Register a Snowflake data source
+--------------------------------
+
+.. code-block:: python
+
+    from cognite.client.data_classes.transformations.externaldata import (
+        SnowflakeCredentialsWrite,
+        SnowflakeExternalDataSourceWrite,
+        SnowflakeLocationDescription,
+        SnowflakeSettingsWrite,
+    )
+    from cognite.client.utils._time import timestamp_to_ms
+
+    snowflake_source = SnowflakeExternalDataSourceWrite(
+        external_id="snowflake-analytics-prod",
+        expiry_time=timestamp_to_ms("now") + 30 * 24 * 3600 * 1000,
+        settings=SnowflakeSettingsWrite(
+            credentials=SnowflakeCredentialsWrite(
+                account_identifier="org-account", user_name="COGNITE_SVC", role_name="COGNITE_READER"
+            ),
+            location_description=SnowflakeLocationDescription(warehouse_name="COMPUTE_WH"),
+        ),
+    )
+    created = client.transformations.external_data_sources.create(snowflake_source)
+    public_key = created.settings.credentials.public_key  # register this with the Snowflake user
+
 Verify that a data source is usable
 -----------------------------------
 
@@ -106,19 +140,38 @@ stored credentials. That way you find configuration problems here instead of in 
     if not usability.is_usable:
         raise RuntimeError("The data source is missing, or its credentials do not grant access")
 
-Read OneLake tables from transformation SQL
--------------------------------------------
+The same check works for Snowflake data sources, which are passed by external ID in the same way:
 
-A registered data source is referenced from transformation SQL through the ``ext_onelake()`` table-valued
-function, which takes the external ID of the data source and the table name, plus an optional schema name:
+.. code-block:: python
+
+    usability = client.transformations.external_data_sources.verify_usability("snowflake-analytics-prod")
+
+    if not usability.is_usable:
+        raise RuntimeError("The data source is missing, or its credentials do not grant access")
+
+Read tables from transformation SQL
+-----------------------------------
+
+A registered data source is referenced from transformation SQL through a table-valued function that depends on
+the format: ``ext_onelake()`` for OneLake and ``ext_snowflake()`` for Snowflake.
+
+For OneLake, the ``ext_onelake()`` function takes the external ID of the data source and the table name, plus an
+optional schema name:
 
 .. code-block:: sql
 
     SELECT * FROM ext_onelake('fabric-lakehouse-prod', 'my_table')
     SELECT * FROM ext_onelake('fabric-lakehouse-prod', 'my_table', 'my_schema')
 
-Data read this way can be written to any transformation destination. This example writes it into a data
-model view:
+For Snowflake, ``ext_snowflake()`` takes the external ID of the data source, then the database name, schema name,
+and table name, in that order:
+
+.. code-block:: sql
+
+    select * from ext_snowflake('snowflake-sales-prod', 'mydb', 'myschema', 'mytable')
+
+Data read this way can be written to any transformation destination. This example reads from OneLake and writes
+it into a data model view:
 
 .. code-block:: python
 
@@ -149,19 +202,53 @@ model view:
     )
     job = client.transformations.run(transformation_id=transformation.id)
 
+To read from a Snowflake data source instead, change only the ``query=`` argument. The rest of the
+``TransformationWrite`` call stays the same:
+
+.. code-block:: python
+
+    query="""
+        SELECT
+            externalId AS externalId,
+            description AS name
+        FROM ext_snowflake('snowflake-sales-prod', 'mydb', 'myschema', 'mytable')
+    """,
+
 See :doc:`transformations` for the rest of the transformation API, including the other ways of supplying
 credentials.
 
 List data sources
 -----------------
 
-Listing returns read models, so OneLake data sources come back as
-:class:`~cognite.client.data_classes.transformations.externaldata.OneLakeExternalDataSource`:
+Listing returns read models: OneLake data sources come back as
+:class:`~cognite.client.data_classes.transformations.externaldata.OneLakeExternalDataSource`, and Snowflake
+data sources come back as
+:class:`~cognite.client.data_classes.transformations.externaldata.SnowflakeExternalDataSource`. Check the class
+to read the format-specific location fields:
 
 .. code-block:: python
 
+    from cognite.client.data_classes.transformations.externaldata import (
+        OneLakeExternalDataSource,
+        SnowflakeExternalDataSource,
+    )
+
     for data_source in client.transformations.external_data_sources.list(limit=None):
-        print(data_source.external_id, data_source.settings.location_description.workspace_id)
+        if isinstance(data_source, OneLakeExternalDataSource):
+            print(data_source.external_id, "OneLake", data_source.settings.location_description.workspace_id)
+        elif isinstance(data_source, SnowflakeExternalDataSource):
+            print(data_source.external_id, "Snowflake", data_source.settings.location_description.warehouse_name)
+
+Filter on format (``one_lake`` or ``snowflake``), and retrieve data sources by external ID. A data source you do not have access to counts as missing: for a list of external IDs, ``retrieve()`` raises unless you pass ``ignore_unknown_ids=True``, and for a single external ID it returns ``None``:
+
+.. code-block:: python
+
+    onelake_sources = client.transformations.external_data_sources.list(format="one_lake")
+    snowflake_sources = client.transformations.external_data_sources.list(format="snowflake")
+    data_source = client.transformations.external_data_sources.retrieve("snowflake-analytics-prod")
+    data_sources = client.transformations.external_data_sources.retrieve(
+        ["snowflake-analytics-prod", "fabric-lakehouse-prod"], ignore_unknown_ids=True
+    )
 
 To iterate without holding every data source in memory, call the API directly, optionally in chunks:
 
@@ -173,19 +260,21 @@ To iterate without holding every data source in memory, call the API directly, o
     for chunk in client.transformations.external_data_sources(chunk_size=25):
         ...  # do something with the chunk
 
-Rotate credentials
-------------------
+Change OneLake credentials
+--------------------------
 
-Because a read model never carries the client secret, it cannot be turned back into a write model —
-``as_write()`` raises a ``TypeError``. There is no update endpoint for this resource, so rotating a
-secret (or changing any other setting) means deleting the existing data source and creating a
-replacement with the same external ID:
+OneLake credentials are managed by you, not by Cognite. The Entra ID application and its client secret live
+in your Azure tenant, and the Cognite REST APIs do not generate or rotate them. There is no update or rotate
+endpoint for OneLake data sources.
+
+To change the credentials, or any other setting, delete the data source and create a replacement with the
+same external ID:
 
 .. code-block:: python
 
     client.transformations.external_data_sources.delete("fabric-lakehouse-prod")
 
-    rotated = OneLakeExternalDataSourceWrite(
+    replacement = OneLakeExternalDataSourceWrite(
         external_id="fabric-lakehouse-prod",
         name="Production lakehouse",
         data_set_id=123456,
@@ -201,16 +290,30 @@ replacement with the same external ID:
             ),
         ),
     )
-    client.transformations.external_data_sources.create(rotated)
+    client.transformations.external_data_sources.create(replacement)
+
+Because a read model never carries the client secret, it cannot be turned back into a write model:
+``as_write()`` raises a ``TypeError``. Build the replacement from your own configuration, as shown above.
+
+Transformations that reference the data source fail while it is deleted, so create the replacement promptly.
+See `Delete a data source`_.
 
 Delete a data source
 --------------------
 
-Transformations that still reference a deleted data source fail the next time they run:
+Transformations that still reference a deleted data source fail the next time they run. ``delete()`` takes
+external IDs of either format:
 
 .. code-block:: python
 
     client.transformations.external_data_sources.delete("fabric-lakehouse-prod")
+    client.transformations.external_data_sources.delete("snowflake-analytics-prod")
+
+A single call can delete a mixed list of OneLake and Snowflake data sources:
+
+.. code-block:: python
+
+    client.transformations.external_data_sources.delete(["fabric-lakehouse-prod", "snowflake-analytics-prod"])
 
 API reference
 -------------

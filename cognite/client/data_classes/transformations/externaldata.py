@@ -406,15 +406,12 @@ class SnowflakeExternalDataSourceWrite(ExternalDataSourceWrite):
 
         Construct a Snowflake source for creation, with credentials expiring in 90 days:
 
-            >>> from datetime import datetime, timedelta, timezone
+            >>> import time
             >>> from cognite.client.data_classes.transformations.externaldata import (
             ...     SnowflakeCredentialsWrite,
             ...     SnowflakeExternalDataSourceWrite,
             ...     SnowflakeLocationDescription,
             ...     SnowflakeSettingsWrite,
-            ... )
-            >>> expiry_time = int(
-            ...     (datetime.now(timezone.utc) + timedelta(days=90)).timestamp() * 1000
             ... )
             >>> source = SnowflakeExternalDataSourceWrite(
             ...     external_id="snowflake-analytics-prod",
@@ -430,7 +427,7 @@ class SnowflakeExternalDataSourceWrite(ExternalDataSourceWrite):
             ...             warehouse_name="COMPUTE_WH"
             ...         ),
             ...     ),
-            ...     expiry_time=expiry_time,
+            ...     expiry_time=int((time.time() + 90 * 24 * 3600) * 1000),
             ... )
     """
 

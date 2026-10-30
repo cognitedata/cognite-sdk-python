@@ -7,6 +7,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.transformations.externaldata import (
     ExternalDataSource,
+    ExternalDataSourceFormat,
     ExternalDataSourceList,
     ExternalDataSourceUsability,
     ExternalDataSourceWrite,
@@ -28,15 +29,25 @@ class TransformationExternalDataSourcesAPI(APIClient):
         self._warning = FeaturePreviewWarning(
             api_maturity="beta", sdk_maturity="alpha", feature_name="Transformation External Data Sources"
         )
+        self._retrieve_warning = FeaturePreviewWarning(
+            api_maturity="alpha",
+            sdk_maturity="alpha",
+            feature_name="Retrieving Transformation External Data Sources by external ID",
+        )
+        self._RETRIEVE_LIMIT = 100  # ExternalDataSource.ByIds.maxItemsPerRequest
 
     @overload
-    def __call__(self, chunk_size: None = None, limit: int | None = None) -> AsyncIterator[ExternalDataSource]: ...
+    def __call__(
+        self, chunk_size: None = None, limit: int | None = None, format: ExternalDataSourceFormat | None = None
+    ) -> AsyncIterator[ExternalDataSource]: ...
 
     @overload
-    def __call__(self, chunk_size: int, limit: int | None = None) -> AsyncIterator[ExternalDataSourceList]: ...
+    def __call__(
+        self, chunk_size: int, limit: int | None = None, format: ExternalDataSourceFormat | None = None
+    ) -> AsyncIterator[ExternalDataSourceList]: ...
 
     async def __call__(
-        self, chunk_size: int | None = None, limit: int | None = None
+        self, chunk_size: int | None = None, limit: int | None = None, format: ExternalDataSourceFormat | None = None
     ) -> AsyncIterator[ExternalDataSource] | AsyncIterator[ExternalDataSourceList]:
         """Iterate over external data sources
 
@@ -45,6 +56,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
         Args:
             chunk_size (int | None): Number of data sources to return in each chunk. Defaults to yielding one data source at a time.
             limit (int | None): Maximum number of data sources to return. Defaults to return all.
+            format (ExternalDataSourceFormat | None): Only return data sources of this format ("one_lake" or "snowflake"). Defaults to all formats.
 
         Yields:
             ExternalDataSource | ExternalDataSourceList: yields ExternalDataSource one by one if chunk_size is not specified, else ExternalDataSourceList objects.
@@ -57,14 +69,18 @@ class TransformationExternalDataSourcesAPI(APIClient):
             method="GET",
             chunk_size=chunk_size,
             limit=limit,
+            other_params={"format": format} if format else None,
         ):
             yield item
 
-    async def list(self, limit: int | None = DEFAULT_LIMIT_READ) -> ExternalDataSourceList:
+    async def list(
+        self, limit: int | None = DEFAULT_LIMIT_READ, format: ExternalDataSourceFormat | None = None
+    ) -> ExternalDataSourceList:
         """`List external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/listExternalDataSources>`_.
 
         Args:
             limit (int | None): Maximum number of data sources to return. Defaults to 25. Set to -1, float("inf") or None to return all items.
+            format (ExternalDataSourceFormat | None): Only return data sources of this format ("one_lake" or "snowflake"). Defaults to all formats.
 
         Returns:
             ExternalDataSourceList: List of external data sources.
@@ -77,6 +93,12 @@ class TransformationExternalDataSourcesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> data_sources = client.transformations.external_data_sources.list(limit=5)
+
+            List only Snowflake data sources:
+
+                >>> snowflake_sources = client.transformations.external_data_sources.list(
+                ...     format="snowflake"
+                ... )
 
             Iterate over data sources, one-by-one:
 
@@ -94,6 +116,54 @@ class TransformationExternalDataSourcesAPI(APIClient):
             list_cls=ExternalDataSourceList,
             resource_cls=ExternalDataSource,  # type: ignore[type-abstract]
             limit=limit,
+            other_params={"format": format} if format else None,
+        )
+
+    @overload
+    async def retrieve(self, external_id: str, ignore_unknown_ids: bool = False) -> ExternalDataSource | None: ...
+
+    @overload
+    async def retrieve(
+        self, external_id: SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> ExternalDataSourceList: ...
+
+    async def retrieve(
+        self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
+    ) -> ExternalDataSource | ExternalDataSourceList | None:
+        """`Retrieve one or more external data sources by external ID <https://api-docs.cognite.com/20230101-alpha/tag/Transformation-External-Data-Sources/operation/getExternalDataSourcesByExternalIds>`_.
+
+        The API accepts at most 100 external IDs per request; larger inputs are split into several requests
+        automatically. The external IDs must be unique. A data source you do not have access to is treated as missing.
+
+        Args:
+            external_id (str | SequenceNotStr[str]): External ID or list of external IDs of the data source(s).
+            ignore_unknown_ids (bool): Ignore external IDs that are not found (or not accessible) rather than raise an exception.
+
+        Returns:
+            ExternalDataSource | ExternalDataSourceList | None: If a single external ID is specified: the requested data source, or None if it does not exist. If several external IDs are specified: the requested data sources.
+
+        Examples:
+
+            Retrieve a data source:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.transformations.external_data_sources.retrieve("fabric-lakehouse-prod")
+
+            Retrieve several data sources, skipping unknown external IDs:
+
+                >>> res = client.transformations.external_data_sources.retrieve(
+                ...     ["fabric-lakehouse-prod", "snowflake-analytics-prod", "might-not-exist"],
+                ...     ignore_unknown_ids=True,
+                ... )
+        """
+        self._retrieve_warning.warn()
+        return await self._retrieve_multiple(
+            list_cls=ExternalDataSourceList,
+            resource_cls=ExternalDataSource,  # type: ignore[type-abstract]
+            identifiers=IdentifierSequence.load(external_ids=external_id),
+            ignore_unknown_ids=ignore_unknown_ids,
         )
 
     @overload
@@ -106,6 +176,10 @@ class TransformationExternalDataSourcesAPI(APIClient):
         self, data_source: ExternalDataSourceWrite | Sequence[ExternalDataSourceWrite]
     ) -> ExternalDataSource | ExternalDataSourceList:
         """`Create external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/createExternalDataSources>`_.
+
+        Both OneLake and Snowflake data sources can be created, also in the same call. For Snowflake, the client sends
+        no keys: the server generates the key pair and only the public key is returned, which you must register with
+        the Snowflake user. ``expiry_time`` is required for Snowflake and not allowed for OneLake.
 
         Fails with a 409 if any external ID in the request already exists for the project; no items
         are created in that case. To modify an existing data source, delete it and create a replacement.
@@ -150,6 +224,34 @@ class TransformationExternalDataSourcesAPI(APIClient):
                 ...     ),
                 ... )
                 >>> res = client.transformations.external_data_sources.create(data_source)
+
+            Register a Snowflake data source, valid for 30 days:
+
+                >>> from cognite.client.data_classes.transformations.externaldata import (
+                ...     SnowflakeCredentialsWrite,
+                ...     SnowflakeExternalDataSourceWrite,
+                ...     SnowflakeLocationDescription,
+                ...     SnowflakeSettingsWrite,
+                ... )
+                >>> from cognite.client.utils._time import timestamp_to_ms
+                >>> snowflake_source = SnowflakeExternalDataSourceWrite(
+                ...     external_id="snowflake-analytics-prod",
+                ...     expiry_time=timestamp_to_ms("now") + 30 * 24 * 3600 * 1000,
+                ...     settings=SnowflakeSettingsWrite(
+                ...         credentials=SnowflakeCredentialsWrite(
+                ...             account_identifier="org-account",
+                ...             user_name="COGNITE_SVC",
+                ...             role_name="COGNITE_READER",
+                ...         ),
+                ...         location_description=SnowflakeLocationDescription(
+                ...             warehouse_name="COMPUTE_WH"
+                ...         ),
+                ...     ),
+                ... )
+                >>> created = client.transformations.external_data_sources.create(snowflake_source)
+                >>> public_key = (
+                ...     created.settings.credentials.public_key
+                ... )  # register with the Snowflake user
         """
         self._warning.warn()
         return await self._create_multiple(
