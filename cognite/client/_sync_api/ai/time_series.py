@@ -18,6 +18,8 @@ from cognite.client.data_classes.ai import (
     InputTimeSeries,
     TimeSeriesForecast,
     TimeSeriesForecastList,
+    TimeSeriesImpute,
+    TimeSeriesImputeList,
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import Aggregate
@@ -267,5 +269,121 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 granularity=granularity,
                 aggregate=aggregate,
                 cohort=cohort,
+            )
+        )
+
+    @overload
+    def impute_with_retrieval(
+        self,
+        *,
+        instance_id: NodeId,
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+        fill_gaps: bool = False,
+        mask: Sequence[
+            int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]
+        ]
+        | None = None,
+    ) -> TimeSeriesImpute: ...
+
+    @overload
+    def impute_with_retrieval(
+        self,
+        *,
+        instance_id: Sequence[NodeId],
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+        fill_gaps: bool = False,
+        mask: Sequence[
+            int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]
+        ]
+        | None = None,
+    ) -> TimeSeriesImputeList: ...
+
+    def impute_with_retrieval(
+        self,
+        *,
+        instance_id: NodeId | Sequence[NodeId],
+        start: int | str | datetime.datetime,
+        end: int | str | datetime.datetime | None = None,
+        granularity: str | None = None,
+        aggregate: Aggregate | str | None = None,
+        cohort: str | None = None,
+        fill_gaps: bool = False,
+        mask: Sequence[
+            int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]
+        ]
+        | None = None,
+    ) -> TimeSeriesImpute | TimeSeriesImputeList:
+        """
+        Retrieve the history of time series in `[start, end)` and reconstruct gaps and chosen datapoints.
+
+        You must say what to reconstruct: `fill_gaps=True`, `mask=[...]`, or both. The history is aligned the same way
+        as in `forecast_with_retrieval`, and is never resampled or truncated.
+
+        Args:
+            instance_id (NodeId | Sequence[NodeId]): Instance id(s) of the time series.
+            start (int | str | datetime.datetime): Start of the history window, for example "7d-ago".
+            end (int | str | datetime.datetime | None): End of the history window. Defaults to now.
+            granularity (str | None): Align the history using aggregates at this granularity, for example "10m".
+                Requires `aggregate`.
+            aggregate (Aggregate | str | None): The aggregate to reconstruct, for example "average".
+            cohort (str | None): Reconstruct all the requested time series jointly, aligned on one common grid.
+            fill_gaps (bool): Reconstruct every grid point without a datapoint (with aggregates, every empty bucket).
+            mask (Sequence[int | str | datetime.datetime | tuple[int | str | datetime.datetime, int | str | datetime.datetime]] | None): Timestamps, or inclusive `(start, end)` ranges, to hide from the model
+                and reconstruct even though values exist.
+
+        Returns:
+            TimeSeriesImpute | TimeSeriesImputeList: A single result if a single instance id was passed, otherwise a
+            list you can look up with `.get(instance_id=...)`.
+
+        Examples:
+
+            Fill every empty 10-minute bucket in the last week:
+
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> from cognite.client.data_classes.data_modeling import NodeId
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> res = client.ai.time_series.impute_with_retrieval(
+                ...     instance_id=NodeId("my_space", "21-PT-1019"),
+                ...     start="7d-ago",
+                ...     granularity="10m",
+                ...     aggregate="average",
+                ...     fill_gaps=True,
+                ... )
+
+            Reconstruct a period you know is bad, for example during a sensor fault:
+
+                >>> from datetime import datetime, timezone
+                >>> res = client.ai.time_series.impute_with_retrieval(
+                ...     instance_id=NodeId("my_space", "21-PT-1019"),
+                ...     start="7d-ago",
+                ...     granularity="10m",
+                ...     aggregate="average",
+                ...     mask=[
+                ...         (
+                ...             datetime(2026, 9, 30, 8, tzinfo=timezone.utc),
+                ...             datetime(2026, 9, 30, 12, tzinfo=timezone.utc),
+                ...         )
+                ...     ],
+                ... )
+        """
+        return run_sync(
+            self.__async_client.ai.time_series.impute_with_retrieval(
+                instance_id=instance_id,
+                start=start,
+                end=end,
+                granularity=granularity,
+                aggregate=aggregate,
+                cohort=cohort,
+                fill_gaps=fill_gaps,
+                mask=mask,
             )
         )
