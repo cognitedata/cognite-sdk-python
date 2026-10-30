@@ -53,7 +53,7 @@ Every operation is governed by ``transformationsExternalDataSourcesAcl``, availa
 Operation                                 Action
 ========================================= ==========
 ``list()``                                ``READ``
-``retrieve_multiple()``                   ``READ``
+``retrieve()``                            ``READ``
 ``create()``                              ``WRITE``
 ``delete()``                              ``WRITE``
 ``verify_usability()``                    ``USE``
@@ -255,7 +255,8 @@ Filter on format, and retrieve data sources by external ID. A data source you do
 .. code-block:: python
 
     snowflake_sources = client.transformations.external_data_sources.list(format="snowflake")
-    data_sources = client.transformations.external_data_sources.retrieve_multiple(
+    data_source = client.transformations.external_data_sources.retrieve("snowflake-analytics-prod")
+    data_sources = client.transformations.external_data_sources.retrieve(
         ["snowflake-analytics-prod", "fabric-lakehouse-prod"], ignore_unknown_ids=True
     )
 

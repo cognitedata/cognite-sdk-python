@@ -170,34 +170,33 @@ class TransformationExternalDataSourcesAPI(APIClient):
         """`Retrieve an external data source by external ID <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/getExternalDataSource>`_.
 
         Args:
-            external_ids (SequenceNotStr[str]): External IDs of the data sources.
+            external_id (str | SequenceNotStr[str]): External ID or list of external IDs of the data source(s).
             ignore_unknown_ids (bool): Ignore external IDs that are not found (or not accessible) rather than raise an exception.
 
         Returns:
-            ExternalDataSourceList: The requested data sources.
+            ExternalDataSource | ExternalDataSourceList | None: If a single external ID is specified: the requested data source, or None if it does not exist. If several external IDs are specified: the requested data sources.
 
         Examples:
 
-            Retrieve multiple data sources:
+            Retrieve a data source:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.transformations.external_data_sources.retrieve_multiple(
-                ...     ["fabric-lakehouse-prod", "snowflake-analytics-prod"]
-                ... )
+                >>> res = client.transformations.external_data_sources.retrieve("fabric-lakehouse-prod")
 
-            Skip unknown external IDs:
+            Retrieve several data sources, skipping unknown external IDs:
 
-                >>> res = client.transformations.external_data_sources.retrieve_multiple(
-                ...     ["fabric-lakehouse-prod", "might-not-exist"], ignore_unknown_ids=True
+                >>> res = client.transformations.external_data_sources.retrieve(
+                ...     ["fabric-lakehouse-prod", "snowflake-analytics-prod", "might-not-exist"],
+                ...     ignore_unknown_ids=True,
                 ... )
         """
         self._warning.warn()
         return await self._retrieve_multiple(
             list_cls=ExternalDataSourceList,
             resource_cls=ExternalDataSource,  # type: ignore[type-abstract]
-            identifiers=IdentifierSequence.load(external_ids=external_ids),
+            identifiers=IdentifierSequence.load(external_ids=external_id),
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
