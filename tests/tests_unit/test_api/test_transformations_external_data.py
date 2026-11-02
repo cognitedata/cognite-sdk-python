@@ -324,7 +324,7 @@ class TestTransformationExternalDataSourcesAPI:
         assert data_source.settings.location_description.warehouse_name == "COMPUTE_WH"
         assert data_source.expiry_time == 1700000000000
 
-    def test_retrieve_several(
+    def test_retrieve(
         self,
         cognite_client: CogniteClient,
         httpx2_mock: HTTPXMock,
