@@ -116,7 +116,7 @@ Register a Snowflake data source
 
     snowflake_source = SnowflakeExternalDataSourceWrite(
         external_id="snowflake-analytics-prod",
-        expiry_time=timestamp_to_ms("now") + 30 * 24 * 3600 * 1000,
+        expiry_time=timestamp_to_ms("30d-ahead"),
         settings=SnowflakeSettingsWrite(
             credentials=SnowflakeCredentialsWrite(
                 account_identifier="org-account", user_name="COGNITE_SVC", role_name="COGNITE_READER"

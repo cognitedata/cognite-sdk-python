@@ -413,6 +413,7 @@ class SnowflakeExternalDataSourceWrite(ExternalDataSourceWrite):
             ...     SnowflakeLocationDescription,
             ...     SnowflakeSettingsWrite,
             ... )
+            >>> from cognite.client.utils._time import timestamp_to_ms
             >>> source = SnowflakeExternalDataSourceWrite(
             ...     external_id="snowflake-analytics-prod",
             ...     name="Production warehouse",
@@ -427,7 +428,7 @@ class SnowflakeExternalDataSourceWrite(ExternalDataSourceWrite):
             ...             warehouse_name="COMPUTE_WH"
             ...         ),
             ...     ),
-            ...     expiry_time=int((time.time() + 90 * 24 * 3600) * 1000),
+            ...     expiry_time= timestamp_to_ms("90d-ahead"),
             ... )
     """
 
