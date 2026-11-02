@@ -305,7 +305,7 @@ def _points_to_pandas(
 def _concat_columns(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
     pd = local_import("pandas")
     if not frames:
-        return pd.DataFrame(index=pd.to_datetime([]))
+        return pd.DataFrame(index=to_pandas_datetime_index([], timezone=None))
     return pd.concat(frames, axis=1)
 
 
