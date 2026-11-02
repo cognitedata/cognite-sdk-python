@@ -428,7 +428,7 @@ class SnowflakeExternalDataSourceWrite(ExternalDataSourceWrite):
             ...             warehouse_name="COMPUTE_WH"
             ...         ),
             ...     ),
-            ...     expiry_time= timestamp_to_ms("90d-ahead"),
+            ...     expiry_time=timestamp_to_ms("90d-ahead"),
             ... )
     """
 
