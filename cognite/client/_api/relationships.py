@@ -6,6 +6,8 @@ from collections.abc import Iterator, Sequence
 from functools import partial
 from typing import TYPE_CHECKING, Literal, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -28,8 +30,23 @@ if TYPE_CHECKING:
     from cognite.client.config import ClientConfig
 
 
+_RELATIONSHIPS_DEPRECATION_MESSAGE = (
+    "The Relationships API is deprecated and is scheduled for removal on 2027-12-31. "
+    "Model connections as edges or direct relations in the data modeling service. "
+    "See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+)
+
+
 class RelationshipsAPI(APIClient):
     _RESOURCE_PATH = "/relationships"
+
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            _RELATIONSHIPS_DEPRECATION_MESSAGE,
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -79,6 +96,7 @@ class RelationshipsAPI(APIClient):
         partitions: int | None = None,
     ) -> Iterator[RelationshipList]: ...
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     def __call__(
         self,
         chunk_size: int | None = None,
@@ -100,6 +118,9 @@ class RelationshipsAPI(APIClient):
         partitions: int | None = None,
     ) -> Iterator[Relationship] | Iterator[RelationshipList]:
         """Iterate over relationships
+
+        .. deprecated:: 7.95.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges or direct relations in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Fetches relationships as they are iterated over, so you keep a limited number of relationships in memory.
 
@@ -125,6 +146,7 @@ class RelationshipsAPI(APIClient):
         Returns:
             Iterator[Relationship] | Iterator[RelationshipList]: yields Relationship one by one if chunk_size is not specified, else RelationshipList objects.
         """
+        self._deprecation_warning()
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
         filter = RelationshipFilter(
             source_external_ids=source_external_ids,
@@ -167,8 +189,12 @@ class RelationshipsAPI(APIClient):
         """
         return self()
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     def retrieve(self, external_id: str, fetch_resources: bool = False) -> Relationship | None:
         """Retrieve a single relationship by external id.
+
+        .. deprecated:: 7.95.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges or direct relations in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             external_id (str): External ID
@@ -185,6 +211,7 @@ class RelationshipsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.relationships.retrieve(external_id="1")
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(
             list_cls=RelationshipList,
@@ -193,10 +220,14 @@ class RelationshipsAPI(APIClient):
             other_params={"fetchResources": fetch_resources},
         )
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     def retrieve_multiple(
         self, external_ids: SequenceNotStr[str], fetch_resources: bool = False, ignore_unknown_ids: bool = False
     ) -> RelationshipList:
         """`Retrieve multiple relationships by external id.  <https://api-docs.cognite.com/20230101/tag/Relationships/operation/byidsRelationships>`_
+
+        .. deprecated:: 7.95.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges or direct relations in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             external_ids (SequenceNotStr[str]): External IDs
@@ -215,6 +246,7 @@ class RelationshipsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.relationships.retrieve_multiple(external_ids=["abc", "def"])
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_ids)
         return self._retrieve_multiple(
             list_cls=RelationshipList,
@@ -224,6 +256,7 @@ class RelationshipsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     def list(
         self,
         source_external_ids: SequenceNotStr[str] | None = None,
@@ -244,6 +277,9 @@ class RelationshipsAPI(APIClient):
         fetch_resources: bool = False,
     ) -> RelationshipList:
         """`Lists relationships stored in the project based on a query filter given in the payload of this request. Up to 1000 relationships can be retrieved in one operation.  <https://api-docs.cognite.com/20230101/tag/Relationships/operation/listRelationships>`_
+
+        .. deprecated:: 7.95.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges or direct relations in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             source_external_ids (SequenceNotStr[str] | None): Include relationships that have any of these values in their source External Id field
@@ -279,6 +315,7 @@ class RelationshipsAPI(APIClient):
                 >>> for relationship in client.relationships:
                 ...     relationship # do something with the relationship
         """
+        self._deprecation_warning()
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
         filter = RelationshipFilter(
             source_external_ids=source_external_ids,
@@ -353,10 +390,14 @@ class RelationshipsAPI(APIClient):
     @overload
     def create(self, relationship: Sequence[Relationship | RelationshipWrite]) -> RelationshipList: ...
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     def create(
         self, relationship: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]
     ) -> Relationship | RelationshipList:
         """`Create one or more relationships. <https://api-docs.cognite.com/20230101/tag/Relationships/operation/createRelationships>`_
+
+        .. deprecated:: 7.95.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges or direct relations in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             relationship (Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite]): Relationship or list of relationships to create.
@@ -395,6 +436,7 @@ class RelationshipsAPI(APIClient):
                 ... )
                 >>> res = client.relationships.create([flowrel1,flowrel2])
         """
+        self._deprecation_warning()
         assert_type(relationship, "relationship", [RelationshipCore, Sequence])
         if isinstance(relationship, Sequence):
             relationship = [r._validate_resource_types() for r in relationship]
@@ -414,6 +456,7 @@ class RelationshipsAPI(APIClient):
     @overload
     def update(self, item: Sequence[Relationship | RelationshipWrite | RelationshipUpdate]) -> RelationshipList: ...
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     def update(
         self,
         item: Relationship
@@ -424,6 +467,9 @@ class RelationshipsAPI(APIClient):
     ) -> Relationship | RelationshipList:
         """`Update one or more relationships <https://api-docs.cognite.com/20230101/tag/Relationships/operation/updateRelationships>`_
         Currently, a full replacement of labels on a relationship is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
+
+        .. deprecated:: 7.95.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges or direct relations in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             item (Relationship | RelationshipWrite | RelationshipUpdate | Sequence[Relationship | RelationshipWrite | RelationshipUpdate]): Relationship(s) to update
@@ -462,6 +508,7 @@ class RelationshipsAPI(APIClient):
                 >>> my_update = RelationshipUpdate(external_id="flow_1").labels.remove("PUMP")
                 >>> res = client.relationships.update(my_update)
         """
+        self._deprecation_warning()
         return self._update_multiple(
             list_cls=RelationshipList, resource_cls=Relationship, update_cls=RelationshipUpdate, items=item, mode=mode
         )
@@ -476,6 +523,7 @@ class RelationshipsAPI(APIClient):
         self, item: Relationship | RelationshipWrite, mode: Literal["patch", "replace"] = "patch"
     ) -> Relationship: ...
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     def upsert(
         self,
         item: Relationship | RelationshipWrite | Sequence[Relationship | RelationshipWrite],
@@ -484,6 +532,9 @@ class RelationshipsAPI(APIClient):
         """Upsert relationships, i.e., update if it exists, and create if it does not exist.
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
+
+        .. deprecated:: 7.95.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges or direct relations in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
             For more details, see :ref:`appendix-upsert`.
 
@@ -506,6 +557,7 @@ class RelationshipsAPI(APIClient):
                 >>> new_relationship = Relationship(external_id="new_relationship", source_external_id="new_source")
                 >>> res = client.relationships.upsert([existing_relationship, new_relationship], mode="replace")
         """
+        self._deprecation_warning()
         return self._upsert_multiple(
             item,
             list_cls=RelationshipList,
@@ -515,8 +567,12 @@ class RelationshipsAPI(APIClient):
             mode=mode,
         )
 
+    @deprecated(_RELATIONSHIPS_DEPRECATION_MESSAGE, category=None)
     def delete(self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False) -> None:
         """`Delete one or more relationships. <https://api-docs.cognite.com/20230101/tag/Relationships/operation/deleteRelationships>`_
+
+        .. deprecated:: 7.95.0
+            The Relationships API is deprecated and is scheduled for removal on 2027-12-31. Model connections as edges or direct relations in the data modeling service. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids
@@ -529,6 +585,7 @@ class RelationshipsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.relationships.delete(external_id=["a","b"])
         """
+        self._deprecation_warning()
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,

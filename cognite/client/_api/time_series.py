@@ -4,6 +4,8 @@ import warnings
 from collections.abc import Iterator, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeAlias, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api.datapoints import DatapointsAPI
 from cognite.client._api.datapoints_subscriptions import DatapointsSubscriptionAPI
 from cognite.client._api_client import APIClient
@@ -43,8 +45,19 @@ SortSpec: TypeAlias = (
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 
+_TIME_SERIES_DEPRECATION_MESSAGE = "The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+
+
 class TimeSeriesAPI(APIClient):
     _RESOURCE_PATH = "/timeseries"
+
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            _TIME_SERIES_DEPRECATION_MESSAGE,
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -101,6 +114,7 @@ class TimeSeriesAPI(APIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[TimeSeriesList]: ...
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def __call__(
         self,
         chunk_size: int | None = None,
@@ -126,6 +140,9 @@ class TimeSeriesAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> Iterator[TimeSeries] | Iterator[TimeSeriesList]:
         """Iterate over time series
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
@@ -155,6 +172,7 @@ class TimeSeriesAPI(APIClient):
         Returns:
             Iterator[TimeSeries] | Iterator[TimeSeriesList]: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
         """
+        self._deprecation_warning()
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -200,10 +218,14 @@ class TimeSeriesAPI(APIClient):
         """
         return self()
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def retrieve(
         self, id: int | None = None, external_id: str | None = None, instance_id: NodeId | None = None
     ) -> TimeSeries | None:
         """`Retrieve a single time series by id. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getTimeSeriesByIds>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | None): ID
@@ -225,6 +247,7 @@ class TimeSeriesAPI(APIClient):
 
                 >>> res = client.time_series.retrieve(external_id="1")
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id, instance_ids=instance_id).as_singleton()
         return self._retrieve_multiple(
             list_cls=TimeSeriesList,
@@ -232,6 +255,7 @@ class TimeSeriesAPI(APIClient):
             identifiers=identifiers,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
@@ -240,6 +264,9 @@ class TimeSeriesAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> TimeSeriesList:
         """`Retrieve multiple time series by id. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getTimeSeriesByIds>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -262,6 +289,7 @@ class TimeSeriesAPI(APIClient):
 
                 >>> res = client.time_series.retrieve_multiple(external_ids=["abc", "def"])
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids, instance_ids=instance_ids)
         return self._retrieve_multiple(
             list_cls=TimeSeriesList,
@@ -270,8 +298,12 @@ class TimeSeriesAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def aggregate(self, filter: TimeSeriesFilter | dict[str, Any] | None = None) -> list[CountAggregate]:
         """`Aggregate time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             filter (TimeSeriesFilter | dict[str, Any] | None): Filter on time series filter with exact match
@@ -287,17 +319,22 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.time_series.aggregate(filter={"unit": "kpa"})
         """
+        self._deprecation_warning()
         warnings.warn(
             "This method will be deprecated in the next major release. Use aggregate_count instead.", DeprecationWarning
         )
         return self._aggregate(filter=filter, cls=CountAggregate)
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def aggregate_count(
         self,
         advanced_filter: Filter | dict[str, Any] | None = None,
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Count of time series matching the specified filters and search. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count.
@@ -322,6 +359,7 @@ class TimeSeriesAPI(APIClient):
             >>> count = client.time_series.aggregate_count(advanced_filter=is_numeric)
 
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
             "count",
@@ -329,6 +367,7 @@ class TimeSeriesAPI(APIClient):
             advanced_filter=advanced_filter,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def aggregate_cardinality_values(
         self,
         property: TimeSeriesProperty | str | list[str],
@@ -337,6 +376,9 @@ class TimeSeriesAPI(APIClient):
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate property count for time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (TimeSeriesProperty | str | list[str]): The property to count the cardinality of.
@@ -368,6 +410,7 @@ class TimeSeriesAPI(APIClient):
             ...     aggregate_filter=not_america)
 
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
             "cardinalityValues",
@@ -377,6 +420,7 @@ class TimeSeriesAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def aggregate_cardinality_properties(
         self,
         path: TimeSeriesProperty | str | list[str],
@@ -385,6 +429,9 @@ class TimeSeriesAPI(APIClient):
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate paths count for time series.  <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -403,6 +450,7 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> key_count = client.time_series.aggregate_cardinality_properties(TimeSeriesProperty.metadata)
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
             "cardinalityProperties",
@@ -412,6 +460,7 @@ class TimeSeriesAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def aggregate_unique_values(
         self,
         property: TimeSeriesProperty | str | list[str],
@@ -420,6 +469,9 @@ class TimeSeriesAPI(APIClient):
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique properties with counts for time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (TimeSeriesProperty | str | list[str]): The property to group by.
@@ -460,6 +512,7 @@ class TimeSeriesAPI(APIClient):
                 >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.unit, advanced_filter=created_after_2020, aggregate_filter=not_test)
                 >>> print(result.unique)
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
             aggregate="uniqueValues",
@@ -469,6 +522,7 @@ class TimeSeriesAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def aggregate_unique_properties(
         self,
         path: TimeSeriesProperty | str | list[str],
@@ -477,6 +531,9 @@ class TimeSeriesAPI(APIClient):
         filter: TimeSeriesFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique paths with counts for time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
@@ -496,6 +553,7 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> result = client.time_series.aggregate_unique_values(TimeSeriesProperty.metadata)
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
             aggregate="uniqueProperties",
@@ -511,10 +569,14 @@ class TimeSeriesAPI(APIClient):
     @overload
     def create(self, time_series: TimeSeries | TimeSeriesWrite) -> TimeSeries: ...
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def create(
         self, time_series: TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]
     ) -> TimeSeries | TimeSeriesList:
         """`Create one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/postTimeSeries>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             time_series (TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]): TimeSeries or list of TimeSeries to create.
@@ -531,6 +593,7 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> ts = client.time_series.create(TimeSeriesWrite(name="my_ts", data_set_id=123, external_id="foo"))
         """
+        self._deprecation_warning()
         return self._create_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
@@ -538,6 +601,7 @@ class TimeSeriesAPI(APIClient):
             input_resource_cls=TimeSeriesWrite,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def delete(
         self,
         id: int | Sequence[int] | None = None,
@@ -545,6 +609,9 @@ class TimeSeriesAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/deleteTimeSeries>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -559,6 +626,7 @@ class TimeSeriesAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.time_series.delete(id=[1,2,3], external_id="3")
         """
+        self._deprecation_warning()
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
@@ -579,6 +647,7 @@ class TimeSeriesAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TimeSeries: ...
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def update(
         self,
         item: TimeSeries
@@ -588,6 +657,9 @@ class TimeSeriesAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> TimeSeries | TimeSeriesList:
         """`Update one or more time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/alterTimeSeries>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             item (TimeSeries | TimeSeriesWrite | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]): Time series to update
@@ -624,6 +696,7 @@ class TimeSeriesAPI(APIClient):
                 ... )
                 >>> client.time_series.update(my_update)
         """
+        self._deprecation_warning()
         return self._update_multiple(
             list_cls=TimeSeriesList,
             resource_cls=TimeSeries,
@@ -640,6 +713,7 @@ class TimeSeriesAPI(APIClient):
     @overload
     def upsert(self, item: TimeSeries | TimeSeriesWrite, mode: Literal["patch", "replace"] = "patch") -> TimeSeries: ...
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def upsert(
         self,
         item: TimeSeries | TimeSeriesWrite | Sequence[TimeSeries | TimeSeriesWrite],
@@ -648,6 +722,9 @@ class TimeSeriesAPI(APIClient):
         """Upsert time series, i.e., update if it exists, and create if it does not exist.
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
             For more details, see :ref:`appendix-upsert`.
 
@@ -670,6 +747,7 @@ class TimeSeriesAPI(APIClient):
                 >>> new_time_series = TimeSeries(external_id="new_timeSeries", description="New timeSeries")
                 >>> res = client.time_series.upsert([existing_time_series, new_time_series], mode="replace")
         """
+        self._deprecation_warning()
 
         return self._upsert_multiple(
             item,
@@ -680,6 +758,7 @@ class TimeSeriesAPI(APIClient):
             mode=mode,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def search(
         self,
         name: str | None = None,
@@ -690,6 +769,9 @@ class TimeSeriesAPI(APIClient):
     ) -> TimeSeriesList:
         """`Search for time series. <https://api-docs.cognite.com/20230101/tag/Time-series/operation/searchTimeSeries>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             name (str | None): Prefix and fuzzy search on name.
@@ -713,6 +795,7 @@ class TimeSeriesAPI(APIClient):
 
                 >>> res = client.time_series.search(filter={"asset_ids":[123]})
         """
+        self._deprecation_warning()
 
         return self._search(
             list_cls=TimeSeriesList,
@@ -721,6 +804,7 @@ class TimeSeriesAPI(APIClient):
             limit=limit,
         )
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def filter(
         self,
         filter: Filter | dict,
@@ -728,6 +812,9 @@ class TimeSeriesAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> TimeSeriesList:
         """`Advanced filter time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/listTimeSeries>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Advanced filter lets you create complex filtering expressions that combine simple operations,
         such as equals, prefix, exists, etc., using boolean operators and, or, and not.
@@ -762,6 +849,7 @@ class TimeSeriesAPI(APIClient):
                 >>> is_numeric = Equals(TimeSeriesProperty.is_string, False)
                 >>> res = client.time_series.filter(filter=is_numeric, sort=SortableTimeSeriesProperty.external_id)
         """
+        self._deprecation_warning()
         warnings.warn(
             f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
             DeprecationWarning,
@@ -780,6 +868,7 @@ class TimeSeriesAPI(APIClient):
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
+    @deprecated(_TIME_SERIES_DEPRECATION_MESSAGE, category=None)
     def list(
         self,
         name: str | None = None,
@@ -804,6 +893,9 @@ class TimeSeriesAPI(APIClient):
         sort: SortSpec | list[SortSpec] | None = None,
     ) -> TimeSeriesList:
         """`List time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/listTimeSeries>`_
+
+        .. deprecated:: 7.95.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             name (str | None): Name of the time series. Often referred to as tag.
@@ -883,6 +975,7 @@ class TimeSeriesAPI(APIClient):
                 ... )
                 >>> res = client.time_series.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
         """
+        self._deprecation_warning()
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 

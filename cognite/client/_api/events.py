@@ -4,6 +4,8 @@ import warnings
 from collections.abc import Iterator, Sequence
 from typing import Any, Literal, TypeAlias, overload
 
+from typing_extensions import deprecated
+
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
@@ -34,8 +36,19 @@ SortSpec: TypeAlias = (
 _FILTERS_SUPPORTED: frozenset[type[Filter]] = _BASIC_FILTERS | {filters.Search}
 
 
+_EVENTS_DEPRECATION_MESSAGE = "The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+
+
 class EventsAPI(APIClient):
     _RESOURCE_PATH = "/events"
+
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            _EVENTS_DEPRECATION_MESSAGE,
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     @overload
     def __call__(
@@ -89,6 +102,7 @@ class EventsAPI(APIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
     ) -> Iterator[EventList]: ...
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def __call__(
         self,
         chunk_size: int | None = None,
@@ -114,6 +128,9 @@ class EventsAPI(APIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
     ) -> Iterator[Event] | Iterator[EventList]:
         """Iterate over events
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Fetches events as they are iterated over, so you keep a limited number of events in memory.
 
@@ -143,6 +160,7 @@ class EventsAPI(APIClient):
         Returns:
             Iterator[Event] | Iterator[EventList]: yields Event one by one if chunk_size is not specified, else EventList objects.
         """
+        self._deprecation_warning()
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 
@@ -188,8 +206,12 @@ class EventsAPI(APIClient):
         """
         return self()
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> Event | None:
         """`Retrieve a single event by id. <https://api-docs.cognite.com/20230101/tag/Events/operation/getEventByInternalId>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | None): ID
@@ -210,9 +232,11 @@ class EventsAPI(APIClient):
 
                 >>> res = client.events.retrieve(external_id="1")
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=id, external_ids=external_id).as_singleton()
         return self._retrieve_multiple(list_cls=EventList, resource_cls=Event, identifiers=identifiers)
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def retrieve_multiple(
         self,
         ids: Sequence[int] | None = None,
@@ -220,6 +244,9 @@ class EventsAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> EventList:
         """`Retrieve multiple events by id. <https://api-docs.cognite.com/20230101/tag/Events/operation/byIdsEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -241,13 +268,18 @@ class EventsAPI(APIClient):
 
                 >>> res = client.events.retrieve_multiple(external_ids=["abc", "def"])
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=ids, external_ids=external_ids)
         return self._retrieve_multiple(
             list_cls=EventList, resource_cls=Event, identifiers=identifiers, ignore_unknown_ids=ignore_unknown_ids
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def aggregate(self, filter: EventFilter | dict[str, Any] | None = None) -> list[AggregateResult]:
         """`Aggregate events <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             filter (EventFilter | dict[str, Any] | None): Filter on events filter with exact match
@@ -263,12 +295,14 @@ class EventsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> aggregate_type = client.events.aggregate(filter={"type": "failure"})
         """
+        self._deprecation_warning()
         warnings.warn(
             "This method is deprecated. Use aggregate_count, aggregate_unique_values, aggregate_cardinality_values, aggregate_cardinality_properties, or aggregate_unique_properties instead.",
             DeprecationWarning,
         )
         return self._aggregate(filter=filter, cls=AggregateResult)
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def aggregate_unique_values(
         self,
         filter: EventFilter | dict[str, Any] | None = None,
@@ -277,6 +311,9 @@ class EventsAPI(APIClient):
         aggregate_filter: AggregationFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique properties with counts for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             filter (EventFilter | dict[str, Any] | None): The filter to narrow down the events to count requiring exact match.
@@ -319,6 +356,7 @@ class EventsAPI(APIClient):
             >>> print(result.unique)
 
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
             aggregate="uniqueValues",
@@ -328,6 +366,7 @@ class EventsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def aggregate_count(
         self,
         property: EventPropertyLike | None = None,
@@ -335,6 +374,9 @@ class EventsAPI(APIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Count of event matching the specified filters. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (EventPropertyLike | None): If specified, Get an approximate number of Events with a specific property
@@ -360,6 +402,7 @@ class EventsAPI(APIClient):
                 >>> is_workorder = filters.Equals(EventProperty.type, "workorder")
                 >>> workorder_count = client.events.aggregate_count(advanced_filter=is_workorder)
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
             "count",
@@ -368,6 +411,7 @@ class EventsAPI(APIClient):
             advanced_filter=advanced_filter,
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def aggregate_cardinality_values(
         self,
         property: EventPropertyLike,
@@ -376,6 +420,9 @@ class EventsAPI(APIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate property count for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             property (EventPropertyLike): The property to count the cardinality of.
@@ -402,6 +449,7 @@ class EventsAPI(APIClient):
             >>> plain_text_author_count = client.events.aggregate_cardinality_values(EventProperty.type, advanced_filter=is_asset)
 
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
 
         return self._advanced_aggregate(
@@ -412,6 +460,7 @@ class EventsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def aggregate_cardinality_properties(
         self,
         path: EventPropertyLike,
@@ -420,6 +469,9 @@ class EventsAPI(APIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> int:
         """`Find approximate paths count for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -440,6 +492,7 @@ class EventsAPI(APIClient):
                 >>> type_count = client.events.aggregate_cardinality_properties(EventProperty.metadata)
 
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
             "cardinalityProperties",
@@ -449,6 +502,7 @@ class EventsAPI(APIClient):
             aggregate_filter=aggregate_filter,
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def aggregate_unique_properties(
         self,
         path: EventPropertyLike,
@@ -457,6 +511,9 @@ class EventsAPI(APIClient):
         filter: EventFilter | dict[str, Any] | None = None,
     ) -> UniqueResultList:
         """`Get unique paths with counts for events. <https://api-docs.cognite.com/20230101/tag/Events/operation/aggregateEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             path (EventPropertyLike): The scope in every document to aggregate properties. The only value allowed now is ["metadata"].
@@ -478,6 +535,7 @@ class EventsAPI(APIClient):
                 >>> result = client.events.aggregate_unique_properties(EventProperty.metadata)
                 >>> print(result.unique)
         """
+        self._deprecation_warning()
         self._validate_filter(advanced_filter)
         return self._advanced_aggregate(
             aggregate="uniqueProperties",
@@ -493,8 +551,12 @@ class EventsAPI(APIClient):
     @overload
     def create(self, event: Event | EventWrite) -> Event: ...
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def create(self, event: Event | EventWrite | Sequence[Event] | Sequence[EventWrite]) -> Event | EventList:
         """`Create one or more events. <https://api-docs.cognite.com/20230101/tag/Events/operation/createEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             event (Event | EventWrite | Sequence[Event] | Sequence[EventWrite]): Event or list of events to create.
@@ -512,8 +574,10 @@ class EventsAPI(APIClient):
                 >>> events = [EventWrite(start_time=0, end_time=1), EventWrite(start_time=2, end_time=3)]
                 >>> res = client.events.create(events)
         """
+        self._deprecation_warning()
         return self._create_multiple(list_cls=EventList, resource_cls=Event, items=event, input_resource_cls=EventWrite)
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def delete(
         self,
         id: int | Sequence[int] | None = None,
@@ -521,6 +585,9 @@ class EventsAPI(APIClient):
         ignore_unknown_ids: bool = False,
     ) -> None:
         """`Delete one or more events <https://api-docs.cognite.com/20230101/tag/Events/operation/deleteEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -535,6 +602,7 @@ class EventsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.events.delete(id=[1,2,3], external_id="3")
         """
+        self._deprecation_warning()
         self._delete_multiple(
             identifiers=IdentifierSequence.load(ids=id, external_ids=external_id),
             wrap_ids=True,
@@ -555,12 +623,16 @@ class EventsAPI(APIClient):
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Event: ...
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def update(
         self,
         item: Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate],
         mode: Literal["replace_ignore_null", "patch", "replace"] = "replace_ignore_null",
     ) -> Event | EventList:
         """`Update one or more events <https://api-docs.cognite.com/20230101/tag/Events/operation/updateEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             item (Event | EventWrite | EventUpdate | Sequence[Event | EventWrite | EventUpdate]): Event(s) to update
@@ -585,10 +657,12 @@ class EventsAPI(APIClient):
                 >>> my_update = EventUpdate(id=1).description.set("New description").metadata.add({"key": "value"})
                 >>> res = client.events.update(my_update)
         """
+        self._deprecation_warning()
         return self._update_multiple(
             list_cls=EventList, resource_cls=Event, update_cls=EventUpdate, items=item, mode=mode
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def search(
         self,
         description: str | None = None,
@@ -597,6 +671,9 @@ class EventsAPI(APIClient):
     ) -> EventList:
         """`Search for events <https://api-docs.cognite.com/20230101/tag/Events/operation/searchEvents>`_
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             description (str | None): Fuzzy match on description.
@@ -614,6 +691,7 @@ class EventsAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.events.search(description="some description")
         """
+        self._deprecation_warning()
         return self._search(list_cls=EventList, search={"description": description}, filter=filter or {}, limit=limit)
 
     @overload
@@ -622,12 +700,16 @@ class EventsAPI(APIClient):
     @overload
     def upsert(self, item: Event | EventWrite, mode: Literal["patch", "replace"] = "patch") -> Event: ...
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def upsert(
         self, item: Event | EventWrite | Sequence[Event | EventWrite], mode: Literal["patch", "replace"] = "patch"
     ) -> Event | EventList:
         """Upsert events, i.e., update if it exists, and create if it does not exist.
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
             For more details, see :ref:`appendix-upsert`.
 
@@ -650,6 +732,7 @@ class EventsAPI(APIClient):
                 >>> new_event = Event(external_id="new_event", description="New event")
                 >>> res = client.events.upsert([existing_event, new_event], mode="replace")
         """
+        self._deprecation_warning()
         return self._upsert_multiple(
             item,
             list_cls=EventList,
@@ -659,6 +742,7 @@ class EventsAPI(APIClient):
             mode=mode,
         )
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def filter(
         self,
         filter: Filter | dict,
@@ -666,6 +750,9 @@ class EventsAPI(APIClient):
         limit: int | None = DEFAULT_LIMIT_READ,
     ) -> EventList:
         """`Advanced filter events <https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Advanced filter lets you create complex filtering expressions that combine simple operations,
         such as equals, prefix, exists, etc., using boolean operators and, or, and not.
@@ -706,6 +793,7 @@ class EventsAPI(APIClient):
                 ...     filter=filters.And(is_workorder, has_failure),
                 ...     sort=(SortableEventProperty.start_time, "desc"))
         """
+        self._deprecation_warning()
         warnings.warn(
             f"{self.__class__.__name__}.filter() method is deprecated and will be removed in the next major version of the SDK. Please use the {self.__class__.__name__}.list() method with advanced_filter parameter instead.",
             DeprecationWarning,
@@ -724,6 +812,7 @@ class EventsAPI(APIClient):
     def _validate_filter(self, filter: Filter | dict[str, Any] | None) -> None:
         _validate_filter(filter, _FILTERS_SUPPORTED, type(self).__name__)
 
+    @deprecated(_EVENTS_DEPRECATION_MESSAGE, category=None)
     def list(
         self,
         start_time: dict[str, Any] | TimestampRange | None = None,
@@ -748,6 +837,9 @@ class EventsAPI(APIClient):
         advanced_filter: Filter | dict[str, Any] | None = None,
     ) -> EventList:
         """`List events <https://api-docs.cognite.com/20230101/tag/Events/operation/advancedListEvents>`_
+
+        .. deprecated:: 7.95.0
+            The Events API is deprecated and is scheduled for removal on 2027-12-31. Move events to records, CogniteActivity or CogniteMaintenanceOrder in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             start_time (dict[str, Any] | TimestampRange | None): Range between two timestamps.
@@ -829,6 +921,7 @@ class EventsAPI(APIClient):
                 >>> res = client.events.list(asset_subtree_ids=[123456], advanced_filter=not_instrument_lvl5)
 
         """
+        self._deprecation_warning()
         asset_subtree_ids_processed = process_asset_subtree_ids(asset_subtree_ids, asset_subtree_external_ids)
         data_set_ids_processed = process_data_set_ids(data_set_ids, data_set_external_ids)
 

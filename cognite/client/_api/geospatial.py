@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import numbers
 import urllib.parse
+import warnings
 from collections.abc import Iterator, Sequence
 from typing import Any, cast, overload
 
 from requests.exceptions import ChunkedEncodingError
+from typing_extensions import deprecated
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -32,9 +34,19 @@ from cognite.client.utils import _json
 from cognite.client.utils._identifier import IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
+_GEOSPATIAL_DEPRECATION_MESSAGE = "The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance."
+
 
 class GeospatialAPI(APIClient):
     _RESOURCE_PATH = "/geospatial"
+
+    @staticmethod
+    def _deprecation_warning() -> None:
+        warnings.warn(
+            _GEOSPATIAL_DEPRECATION_MESSAGE,
+            DeprecationWarning,
+            stacklevel=3,
+        )
 
     @staticmethod
     def _feature_resource_path(feature_type_external_id: str) -> str:
@@ -59,11 +71,15 @@ class GeospatialAPI(APIClient):
         self, feature_type: Sequence[FeatureType] | Sequence[FeatureTypeWrite]
     ) -> FeatureTypeList: ...
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def create_feature_types(
         self, feature_type: FeatureType | FeatureTypeWrite | Sequence[FeatureType] | Sequence[FeatureTypeWrite]
     ) -> FeatureType | FeatureTypeList:
         """`Creates feature types`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createFeatureTypes>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type (FeatureType | FeatureTypeWrite | Sequence[FeatureType] | Sequence[FeatureTypeWrite]): feature type definition or list of feature type definitions to create.
@@ -88,6 +104,7 @@ class GeospatialAPI(APIClient):
                 ... ]
                 >>> res = client.geospatial.create_feature_types(feature_types)
         """
+        self._deprecation_warning()
         return self._create_multiple(
             list_cls=FeatureTypeList,
             resource_cls=FeatureType,
@@ -96,9 +113,13 @@ class GeospatialAPI(APIClient):
             input_resource_cls=FeatureTypeWrite,
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def delete_feature_types(self, external_id: str | SequenceNotStr[str], recursive: bool = False) -> None:
         """`Delete one or more feature type`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/GeospatialDeleteFeatureTypes>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             external_id (str | SequenceNotStr[str]): External ID or list of external ids
@@ -112,6 +133,7 @@ class GeospatialAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> client.geospatial.delete_feature_types(external_id=["wells", "cities"])
         """
+        self._deprecation_warning()
         extra_body_fields = {"recursive": True} if recursive else {}
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
@@ -120,9 +142,13 @@ class GeospatialAPI(APIClient):
             extra_body_fields=extra_body_fields,
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def list_feature_types(self) -> FeatureTypeList:
         """`List feature types`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listFeatureTypes>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Returns:
             FeatureTypeList: List of feature types
@@ -136,6 +162,7 @@ class GeospatialAPI(APIClient):
                 >>> for feature_type in client.geospatial.list_feature_types():
                 ...     feature_type # do something with the feature type definition
         """
+        self._deprecation_warning()
         return self._list(
             list_cls=FeatureTypeList,
             resource_cls=FeatureType,
@@ -149,9 +176,13 @@ class GeospatialAPI(APIClient):
     @overload
     def retrieve_feature_types(self, external_id: list[str]) -> FeatureTypeList: ...
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def retrieve_feature_types(self, external_id: str | list[str]) -> FeatureType | FeatureTypeList:
         """`Retrieve feature types`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getFeatureTypesByIds>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             external_id (str | list[str]): External ID
@@ -167,6 +198,7 @@ class GeospatialAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> res = client.geospatial.retrieve_feature_types(external_id="1")
         """
+        self._deprecation_warning()
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_id)
         return self._retrieve_multiple(
             list_cls=FeatureTypeList,
@@ -175,9 +207,13 @@ class GeospatialAPI(APIClient):
             resource_path=f"{self._RESOURCE_PATH}/featuretypes",
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def patch_feature_types(self, patch: FeatureTypePatch | Sequence[FeatureTypePatch]) -> FeatureTypeList:
         """`Patch feature types`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/updateFeatureTypes>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             patch (FeatureTypePatch | Sequence[FeatureTypePatch]): the patch to apply
@@ -215,6 +251,7 @@ class GeospatialAPI(APIClient):
                 ... ))
 
         """
+        self._deprecation_warning()
         if isinstance(patch, FeatureTypePatch):
             patch = [patch]
         payload = {
@@ -247,6 +284,7 @@ class GeospatialAPI(APIClient):
         chunk_size: int | None = None,
     ) -> FeatureList: ...
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def create_features(
         self,
         feature_type_external_id: str,
@@ -256,6 +294,9 @@ class GeospatialAPI(APIClient):
     ) -> Feature | FeatureList:
         """`Creates features`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createFeatures>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type_external_id (str): Feature type definition for the features to create.
@@ -292,6 +333,7 @@ class GeospatialAPI(APIClient):
                 ...     )
                 ... )
         """
+        self._deprecation_warning()
         if chunk_size is not None and (chunk_size < 1 or chunk_size > self._CREATE_LIMIT):
             raise ValueError(f"The chunk_size must be strictly positive and not exceed {self._CREATE_LIMIT}")
         if isinstance(feature, (FeatureList, FeatureWriteList)):
@@ -309,11 +351,15 @@ class GeospatialAPI(APIClient):
             input_resource_cls=FeatureWrite,
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def delete_features(
         self, feature_type_external_id: str, external_id: str | SequenceNotStr[str] | None = None
     ) -> None:
         """`Delete one or more feature`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteFeatures>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type_external_id (str): No description.
@@ -330,6 +376,7 @@ class GeospatialAPI(APIClient):
                 ...     external_id=my_feature
                 ... )
         """
+        self._deprecation_warning()
         resource_path = self._feature_resource_path(feature_type_external_id)
         self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id), resource_path=resource_path, wrap_ids=True
@@ -351,6 +398,7 @@ class GeospatialAPI(APIClient):
         properties: dict[str, Any] | None = None,
     ) -> FeatureList: ...
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def retrieve_features(
         self,
         feature_type_external_id: str,
@@ -359,6 +407,9 @@ class GeospatialAPI(APIClient):
     ) -> FeatureList | Feature:
         """`Retrieve features`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getFeaturesByIds>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type_external_id (str): No description.
@@ -379,6 +430,7 @@ class GeospatialAPI(APIClient):
                 ...     external_id="my_feature"
                 ... )
         """
+        self._deprecation_warning()
         resource_path = self._feature_resource_path(feature_type_external_id)
         identifiers = IdentifierSequence.load(ids=None, external_ids=external_id)
         return self._retrieve_multiple(
@@ -389,6 +441,7 @@ class GeospatialAPI(APIClient):
             other_params={"output": {"properties": properties}},
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def update_features(
         self,
         feature_type_external_id: str,
@@ -398,6 +451,9 @@ class GeospatialAPI(APIClient):
     ) -> FeatureList:
         """`Update features`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/updateFeatures>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type_external_id (str): No description.
@@ -423,6 +479,7 @@ class GeospatialAPI(APIClient):
                 ...     feature=Feature(external_id="my_feature", temperature=6.237)
                 ... )
         """
+        self._deprecation_warning()
         if chunk_size is not None and (chunk_size < 1 or chunk_size > self._UPDATE_LIMIT):
             raise ValueError(f"The chunk_size must be strictly positive and not exceed {self._UPDATE_LIMIT}")
         if isinstance(feature, FeatureList):
@@ -443,6 +500,7 @@ class GeospatialAPI(APIClient):
             ),
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def list_features(
         self,
         feature_type_external_id: str,
@@ -453,6 +511,9 @@ class GeospatialAPI(APIClient):
     ) -> FeatureList:
         """`List features`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listFeatures>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This method allows to filter all features.
 
@@ -508,6 +569,7 @@ class GeospatialAPI(APIClient):
                 ...     }}
                 ... )
         """
+        self._deprecation_warning()
         return self._list(
             list_cls=FeatureList,
             resource_cls=Feature,
@@ -521,6 +583,7 @@ class GeospatialAPI(APIClient):
             },
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def search_features(
         self,
         feature_type_external_id: str,
@@ -533,6 +596,9 @@ class GeospatialAPI(APIClient):
     ) -> FeatureList:
         """`Search for features`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/searchFeatures>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This method allows to order the result by one or more of the properties of the feature type.
         However, the number of items returned is limited to 1000 and there is no support for cursors yet.
@@ -634,6 +700,7 @@ class GeospatialAPI(APIClient):
                 ...     ]}
                 ... )
         """
+        self._deprecation_warning()
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search"
         order = None if order_by is None else [f"{item.property}:{item.direction}" for item in order_by]
         res = self._post(
@@ -649,6 +716,7 @@ class GeospatialAPI(APIClient):
         )
         return FeatureList._load(res.json()["items"], cognite_client=self._cognite_client)
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def stream_features(
         self,
         feature_type_external_id: str,
@@ -659,6 +727,9 @@ class GeospatialAPI(APIClient):
     ) -> Iterator[Feature]:
         """`Stream features`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/searchFeaturesStreaming>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This method allows to return any number of items until the underlying
         api calls times out. The order of the result items is not deterministic.
@@ -701,6 +772,7 @@ class GeospatialAPI(APIClient):
                 >>> for f in features:
                 ...     # do something with the features
         """
+        self._deprecation_warning()
         resource_path = self._feature_resource_path(feature_type_external_id) + "/search-streaming"
         payload = {
             "filter": filter or {},
@@ -716,6 +788,7 @@ class GeospatialAPI(APIClient):
         except (ChunkedEncodingError, ConnectionError) as e:
             raise CogniteConnectionError(e)
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def aggregate_features(
         self,
         feature_type_external_id: str,
@@ -726,6 +799,9 @@ class GeospatialAPI(APIClient):
     ) -> FeatureAggregateList:
         """`Aggregate filtered features`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/aggregateFeatures>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type_external_id (str): the feature type to filter features from
@@ -759,6 +835,7 @@ class GeospatialAPI(APIClient):
                 >>> for a in res:
                 ...     # loop over aggregates in different groups
         """
+        self._deprecation_warning()
         resource_path = self._feature_resource_path(feature_type_external_id) + "/aggregate"
         order = None if order_by is None else [f"{item.property}:{item.direction}" for item in order_by]
         res = self._post(
@@ -772,9 +849,13 @@ class GeospatialAPI(APIClient):
         )
         return FeatureAggregateList._load(res.json()["items"], cognite_client=self._cognite_client)
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def get_coordinate_reference_systems(self, srids: int | Sequence[int]) -> CoordinateReferenceSystemList:
         """`Get Coordinate Reference Systems`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getCoordinateReferenceSystem>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             srids (int | Sequence[int]): (Union[int, Sequence[int]]): SRID or list of SRIDs
@@ -790,6 +871,7 @@ class GeospatialAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> crs = client.geospatial.get_coordinate_reference_systems(srids=[4326, 4327])
         """
+        self._deprecation_warning()
         if isinstance(srids, (int, numbers.Integral)):
             srids_processed: Sequence[numbers.Integral | int] = [srids]
         else:
@@ -800,9 +882,13 @@ class GeospatialAPI(APIClient):
         )
         return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def list_coordinate_reference_systems(self, only_custom: bool = False) -> CoordinateReferenceSystemList:
         """`List Coordinate Reference Systems`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listGeospatialCoordinateReferenceSystems>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             only_custom (bool): list only custom CRSs or not
@@ -818,9 +904,11 @@ class GeospatialAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> crs = client.geospatial.list_coordinate_reference_systems(only_custom=True)
         """
+        self._deprecation_warning()
         res = self._get(url_path=f"{self._RESOURCE_PATH}/crs", params={"filterCustom": only_custom})
         return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def create_coordinate_reference_systems(
         self,
         crs: CoordinateReferenceSystem
@@ -830,6 +918,9 @@ class GeospatialAPI(APIClient):
     ) -> CoordinateReferenceSystemList:
         """`Create Coordinate Reference System`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createGeospatialCoordinateReferenceSystems>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             crs (CoordinateReferenceSystem | CoordinateReferenceSystemWrite | Sequence[CoordinateReferenceSystem] | Sequence[CoordinateReferenceSystemWrite]): a CoordinateReferenceSystem or a list of CoordinateReferenceSystem
@@ -879,6 +970,7 @@ class GeospatialAPI(APIClient):
                 ... )
                 >>> crs = client.geospatial.create_coordinate_reference_systems(custom_crs)
         """
+        self._deprecation_warning()
         if isinstance(crs, CoordinateReferenceSystem):
             crs = [crs.as_write()]
         elif isinstance(crs, CoordinateReferenceSystemWrite):
@@ -891,9 +983,13 @@ class GeospatialAPI(APIClient):
         )
         return CoordinateReferenceSystemList._load(res.json()["items"], cognite_client=self._cognite_client)
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def delete_coordinate_reference_systems(self, srids: int | Sequence[int]) -> None:
         """`Delete Coordinate Reference System`
         <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteGeospatialCoordinateReferenceSystems>
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             srids (int | Sequence[int]): (Union[int, Sequence[int]]): SRID or list of SRIDs
@@ -906,6 +1002,7 @@ class GeospatialAPI(APIClient):
                 >>> client = CogniteClient()
                 >>> crs = client.geospatial.delete_coordinate_reference_systems(srids=[121111])
         """
+        self._deprecation_warning()
         if isinstance(srids, (int, numbers.Integral)):
             srids_processed: Sequence[numbers.Integral | int] = [srids]
         else:
@@ -915,6 +1012,7 @@ class GeospatialAPI(APIClient):
             url_path=f"{self._RESOURCE_PATH}/crs/delete", json={"items": [{"srid": srid} for srid in srids_processed]}
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def put_raster(
         self,
         feature_type_external_id: str,
@@ -928,6 +1026,9 @@ class GeospatialAPI(APIClient):
         raster_scale_y: float | None = None,
     ) -> RasterMetadata:
         """`Put raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/putRaster>`
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type_external_id (str): No description.
@@ -955,6 +1056,7 @@ class GeospatialAPI(APIClient):
                 >>> metadata = client.geospatial.put_raster(feature_type.external_id, feature.external_id,
                 ...         raster_property_name, "XYZ", 3857, file)
         """
+        self._deprecation_warning()
         query_params = f"format={raster_format}&srid={raster_srid}"
         if allow_crs_transformation:
             query_params += "&allowCrsTransformation=true"
@@ -977,6 +1079,7 @@ class GeospatialAPI(APIClient):
         )
         return RasterMetadata.load(res.json(), cognite_client=self._cognite_client)
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def delete_raster(
         self,
         feature_type_external_id: str,
@@ -984,6 +1087,9 @@ class GeospatialAPI(APIClient):
         raster_property_name: str,
     ) -> None:
         """`Delete raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteRaster>`
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type_external_id (str): No description.
@@ -1001,6 +1107,7 @@ class GeospatialAPI(APIClient):
                 >>> raster_property_name = ...
                 >>> client.geospatial.delete_raster(feature_type.external_id, feature.external_id, raster_property_name)
         """
+        self._deprecation_warning()
         url_path = (
             self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name) + "/delete"
         )
@@ -1010,6 +1117,7 @@ class GeospatialAPI(APIClient):
             timeout=self._config.timeout,
         )
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def get_raster(
         self,
         feature_type_external_id: str,
@@ -1023,6 +1131,9 @@ class GeospatialAPI(APIClient):
         allow_crs_transformation: bool = False,
     ) -> bytes:
         """`Get raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getRaster>`
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             feature_type_external_id (str): Feature type definition for the features to create.
@@ -1050,6 +1161,7 @@ class GeospatialAPI(APIClient):
                 >>> raster_data = client.geospatial.get_raster(feature_type.external_id, feature.external_id,
                 ...    raster_property_name, "XYZ", {"SIGNIFICANT_DIGITS": "4"})
         """
+        self._deprecation_warning()
         url_path = self._raster_resource_path(feature_type_external_id, feature_external_id, raster_property_name)
         res = self._do_request(
             "POST",
@@ -1066,11 +1178,15 @@ class GeospatialAPI(APIClient):
         )
         return res.content
 
+    @deprecated(_GEOSPATIAL_DEPRECATION_MESSAGE, category=None)
     def compute(
         self,
         output: dict[str, GeospatialComputeFunction],
     ) -> GeospatialComputedResponse:
         """`Compute <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/compute>`
+
+        .. deprecated:: 7.95.0
+            The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             output (dict[str, GeospatialComputeFunction]): No description.
@@ -1088,6 +1204,7 @@ class GeospatialAPI(APIClient):
                 >>> compute_function = GeospatialGeometryTransformComputeFunction(GeospatialGeometryValueComputeFunction("SRID=4326;POLYGON((0 0,10 0,10 10,0 10,0 0))"), srid=23031)
                 >>> compute_result = client.geospatial.compute(output = {"output": compute_function})
         """
+        self._deprecation_warning()
         res = self._do_request(
             "POST",
             f"{GeospatialAPI._RESOURCE_PATH}/compute",
