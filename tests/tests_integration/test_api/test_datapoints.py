@@ -1777,6 +1777,7 @@ class TestRetrieveAggregateDatapointsAPI:
                         aligned_start, _ = align_start_and_end_for_granularity(start, end, gran)
                         assert first_ts == aligned_start
 
+    @pytest.mark.skip(reason="string aggregates are about to be supported")
     @pytest.mark.parametrize(
         "max_workers, n_ts, mock_out_eager_or_chunk",
         [
