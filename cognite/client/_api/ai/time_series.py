@@ -212,7 +212,9 @@ class AITimeSeriesAPI(APIClient):
 
 
 def _dataframe_to_input(df: pd.DataFrame, cohort: str | Mapping[str, str] | None) -> list[InputTimeSeries]:
-    np = local_import("numpy")
+    np, pd = local_import("numpy", "pandas")
+    if not isinstance(df.index, pd.DatetimeIndex):
+        raise ValueError(f"DataFrame index must be a DatetimeIndex, got {type(df.index).__name__}.")
     if df.columns.has_duplicates:
         raise ValueError(f"DataFrame columns must be unique. Duplicated cols: {find_duplicates(df.columns)}.")
     if np.isinf(df.select_dtypes(include="number")).any(axis=None):

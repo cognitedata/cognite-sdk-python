@@ -195,3 +195,11 @@ class TestDataFrames:
         df = pd.DataFrame([[1.0, 2.0]], columns=["a", "a"], index=pd.date_range("2026-10-01", periods=1))
         with pytest.raises(ValueError, match="columns must be unique"):
             cognite_client.ai.time_series.forecast_dataframe(df)
+
+    def test_non_datetime_index_is_rejected(self, cognite_client: CogniteClient) -> None:
+        pd = local_import("pandas")
+        df = pd.DataFrame({"a": [1.0, 2.0, 3.0]})
+        with pytest.raises(ValueError, match="index must be a DatetimeIndex, got RangeIndex"):
+            cognite_client.ai.time_series.forecast_dataframe(df)
+        with pytest.raises(ValueError, match="index must be a DatetimeIndex, got RangeIndex"):
+            cognite_client.ai.time_series.impute_dataframe(df)
