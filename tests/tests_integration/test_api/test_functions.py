@@ -128,6 +128,7 @@ class TestFunctionsAPI:
         else:
             assert False, "Expected at least one function"
 
+    @pytest.mark.skip(reason="rate limited when creating sessions, ignoring on v7 branch (kept on master, v8+)")
     def test_call_function_with_oneshot(self, cognite_client: CogniteClient, a_function: Function) -> None:
         session = cognite_client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
 
@@ -199,6 +200,7 @@ class TestFunctionSchedulesAPI:
             cognite_client.functions.schedules.retrieve(id=[123])
         assert cognite_client.functions.schedules.retrieve(id=123) is None
 
+    @pytest.mark.skip(reason="rate limited when creating sessions, ignoring on v7 branch (kept on master, v8+)")
     def test_create_with_nonce(self, cognite_client: CogniteClient) -> None:
         session = cognite_client.iam.sessions.create(session_type="ONESHOT_TOKEN_EXCHANGE")
 
