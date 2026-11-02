@@ -109,6 +109,12 @@ class TestForecastResultList:
         assert list(reloaded.columns) == [(label, q) for label in ["23-PT-1101", "24-TT-3001"] for q in levels]
         assert len(reloaded) == 2
 
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("list_cls", [ForecastResultList, ImputeResultList])
+    def test_to_pandas_on_empty_list_returns_empty_frame(self, list_cls: type) -> None:
+        df = list_cls([]).to_pandas()
+        assert df.empty
+
 
 class TestImputeResultList:
     @pytest.mark.dsl
