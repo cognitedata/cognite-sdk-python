@@ -36,7 +36,7 @@ class SecurityCategoriesAPI(APIClient):
     ) -> SecurityCategoryList:
         """`List security categories <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/getSecurityCategories>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Security Categories API is deprecated and is scheduled for removal on 2027-12-31. Replace security categories with data products and granular access control. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -82,7 +82,7 @@ class SecurityCategoriesAPI(APIClient):
     ) -> SecurityCategory | SecurityCategoryList:
         """`Create one or more security categories <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/createSecurityCategories>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Security Categories API is deprecated and is scheduled for removal on 2027-12-31. Replace security categories with data products and granular access control. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -114,7 +114,7 @@ class SecurityCategoriesAPI(APIClient):
     async def delete(self, id: int | Sequence[int]) -> None:
         """`Delete one or more security categories <https://api-docs.cognite.com/20230101/tag/Security-categories/operation/deleteSecurityCategories>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Security Categories API is deprecated and is scheduled for removal on 2027-12-31. Replace security categories with data products and granular access control. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:

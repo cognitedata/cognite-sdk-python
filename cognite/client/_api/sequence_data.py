@@ -62,7 +62,7 @@ class SequencesDataAPI(APIClient):
     ) -> None:
         """`Insert rows into a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -151,7 +151,7 @@ class SequencesDataAPI(APIClient):
     ) -> None:
         """`Insert a Pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
@@ -189,7 +189,7 @@ class SequencesDataAPI(APIClient):
     async def delete(self, rows: typing.Sequence[int], id: int | None = None, external_id: str | None = None) -> None:
         """`Delete rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -222,7 +222,7 @@ class SequencesDataAPI(APIClient):
     ) -> None:
         """`Delete a range of rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Note this operation is potentially slow, as retrieves each row before deleting.
@@ -330,7 +330,7 @@ class SequencesDataAPI(APIClient):
     ) -> SequenceRows | SequenceRowsList:
         """`Retrieve data from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -395,7 +395,7 @@ class SequencesDataAPI(APIClient):
     ) -> SequenceRows:
         """`Retrieves the last row (i.e the row with the highest row number) in a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getLatestSequenceRow>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -438,7 +438,7 @@ class SequencesDataAPI(APIClient):
     ) -> pd.DataFrame:
         """`Retrieve data from a sequence as a pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:

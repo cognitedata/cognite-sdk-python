@@ -112,7 +112,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         Iterate over assets
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Fetches assets as they are iterated over, so you keep a limited number of assets in memory.
@@ -171,7 +171,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `Retrieve a single asset by id <https://api-docs.cognite.com/20230101/tag/Assets/operation/getAsset>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -205,7 +205,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `Retrieve multiple assets by id <https://api-docs.cognite.com/20230101/tag/Assets/operation/byIdsAssets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -246,7 +246,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `Count of assets matching the specified filters <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -289,7 +289,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `Find approximate property count for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -335,7 +335,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `Find approximate paths count for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -373,7 +373,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `Get unique properties with counts for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Note:
@@ -448,7 +448,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `Get unique paths with counts for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/aggregateAssets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Note:
@@ -490,7 +490,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `Create one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/createAssets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         You can create an arbitrary number of assets, and the SDK will split the request into multiple requests.
@@ -531,7 +531,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         Create an asset hierarchy with validation.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This helper function makes it easy to insert large asset hierarchies. It solves the problem of topological
@@ -664,7 +664,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `Delete one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/deleteAssets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -710,7 +710,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `Update one or more assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/updateAssets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Labels can be added, removed or replaced (set). Note that set operation deletes all the existing labels and adds the new specified labels.
@@ -780,7 +780,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         Upsert assets, i.e., update if it exists, and create if it does not exist.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
@@ -823,7 +823,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `Search for assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/searchAssets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -878,7 +878,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         Retrieve the subtree for this asset up to a specified depth.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -917,7 +917,7 @@ class SyncAssetsAPI(SyncAPIClient):
         """
         `List assets <https://api-docs.cognite.com/20230101/tag/Assets/operation/listAssets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Assets API is deprecated and is scheduled for removal on 2027-12-31. Move asset hierarchies to CogniteAsset in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:

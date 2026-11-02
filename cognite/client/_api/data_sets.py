@@ -83,7 +83,7 @@ class DataSetsAPI(APIClient):
     ) -> AsyncIterator[DataSet] | AsyncIterator[DataSetList]:
         """Iterate over data sets
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
@@ -125,7 +125,7 @@ class DataSetsAPI(APIClient):
     ) -> DataSet | DataSetList:
         """`Create one or more data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/createDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -154,7 +154,7 @@ class DataSetsAPI(APIClient):
     async def retrieve(self, id: int | None = None, external_id: str | None = None) -> DataSet | None:
         """`Retrieve a single data set by id <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/getDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -190,7 +190,7 @@ class DataSetsAPI(APIClient):
     ) -> DataSetList:
         """`Retrieve multiple data sets by id <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/getDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -226,7 +226,7 @@ class DataSetsAPI(APIClient):
     async def aggregate_count(self, filter: DataSetFilter | dict[str, Any] | None = None) -> int:
         """`Aggregate data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/aggregateDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -271,7 +271,7 @@ class DataSetsAPI(APIClient):
     ) -> DataSet | DataSetList:
         """`Update one or more data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/updateDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -317,7 +317,7 @@ class DataSetsAPI(APIClient):
     ) -> DataSetList:
         """`List data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/listDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:

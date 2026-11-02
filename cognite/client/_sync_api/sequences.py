@@ -92,7 +92,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         Iterate over sequences
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Fetches sequences as they are iterated over, so you keep a limited number of objects in memory.
@@ -139,7 +139,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Retrieve a single sequence by id <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceById>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -173,7 +173,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Retrieve multiple sequences by id <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceById>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -211,7 +211,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Count of sequences matching the specified filters and search <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -249,7 +249,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Find approximate property count for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -302,7 +302,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Find approximate paths count for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -340,7 +340,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Get unique paths with counts for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -411,7 +411,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Find approximate unique sequence properties <https://api-docs.cognite.com/20230101/tag/Sequences/operation/aggregateSequences>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -451,7 +451,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Create one or more sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/createSequence>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -495,7 +495,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Delete one or more sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequences>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -538,7 +538,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Update one or more sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/updateSequences>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -646,7 +646,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         Upsert sequences, i.e., update if it exists, and create if it does not exist.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
@@ -691,7 +691,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `Search for sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/searchSequences>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -741,7 +741,7 @@ class SyncSequencesAPI(SyncAPIClient):
         """
         `List sequences <https://api-docs.cognite.com/20230101/tag/Sequences/operation/advancedListSequences>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:

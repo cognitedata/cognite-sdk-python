@@ -60,7 +60,7 @@ class SyncDataSetsAPI(SyncAPIClient):
         """
         Iterate over data sets
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
@@ -101,7 +101,7 @@ class SyncDataSetsAPI(SyncAPIClient):
         """
         `Create one or more data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/createDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -127,7 +127,7 @@ class SyncDataSetsAPI(SyncAPIClient):
         """
         `Retrieve a single data set by id <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/getDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -161,7 +161,7 @@ class SyncDataSetsAPI(SyncAPIClient):
         """
         `Retrieve multiple data sets by id <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/getDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -197,7 +197,7 @@ class SyncDataSetsAPI(SyncAPIClient):
         """
         `Aggregate data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/aggregateDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -241,7 +241,7 @@ class SyncDataSetsAPI(SyncAPIClient):
         """
         `Update one or more data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/updateDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -284,7 +284,7 @@ class SyncDataSetsAPI(SyncAPIClient):
         """
         `List data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/listDataSets>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:

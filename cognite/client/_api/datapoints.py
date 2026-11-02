@@ -107,7 +107,6 @@ class DatapointsAPI(APIClient):
 
     @staticmethod
     def _maybe_warn_deprecated_identifier(identifiers: Iterable[Identifier]) -> None:
-        # Identifying datapoints by 'id' or 'external_id' is deprecated; only 'instance_id' is future-proof.
         if any(identifier.is_id or identifier.is_external_id for identifier in identifiers):
             warnings.warn(
                 "Identifying time series by 'id' or 'external_id' when working with datapoints is deprecated and is scheduled "
@@ -1839,21 +1838,12 @@ class DatapointsAPI(APIClient):
         """
         if not isinstance(datapoints, Sequence):
             raise TypeError("Input to 'insert_multiple' must be a list of dictionaries")
-        identifiers: list[Identifier] = []
-        for dct in datapoints:
-            if not isinstance(dct, dict):
-                continue
-            id_value = dct.get("id")
-            external_id_value = dct.get("external_id") or dct.get("externalId")
-            if isinstance(id_value, int) or isinstance(external_id_value, str):
-                identifiers.append(
-                    Identifier.load(
-                        id=id_value if isinstance(id_value, int) else None,
-                        external_id=external_id_value if isinstance(external_id_value, str) else None,
-                    )
-                )
-
-        self._maybe_warn_deprecated_identifier(identifiers)
+        # Items identified by instance_id (or malformed ones, validated later by the poster) are skipped:
+        self._maybe_warn_deprecated_identifier(
+            Identifier(xid)
+            for dct in datapoints
+            if isinstance(dct, dict) and (xid := dct.get("id") or dct.get("external_id") or dct.get("externalId"))
+        )
         await DatapointsPoster(self).insert(datapoints)
 
     async def insert_states(self, items: StateDatapointsInsert | Sequence[StateDatapointsInsert]) -> None:

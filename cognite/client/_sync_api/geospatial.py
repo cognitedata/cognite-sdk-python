@@ -55,7 +55,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Creates feature types <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createFeatureTypes>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -88,7 +88,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Delete one or more feature type <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/GeospatialDeleteFeatureTypes>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -112,7 +112,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `List feature types <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listFeatureTypes>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Returns:
@@ -140,7 +140,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Retrieve feature types <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getFeatureTypesByIds>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -164,7 +164,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Patch feature types <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/updateFeatureTypes>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -236,7 +236,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Creates features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createFeatures>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -288,7 +288,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Delete one or more feature <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteFeatures>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -328,7 +328,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Retrieve features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getFeaturesByIds>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -384,7 +384,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Update features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/updateFeatures>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -432,7 +432,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `List features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listFeatures>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This method allows to filter all features.
@@ -513,7 +513,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Search for features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/searchFeatures>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This method allows to order the result by one or more of the properties of the feature type.
@@ -646,7 +646,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Stream features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/searchFeaturesStreaming>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This method allows to return any number of items until the underlying
@@ -712,7 +712,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Aggregate filtered features <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/aggregateFeatures>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -763,7 +763,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Get Coordinate Reference Systems <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getCoordinateReferenceSystem>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -787,7 +787,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `List Coordinate Reference Systems <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/listGeospatialCoordinateReferenceSystems>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -817,7 +817,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Create Coordinate Reference System <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/createGeospatialCoordinateReferenceSystems>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -875,7 +875,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Delete Coordinate Reference System <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteGeospatialCoordinateReferenceSystems>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -907,7 +907,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Put raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/putRaster>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -961,7 +961,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Delete raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/deleteRaster>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -1006,7 +1006,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Get raster <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/getRaster>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -1059,7 +1059,7 @@ class SyncGeospatialAPI(SyncAPIClient):
         """
         `Compute <https://api-docs.cognite.com/20230101/tag/Geospatial/operation/compute>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Geospatial API is deprecated and is scheduled for removal on 2027-12-31. There is no replacement in the data modeling service; plan to stop using it. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:

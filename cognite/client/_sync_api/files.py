@@ -209,7 +209,7 @@ class SyncFilesAPI(SyncAPIClient):
         """
         `Retrieve a single file metadata by id <https://api-docs.cognite.com/20230101/tag/Files/operation/getFileByInternalId>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -249,7 +249,7 @@ class SyncFilesAPI(SyncAPIClient):
         """
         `Retrieve multiple file metadatas by id <https://api-docs.cognite.com/20230101/tag/Files/operation/byIdsFiles>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -290,7 +290,7 @@ class SyncFilesAPI(SyncAPIClient):
         """
         `Aggregate files <https://api-docs.cognite.com/20230101/tag/Files/operation/aggregateFiles>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -319,7 +319,7 @@ class SyncFilesAPI(SyncAPIClient):
         """
         `Delete files <https://api-docs.cognite.com/20230101/tag/Files/operation/deleteFiles>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -365,7 +365,7 @@ class SyncFilesAPI(SyncAPIClient):
         """
         `Update files <https://api-docs.cognite.com/20230101/tag/Files/operation/updateFiles>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
@@ -419,7 +419,7 @@ class SyncFilesAPI(SyncAPIClient):
         """
         `Search for files <https://api-docs.cognite.com/20230101/tag/Files/operation/searchFiles>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
@@ -738,7 +738,7 @@ class SyncFilesAPI(SyncAPIClient):
         """
         Begin uploading a file in multiple parts.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This allows uploading files larger than 5GiB.

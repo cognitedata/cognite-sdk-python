@@ -36,7 +36,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         `Create annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsCreate>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -59,7 +59,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         `Suggest annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsSuggest>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -95,7 +95,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         `Update annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsUpdate>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -111,7 +111,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         `Delete annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsDelete>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -123,7 +123,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         `Retrieve annotations by IDs <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsByids>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -138,7 +138,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         `Retrieve an annotation by id <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsGet>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -153,7 +153,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         Reverse lookup annotated resources based on having annotations matching the filter.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -180,7 +180,7 @@ class SyncAnnotationsAPI(SyncAPIClient):
         """
         `List annotations <https://api-docs.cognite.com/20230101/tag/Annotations/operation/annotationsFilter>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Annotations API is deprecated and is scheduled for removal on 2027-12-31. Move annotations to CogniteAnnotation in the core data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Note:

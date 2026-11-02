@@ -61,7 +61,7 @@ class SyncLabelsAPI(SyncAPIClient):
         """
         Iterate over Labels
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -101,7 +101,7 @@ class SyncLabelsAPI(SyncAPIClient):
         """
         `Retrieve one or more label definitions by external id <https://api-docs.cognite.com/20230101/tag/Labels/operation/byIdsLabels>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -135,7 +135,7 @@ class SyncLabelsAPI(SyncAPIClient):
         """
         `List Labels <https://api-docs.cognite.com/20230101/tag/Labels/operation/listLabels>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -189,7 +189,7 @@ class SyncLabelsAPI(SyncAPIClient):
         """
         `Create one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/createLabelDefinitions>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -223,7 +223,7 @@ class SyncLabelsAPI(SyncAPIClient):
         """
         `Delete one or more label definitions <https://api-docs.cognite.com/20230101/tag/Labels/operation/deleteLabels>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Labels API is deprecated and is scheduled for removal on 2027-12-31. There is no direct replacement; model labels as a concept in your data model. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:

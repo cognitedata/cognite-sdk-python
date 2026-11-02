@@ -38,7 +38,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Insert rows into a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -95,7 +95,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Insert a Pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/postSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         The index of the dataframe must contain the row numbers. The names of the remaining columns specify the column external ids.
@@ -127,7 +127,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Delete rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -150,7 +150,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Delete a range of rows from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/deleteSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Note this operation is potentially slow, as retrieves each row before deleting.
@@ -241,7 +241,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Retrieve data from a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -286,7 +286,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Retrieves the last row (i.e the row with the highest row number) in a sequence <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getLatestSequenceRow>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
@@ -326,7 +326,7 @@ class SyncSequencesDataAPI(SyncAPIClient):
         """
         `Retrieve data from a sequence as a pandas dataframe <https://api-docs.cognite.com/20230101/tag/Sequences/operation/getSequenceData>`_.
 
-        .. deprecated:: 8.22.0
+        .. deprecated:: 8.23.0
             The Sequences API is deprecated and is scheduled for removal on 2027-12-31. Use files in data modeling (for whole-table downloads) or records (for row-level queries). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
