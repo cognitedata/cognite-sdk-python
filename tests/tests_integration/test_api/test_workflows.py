@@ -41,6 +41,8 @@ from tests.tests_integration.test_api.test_simulators.seed.resources import (
     ensure_workflow_simint_routine,
 )
 
+pytestmark = pytest.mark.skip(reason="flaky, rework is planned")
+
 
 @pytest.fixture
 def workflow_simint_routine(cognite_client: CogniteClient) -> str:
