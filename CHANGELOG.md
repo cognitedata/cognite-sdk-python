@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.95.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.94.2...cognite-sdk-python-v7.95.0) (2026-11-02)
+
+
+### Features
+
+* **Asset-centric APIs:** Add deprecation warnings for classic endpoints ([#2911](https://github.com/cognitedata/cognite-sdk-python/issues/2911)) ([af802b1](https://github.com/cognitedata/cognite-sdk-python/commit/af802b189da1ef0ced42ab5fac789e97a11a2643))
+
 ## [7.94.2](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.94.1...cognite-sdk-python-v7.94.2) (2026-08-04)
 
 
