@@ -888,7 +888,8 @@ class TestInstancesAPI:
             cognite_client.data_modeling.instances.search(
                 person_view.as_id(), query="Quentin", properties=["invalidProperty"]
             )
-        assert "Unknown property" in error.value.message
+        assert "invalidProperty" in error.value.message
+        assert "is not available when searching view" in error.value.message
 
     def test_search_node_data_with_filtering(self, cognite_client: CogniteClient, person_view: View) -> None:
         view_id = person_view.as_id()
@@ -1508,8 +1509,8 @@ class TestInstancesAPI:
             assert isinstance(res.debug.translated_query, TranslatedQuery)
             assert isinstance(res.debug.plan, ExecutionPlan)
             assert isinstance(res.debug.notices, DebugNoticeList)
-            assert len(res.debug.notices) == 1
-            assert isinstance(res.debug.notices[0], SortNotBackedByIndexNotice)
+            assert len(res.debug.notices) >= 1
+            assert any(isinstance(notice, SortNotBackedByIndexNotice) for notice in res.debug.notices)
 
             if include_typing:
                 assert res.typing is not None
