@@ -192,11 +192,11 @@ class RetryTracker:
         # one of [status, read, connect] += 1. Said differently, do last retry when 'total = max':
         return self.total <= self.config.max_retries_total
 
-    def should_retry_status_code(self, err: httpx2.HTTPStatusError, is_auto_retryable: bool = False) -> bool:
+    def should_retry_status_code(self, response: httpx2.Response, is_auto_retryable: bool = False) -> bool:
         self.status += 1
-        status_code = err.response.status_code
+        status_code = response.status_code
         error_type = CogniteHTTPStatusError.get_error_type(status_code)
-        self.last_failed_reason = f"HTTPStatusError({status_code} - {error_type}: {err.response.reason_phrase})"
+        self.last_failed_reason = f"HTTPStatusError({status_code} - {error_type}: {response.reason_phrase})"
         return (
             self.should_retry_total
             and self.status <= self.config.max_retries_status
@@ -298,7 +298,6 @@ class AsyncHTTPClientWithRetry:
         # will be assigned a semaphore in the APIClient layer.
         concurrency_control = semaphore or nullcontext()
 
-        is_auto_retryable = False
         retry_tracker = RetryTracker(url, self.config)
         accepts_json = (headers or {}).get("accept") == "application/json"
         while True:
@@ -309,27 +308,10 @@ class AsyncHTTPClientWithRetry:
                         self.refresh_auth_header(headers)
                     response = await coro_factory()
 
-                if accepts_json:
-                    # Cache .json() return value in order to avoid redecoding JSON if called multiple times
-                    response.json = functools.cache(response.json)  # type: ignore [method-assign]
-                return CogniteHTTPResponse(response.raise_for_status())
-
-            except httpx2.HTTPStatusError as err:
-                response = err.response
-                is_auto_retryable = response.headers.get("cdf-is-auto-retryable", "").lower() == "true"
-                if not retry_tracker.should_retry_status_code(err, is_auto_retryable):
-                    # For streamed responses the body is unread, which would leak the pooled connection (we raise
-                    # before stream() can yield and close it). Reading it releases the connection and keeps the
-                    # error body available to callers (no-op for non-stream responses):
+                if not response.is_success:
+                    # Every non-success response is fully read before we decide to raise or retry. This is because
+                    # streamed requests otherwise would not release their pooled connection (noop for non-stream responses)
                     await response.aread()
-                    raise CogniteHTTPStatusError(
-                        response.status_code,
-                        request=err.request,
-                        response=CogniteHTTPResponse(response),
-                    ) from None
-                # We are going to retry, so this response is discarded. For streamed requests, the body has not
-                # been read, so we must close it to release the pooled connection (no-op for non-stream responses):
-                await response.aclose()
 
             except httpx2.ConnectError as err:
                 if not retry_tracker.should_retry_connect_error(err):
@@ -347,6 +329,19 @@ class AsyncHTTPClientWithRetry:
                 # We want to avoid raising a non-Cognite error (from the underlying library). httpx2.RequestError is the
                 # base class for all exceptions that can be raised during a request, so we use it here as a fallback.
                 raise CogniteRequestError from err
+
+            else:
+                if accepts_json:
+                    # Cache .json() return value in order to avoid redecoding JSON if called multiple times
+                    response.json = functools.cache(response.json)  # type: ignore [method-assign]
+                if response.is_success:
+                    return CogniteHTTPResponse(response)
+
+                is_auto_retryable = response.headers.get("cdf-is-auto-retryable", "").lower() == "true"
+                if not retry_tracker.should_retry_status_code(response, is_auto_retryable):
+                    raise CogniteHTTPStatusError(
+                        response.status_code, request=response.request, response=CogniteHTTPResponse(response)
+                    )
 
             # If we got here, it means we have decided to retry the request!
             await retry_tracker.back_off()
