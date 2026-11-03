@@ -318,6 +318,10 @@ class AsyncHTTPClientWithRetry:
                 response = err.response
                 is_auto_retryable = response.headers.get("cdf-is-auto-retryable", "").lower() == "true"
                 if not retry_tracker.should_retry_status_code(err, is_auto_retryable):
+                    # For streamed responses the body is unread, which would leak the pooled connection (we raise
+                    # before stream() can yield and close it). Reading it releases the connection and keeps the
+                    # error body available to callers (no-op for non-stream responses):
+                    await response.aread()
                     raise CogniteHTTPStatusError(
                         response.status_code,
                         request=err.request,

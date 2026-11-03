@@ -201,6 +201,30 @@ class TestAsyncHTTPClientWithRetry:
 
         assert closed_status_codes == [409, 200]
 
+    async def test_stream_closes_failed_responses_on_non_retryable_error(
+        self,
+        retry_http_client: AsyncHTTPClientWithRetry,
+        httpx2_mock: HTTPXMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        closed_status_codes: list[int] = []
+        original_aclose = httpx2.Response.aclose
+
+        async def spy_aclose(self: httpx2.Response) -> None:
+            closed_status_codes.append(self.status_code)
+            await original_aclose(self)
+
+        monkeypatch.setattr(httpx2.Response, "aclose", spy_aclose)
+        httpx2_mock.add_response(method="GET", url=URL, status_code=404, text="not found body")
+
+        with pytest.raises(CogniteHTTPStatusError) as exc_info:
+            async with retry_http_client.stream("GET", URL, semaphore=asyncio.BoundedSemaphore(1)):
+                pass
+
+        assert closed_status_codes == [404]
+        # The error body must still be readable by callers:
+        assert exc_info.value.response.text == "not found body"
+
 
 @pytest.fixture
 def _clean_global_httpx_clients() -> Iterator[None]:
