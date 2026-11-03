@@ -175,6 +175,32 @@ class TestAsyncHTTPClientWithRetry:
         assert resp.status_code == 200
         assert len(httpx2_mock.get_requests()) == 2
 
+    async def test_stream_closes_failed_responses_before_retrying(
+        self,
+        retry_http_client: AsyncHTTPClientWithRetry,
+        httpx2_mock: HTTPXMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Streamed responses have unread bodies, so unless we close the failed ones, the pooled connection leaks
+        closed_status_codes: list[int] = []
+        original_aclose = httpx2.Response.aclose
+
+        async def spy_aclose(self: httpx2.Response) -> None:
+            closed_status_codes.append(self.status_code)
+            await original_aclose(self)
+
+        monkeypatch.setattr(httpx2.Response, "aclose", spy_aclose)
+        retry_header = {"cdf-is-auto-retryable": "true"}
+        httpx2_mock.add_response(method="GET", url=URL, status_code=409, headers=retry_header)
+        httpx2_mock.add_response(method="GET", url=URL, status_code=200)
+
+        async with retry_http_client.stream("GET", URL, semaphore=asyncio.BoundedSemaphore(1)) as resp:
+            assert resp.status_code == 200
+            # The failed response must already be closed while the successful one is still open:
+            assert closed_status_codes == [409]
+
+        assert closed_status_codes == [409, 200]
+
 
 @pytest.fixture
 def _clean_global_httpx_clients() -> Iterator[None]:
