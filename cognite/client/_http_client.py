@@ -323,6 +323,9 @@ class AsyncHTTPClientWithRetry:
                         request=err.request,
                         response=CogniteHTTPResponse(response),
                     ) from None
+                # We are going to retry, so this response is discarded. For streamed requests, the body has not
+                # been read, so we must close it to release the pooled connection (no-op for non-stream responses):
+                await response.aclose()
 
             except httpx2.ConnectError as err:
                 if not retry_tracker.should_retry_connect_error(err):
