@@ -3,6 +3,7 @@ name: cdf_auth
 on:
   push:
     branches: [master]
+  workflow_dispatch:
 
 jobs:
   cdf_auth:
