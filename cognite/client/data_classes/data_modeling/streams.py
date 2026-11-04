@@ -79,24 +79,41 @@ class StreamLimitSettings(CogniteResource):
 
 
 class StreamSettings(CogniteResource):
-    """Read model for stream settings (lifecycle + limits)."""
+    """Read model for stream settings (lifecycle + limits).
 
-    def __init__(self, lifecycle: StreamLifecycleSettings, limits: StreamLimitSettings) -> None:
+    Args:
+        lifecycle (StreamLifecycleSettings): Lifecycle settings of the stream.
+        limits (StreamLimitSettings): Provisioned (and optionally consumed) limits of the stream.
+        allowed_record_spaces (list[str] | None): External IDs of the spaces records written to the stream
+            may belong to. ``None`` means records in any space are accepted.
+    """
+
+    def __init__(
+        self,
+        lifecycle: StreamLifecycleSettings,
+        limits: StreamLimitSettings,
+        allowed_record_spaces: list[str] | None = None,
+    ) -> None:
         self.lifecycle = lifecycle
         self.limits = limits
+        self.allowed_record_spaces = allowed_record_spaces
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             lifecycle=StreamLifecycleSettings._load(resource["lifecycle"]),
             limits=StreamLimitSettings._load(resource["limits"]),
+            allowed_record_spaces=resource.get("allowedRecordSpaces"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "lifecycle": self.lifecycle.dump(camel_case=camel_case),
             "limits": self.limits.dump(camel_case=camel_case),
         }
+        if self.allowed_record_spaces is not None:
+            out["allowedRecordSpaces" if camel_case else "allowed_record_spaces"] = self.allowed_record_spaces
+        return out
 
 
 class Stream(WriteableCogniteResource["StreamWrite"]):
@@ -142,7 +159,10 @@ class Stream(WriteableCogniteResource["StreamWrite"]):
     def as_write(self) -> StreamWrite:
         return StreamWrite(
             external_id=self.external_id,
-            settings=StreamWriteSettings(template=StreamTemplate(name=self.created_from_template)),
+            settings=StreamWriteSettings(
+                template=StreamTemplate(name=self.created_from_template),
+                allowed_record_spaces=self.settings.allowed_record_spaces,
+            ),
         )
 
 
@@ -170,17 +190,30 @@ class StreamWriteSettings(CogniteResource):
 
     Args:
         template (StreamTemplate): The template to create the stream from.
+        allowed_record_spaces (list[str] | None): External IDs of the spaces records written to the stream
+            may belong to. If not given, records in any space are accepted.
     """
 
-    def __init__(self, template: StreamTemplate) -> None:
+    def __init__(
+        self,
+        template: StreamTemplate,
+        allowed_record_spaces: list[str] | None = None,
+    ) -> None:
         self.template = template
+        self.allowed_record_spaces = allowed_record_spaces
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(template=StreamTemplate._load(resource["template"]))
+        return cls(
+            template=StreamTemplate._load(resource["template"]),
+            allowed_record_spaces=resource.get("allowedRecordSpaces"),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {"template": self.template.dump(camel_case=camel_case)}
+        out: dict[str, Any] = {"template": self.template.dump(camel_case=camel_case)}
+        if self.allowed_record_spaces is not None:
+            out["allowedRecordSpaces" if camel_case else "allowed_record_spaces"] = self.allowed_record_spaces
+        return out
 
 
 class StreamWrite(WriteableCogniteResource["StreamWrite"]):

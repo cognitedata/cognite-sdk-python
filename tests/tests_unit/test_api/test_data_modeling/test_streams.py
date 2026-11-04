@@ -149,6 +149,78 @@ class TestStreamsAPI:
             "items": [{"externalId": "st1", "settings": {"template": {"name": "ImmutableTestStream"}}}]
         }
 
+    @pytest.mark.parametrize(
+        "allowed_record_spaces",
+        [
+            pytest.param(["space-a", "space-b"], id="spaces"),
+            pytest.param([], id="empty list is sent as-is"),
+        ],
+    )
+    def test_create_posts_allowed_record_spaces(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        streams_base_url: str,
+        stream_list_response: dict,
+        allowed_record_spaces: list[str],
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST", url=re.compile(re.escape(streams_base_url) + r"$"), json=stream_list_response
+        )
+        w = StreamWrite(
+            "st1",
+            StreamWriteSettings(StreamTemplate("ImmutableTestStream"), allowed_record_spaces=allowed_record_spaces),
+        )
+        cognite_client.data_modeling.streams.create(w)
+        (request,) = httpx2_mock.get_requests()
+        assert jsgz_load(request.content) == {
+            "items": [
+                {
+                    "externalId": "st1",
+                    "settings": {
+                        "template": {"name": "ImmutableTestStream"},
+                        "allowedRecordSpaces": allowed_record_spaces,
+                    },
+                }
+            ]
+        }
+
+    def test_retrieve_loads_allowed_record_spaces_and_as_write_carries_them_over(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        streams_base_url: str,
+        stream_response: dict,
+    ) -> None:
+        stream_response["settings"]["allowedRecordSpaces"] = ["space-a", "space-b"]
+        httpx2_mock.add_response(
+            method="GET", url=re.compile(re.escape(streams_base_url) + r"/st1(?:\?.+)?$"), json=stream_response
+        )
+        out = cognite_client.data_modeling.streams.retrieve("st1")
+        assert out is not None
+        assert out.settings.allowed_record_spaces == ["space-a", "space-b"]
+        assert out.dump() == stream_response
+        assert out.as_write().dump() == {
+            "externalId": "st1",
+            "settings": {"template": {"name": "ImmutableTestStream"}, "allowedRecordSpaces": ["space-a", "space-b"]},
+        }
+
+    def test_retrieve_without_allowed_record_spaces_omits_them(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        streams_base_url: str,
+        stream_response: dict,
+    ) -> None:
+        httpx2_mock.add_response(
+            method="GET", url=re.compile(re.escape(streams_base_url) + r"/st1(?:\?.+)?$"), json=stream_response
+        )
+        out = cognite_client.data_modeling.streams.retrieve("st1")
+        assert out is not None
+        assert out.settings.allowed_record_spaces is None
+        assert out.dump() == stream_response
+        assert out.as_write().dump() == {"externalId": "st1", "settings": {"template": {"name": "ImmutableTestStream"}}}
+
     def test_create_chunks_multiple_items(
         self,
         cognite_client: CogniteClient,
