@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import inspect
 import time
 from io import BytesIO
@@ -238,6 +239,10 @@ class TestDocumentsAPI:
         assert life > 0
         assert link.url.startswith("http")
 
+    @pytest.mark.skipif(
+        datetime.date.today() <= datetime.date(2026, 11, 10),
+        reason="TEMPORARY: Self expires after 10th Nov 2026. The test runs for too long and it impacts CI. To be removed if fixed",
+    )
     def test_download_image_bytes(self, cognite_client: CogniteClient, text_file: FileMetadata) -> None:
         content = cognite_client.documents.previews.download_page_as_png_bytes(id=text_file.id)
         assert content.startswith(b"\x89PNG\r\n\x1a\n")
