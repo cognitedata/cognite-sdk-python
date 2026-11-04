@@ -67,6 +67,10 @@ class TestStreamsAPI:
         out = cognite_client.data_modeling.streams.list()
         assert isinstance(out, StreamList)
         assert out[0].external_id == "st1"
+        assert out[0].settings.limits.unique_properties_with_data is None
+        assert out.dump() == stream_list_response["items"]
+        (request,) = httpx2_mock.get_requests()
+        assert request.headers["cdf-version"] == "20230101-alpha"
 
     def test_templates_list_parses_items_and_sends_alpha_header(
         self,
@@ -125,6 +129,28 @@ class TestStreamsAPI:
         requests = httpx2_mock.get_requests()
         assert len(requests) == 1
         assert requests[0].url.params["includeStatistics"].lower() == "true"
+        assert requests[0].headers["cdf-version"] == "20230101-alpha"
+
+    def test_retrieve_parses_unique_properties_with_data(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        streams_base_url: str,
+        stream_response: dict,
+    ) -> None:
+        stream_response["settings"]["limits"]["uniquePropertiesWithData"] = {"provisioned": 1000, "consumed": 42}
+        httpx2_mock.add_response(
+            method="GET",
+            url=re.compile(re.escape(streams_base_url) + r"/st1(?:\?.+)?$"),
+            json=stream_response,
+        )
+        out = cognite_client.data_modeling.streams.retrieve("st1", include_statistics=True)
+        assert isinstance(out, Stream)
+        unique_properties = out.settings.limits.unique_properties_with_data
+        assert unique_properties is not None
+        assert unique_properties.provisioned == 1000
+        assert unique_properties.consumed == 42
+        assert out.dump() == stream_response
 
     def test_create_posts_single_item(
         self,
@@ -145,6 +171,7 @@ class TestStreamsAPI:
         assert isinstance(out, Stream)
         assert len(requests) == 1
         assert requests[0].url.path.endswith("/streams")
+        assert requests[0].headers["cdf-version"] == "20230101-alpha"
         assert jsgz_load(requests[0].content) == {
             "items": [{"externalId": "st1", "settings": {"template": {"name": "ImmutableTestStream"}}}]
         }
