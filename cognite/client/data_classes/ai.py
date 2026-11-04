@@ -209,10 +209,22 @@ class Answer:
 class ForecastInputDatapoint:
     """One history point sent to the forecast or impute endpoint.
 
+    The datapoints of a series must be evenly spaced. To represent a gap in the history, such as a sensor outage,
+    keep the timestamp and set the value to None or mark the datapoint as missing.
+
+    A datapoint with value None has no reading. The model does not see it, and impute does not return it.
+
+    A datapoint marked missing is hidden from the model, whatever its value. Impute predicts its value and returns
+    it: mark a gap as missing to fill it, or mark observed datapoints as missing to compare each value with its
+    prediction. For forecast, marking datapoints as missing excludes a segment of the history, for example to see
+    how it affects the result.
+
+    At least one datapoint per series must have a value and not be marked missing.
+
     Args:
         timestamp (int | float | str | datetime): Milliseconds since epoch, a datetime, or a time-shift string like "2d-ago".
-        value (float | None): The observed value, or None when there is no reading.
-        missing (bool): Hide this point from the model. For impute, the missing points are the ones reconstructed.
+        value (float | None): The value, or None when there is no reading.
+        missing (bool): Hide the datapoint from the model, whatever its value. Impute returns a prediction for it.
     """
 
     timestamp: int | float | str | datetime
