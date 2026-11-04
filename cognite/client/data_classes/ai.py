@@ -206,8 +206,8 @@ class Answer:
 
 
 @dataclass
-class InputDatapoint:
-    """One history point sent to the forecasting model.
+class ForecastInputDatapoint:
+    """One history point sent to the forecast or impute endpoint.
 
     Args:
         timestamp (int | float | str | datetime): Milliseconds since epoch, a datetime, or a time-shift string like "2d-ago".
@@ -227,12 +227,12 @@ class InputDatapoint:
 
 
 @dataclass
-class InputTimeSeries:
+class ForecastInputTimeSeries:
     """One series sent to the forecast or impute endpoint.
 
     Args:
         label (str): Caller-chosen identifier, echoed back in the result.
-        datapoints (Sequence[InputDatapoint | tuple[int | float | str | datetime, float | None] | dict[str, Any]]):
+        datapoints (Sequence[ForecastInputDatapoint | tuple[int | float | str | datetime, float | None] | dict[str, Any]]):
             Evenly spaced history. Tuples are `(timestamp, value)`; dicts use the API keys `timestamp`, `value`
             and `missing`.
         cohort (str | None): Series sharing a cohort are forecast jointly and must have identical timestamps.
@@ -240,7 +240,7 @@ class InputTimeSeries:
     """
 
     label: str
-    datapoints: Sequence[InputDatapoint | tuple[int | float | str | datetime, float | None] | dict[str, Any]]
+    datapoints: Sequence[ForecastInputDatapoint | tuple[int | float | str | datetime, float | None] | dict[str, Any]]
     cohort: str | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -254,13 +254,13 @@ class InputTimeSeries:
 
 
 def _to_input_datapoint(
-    dp: InputDatapoint | tuple[int | float | str | datetime, float | None] | dict[str, Any],
-) -> InputDatapoint:
-    if isinstance(dp, InputDatapoint):
+    dp: ForecastInputDatapoint | tuple[int | float | str | datetime, float | None] | dict[str, Any],
+) -> ForecastInputDatapoint:
+    if isinstance(dp, ForecastInputDatapoint):
         return dp
     if isinstance(dp, tuple):
-        return InputDatapoint(*dp)
-    return InputDatapoint(dp["timestamp"], dp.get("value"), dp.get("missing", False))
+        return ForecastInputDatapoint(*dp)
+    return ForecastInputDatapoint(dp["timestamp"], dp.get("value"), dp.get("missing", False))
 
 
 def _is_number(value: str) -> bool:

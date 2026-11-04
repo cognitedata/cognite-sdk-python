@@ -5,10 +5,10 @@ from datetime import datetime, timezone
 import pytest
 
 from cognite.client.data_classes.ai import (
+    ForecastInputDatapoint,
+    ForecastInputTimeSeries,
     ForecastResultList,
     ImputeResultList,
-    InputDatapoint,
-    InputTimeSeries,
     QuantileDatapoint,
 )
 from cognite.client.utils._importing import local_import
@@ -32,13 +32,13 @@ FORECAST_RESPONSE = {
 }
 
 
-class TestInputTimeSeries:
+class TestForecastInputTimeSeries:
     def test_dump_converts_timestamps_and_omits_unset_fields(self) -> None:
-        series = InputTimeSeries(
+        series = ForecastInputTimeSeries(
             "21-PT-1019",
             [
-                InputDatapoint(datetime(2026, 10, 1, tzinfo=timezone.utc), 42.1),
-                InputDatapoint(1790812860000, None, missing=True),
+                ForecastInputDatapoint(datetime(2026, 10, 1, tzinfo=timezone.utc), 42.1),
+                ForecastInputDatapoint(1790812860000, None, missing=True),
             ],
         )
         assert series.dump() == {
@@ -50,7 +50,7 @@ class TestInputTimeSeries:
         }
 
     def test_tuples_and_dicts_are_accepted_as_datapoints(self) -> None:
-        series = InputTimeSeries(
+        series = ForecastInputTimeSeries(
             "23-PT-1101",
             [(0, 1.0), {"timestamp": 60_000, "value": None, "missing": True}],
             cohort="compression-train-a",
