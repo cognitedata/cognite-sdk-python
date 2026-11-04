@@ -347,6 +347,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
                 f"At most {self._ROTATE_KEYS_LIMIT} data sources can be rotated per call (the operation is atomic "
                 f"and cannot be split), got {len(items)}"
             )
+        self._rotate_keys_warning.warn()
         res = await self._post(
             url_path=self._RESOURCE_PATH + "/rotatekeys",
             json={"items": [item.dump(camel_case=True) for item in items]},
