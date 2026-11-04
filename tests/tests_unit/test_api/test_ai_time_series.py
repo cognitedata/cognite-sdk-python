@@ -13,6 +13,7 @@ from cognite.client.config import global_config
 from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries
 from cognite.client.exceptions import CogniteAPIError, CogniteException
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._importing import local_import
 from tests.utils import get_url, jsgz_load
 
 QUANTILE_LEVELS = ["0.05", "0.5", "0.95"]
@@ -260,3 +261,126 @@ class TestBetaApi:
 
         assert len([w for w in warnings if issubclass(w.category, FeaturePreviewWarning)]) == 2
         assert {r.headers["cdf-version"] for r in mock_forecast.get_requests()} == {expected_header}
+
+
+@pytest.mark.dsl
+class TestDataFrames:
+    @staticmethod
+    def frame(columns: dict[Any, list[float]], tz: str | None = None) -> Any:
+        pd = local_import("pandas")
+        return pd.DataFrame(columns, index=pd.date_range("2026-10-01", periods=3, freq="1min", tz=tz))
+
+    def test_forecast_dataframe_sends_one_series_per_column(
+        self, cognite_client: CogniteClient, mock_forecast: HTTPXMock
+    ) -> None:
+        np = local_import("numpy")
+        df = self.frame(
+            {"23-PT-1101": [42.1, np.nan, 42.9], "23-PT-1201": [39.8, 40.1, 40.0], "24-TT-3001": [31.0] * 3}
+        )
+
+        out = cognite_client.ai.time_series.forecast_dataframe(
+            df, cohort={"23-PT-1101": "compression-train-a", "23-PT-1201": "compression-train-a"}
+        )
+
+        sent = jsgz_load(mock_forecast.get_requests()[0].content)["items"]
+        assert [(s["label"], s.get("cohort")) for s in sent] == [
+            ("23-PT-1101", "compression-train-a"),
+            ("23-PT-1201", "compression-train-a"),
+            ("24-TT-3001", None),
+        ]
+        assert sent[0]["datapoints"][:2] == [
+            {"timestamp": 1790812800000, "value": 42.1},
+            {"timestamp": 1790812860000, "value": None, "missing": True},
+        ]
+        assert list(out.columns.get_level_values(0).unique()) == ["23-PT-1101", "23-PT-1201", "24-TT-3001"]
+
+    def test_a_single_cohort_applies_to_every_column(
+        self, cognite_client: CogniteClient, mock_forecast: HTTPXMock
+    ) -> None:
+        cognite_client.ai.time_series.forecast_dataframe(self.frame({"a": [1.0] * 3, "b": [2.0] * 3}), cohort="train")
+
+        sent = jsgz_load(mock_forecast.get_requests()[0].content)["items"]
+        assert [s["cohort"] for s in sent] == ["train", "train"]
+
+    def test_impute_dataframe_predicts_the_nans_and_fills_them(
+        self, cognite_client: CogniteClient, mock_impute: HTTPXMock
+    ) -> None:
+        np, pd = local_import("numpy", "pandas")
+        df = self.frame({"21-PT-1019": [42.1, np.nan, 42.9]})
+
+        imputed = cognite_client.ai.time_series.impute_dataframe(df)
+
+        assert imputed.index.tolist() == [pd.Timestamp("2026-10-01 00:01:00")]
+        assert list(imputed.columns) == [("21-PT-1019", 0.5)]
+        assert df.fillna(imputed.xs(0.5, axis=1, level=1))["21-PT-1019"].tolist() == [42.1, 1.0, 42.9]
+
+    def test_results_keep_the_input_column_names(self, cognite_client: CogniteClient, mock_forecast: HTTPXMock) -> None:
+        out = cognite_client.ai.time_series.forecast_dataframe(self.frame({1: [1.0] * 3, 2: [2.0] * 3}))
+
+        assert list(out.columns.get_level_values(0).unique()) == [1, 2]
+
+    def test_timezone_aware_index_is_sent_in_utc_and_kept_in_the_result(
+        self, cognite_client: CogniteClient, mock_impute: HTTPXMock
+    ) -> None:
+        np = local_import("numpy")
+        df = self.frame({"a": [1.0, np.nan, 3.0]}, tz="Europe/Oslo")
+
+        imputed = cognite_client.ai.time_series.impute_dataframe(df)
+
+        sent = jsgz_load(mock_impute.get_requests()[0].content)["items"][0]["datapoints"]
+        assert sent[1]["timestamp"] == int(df.index[1].timestamp() * 1000)
+        assert imputed.index.tolist() == [df.index[1]]
+
+    @pytest.mark.parametrize(
+        "columns, index, cohort, match",
+        [
+            (["a", "a"], None, None, r"columns must be unique\. Duplicated cols: \{'a'\}"),
+            (["a", "b"], None, {"c": "train"}, r"cohort mapping names columns that aren't in the DataFrame: \['c'\]"),
+            (["a", "b"], "range", None, "index must be a DatetimeIndex, got RangeIndex"),
+        ],
+    )
+    def test_invalid_input_is_rejected(
+        self, cognite_client: CogniteClient, columns: list[str], index: str | None, cohort: Any, match: str
+    ) -> None:
+        pd = local_import("pandas")
+        df = pd.DataFrame([[1.0, 2.0]] * 3, columns=columns)
+        if index is None:
+            df.index = pd.date_range("2026-10-01", periods=3, freq="1min")
+        for method in (
+            cognite_client.ai.time_series.forecast_dataframe,
+            cognite_client.ai.time_series.impute_dataframe,
+        ):
+            with pytest.raises(ValueError, match=match):
+                method(df, cohort=cohort)
+
+    @pytest.mark.parametrize(
+        "method, mock", [("forecast_dataframe", "mock_forecast"), ("impute_dataframe", "mock_impute")]
+    )
+    async def test_every_call_sends_the_beta_header_and_warns(
+        self,
+        method: str,
+        mock: str,
+        async_client: AsyncCogniteClient,
+        request: pytest.FixtureRequest,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        httpx_mock: HTTPXMock = request.getfixturevalue(mock)
+        api = async_client.ai.time_series
+        monkeypatch.setattr(api, "_api_subversion", "20230101")
+        monkeypatch.setattr(global_config, "silence_feature_preview_warnings", False)
+
+        with pytest.warns(FeaturePreviewWarning, match="Time series forecasting and imputation"):
+            await getattr(api, method)(self.frame({"a": [1.0] * 3}))
+
+        assert {r.headers["cdf-version"] for r in httpx_mock.get_requests()} == {"20230101-beta"}
+
+    def test_non_numeric_columns_are_rejected(self, cognite_client: CogniteClient) -> None:
+        pd = local_import("pandas")
+        df = pd.DataFrame({"a": [1.0] * 3, "b": ["x"] * 3}, index=pd.date_range("2026-10-01", periods=3, freq="1min"))
+        with pytest.raises(ValueError, match=r"columns must be numeric\. Non-numeric cols: \['b'\]"):
+            cognite_client.ai.time_series.forecast_dataframe(df)
+
+    def test_infinity_is_rejected(self, cognite_client: CogniteClient) -> None:
+        np = local_import("numpy")
+        with pytest.raises(ValueError, match="Infinity"):
+            cognite_client.ai.time_series.forecast_dataframe(self.frame({"a": [1.0, np.inf, 3.0]}))
