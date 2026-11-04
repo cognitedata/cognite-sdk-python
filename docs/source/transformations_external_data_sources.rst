@@ -56,6 +56,7 @@ Operation                                 Action
 ``retrieve()``                            ``READ``
 ``create()``                              ``WRITE``
 ``delete()``                              ``WRITE``
+``rotate_keys()``                         ``WRITE``
 ``verify_usability()``                    ``USE``
 ========================================= ==========
 
@@ -260,12 +261,39 @@ To iterate without holding every data source in memory, call the API directly, o
     for chunk in client.transformations.external_data_sources(chunk_size=25):
         ...  # do something with the chunk
 
+Rotate Snowflake keys
+---------------------
+
+Snowflake data sources have a dedicated endpoint that generates a new key pair on the server. This operation
+is Snowflake only: the API returns a 400 if you pass the external ID of a OneLake data source (for OneLake, see
+`Change OneLake credentials`_). Pass up to
+10 data sources per call; the operation is atomic, so either all keys are rotated or none. Each
+``expiry_time`` must be in the future and at most one year from now.
+
+The rotation is complete only after you register the new public key with the Snowflake user:
+
+1. Call ``rotate_keys()`` and read the returned ``public_key``.
+2. Run ``ALTER USER ... SET RSA_PUBLIC_KEY`` on the Snowflake user with that key.
+
+.. code-block:: python
+
+    from cognite.client.data_classes.transformations.externaldata import ExternalDataSourceRotateKeys
+    from cognite.client.utils._time import timestamp_to_ms
+
+    rotated = client.transformations.external_data_sources.rotate_keys(
+        ExternalDataSourceRotateKeys("snowflake-analytics-prod", timestamp_to_ms("now") + 30 * 24 * 3600 * 1000)
+    )
+    public_key = rotated.public_key
+
+    # Final step, outside the SDK: ALTER USER COGNITE_SVC SET RSA_PUBLIC_KEY = '<public_key>'
+
 Change OneLake credentials
 --------------------------
 
 OneLake credentials are managed by you, not by Cognite. The Entra ID application and its client secret live
 in your Azure tenant, and the Cognite REST APIs do not generate or rotate them. There is no update or rotate
-endpoint for OneLake data sources.
+endpoint for OneLake data sources. Snowflake data sources do not use this flow; rotate their keys with
+`Rotate Snowflake keys`_ instead.
 
 To change the credentials, or any other setting, delete the data source and create a replacement with the
 same external ID:
