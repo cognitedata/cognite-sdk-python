@@ -83,6 +83,7 @@ class TestForecastResultList:
         assert first is not None
         assert first.cohort == "compression-train-a"
         assert first.forecast[0] == QuantileDatapoint(60_000, {0.05: 41.0, 0.5: 42.0, 0.95: 43.0})
+        assert res.get("23-PT-1101") is first
         assert res.get(label="unknown") is None
 
     @pytest.mark.dsl

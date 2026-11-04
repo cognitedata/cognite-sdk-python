@@ -10,7 +10,6 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.utils._identifier import InstanceId
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import to_pandas_datetime_index
 from cognite.client.utils._time import timestamp_to_ms
@@ -402,27 +401,17 @@ class ForecastResultList(CogniteResourceList[ForecastResult]):
             cohorts=metadata["cohorts"],
         )
 
-    def get(
-        self,
-        id: int | None = None,
-        external_id: str | None = None,
-        instance_id: InstanceId | tuple[str, str] | None = None,
-        *,
-        label: str | None = None,
-    ) -> ForecastResult | None:
-        """Get the result for an input label.
+    def get(self, label: str) -> ForecastResult | None:  # type: ignore[override]
+        """Get the result for an input series by its label.
+
+        Labels are unique within a result, since duplicate labels in a request are rejected.
 
         Args:
-            id (int | None): Not used; input series have no CDF id.
-            external_id (str | None): Not used; input series have no CDF external id.
-            instance_id (InstanceId | tuple[str, str] | None): Not used; input series have no CDF instance id.
-            label (str | None): The label of the input series.
+            label (str): The label of the input series.
 
         Returns:
             ForecastResult | None: The result, or None if no series has that label.
         """
-        if label is None:
-            return super().get(id, external_id, instance_id)
         return next((item for item in self.data if item.label == label), None)
 
     def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
@@ -501,27 +490,17 @@ class ImputeResultList(CogniteResourceList[ImputeResult]):
             cohorts=metadata["cohorts"],
         )
 
-    def get(
-        self,
-        id: int | None = None,
-        external_id: str | None = None,
-        instance_id: InstanceId | tuple[str, str] | None = None,
-        *,
-        label: str | None = None,
-    ) -> ImputeResult | None:
-        """Get the result for an input label.
+    def get(self, label: str) -> ImputeResult | None:  # type: ignore[override]
+        """Get the result for an input series by its label.
+
+        Labels are unique within a result, since duplicate labels in a request are rejected.
 
         Args:
-            id (int | None): Not used; input series have no CDF id.
-            external_id (str | None): Not used; input series have no CDF external id.
-            instance_id (InstanceId | tuple[str, str] | None): Not used; input series have no CDF instance id.
-            label (str | None): The label of the input series.
+            label (str): The label of the input series.
 
         Returns:
             ImputeResult | None: The result, or None if no series has that label.
         """
-        if label is None:
-            return super().get(id, external_id, instance_id)
         return next((item for item in self.data if item.label == label), None)
 
     def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
