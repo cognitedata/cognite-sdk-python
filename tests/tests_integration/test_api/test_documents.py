@@ -240,7 +240,7 @@ class TestDocumentsAPI:
         assert link.url.startswith("http")
 
     @pytest.mark.skipif(
-        datetime.date.today() == datetime.date(2026, 11, 10),
+        datetime.date.today() <= datetime.date(2026, 11, 10),
         reason="TEMPORARY: Self expires after 10th Nov 2026. The test runs for too long and it impacts CI. To be removed if fixed",
     )
     def test_download_image_bytes(self, cognite_client: CogniteClient, text_file: FileMetadata) -> None:
