@@ -14,7 +14,7 @@ from cognite.client.data_classes.ai import (
 from cognite.client.utils._importing import local_import
 
 FORECAST_RESPONSE = {
-    "timeSeries": [
+    "items": [
         {
             "label": "23-PT-1101",
             "cohort": "compression-train-a",
@@ -120,7 +120,7 @@ class TestImputeResultList:
     @pytest.mark.dsl
     def test_series_with_nothing_imputed_keeps_its_columns(self) -> None:
         response = {
-            "timeSeries": [
+            "items": [
                 {"label": "a", "imputed": [{"timestamp": 60_000, "quantiles": {"0.5": 1.0}}]},
                 {"label": "b", "imputed": []},
             ],
@@ -133,7 +133,7 @@ class TestImputeResultList:
     def test_to_pandas_after_slice_or_dump_load_keeps_quantile_columns(self) -> None:
         levels = [0.05, 0.5, 0.95]
         response = {
-            "timeSeries": [
+            "items": [
                 {
                     "label": "a",
                     "imputed": [
