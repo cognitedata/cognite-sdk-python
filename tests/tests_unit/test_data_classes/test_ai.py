@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Any
 
 import pytest
 
@@ -49,17 +50,27 @@ class TestForecastInputTimeSeries:
             ],
         }
 
-    def test_tuples_and_dicts_are_accepted_as_datapoints(self) -> None:
-        series = ForecastInputTimeSeries(
-            "23-PT-1101",
-            [(0, 1.0), {"timestamp": 60_000, "value": None, "missing": True}],
-            cohort="compression-train-a",
-        )
-        assert series.dump() == {
-            "label": "23-PT-1101",
-            "cohort": "compression-train-a",
-            "datapoints": [{"timestamp": 0, "value": 1.0}, {"timestamp": 60_000, "value": None, "missing": True}],
-        }
+
+class TestForecastInputDatapoint:
+    @pytest.mark.parametrize(
+        "data, expected",
+        [
+            ((0, 1.0), ForecastInputDatapoint(0, 1.0)),
+            ([0, None, True], ForecastInputDatapoint(0, None, missing=True)),
+            ({"timestamp": 0, "value": 1.0}, ForecastInputDatapoint(0, 1.0)),
+            ({"timestamp": 0, "missing": True}, ForecastInputDatapoint(0, None, missing=True)),
+        ],
+    )
+    def test_load(self, data: tuple[Any, ...] | list[Any] | dict[str, Any], expected: ForecastInputDatapoint) -> None:
+        assert ForecastInputDatapoint.load(data) == expected
+
+    def test_load_returns_a_datapoint_as_is(self) -> None:
+        dp = ForecastInputDatapoint(0, 1.0)
+        assert ForecastInputDatapoint.load(dp) is dp
+
+    def test_load_rejects_other_types(self) -> None:
+        with pytest.raises(TypeError, match="from str"):
+            ForecastInputDatapoint.load("0,1.0")  # type: ignore[arg-type]
 
 
 class TestForecastResultList:

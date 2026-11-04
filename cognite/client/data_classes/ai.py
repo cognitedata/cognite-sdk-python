@@ -219,6 +219,38 @@ class ForecastInputDatapoint:
     value: float | None
     missing: bool = False
 
+    @classmethod
+    def load(
+        cls, data: ForecastInputDatapoint | tuple[Any, ...] | list[Any] | dict[str, Any]
+    ) -> ForecastInputDatapoint:
+        """Create a datapoint from any of the supported formats.
+
+        Args:
+            data (ForecastInputDatapoint | tuple[Any, ...] | list[Any] | dict[str, Any]): A datapoint, returned as is; a
+                `(timestamp, value)` or `(timestamp, value, missing)` tuple or list; or a dict with the API keys
+                `timestamp`, `value` and `missing`, where an absent `value` means None.
+
+        Returns:
+            ForecastInputDatapoint: The datapoint.
+
+        Examples:
+
+            Create datapoints from tuples and dicts:
+
+                >>> from cognite.client.data_classes.ai import ForecastInputDatapoint
+                >>> dps = [
+                ...     ForecastInputDatapoint.load((1790812800000, 42.1)),
+                ...     ForecastInputDatapoint.load({"timestamp": 1790812860000, "missing": True}),
+                ... ]
+        """
+        if isinstance(data, ForecastInputDatapoint):
+            return data
+        if isinstance(data, dict):
+            return cls(data["timestamp"], data.get("value"), data.get("missing", False))
+        if isinstance(data, (tuple, list)):
+            return cls(*data)
+        raise TypeError(f"Can't load a ForecastInputDatapoint from {type(data).__name__}")
+
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"timestamp": timestamp_to_ms(self.timestamp), "value": self.value}
         if self.missing:
@@ -232,35 +264,24 @@ class ForecastInputTimeSeries:
 
     Args:
         label (str): Caller-chosen identifier, echoed back in the result.
-        datapoints (Sequence[ForecastInputDatapoint | tuple[int | float | str | datetime, float | None] | dict[str, Any]]):
-            Evenly spaced history. Tuples are `(timestamp, value)`; dicts use the API keys `timestamp`, `value`
-            and `missing`.
+        datapoints (Sequence[ForecastInputDatapoint]): Evenly spaced history. Use `ForecastInputDatapoint.load` to
+            create datapoints from tuples or dicts.
         cohort (str | None): Series sharing a cohort are forecast jointly and must have identical timestamps.
             Omit it to forecast the series independently.
     """
 
     label: str
-    datapoints: Sequence[ForecastInputDatapoint | tuple[int | float | str | datetime, float | None] | dict[str, Any]]
+    datapoints: Sequence[ForecastInputDatapoint]
     cohort: str | None = None
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {
             "label": self.label,
-            "datapoints": [_to_input_datapoint(dp).dump(camel_case) for dp in self.datapoints],
+            "datapoints": [dp.dump(camel_case) for dp in self.datapoints],
         }
         if self.cohort is not None:
             output["cohort"] = self.cohort
         return output
-
-
-def _to_input_datapoint(
-    dp: ForecastInputDatapoint | tuple[int | float | str | datetime, float | None] | dict[str, Any],
-) -> ForecastInputDatapoint:
-    if isinstance(dp, ForecastInputDatapoint):
-        return dp
-    if isinstance(dp, tuple):
-        return ForecastInputDatapoint(*dp)
-    return ForecastInputDatapoint(dp["timestamp"], dp.get("value"), dp.get("missing", False))
 
 
 def _is_number(value: str) -> bool:
