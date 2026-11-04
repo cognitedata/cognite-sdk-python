@@ -36,7 +36,7 @@ class SyncStreamsAPI(SyncAPIClient):
 
         Note:
             This method sends the alpha ``cdf-version`` header so that the alpha field
-            ``settings.limits.unique_properties_with_data`` is returned, see
+            ``settings.limits.max_unique_properties_with_data`` is returned, see
             :class:`~cognite.client.data_classes.data_modeling.streams.StreamLimitSettings`.
 
         Args:
@@ -77,7 +77,7 @@ class SyncStreamsAPI(SyncAPIClient):
             (projects are expected to have few streams).
 
             This method sends the alpha ``cdf-version`` header so that the alpha field
-            ``settings.limits.unique_properties_with_data`` is returned, see
+            ``settings.limits.max_unique_properties_with_data`` is returned, see
             :class:`~cognite.client.data_classes.data_modeling.streams.StreamLimitSettings`.
 
         Returns:
@@ -100,7 +100,7 @@ class SyncStreamsAPI(SyncAPIClient):
 
         Note:
             This method sends the alpha ``cdf-version`` header so that the alpha field
-            ``settings.limits.unique_properties_with_data`` is returned, see
+            ``settings.limits.max_unique_properties_with_data`` is returned, see
             :class:`~cognite.client.data_classes.data_modeling.streams.StreamLimitSettings`.
 
         Args:

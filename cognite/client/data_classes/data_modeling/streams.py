@@ -54,7 +54,7 @@ class StreamLimitSettings(CogniteResource):
         max_records_total (StreamLimit): Maximum total number of records in the stream.
         max_giga_bytes_total (StreamLimit): Maximum total data volume of the stream, in gigabytes.
         max_filtering_interval (str | None): Maximum range filter interval for the ``lastUpdatedTime`` property.
-        unique_properties_with_data (StreamLimit | None): Maximum number of unique properties with data in the
+        max_unique_properties_with_data (StreamLimit | None): Maximum number of unique properties with data in the
             stream (``provisioned``), and the number currently counted against it (``consumed``, only returned
             when retrieving the stream with ``include_statistics=True``). Alpha: only returned when the request
             uses the alpha ``cdf-version`` header, which the SDK sends. A property counts once it has been written
@@ -70,22 +70,24 @@ class StreamLimitSettings(CogniteResource):
         max_records_total: StreamLimit,
         max_giga_bytes_total: StreamLimit,
         max_filtering_interval: str | None = None,
-        unique_properties_with_data: StreamLimit | None = None,
+        max_unique_properties_with_data: StreamLimit | None = None,
     ) -> None:
         self.max_records_total = max_records_total
         self.max_giga_bytes_total = max_giga_bytes_total
         self.max_filtering_interval = max_filtering_interval
-        self.unique_properties_with_data = unique_properties_with_data
+        self.max_unique_properties_with_data = max_unique_properties_with_data
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        unique_properties_with_data = resource.get("uniquePropertiesWithData")
+        max_unique_properties_with_data = resource.get("maxUniquePropertiesWithData")
         return cls(
             max_records_total=StreamLimit._load(resource["maxRecordsTotal"]),
             max_giga_bytes_total=StreamLimit._load(resource["maxGigaBytesTotal"]),
             max_filtering_interval=resource.get("maxFilteringInterval"),
-            unique_properties_with_data=(
-                StreamLimit._load(unique_properties_with_data) if unique_properties_with_data is not None else None
+            max_unique_properties_with_data=(
+                StreamLimit._load(max_unique_properties_with_data)
+                if max_unique_properties_with_data is not None
+                else None
             ),
         )
 
@@ -96,8 +98,8 @@ class StreamLimitSettings(CogniteResource):
         }
         if self.max_filtering_interval is not None:
             out["max_filtering_interval"] = self.max_filtering_interval
-        if self.unique_properties_with_data is not None:
-            out["unique_properties_with_data"] = self.unique_properties_with_data.dump(camel_case=camel_case)
+        if self.max_unique_properties_with_data is not None:
+            out["max_unique_properties_with_data"] = self.max_unique_properties_with_data.dump(camel_case=camel_case)
         return convert_all_keys_to_camel_case(out) if camel_case else out
 
 

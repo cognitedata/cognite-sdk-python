@@ -67,7 +67,7 @@ class TestStreamsAPI:
         out = cognite_client.data_modeling.streams.list()
         assert isinstance(out, StreamList)
         assert out[0].external_id == "st1"
-        assert out[0].settings.limits.unique_properties_with_data is None
+        assert out[0].settings.limits.max_unique_properties_with_data is None
         assert out.dump() == stream_list_response["items"]
         (request,) = httpx2_mock.get_requests()
         assert request.headers["cdf-version"] == "20230101-alpha"
@@ -131,14 +131,14 @@ class TestStreamsAPI:
         assert requests[0].url.params["includeStatistics"].lower() == "true"
         assert requests[0].headers["cdf-version"] == "20230101-alpha"
 
-    def test_retrieve_parses_unique_properties_with_data(
+    def test_retrieve_parses_max_unique_properties_with_data(
         self,
         cognite_client: CogniteClient,
         httpx2_mock: HTTPXMock,
         streams_base_url: str,
         stream_response: dict,
     ) -> None:
-        stream_response["settings"]["limits"]["uniquePropertiesWithData"] = {"provisioned": 1000, "consumed": 42}
+        stream_response["settings"]["limits"]["maxUniquePropertiesWithData"] = {"provisioned": 1000, "consumed": 42}
         httpx2_mock.add_response(
             method="GET",
             url=re.compile(re.escape(streams_base_url) + r"/st1(?:\?.+)?$"),
@@ -146,7 +146,7 @@ class TestStreamsAPI:
         )
         out = cognite_client.data_modeling.streams.retrieve("st1", include_statistics=True)
         assert isinstance(out, Stream)
-        unique_properties = out.settings.limits.unique_properties_with_data
+        unique_properties = out.settings.limits.max_unique_properties_with_data
         assert unique_properties is not None
         assert unique_properties.provisioned == 1000
         assert unique_properties.consumed == 42
