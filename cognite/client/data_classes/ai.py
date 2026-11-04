@@ -298,14 +298,6 @@ class ForecastInputTimeSeries:
         return output
 
 
-def _is_number(value: str) -> bool:
-    try:
-        float(value)
-    except ValueError:
-        return False
-    return True
-
-
 class QuantileDatapoint(CogniteResource):
     """One forecasted or reconstructed step.
 
@@ -320,8 +312,7 @@ class QuantileDatapoint(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        # Only numeric keys are quantile levels; ignore anything else, like unknown fields elsewhere in the SDK.
-        quantiles = {float(level): value for level, value in resource["quantiles"].items() if _is_number(level)}
+        quantiles = {float(level): value for level, value in resource["quantiles"].items()}
         return cls(timestamp=resource["timestamp"], quantiles=quantiles)
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:

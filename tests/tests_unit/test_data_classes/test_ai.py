@@ -174,7 +174,3 @@ class TestQuantileDatapoint:
     @pytest.mark.parametrize("key", ["0.5", "0.50", "5e-1"])
     def test_quantile_levels_are_parsed_as_floats(self, key: str) -> None:
         assert QuantileDatapoint._load({"timestamp": 0, "quantiles": {key: 1.0}}).quantiles == {0.5: 1.0}
-
-    def test_non_numeric_keys_are_ignored(self) -> None:
-        point = QuantileDatapoint._load({"timestamp": 0, "quantiles": {"0.5": 1.0, "unexpected": 2.0}})
-        assert point.quantiles == {0.5: 1.0}
