@@ -270,7 +270,7 @@ class SyncTransformationExternalDataSourcesAPI(SyncAPIClient):
         self, rotation: ExternalDataSourceRotateKeys | Sequence[ExternalDataSourceRotateKeys]
     ) -> ExternalDataSourceRotatedKeys | ExternalDataSourceRotatedKeysList:
         """
-        `Rotate the keys of Snowflake external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/rotateExternalDataSourceKeys>`_.
+        `Rotate the keys of Snowflake external data sources <https://api-docs.cognite.com/20230101-alpha/tag/Transformation-External-Data-Sources/operation/rotateExternalDataSourceKeys>`_.
 
         The server generates a new key pair for each data source and returns the new public key, which you must
         register with the Snowflake user. Only Snowflake data sources support this. The operation is atomic: if any

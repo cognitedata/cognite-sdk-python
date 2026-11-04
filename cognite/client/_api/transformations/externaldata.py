@@ -306,7 +306,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
     async def rotate_keys(
         self, rotation: ExternalDataSourceRotateKeys | Sequence[ExternalDataSourceRotateKeys]
     ) -> ExternalDataSourceRotatedKeys | ExternalDataSourceRotatedKeysList:
-        """`Rotate the keys of Snowflake external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/rotateExternalDataSourceKeys>`_.
+        """`Rotate the keys of Snowflake external data sources <https://api-docs.cognite.com/20230101-alpha/tag/Transformation-External-Data-Sources/operation/rotateExternalDataSourceKeys>`_.
 
         The server generates a new key pair for each data source and returns the new public key, which you must
         register with the Snowflake user. Only Snowflake data sources support this. The operation is atomic: if any
@@ -338,7 +338,7 @@ class TransformationExternalDataSourcesAPI(APIClient):
                 ... )
                 >>> new_public_key = res.public_key
         """
-        self._warning.warn()
+        self._rotate_keys_warning.warn()
         items = [rotation] if isinstance(rotation, ExternalDataSourceRotateKeys) else list(rotation)
         if not items:
             return ExternalDataSourceRotatedKeysList([])
@@ -347,7 +347,6 @@ class TransformationExternalDataSourcesAPI(APIClient):
                 f"At most {self._ROTATE_KEYS_LIMIT} data sources can be rotated per call (the operation is atomic "
                 f"and cannot be split), got {len(items)}"
             )
-        self._rotate_keys_warning.warn()
         res = await self._post(
             url_path=self._RESOURCE_PATH + "/rotatekeys",
             json={"items": [item.dump(camel_case=True) for item in items]},
