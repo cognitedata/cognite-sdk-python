@@ -165,22 +165,46 @@ class StreamTemplate(CogniteResource):
         return cls(name=resource["name"])
 
 
+class StreamLifecycleWriteSettings(CogniteResource):
+    """Lifecycle settings to apply when creating a stream, overriding the defaults of the template.
+
+    Args:
+        data_deleted_after (str): ISO-8601 duration (e.g. ``"PT168H"``) after which records in the stream are deleted.
+    """
+
+    def __init__(self, data_deleted_after: str) -> None:
+        self.data_deleted_after = data_deleted_after
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(data_deleted_after=resource["dataDeletedAfter"])
+
+
 class StreamWriteSettings(CogniteResource):
     """Write-side settings that specify which template to create the stream from.
 
     Args:
         template (StreamTemplate): The template to create the stream from.
+        lifecycle (StreamLifecycleWriteSettings | None): Lifecycle settings overriding the defaults of the template.
+            If omitted, the defaults of the template are used.
     """
 
-    def __init__(self, template: StreamTemplate) -> None:
+    def __init__(self, template: StreamTemplate, lifecycle: StreamLifecycleWriteSettings | None = None) -> None:
         self.template = template
+        self.lifecycle = lifecycle
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(template=StreamTemplate._load(resource["template"]))
+        return cls(
+            template=StreamTemplate._load(resource["template"]),
+            lifecycle=StreamLifecycleWriteSettings._load_if(resource.get("lifecycle")),
+        )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
-        return {"template": self.template.dump(camel_case=camel_case)}
+        out: dict[str, Any] = {"template": self.template.dump(camel_case=camel_case)}
+        if self.lifecycle is not None:
+            out["lifecycle"] = self.lifecycle.dump(camel_case=camel_case)
+        return out
 
 
 class StreamWrite(WriteableCogniteResource["StreamWrite"]):
