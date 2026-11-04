@@ -395,11 +395,11 @@ class ForecastResultList(CogniteResourceList[ForecastResult]):
 
     @classmethod
     def _load_response(cls, response: dict[str, Any]) -> Self:
-        metadata = response.get("metadata", {})
+        metadata = response["metadata"]
         return cls(
             [ForecastResult._load(item) for item in response["items"]],
-            quantile_levels=[float(q) for q in metadata.get("quantileLevels", [])],
-            cohorts=metadata.get("cohorts", []),
+            quantile_levels=metadata["quantileLevels"],
+            cohorts=metadata["cohorts"],
         )
 
     def get(
@@ -494,11 +494,11 @@ class ImputeResultList(CogniteResourceList[ImputeResult]):
 
     @classmethod
     def _load_response(cls, response: dict[str, Any]) -> Self:
-        metadata = response.get("metadata", {})
+        metadata = response["metadata"]
         return cls(
             [ImputeResult._load(item) for item in response["items"]],
-            quantile_levels=[float(q) for q in metadata.get("quantileLevels", [])],
-            cohorts=metadata.get("cohorts", []),
+            quantile_levels=metadata["quantileLevels"],
+            cohorts=metadata["cohorts"],
         )
 
     def get(
