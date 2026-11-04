@@ -48,22 +48,7 @@ class StreamLifecycleSettings(CogniteResource):
 
 
 class StreamLimitSettings(CogniteResource):
-    """Provisioned/consumed limits for a stream.
-
-    Args:
-        max_records_total (StreamLimit): Maximum total number of records in the stream.
-        max_giga_bytes_total (StreamLimit): Maximum total data volume of the stream, in gigabytes.
-        max_filtering_interval (str | None): Maximum range filter interval for the ``lastUpdatedTime`` property.
-        max_unique_properties_with_data (StreamLimit | None): Maximum number of unique properties with data in the
-            stream (``provisioned``), and the number currently counted against it (``consumed``, only returned
-            when retrieving the stream with ``include_statistics=True``). Alpha: only returned when the request
-            uses the alpha ``cdf-version`` header, which the SDK sends. A property counts once it has been written
-            to the stream at least once, even if it holds no data now, and container properties with a default
-            value count as soon as any property of their container is written. The count never decreases for
-            mutable streams; for immutable streams it decreases only as old data is deleted by retention. It is
-            eventually consistent, with a delay of about 10 seconds. ``consumed`` can exceed ``provisioned`` on
-            older streams, so compute the remaining capacity as ``max(0, provisioned - consumed)``.
-    """
+    """Provisioned/consumed limits for a stream."""
 
     def __init__(
         self,
