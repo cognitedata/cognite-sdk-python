@@ -39,6 +39,12 @@ class TestSplitIntoRequests:
         assert all(size_of(r) <= MAX_REQUEST_BYTES for r in requests)
         for c in set(COHORTS) - {None}:
             assert sum(any(s.cohort == c for s in r) for r in requests) <= 1
+        for r in requests:
+            assert [int(s.label) for s in r] == sorted(int(s.label) for s in r)
+
+    def test_keeps_input_order_within_a_request(self) -> None:
+        series = [_series("a", "train-a"), _series("b"), _series("c", "train-a")]
+        assert [[s.label for s in r] for r in split_into_requests(series, _one_byte_each)] == [["a", "b", "c"]]
 
     def test_cohort_with_too_many_series_is_rejected(self) -> None:
         series = [_series(str(i), "train-a") for i in range(MAX_SERIES_PER_REQUEST + 1)]

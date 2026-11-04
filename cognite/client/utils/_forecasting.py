@@ -15,6 +15,8 @@ def split_into_requests(
 ) -> list[list[ForecastInputTimeSeries]]:
     """Pack series into requests of at most 32 series and 5 MiB, never splitting a cohort across requests.
 
+    Series keep their input order within each request.
+
     Args:
         series (Sequence[ForecastInputTimeSeries]): All series for one call.
         size_of (Callable[[Sequence[ForecastInputTimeSeries]], int]): The size in bytes, as sent, of a request body
@@ -27,13 +29,14 @@ def split_into_requests(
     Raises:
         ValueError: If a cohort has more than 32 series, or a cohort or a series is over 5 MiB on its own.
     """
-    groups: dict[str | int, list[ForecastInputTimeSeries]] = defaultdict(list)
+    groups: dict[str | int, list[int]] = defaultdict(list)
     for i, s in enumerate(series):
-        groups[s.cohort if s.cohort is not None else i].append(s)
+        groups[s.cohort if s.cohort is not None else i].append(i)
 
-    requests: list[list[ForecastInputTimeSeries]] = []
+    requests: list[list[int]] = []
     request_bytes = 0
-    for group in groups.values():
+    for positions in groups.values():
+        group = [series[i] for i in positions]
         name = f"Cohort {group[0].cohort!r}" if group[0].cohort is not None else f"Series {group[0].label!r}"
         if len(group) > MAX_SERIES_PER_REQUEST:
             raise ValueError(
@@ -53,6 +56,7 @@ def split_into_requests(
         ):
             requests.append([])
             request_bytes = 0
-        requests[-1].extend(group)
+        requests[-1].extend(positions)
         request_bytes += group_bytes
-    return requests
+    # Keep the input order within each request, so that the API's error locations (`items[i]`) match it.
+    return [[series[i] for i in sorted(request)] for request in requests]
