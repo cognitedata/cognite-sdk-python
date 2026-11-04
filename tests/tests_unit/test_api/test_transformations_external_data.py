@@ -514,3 +514,12 @@ class TestTransformationExternalDataSourcesAPI:
             cognite_client.transformations.external_data_sources.rotate_keys(too_many)
 
         assert httpx2_mock.get_requests() == []
+
+    def test_rotate_keys_no_input(
+            self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, external_data_url: str
+    ) -> None:
+        result = cognite_client.transformations.external_data_sources.rotate_keys([])
+
+        assert isinstance(result, ExternalDataSourceRotatedKeysList)
+        assert len(result) == 0
+        assert httpx2_mock.get_requests() == []
