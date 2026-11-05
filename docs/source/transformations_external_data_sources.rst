@@ -281,7 +281,7 @@ The rotation is complete only after you register the new public key with the Sno
     from cognite.client.utils._time import timestamp_to_ms
 
     rotated = client.transformations.external_data_sources.rotate_keys(
-        ExternalDataSourceRotateKeys("snowflake-analytics-prod", timestamp_to_ms("now") + 30 * 24 * 3600 * 1000)
+        ExternalDataSourceRotateKeys("snowflake-analytics-prod", timestamp_to_ms("30d-ahead"))
     )
     public_key = rotated.public_key
 

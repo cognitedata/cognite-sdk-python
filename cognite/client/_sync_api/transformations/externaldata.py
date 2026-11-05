@@ -296,7 +296,7 @@ class SyncTransformationExternalDataSourcesAPI(SyncAPIClient):
                 >>> from cognite.client.utils._time import timestamp_to_ms
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> expiry_time = timestamp_to_ms("now") + 30 * 24 * 3600 * 1000
+                >>> expiry_time = timestamp_to_ms("30d-ahead")
                 >>> res = client.transformations.external_data_sources.rotate_keys(
                 ...     ExternalDataSourceRotateKeys("snowflake-analytics-prod", expiry_time)
                 ... )
