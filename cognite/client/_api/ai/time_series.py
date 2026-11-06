@@ -163,7 +163,8 @@ class AITimeSeriesAPI(APIClient):
 
         requests = split_into_requests(series, self._size_as_sent)
         tasks = [AsyncSDKTask(self._post_chunk, path, request, list_cls) for request in requests]
-        summary = await execute_async_tasks(tasks)
+        # Results are only returned all together, so stop sending the others once one request fails.
+        summary = await execute_async_tasks(tasks, fail_fast=True)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=lambda task: task[1], task_list_element_unwrap_fn=lambda s: s.label
         )

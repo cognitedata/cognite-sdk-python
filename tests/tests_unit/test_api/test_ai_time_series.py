@@ -148,6 +148,24 @@ class TestForecast:
             cognite_client.ai.time_series.forecast([series("21-PT-1019")])
         assert err.value.failed == ["21-PT-1019"]
 
+    def test_failed_request_stops_the_others_and_reports_every_label(
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient
+    ) -> None:
+        def fail_the_first_request(request: Request) -> Response:
+            if jsgz_load(request.content)["items"][0]["label"] == "s0":
+                return Response(400, json={"detail": "items[3].datapoints[1].timestamp: must be 60000 ms after ..."})
+            return fake_model(request)
+
+        url = get_url(async_client.ai.time_series, "/ai/timeseries/forecast")
+        httpx2_mock.add_callback(fail_the_first_request, method="POST", url=url, is_reusable=True)
+        inputs = [series(f"s{i}") for i in range(40)]
+
+        with pytest.raises(CogniteAPIError) as err:
+            cognite_client.ai.time_series.forecast(inputs)
+
+        assert err.value.failed == [f"s{i}" for i in range(32)]
+        assert sorted(err.value.successful + err.value.skipped) == sorted(f"s{i}" for i in range(32, 40))
+
     def test_duplicate_labels_are_rejected(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError, match=re.escape("Duplicated labels: {'21-PT-1019'}")):
             cognite_client.ai.time_series.forecast([series("21-PT-1019"), series("21-PT-1019")])
