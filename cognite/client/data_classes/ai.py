@@ -318,9 +318,7 @@ class QuantileDatapoint(CogniteResource):
         return {"timestamp": self.timestamp, "quantiles": {str(level): v for level, v in self.quantiles.items()}}
 
 
-def _points_to_pandas(
-    points: Sequence[QuantileDatapoint], quantile_levels: Sequence[float] | None = None
-) -> pd.DataFrame:
+def _points_to_pandas(points: Sequence[QuantileDatapoint], quantile_levels: Sequence[float] | None) -> pd.DataFrame:
     pd = local_import("pandas")
     index = to_pandas_datetime_index([p.timestamp for p in points], timezone=None)
     df = pd.DataFrame([p.quantiles for p in points], index=index)
@@ -362,13 +360,17 @@ class ForecastResult(CogniteResource):
             output["cohort"] = self.cohort
         return output
 
-    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
+    def to_pandas(self, quantile_levels: Sequence[float] | None = (0.5,)) -> pd.DataFrame:  # type: ignore[override]
         """Convert to a DataFrame with a DatetimeIndex and one column per quantile level.
+
+        Args:
+            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass None
+                to include every level in the result.
 
         Returns:
             pd.DataFrame: The forecast.
         """
-        return _points_to_pandas(self.forecast)
+        return _points_to_pandas(self.forecast, quantile_levels)
 
 
 class ForecastResultList(CogniteResourceList[ForecastResult]):
@@ -414,13 +416,19 @@ class ForecastResultList(CogniteResourceList[ForecastResult]):
         """
         return next((item for item in self.data if item.label == label), None)
 
-    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
-        """Convert to a DataFrame with a DatetimeIndex and `(label, quantile)` columns.
+    def to_pandas(self, quantile_levels: Sequence[float] | None = (0.5,)) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and `(label, quantile level)` columns.
+
+        Args:
+            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass None
+                to include every level in the result.
 
         Returns:
             pd.DataFrame: The forecasts.
         """
-        return _concat_columns({r.label: _points_to_pandas(r.forecast, self.quantile_levels) for r in self.data})
+        # Every series gets the same columns, even one without points.
+        levels = self.quantile_levels if quantile_levels is None else quantile_levels
+        return _concat_columns({r.label: _points_to_pandas(r.forecast, levels) for r in self.data})
 
 
 class ImputeResult(CogniteResource):
@@ -451,13 +459,17 @@ class ImputeResult(CogniteResource):
             output["cohort"] = self.cohort
         return output
 
-    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
+    def to_pandas(self, quantile_levels: Sequence[float] | None = (0.5,)) -> pd.DataFrame:  # type: ignore[override]
         """Convert to a DataFrame with a DatetimeIndex and one column per quantile level.
+
+        Args:
+            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass None
+                to include every level in the result.
 
         Returns:
             pd.DataFrame: The reconstructed points.
         """
-        return _points_to_pandas(self.imputed)
+        return _points_to_pandas(self.imputed, quantile_levels)
 
 
 class ImputeResultList(CogniteResourceList[ImputeResult]):
@@ -503,10 +515,16 @@ class ImputeResultList(CogniteResourceList[ImputeResult]):
         """
         return next((item for item in self.data if item.label == label), None)
 
-    def to_pandas(self) -> pd.DataFrame:  # type: ignore[override]
-        """Convert to a DataFrame with a DatetimeIndex and `(label, quantile)` columns.
+    def to_pandas(self, quantile_levels: Sequence[float] | None = (0.5,)) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and `(label, quantile level)` columns.
+
+        Args:
+            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass None
+                to include every level in the result.
 
         Returns:
             pd.DataFrame: The reconstructed points.
         """
-        return _concat_columns({r.label: _points_to_pandas(r.imputed, self.quantile_levels) for r in self.data})
+        # Every series gets the same columns, even one without points.
+        levels = self.quantile_levels if quantile_levels is None else quantile_levels
+        return _concat_columns({r.label: _points_to_pandas(r.imputed, levels) for r in self.data})

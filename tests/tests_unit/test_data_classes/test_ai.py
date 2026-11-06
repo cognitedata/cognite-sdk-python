@@ -89,7 +89,7 @@ class TestForecastResultList:
     @pytest.mark.dsl
     def test_to_pandas_has_datetime_index_and_label_quantile_columns(self) -> None:
         pd = local_import("pandas")
-        df = ForecastResultList._load_response(FORECAST_RESPONSE).to_pandas()
+        df = ForecastResultList._load_response(FORECAST_RESPONSE).to_pandas(quantile_levels=None)
 
         assert isinstance(df.index, pd.DatetimeIndex)
         assert list(df.columns) == [(label, q) for label in ["23-PT-1101", "24-TT-3001"] for q in [0.05, 0.5, 0.95]]
@@ -98,10 +98,31 @@ class TestForecastResultList:
         assert pd.isna(df[("24-TT-3001", 0.5)].iloc[1])  # no forecast at the second timestamp
 
     @pytest.mark.dsl
+    def test_to_pandas_has_the_median_by_default_and_the_requested_levels_otherwise(self) -> None:
+        res = ForecastResultList._load_response(FORECAST_RESPONSE)
+        single = res.get(label="23-PT-1101")
+        assert single is not None
+
+        assert list(res.to_pandas().columns) == [("23-PT-1101", 0.5), ("24-TT-3001", 0.5)]
+        assert list(single.to_pandas().columns) == [0.5]
+        assert list(res.to_pandas(quantile_levels=[0.95, 0.05]).columns) == [
+            (label, q) for label in ["23-PT-1101", "24-TT-3001"] for q in [0.95, 0.05]
+        ]
+
+    @pytest.mark.dsl
+    def test_notebook_view_shows_the_median_only(self) -> None:
+        res = ForecastResultList._load_response(FORECAST_RESPONSE)
+        single = res.get(label="23-PT-1101")
+        assert single is not None
+        for html in (res._repr_html_(), single._repr_html_()):
+            assert "0.5" in html
+            assert "0.05" not in html and "0.95" not in html
+
+    @pytest.mark.dsl
     def test_single_result_to_pandas(self) -> None:
         result = ForecastResultList._load_response(FORECAST_RESPONSE).get(label="23-PT-1101")
         assert result is not None
-        df = result.to_pandas()
+        df = result.to_pandas(quantile_levels=None)
         assert list(df.columns) == [0.05, 0.5, 0.95]
         assert df.iloc[1][0.5] == 42.5
 
@@ -111,12 +132,12 @@ class TestForecastResultList:
         levels = [0.05, 0.5, 0.95]
         res = ForecastResultList._load_response(FORECAST_RESPONSE)
 
-        sliced = res[:1].to_pandas()
+        sliced = res[:1].to_pandas(quantile_levels=None)
         assert list(sliced.columns) == [("23-PT-1101", q) for q in levels]
         assert len(sliced) == 2
         assert sliced[("23-PT-1101", 0.5)].tolist() == [42.0, 42.5]
 
-        reloaded = ForecastResultList.load(res.dump()).to_pandas()
+        reloaded = ForecastResultList.load(res.dump()).to_pandas(quantile_levels=None)
         assert isinstance(reloaded.index, pd.DatetimeIndex)
         assert list(reloaded.columns) == [(label, q) for label in ["23-PT-1101", "24-TT-3001"] for q in levels]
         assert len(reloaded) == 2
@@ -138,7 +159,7 @@ class TestImputeResultList:
             ],
             "metadata": {"quantileLevels": [0.5], "cohorts": []},
         }
-        df = ImputeResultList._load_response(response).to_pandas()
+        df = ImputeResultList._load_response(response).to_pandas(quantile_levels=None)
         assert list(df.columns) == [("a", 0.5), ("b", 0.5)]
 
     @pytest.mark.dsl
@@ -162,11 +183,11 @@ class TestImputeResultList:
         }
         res = ImputeResultList._load_response(response)
 
-        sliced = res[:1].to_pandas()
+        sliced = res[:1].to_pandas(quantile_levels=None)
         assert list(sliced.columns) == [("a", q) for q in levels]
         assert len(sliced) == 2
 
-        reloaded = ImputeResultList.load(res.dump()).to_pandas()
+        reloaded = ImputeResultList.load(res.dump()).to_pandas(quantile_levels=None)
         assert list(reloaded.columns) == [(label, q) for label in ["a", "b"] for q in levels]
         assert len(reloaded) == 2
 
