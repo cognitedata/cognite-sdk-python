@@ -10,7 +10,6 @@ from cognite.client.data_classes.data_modeling.streams import (
     StreamList,
     StreamWrite,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import Identifier, IdentifierSequence
 from cognite.client.utils.useful_types import SequenceNotStr
 
@@ -27,9 +26,6 @@ class StreamsAPI(APIClient):
         self.templates = StreamTemplatesAPI(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1
-        self._warning = FeaturePreviewWarning(
-            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Streams"
-        )
 
     @overload
     async def create(self, items: StreamWrite) -> Stream: ...
@@ -67,7 +63,6 @@ class StreamsAPI(APIClient):
                 ...     )
                 ... )
         """
-        self._warning.warn()
         return await self._create_multiple(
             items=items,
             list_cls=StreamList,
@@ -94,7 +89,6 @@ class StreamsAPI(APIClient):
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.streams.list()
         """
-        self._warning.warn()
         return await self._list(method="GET", list_cls=StreamList, resource_cls=Stream)
 
     async def retrieve(self, external_id: str, include_statistics: bool | None = None) -> Stream | None:
@@ -124,7 +118,6 @@ class StreamsAPI(APIClient):
                 ...     include_statistics=True,
                 ... )
         """
-        self._warning.warn()
         return await self._retrieve(
             cls=Stream,
             identifier=Identifier(external_id),
@@ -155,7 +148,6 @@ class StreamsAPI(APIClient):
 
                 >>> client.data_modeling.streams.delete(["stream-a", "stream-b"])
         """
-        self._warning.warn()
         await self._delete_multiple(
             identifiers=IdentifierSequence.load(external_ids=external_id),
             wrap_ids=True,
