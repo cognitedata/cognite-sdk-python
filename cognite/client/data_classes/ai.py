@@ -327,7 +327,17 @@ def _points_to_pandas(points: Sequence[QuantileDatapoint], quantile_levels: Sequ
     return df if not quantile_levels else df.reindex(columns=list(quantile_levels))
 
 
-def _concat_columns(frames: dict[str, pd.DataFrame]) -> pd.DataFrame:
+# The median is the 0.5 quantile by definition, so every result has it, whatever other levels the API returns.
+_MEDIAN = 0.5
+
+
+def _median_to_pandas(label: str, points: Sequence[QuantileDatapoint]) -> pd.DataFrame:
+    pd = local_import("pandas")
+    index = to_pandas_datetime_index([p.timestamp for p in points], timezone=None)
+    return pd.DataFrame({label: [p.quantiles[_MEDIAN] for p in points]}, index=index)
+
+
+def _concat_columns(frames: dict[str, pd.DataFrame] | list[pd.DataFrame]) -> pd.DataFrame:
     pd = local_import("pandas")
     if not frames:
         return pd.DataFrame(index=to_pandas_datetime_index([], timezone=None))
@@ -362,17 +372,19 @@ class ForecastResult(CogniteResource):
             output["cohort"] = self.cohort
         return output
 
-    def to_pandas(self, quantile_levels: Sequence[float] | None = (0.5,)) -> pd.DataFrame:  # type: ignore[override]
-        """Convert to a DataFrame with a DatetimeIndex and one column per quantile level.
+    def to_pandas(self, include_all_quantiles: bool = False) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and one column, named by the label, with the median.
 
         Args:
-            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass None
-                to include every level in the result.
+            include_all_quantiles (bool): Include every quantile level instead of only the median, as one column per
+                level.
 
         Returns:
             pd.DataFrame: The forecast.
         """
-        return _points_to_pandas(self.forecast, quantile_levels)
+        if include_all_quantiles:
+            return _points_to_pandas(self.forecast, None)
+        return _median_to_pandas(self.label, self.forecast)
 
 
 class ForecastResultList(CogniteResourceList[ForecastResult]):
@@ -417,19 +429,20 @@ class ForecastResultList(CogniteResourceList[ForecastResult]):
         """
         return next((item for item in self.data if item.label == label), None)
 
-    def to_pandas(self, quantile_levels: Sequence[float] | None = (0.5,)) -> pd.DataFrame:  # type: ignore[override]
-        """Convert to a DataFrame with a DatetimeIndex and `(label, quantile level)` columns.
+    def to_pandas(self, include_all_quantiles: bool = False) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and one column per label, with the median.
 
         Args:
-            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass None
-                to include every level in the result.
+            include_all_quantiles (bool): Include every quantile level instead of only the median, as
+                `(label, quantile level)` columns.
 
         Returns:
             pd.DataFrame: The forecasts.
         """
-        # Every series gets the same columns, even one without points.
-        levels = self.quantile_levels if quantile_levels is None else quantile_levels
-        return _concat_columns({r.label: _points_to_pandas(r.forecast, levels) for r in self.data})
+        if include_all_quantiles:
+            # Every series gets the same columns, even one without points.
+            return _concat_columns({r.label: _points_to_pandas(r.forecast, self.quantile_levels) for r in self.data})
+        return _concat_columns([_median_to_pandas(r.label, r.forecast) for r in self.data])
 
 
 class ImputeResult(CogniteResource):
@@ -460,17 +473,19 @@ class ImputeResult(CogniteResource):
             output["cohort"] = self.cohort
         return output
 
-    def to_pandas(self, quantile_levels: Sequence[float] | None = (0.5,)) -> pd.DataFrame:  # type: ignore[override]
-        """Convert to a DataFrame with a DatetimeIndex and one column per quantile level.
+    def to_pandas(self, include_all_quantiles: bool = False) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and one column, named by the label, with the median.
 
         Args:
-            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass None
-                to include every level in the result.
+            include_all_quantiles (bool): Include every quantile level instead of only the median, as one column per
+                level.
 
         Returns:
             pd.DataFrame: The reconstructed points.
         """
-        return _points_to_pandas(self.imputed, quantile_levels)
+        if include_all_quantiles:
+            return _points_to_pandas(self.imputed, None)
+        return _median_to_pandas(self.label, self.imputed)
 
 
 class ImputeResultList(CogniteResourceList[ImputeResult]):
@@ -517,16 +532,17 @@ class ImputeResultList(CogniteResourceList[ImputeResult]):
         """
         return next((item for item in self.data if item.label == label), None)
 
-    def to_pandas(self, quantile_levels: Sequence[float] | None = (0.5,)) -> pd.DataFrame:  # type: ignore[override]
-        """Convert to a DataFrame with a DatetimeIndex and `(label, quantile level)` columns.
+    def to_pandas(self, include_all_quantiles: bool = False) -> pd.DataFrame:  # type: ignore[override]
+        """Convert to a DataFrame with a DatetimeIndex and one column per label, with the median.
 
         Args:
-            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass None
-                to include every level in the result.
+            include_all_quantiles (bool): Include every quantile level instead of only the median, as
+                `(label, quantile level)` columns.
 
         Returns:
             pd.DataFrame: The reconstructed points.
         """
-        # Every series gets the same columns, even one without points.
-        levels = self.quantile_levels if quantile_levels is None else quantile_levels
-        return _concat_columns({r.label: _points_to_pandas(r.imputed, levels) for r in self.data})
+        if include_all_quantiles:
+            # Every series gets the same columns, even one without points.
+            return _concat_columns({r.label: _points_to_pandas(r.imputed, self.quantile_levels) for r in self.data})
+        return _concat_columns([_median_to_pandas(r.label, r.imputed) for r in self.data])
