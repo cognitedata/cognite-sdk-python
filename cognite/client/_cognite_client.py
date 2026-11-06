@@ -50,6 +50,7 @@ if TYPE_CHECKING:
 
 
 if _should_build_docs := os.getenv("BUILD_COGNITE_SDK_DOCS") == "true":
+    from cognite.client._api.ai.time_series import AITimeSeriesAPI
     from cognite.client._api.ai.tools import AIToolsAPI
     from cognite.client._api.ai.tools.documents import AIDocumentsAPI
     from cognite.client._api.data_modeling.containers import ContainersAPI
@@ -393,6 +394,7 @@ class AsyncCogniteClient:
 def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.agents = AgentsAPI  # type: ignore
     AsyncCogniteClient.ai = AIAPI  # type: ignore
+    AsyncCogniteClient.ai.time_series = AITimeSeriesAPI  # type: ignore
     AsyncCogniteClient.ai.tools = AIToolsAPI  # type: ignore
     AsyncCogniteClient.ai.tools.documents = AIDocumentsAPI  # type: ignore
     AsyncCogniteClient.assets = AssetsAPI  # type: ignore
