@@ -278,7 +278,7 @@ class ForecastInputTimeSeries:
         datapoints (Sequence[ForecastInputDatapoint]): Evenly spaced history. Use `ForecastInputDatapoint.load` to
             create datapoints from tuples or dicts.
         cohort (str | None): A group name. Give related series, such as the sensors on one compressor, the same
-            cohort to process them jointly, so the model can use the relationships between them. Series in a cohort
+            cohort to process them jointly (multivariate), so the model can use the relationships between them. Series in a cohort
             must have identical timestamps: the same start, interval and number of datapoints. Leave it as None to
             process the series independently.
     """
@@ -404,9 +404,7 @@ class ForecastResultList(CogniteResourceList[ForecastResult]):
         )
 
     def get(self, label: str) -> ForecastResult | None:  # type: ignore[override]
-        """Get the result for an input series by its label.
-
-        Labels are unique within a result, since duplicate labels in a request are rejected.
+        """Get the result for an input series by its label (user-given).
 
         Args:
             label (str): The label of the input series.
