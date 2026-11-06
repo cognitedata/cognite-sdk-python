@@ -30,6 +30,9 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
         model can use the relationships between them. A time series without an underlying pattern, such as random
         noise, a flat line, or a setpoint changed by an operator, will not give a useful forecast.
 
+        The time series are sent in as many requests as needed to stay within the API's limits of 32 time series and
+        5 MiB per request. A cohort is always sent in one request.
+
         Note:
             This endpoint is in beta, and is called with the beta ``cdf-version`` header.
 
@@ -43,7 +46,7 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 in every point's quantiles; use 0.5, the median, as a single predicted value.
 
         Raises:
-            ValueError: If no time series are given, or a label is repeated.
+            ValueError: If no time series are given, a label is repeated, or a cohort doesn't fit in one request.
 
         Examples:
 
@@ -98,6 +101,9 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
         A datapoint marked missing is hidden from the model, whatever its value, and returned. A datapoint with value
         None and not marked missing is hidden from the model but not returned.
 
+        The time series are sent in as many requests as needed to stay within the API's limits of 32 time series and
+        5 MiB per request. A cohort is always sent in one request.
+
         Note:
             This endpoint is in beta, and is called with the beta ``cdf-version`` header.
 
@@ -112,7 +118,7 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 single predicted value.
 
         Raises:
-            ValueError: If no time series are given, or a label is repeated.
+            ValueError: If no time series are given, a label is repeated, or a cohort doesn't fit in one request.
 
         Examples:
 
