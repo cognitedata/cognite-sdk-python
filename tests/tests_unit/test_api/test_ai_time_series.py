@@ -11,7 +11,7 @@ from pytest_httpx2 import HTTPXMock
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.config import global_config
 from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteException
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from tests.utils import get_url, jsgz_load
 
@@ -165,6 +165,25 @@ class TestForecast:
 
         assert err.value.failed == [f"s{i}" for i in range(32)]
         assert sorted(err.value.successful + err.value.skipped) == sorted(f"s{i}" for i in range(32, 40))
+
+    def test_different_quantile_levels_across_requests_raise(
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient
+    ) -> None:
+        def answer_with_other_levels_for_the_second_request(request: Request) -> Response:
+            response = fake_model(request)
+            if jsgz_load(request.content)["items"][0]["label"] == "s32":
+                body = response.json()
+                body["metadata"]["quantileLevels"] = [0.1, 0.5, 0.9]
+                return Response(200, json=body)
+            return response
+
+        url = get_url(async_client.ai.time_series, "/ai/timeseries/forecast")
+        httpx2_mock.add_callback(
+            answer_with_other_levels_for_the_second_request, method="POST", url=url, is_reusable=True
+        )
+
+        with pytest.raises(CogniteException, match="different quantile levels"):
+            cognite_client.ai.time_series.forecast([series(f"s{i}") for i in range(40)])
 
     def test_duplicate_labels_are_rejected(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError, match=re.escape("Duplicated labels: {'21-PT-1019'}")):

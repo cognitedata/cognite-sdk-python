@@ -9,6 +9,7 @@ from cognite.client.data_classes.ai import (
     ForecastResultList,
     ImputeResultList,
 )
+from cognite.client.exceptions import CogniteException
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._experimental import FeaturePreviewWarning
@@ -169,6 +170,11 @@ class AITimeSeriesAPI(APIClient):
             task_unwrap_fn=lambda task: task[1], task_list_element_unwrap_fn=lambda s: s.label
         )
         results: list[T_ResultList] = summary.results
+        if len(levels := {tuple(res.quantile_levels) for res in results}) > 1:
+            raise CogniteException(
+                f"The requests for this call returned different quantile levels: {sorted(levels)}. This can happen "
+                "while the model is being updated; retry the call."
+            )
         by_label = {item.label: item for res in results for item in res}
         return list_cls(
             [by_label[s.label] for s in series],
