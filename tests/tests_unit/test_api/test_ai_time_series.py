@@ -314,6 +314,16 @@ class TestDataFrames:
         assert list(imputed.columns) == [("21-PT-1019", 0.5)]
         assert df.fillna(imputed.xs(0.5, axis=1, level=1))["21-PT-1019"].tolist() == [42.1, 1.0, 42.9]
 
+    def test_quantile_levels_selects_the_levels_in_the_result(
+        self, cognite_client: CogniteClient, mock_forecast: HTTPXMock, mock_impute: HTTPXMock
+    ) -> None:
+        df = self.frame({"a": [1.0] * 3})
+        api = cognite_client.ai.time_series
+
+        assert list(api.forecast_dataframe(df).columns) == [("a", 0.5)]
+        assert list(api.forecast_dataframe(df, quantile_levels=None).columns) == [("a", q) for q in [0.05, 0.5, 0.95]]
+        assert list(api.impute_dataframe(df, quantile_levels=[0.95, 0.05]).columns) == [("a", 0.95), ("a", 0.05)]
+
     def test_results_keep_the_input_column_names(self, cognite_client: CogniteClient, mock_forecast: HTTPXMock) -> None:
         out = cognite_client.ai.time_series.forecast_dataframe(self.frame({1: [1.0] * 3, 2: [2.0] * 3}))
 

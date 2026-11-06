@@ -157,7 +157,10 @@ class AITimeSeriesAPI(APIClient):
         return await self._forecast_or_impute("/impute", time_series, ImputeResultList)
 
     async def forecast_dataframe(
-        self, df: pd.DataFrame, cohort: str | Mapping[Hashable, str] | None = None
+        self,
+        df: pd.DataFrame,
+        cohort: str | Mapping[Hashable, str] | None = None,
+        quantile_levels: Sequence[float] | None = (0.5,),
     ) -> pd.DataFrame:
         """Forecast the next 512 points of every column of a DataFrame.
 
@@ -172,10 +175,12 @@ class AITimeSeriesAPI(APIClient):
                 of 2 to 8192 timestamps. A timezone-naive index is taken to be in UTC.
             cohort (str | Mapping[Hashable, str] | None): A cohort for every column, or a mapping from column name to
                 cohort. Columns not in the mapping are forecast independently.
+            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass
+                None to include every level the API returns.
 
         Returns:
             pd.DataFrame: The forecast, with a DatetimeIndex in the timezone of `df`, and a `(column, quantile level)`
-                column for every column of `df`, which holds the median (level 0.5).
+                column for every column of `df` and quantile level included.
 
         Raises:
             ValueError: If the index isn't a DatetimeIndex, a column is repeated or not numeric, a value is infinite,
@@ -209,10 +214,13 @@ class AITimeSeriesAPI(APIClient):
                 >>> median = forecast["23-PT-1101"][0.5]
         """
         res = await self.forecast(_dataframe_to_input(df, cohort))
-        return _like_input(res.to_pandas(), df)
+        return _like_input(res.to_pandas(quantile_levels), df)
 
     async def impute_dataframe(
-        self, df: pd.DataFrame, cohort: str | Mapping[Hashable, str] | None = None
+        self,
+        df: pd.DataFrame,
+        cohort: str | Mapping[Hashable, str] | None = None,
+        quantile_levels: Sequence[float] | None = (0.5,),
     ) -> pd.DataFrame:
         """Predict every NaN value of a DataFrame.
 
@@ -227,11 +235,13 @@ class AITimeSeriesAPI(APIClient):
                 DatetimeIndex of 2 to 8192 timestamps. A timezone-naive index is taken to be in UTC.
             cohort (str | Mapping[Hashable, str] | None): A cohort for every column, or a mapping from column name to
                 cohort. Columns not in the mapping are imputed independently.
+            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass
+                None to include every level the API returns.
 
         Returns:
             pd.DataFrame: The predictions, with one row per timestamp that has a NaN value in any column, a
                 DatetimeIndex in the timezone of `df`, and a `(column, quantile level)` column for every column of
-                `df`, which holds the median (level 0.5).
+                `df` and quantile level included.
 
         Raises:
             ValueError: If the index isn't a DatetimeIndex, a column is repeated or not numeric, a value is infinite,
@@ -255,7 +265,7 @@ class AITimeSeriesAPI(APIClient):
                 >>> filled = df.fillna(imputed.xs(0.5, axis=1, level=1))  # doctest: +SKIP
         """
         res = await self.impute(_dataframe_to_input(df, cohort))
-        return _like_input(res.to_pandas(), df)
+        return _like_input(res.to_pandas(quantile_levels), df)
 
     async def _forecast_or_impute(
         self, path: str, time_series: Sequence[ForecastInputTimeSeries], list_cls: type[T_ResultList]

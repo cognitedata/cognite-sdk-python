@@ -152,7 +152,12 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
         """
         return run_sync(self.__async_client.ai.time_series.impute(time_series=time_series))
 
-    def forecast_dataframe(self, df: pd.DataFrame, cohort: str | Mapping[Hashable, str] | None = None) -> pd.DataFrame:
+    def forecast_dataframe(
+        self,
+        df: pd.DataFrame,
+        cohort: str | Mapping[Hashable, str] | None = None,
+        quantile_levels: Sequence[float] | None = (0.5,),
+    ) -> pd.DataFrame:
         """
         Forecast the next 512 points of every column of a DataFrame.
 
@@ -167,10 +172,12 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 of 2 to 8192 timestamps. A timezone-naive index is taken to be in UTC.
             cohort (str | Mapping[Hashable, str] | None): A cohort for every column, or a mapping from column name to
                 cohort. Columns not in the mapping are forecast independently.
+            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass
+                None to include every level the API returns.
 
         Returns:
             pd.DataFrame: The forecast, with a DatetimeIndex in the timezone of `df`, and a `(column, quantile level)`
-                column for every column of `df`, which holds the median (level 0.5).
+                column for every column of `df` and quantile level included.
 
         Raises:
             ValueError: If the index isn't a DatetimeIndex, a column is repeated or not numeric, a value is infinite,
@@ -203,9 +210,16 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 ... )
                 >>> median = forecast["23-PT-1101"][0.5]
         """
-        return run_sync(self.__async_client.ai.time_series.forecast_dataframe(df=df, cohort=cohort))
+        return run_sync(
+            self.__async_client.ai.time_series.forecast_dataframe(df=df, cohort=cohort, quantile_levels=quantile_levels)
+        )
 
-    def impute_dataframe(self, df: pd.DataFrame, cohort: str | Mapping[Hashable, str] | None = None) -> pd.DataFrame:
+    def impute_dataframe(
+        self,
+        df: pd.DataFrame,
+        cohort: str | Mapping[Hashable, str] | None = None,
+        quantile_levels: Sequence[float] | None = (0.5,),
+    ) -> pd.DataFrame:
         """
         Predict every NaN value of a DataFrame.
 
@@ -220,11 +234,13 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 DatetimeIndex of 2 to 8192 timestamps. A timezone-naive index is taken to be in UTC.
             cohort (str | Mapping[Hashable, str] | None): A cohort for every column, or a mapping from column name to
                 cohort. Columns not in the mapping are imputed independently.
+            quantile_levels (Sequence[float] | None): The quantile levels to include. Defaults to the median, 0.5. Pass
+                None to include every level the API returns.
 
         Returns:
             pd.DataFrame: The predictions, with one row per timestamp that has a NaN value in any column, a
                 DatetimeIndex in the timezone of `df`, and a `(column, quantile level)` column for every column of
-                `df`, which holds the median (level 0.5).
+                `df` and quantile level included.
 
         Raises:
             ValueError: If the index isn't a DatetimeIndex, a column is repeated or not numeric, a value is infinite,
@@ -247,4 +263,6 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 >>> imputed = client.ai.time_series.impute_dataframe(df)
                 >>> filled = df.fillna(imputed.xs(0.5, axis=1, level=1))  # doctest: +SKIP
         """
-        return run_sync(self.__async_client.ai.time_series.impute_dataframe(df=df, cohort=cohort))
+        return run_sync(
+            self.__async_client.ai.time_series.impute_dataframe(df=df, cohort=cohort, quantile_levels=quantile_levels)
+        )
