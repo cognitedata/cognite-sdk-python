@@ -68,9 +68,12 @@ class TestForecastInputDatapoint:
         dp = ForecastInputDatapoint(0, 1.0)
         assert ForecastInputDatapoint.load(dp) is dp
 
-    def test_load_rejects_other_types(self) -> None:
-        with pytest.raises(TypeError, match="from str"):
-            ForecastInputDatapoint.load("0,1.0")  # type: ignore[arg-type]
+    @pytest.mark.parametrize(
+        "data, type_name", [("0,1.0", "str"), ({"value": 1.0}, "dict"), ((0, 1.0, True, 5), "tuple"), ((0,), "tuple")]
+    )
+    def test_load_rejects_other_types(self, data: Any, type_name: str) -> None:
+        with pytest.raises(TypeError, match=f"from {type_name}"):
+            ForecastInputDatapoint.load(data)
 
 
 class TestForecastResultList:

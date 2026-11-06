@@ -254,13 +254,15 @@ class ForecastInputDatapoint:
                 ...     ForecastInputDatapoint.load({"timestamp": 1790812860000, "missing": True}),
                 ... ]
         """
-        if isinstance(data, ForecastInputDatapoint):
-            return data
-        if isinstance(data, dict):
-            return cls(data["timestamp"], data.get("value"), data.get("missing", False))
-        if isinstance(data, (tuple, list)):
-            return cls(*data)
-        raise TypeError(f"Can't load a ForecastInputDatapoint from {type(data).__name__}")
+        match data:
+            case ForecastInputDatapoint():
+                return data
+            case [_, _] | [_, _, _]:
+                return cls(*data)
+            case dict() if "timestamp" in data:
+                return cls(data["timestamp"], data.get("value"), data.get("missing", False))
+            case _:
+                raise TypeError(f"Can't load a ForecastInputDatapoint from {type(data).__name__}")
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output: dict[str, Any] = {"timestamp": timestamp_to_ms(self.timestamp), "value": self.value}
@@ -276,7 +278,7 @@ class ForecastInputTimeSeries:
     Args:
         label (str): Caller-chosen identifier, echoed back in the result.
         datapoints (Sequence[ForecastInputDatapoint]): Evenly spaced history. Use `ForecastInputDatapoint.load` to
-            create datapoints from tuples or dicts.
+            load datapoints from tuples or dicts.
         cohort (str | None): A group name. Give related series, such as the sensors on one compressor, the same
             cohort to process them jointly (multivariate), so the model can use the relationships between them. Series in a cohort
             must have identical timestamps: the same start, interval and number of datapoints. Leave it as None to
