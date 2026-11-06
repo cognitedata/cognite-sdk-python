@@ -14,6 +14,19 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.24.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.23.0...v8.24.0) (2026-11-06)
+
+
+### Features
+
+* **transformations:** Added rotate keys api endpoint support in sdk ([#2921](https://github.com/cognitedata/cognite-sdk-python/issues/2921)) ([dd77f4c](https://github.com/cognitedata/cognite-sdk-python/commit/dd77f4cb65920cadf402f67d55dd5c5c71ebc23e))
+* **transformations:** Added sdk changes for connecting to new external data source apis ([#2895](https://github.com/cognitedata/cognite-sdk-python/issues/2895)) ([d7f60c1](https://github.com/cognitedata/cognite-sdk-python/commit/d7f60c10c2e3157ea5ca77e8dbc0134adf2b6d91))
+
+
+### Bug Fixes
+
+* release pooled connections for failed streamed requests ([#2916](https://github.com/cognitedata/cognite-sdk-python/issues/2916)) ([cf657ce](https://github.com/cognitedata/cognite-sdk-python/commit/cf657cefabcc3dd611e722a6494af457f5c3d028))
+
 ## [8.23.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.22.0...v8.23.0) (2026-11-02)
 
 
