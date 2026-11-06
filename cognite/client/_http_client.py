@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import functools
 import logging
 import warnings
 from collections.abc import (
@@ -299,7 +298,6 @@ class AsyncHTTPClientWithRetry:
         concurrency_control = semaphore or nullcontext()
 
         retry_tracker = RetryTracker(url, self.config)
-        accepts_json = (headers or {}).get("accept") == "application/json"
         while True:
             try:
                 async with concurrency_control:
@@ -333,9 +331,6 @@ class AsyncHTTPClientWithRetry:
             else:
                 # Note: this try-else only runs if the try-block did not raise anything. Exceptions raised here are
                 # thus not caught by the excepts above and CogniteHTTPStatusError can escape (as we want it to):
-                if accepts_json:
-                    # Cache .json() return value in order to avoid redecoding JSON if called multiple times
-                    response.json = functools.cache(response.json)  # type: ignore [method-assign]
                 if response.is_success:
                     return CogniteHTTPResponse(response)
 
