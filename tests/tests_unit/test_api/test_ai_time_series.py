@@ -102,7 +102,39 @@ class TestForecast:
         assert result is not None
         assert [p.timestamp for p in result.forecast] == [120_000, 180_000, 240_000]
 
-    def test_failed_request_raises_with_the_api_message(
+    def test_large_request_is_split_and_results_keep_input_order(
+        self, cognite_client: CogniteClient, mock_forecast: HTTPXMock
+    ) -> None:
+        inputs = [series(f"s{i}") for i in range(100)]
+
+        res = cognite_client.ai.time_series.forecast(inputs)
+
+        assert [len(jsgz_load(r.content)["items"]) for r in mock_forecast.get_requests()] == [32, 32, 32, 4]
+        assert [r.label for r in res] == [s.label for s in inputs]
+
+    def test_results_keep_input_order_with_cohorts_spread_through_the_input(
+        self, cognite_client: CogniteClient, mock_forecast: HTTPXMock
+    ) -> None:
+        inputs = [series(f"s{i}", "train-a" if i % 3 == 0 else None) for i in range(60)]
+
+        res = cognite_client.ai.time_series.forecast(inputs)
+
+        sent = [[s["label"] for s in jsgz_load(r.content)["items"]] for r in mock_forecast.get_requests()]
+        assert len(sent) == 2
+        assert all(labels == sorted(labels, key=lambda label: int(label[1:])) for labels in sent)
+        assert [r.label for r in res] == [s.label for s in inputs]
+
+    def test_cohorts_are_in_input_order_across_requests(
+        self, cognite_client: CogniteClient, mock_forecast: HTTPXMock
+    ) -> None:
+        inputs = [series(f"b{i}", "train-b") for i in range(20)] + [series(f"a{i}", "train-a") for i in range(20)]
+
+        res = cognite_client.ai.time_series.forecast(inputs)
+
+        assert len(mock_forecast.get_requests()) == 2
+        assert res.cohorts == ["train-b", "train-a"]
+
+    def test_failed_request_raises_with_failed_labels(
         self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient
     ) -> None:
         httpx2_mock.add_response(
@@ -112,12 +144,34 @@ class TestForecast:
             json={"detail": "items[0].datapoints[1].timestamp: must be 60000 ms after datapoints[0].timestamp"},
         )
 
-        with pytest.raises(CogniteAPIError, match=r"items\[0\]\.datapoints\[1\]\.timestamp: must be 60000 ms"):
+        with pytest.raises(CogniteAPIError, match=r"items\[0\]\.datapoints\[1\]\.timestamp: must be 60000 ms") as err:
             cognite_client.ai.time_series.forecast([series("21-PT-1019")])
+        assert err.value.failed == ["21-PT-1019"]
 
     def test_duplicate_labels_are_rejected(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError, match=re.escape("Duplicated labels: {'21-PT-1019'}")):
             cognite_client.ai.time_series.forecast([series("21-PT-1019"), series("21-PT-1019")])
+
+    def test_oversized_cohort_is_rejected(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(ValueError, match="Cohort 'compression-train-a' has 33 series"):
+            cognite_client.ai.time_series.forecast([series(f"s{i}", "compression-train-a") for i in range(33)])
+
+    @pytest.mark.parametrize("use_gzip", [True, False])
+    def test_size_used_for_splitting_is_the_size_sent(
+        self,
+        use_gzip: bool,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        mock_forecast: HTTPXMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        monkeypatch.setattr(global_config, "disable_gzip", not use_gzip)
+        inputs = [series("21-PT-1019", "compression-train-a"), series("24-TT-3001")]
+
+        cognite_client.ai.time_series.forecast(inputs)
+
+        [request] = mock_forecast.get_requests()
+        assert async_client.ai.time_series._size_as_sent(inputs) == len(request.content)
 
     async def test_async_client(self, async_client: AsyncCogniteClient, mock_forecast: HTTPXMock) -> None:
         res = await async_client.ai.time_series.forecast([series("21-PT-1019")])
