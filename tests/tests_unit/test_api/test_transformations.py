@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+import re
+from typing import TYPE_CHECKING
+
 import pytest
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client.credentials import OAuthClientCredentials
 from cognite.client.data_classes.iam import ClientCredentials
 from cognite.client.data_classes.transformations.common import OidcCredentials
+from tests.utils import get_url, jsgz_load
+
+if TYPE_CHECKING:
+    from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
@@ -49,3 +57,31 @@ def test_oidc_credentials_as_client_credentials(oidc_credentials: OidcCredential
 
     assert isinstance(client_creds, ClientCredentials)
     assert client_creds == ClientCredentials("id", "secret")
+
+
+@pytest.fixture
+def mock_transformations_list_response(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    url_pattern = re.compile(re.escape(get_url(async_client.transformations)) + r"/transformations/filter(?:\?.+)?$")
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json={"items": []})
+    return httpx2_mock
+
+
+@pytest.mark.parametrize(
+    "data_domain_external_ids, expected",
+    [
+        pytest.param(None, None, id="omitted when not given"),
+        pytest.param([], None, id="omitted when empty list given"),
+        pytest.param("my-domain", ["my-domain"], id="single string is wrapped in list"),
+        pytest.param(["domain-a", "domain-b"], ["domain-a", "domain-b"], id="list of strings passed through"),
+    ],
+)
+def test_list_data_domain_external_ids_filter(
+    cognite_client: CogniteClient,
+    mock_transformations_list_response: HTTPXMock,
+    data_domain_external_ids: str | list[str] | None,
+    expected: list[str] | None,
+) -> None:
+    cognite_client.transformations.list(data_domain_external_ids=data_domain_external_ids)
+
+    sent_filter = jsgz_load(mock_transformations_list_response.get_requests()[0].content)["filter"]
+    assert sent_filter.get("dataDomainExternalIds") == expected
