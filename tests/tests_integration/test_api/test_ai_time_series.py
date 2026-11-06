@@ -2,11 +2,16 @@ from __future__ import annotations
 
 import math
 from collections.abc import Collection
+from typing import TYPE_CHECKING
 
 import pytest
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries
+from cognite.client.utils._importing import local_import
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 START_MS = 1_790_812_800_000  # 2026-10-01T00:00:00Z
 STEP_MS = 60_000
@@ -80,3 +85,42 @@ class TestImpute:
         assert all(0.5 in p.quantiles for p in res[0].imputed)
         assert res[1].imputed == []  # nothing marked missing, nothing returned
         assert 0.5 in res.quantile_levels
+
+
+def frame(missing: Collection[int] = ()) -> pd.DataFrame:
+    """Two columns of the same shape as `signal`, with `missing` as NaN in column "a"."""
+    pd = local_import("pandas")
+    columns = {}
+    for label, phase in [("a", 0.0), ("b", 1.0)]:
+        series = signal(label, phase=phase, missing=missing if label == "a" else ())
+        columns[label] = [None if dp.missing else dp.value for dp in series.datapoints]
+    return pd.DataFrame(columns, index=pd.date_range("2026-10-01", periods=200, freq="1min"))
+
+
+@pytest.mark.dsl
+class TestDataFrames:
+    def test_forecast_dataframe(self, cognite_client: CogniteClient) -> None:
+        df = frame()
+
+        out = cognite_client.ai.time_series.forecast_dataframe(df)
+
+        assert list(out.columns) == [("a", 0.5), ("b", 0.5)]
+        assert len(out) == FORECAST_LENGTH
+        assert out.index[0] == df.index[-1] + (df.index[1] - df.index[0])
+
+    def test_forecast_dataframe_with_every_quantile_level(self, cognite_client: CogniteClient) -> None:
+        out = cognite_client.ai.time_series.forecast_dataframe(frame(), cohort="train", quantile_levels=None)
+
+        levels = list(out["a"].columns)
+        assert 0.5 in levels and len(levels) > 1
+        assert list(out["b"].columns) == levels
+
+    def test_impute_dataframe_fills_the_gaps(self, cognite_client: CogniteClient) -> None:
+        missing = [100, 101, 150]
+        df = frame(missing)
+
+        imputed = cognite_client.ai.time_series.impute_dataframe(df)
+
+        assert imputed.index.tolist() == df.index[missing].tolist()
+        filled = df.fillna(imputed.xs(0.5, axis=1, level=1))
+        assert not filled.isna().any().any()
