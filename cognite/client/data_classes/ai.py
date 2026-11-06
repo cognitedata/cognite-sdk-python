@@ -397,12 +397,13 @@ class ForecastResultList(CogniteResourceList[ForecastResult]):
         self.cohorts = cohorts or []
 
     @classmethod
-    def _load_response(cls, response: dict[str, Any]) -> Self:
-        metadata = response["metadata"]
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:
+        # The API puts the quantile levels and cohorts next to the items. Responses to the requests of one call
+        # have the same levels, and the cohorts are merged in the order the API lists them.
         return cls(
-            [ForecastResult._load(item) for item in response["items"]],
-            quantile_levels=metadata["quantileLevels"],
-            cohorts=metadata["cohorts"],
+            [ForecastResult._load(item) for response in responses for item in response["items"]],
+            quantile_levels=responses[0]["metadata"]["quantileLevels"],
+            cohorts=list(dict.fromkeys(c for response in responses for c in response["metadata"]["cohorts"])),
         )
 
     def get(self, label: str) -> ForecastResult | None:  # type: ignore[override]
@@ -494,12 +495,13 @@ class ImputeResultList(CogniteResourceList[ImputeResult]):
         self.cohorts = cohorts or []
 
     @classmethod
-    def _load_response(cls, response: dict[str, Any]) -> Self:
-        metadata = response["metadata"]
+    def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:
+        # The API puts the quantile levels and cohorts next to the items. Responses to the requests of one call
+        # have the same levels, and the cohorts are merged in the order the API lists them.
         return cls(
-            [ImputeResult._load(item) for item in response["items"]],
-            quantile_levels=metadata["quantileLevels"],
-            cohorts=metadata["cohorts"],
+            [ImputeResult._load(item) for response in responses for item in response["items"]],
+            quantile_levels=responses[0]["metadata"]["quantileLevels"],
+            cohorts=list(dict.fromkeys(c for response in responses for c in response["metadata"]["cohorts"])),
         )
 
     def get(self, label: str) -> ImputeResult | None:  # type: ignore[override]

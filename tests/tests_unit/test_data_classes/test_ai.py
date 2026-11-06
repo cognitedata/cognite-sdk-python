@@ -77,8 +77,24 @@ class TestForecastInputDatapoint:
 
 
 class TestForecastResultList:
+    def test_load_raw_api_response_merges_the_responses_of_several_requests(self) -> None:
+        def response(label: str, cohort: str | None) -> dict[str, Any]:
+            item = {"label": label, "forecast": [{"timestamp": 60_000, "quantiles": {"0.5": 1.0}}]}
+            return {
+                "items": [item | ({"cohort": cohort} if cohort else {})],
+                "metadata": {"quantileLevels": [0.5], "cohorts": [cohort] if cohort else []},
+            }
+
+        res = ForecastResultList._load_raw_api_response(
+            [response("a", "train-b"), response("b", None), response("c", "train-a"), response("d", "train-b")]
+        )
+
+        assert [r.label for r in res] == ["a", "b", "c", "d"]
+        assert res.cohorts == ["train-b", "train-a"]
+        assert res.quantile_levels == [0.5]
+
     def test_load_response(self) -> None:
-        res = ForecastResultList._load_response(FORECAST_RESPONSE)
+        res = ForecastResultList._load_raw_api_response([FORECAST_RESPONSE])
 
         assert res.quantile_levels == [0.05, 0.5, 0.95]
         assert res.cohorts == ["compression-train-a"]
@@ -92,7 +108,7 @@ class TestForecastResultList:
     @pytest.mark.dsl
     def test_to_pandas_has_datetime_index_and_label_quantile_columns(self) -> None:
         pd = local_import("pandas")
-        df = ForecastResultList._load_response(FORECAST_RESPONSE).to_pandas(quantile_levels=None)
+        df = ForecastResultList._load_raw_api_response([FORECAST_RESPONSE]).to_pandas(quantile_levels=None)
 
         assert isinstance(df.index, pd.DatetimeIndex)
         assert list(df.columns) == [(label, q) for label in ["23-PT-1101", "24-TT-3001"] for q in [0.05, 0.5, 0.95]]
@@ -102,7 +118,7 @@ class TestForecastResultList:
 
     @pytest.mark.dsl
     def test_to_pandas_has_the_median_by_default_and_the_requested_levels_otherwise(self) -> None:
-        res = ForecastResultList._load_response(FORECAST_RESPONSE)
+        res = ForecastResultList._load_raw_api_response([FORECAST_RESPONSE])
         single = res.get(label="23-PT-1101")
         assert single is not None
 
@@ -114,7 +130,7 @@ class TestForecastResultList:
 
     @pytest.mark.dsl
     def test_notebook_view_shows_the_median_only(self) -> None:
-        res = ForecastResultList._load_response(FORECAST_RESPONSE)
+        res = ForecastResultList._load_raw_api_response([FORECAST_RESPONSE])
         single = res.get(label="23-PT-1101")
         assert single is not None
         for html in (res._repr_html_(), single._repr_html_()):
@@ -123,7 +139,7 @@ class TestForecastResultList:
 
     @pytest.mark.dsl
     def test_single_result_to_pandas(self) -> None:
-        result = ForecastResultList._load_response(FORECAST_RESPONSE).get(label="23-PT-1101")
+        result = ForecastResultList._load_raw_api_response([FORECAST_RESPONSE]).get(label="23-PT-1101")
         assert result is not None
         df = result.to_pandas(quantile_levels=None)
         assert list(df.columns) == [0.05, 0.5, 0.95]
@@ -133,7 +149,7 @@ class TestForecastResultList:
     def test_to_pandas_after_slice_or_dump_load_keeps_quantile_columns(self) -> None:
         pd = local_import("pandas")
         levels = [0.05, 0.5, 0.95]
-        res = ForecastResultList._load_response(FORECAST_RESPONSE)
+        res = ForecastResultList._load_raw_api_response([FORECAST_RESPONSE])
 
         sliced = res[:1].to_pandas(quantile_levels=None)
         assert list(sliced.columns) == [("23-PT-1101", q) for q in levels]
@@ -162,7 +178,7 @@ class TestImputeResultList:
             ],
             "metadata": {"quantileLevels": [0.5], "cohorts": []},
         }
-        df = ImputeResultList._load_response(response).to_pandas(quantile_levels=None)
+        df = ImputeResultList._load_raw_api_response([response]).to_pandas(quantile_levels=None)
         assert list(df.columns) == [("a", 0.5), ("b", 0.5)]
 
     @pytest.mark.dsl
@@ -184,7 +200,7 @@ class TestImputeResultList:
             ],
             "metadata": {"quantileLevels": levels, "cohorts": []},
         }
-        res = ImputeResultList._load_response(response)
+        res = ImputeResultList._load_raw_api_response([response])
 
         sliced = res[:1].to_pandas(quantile_levels=None)
         assert list(sliced.columns) == [("a", q) for q in levels]
