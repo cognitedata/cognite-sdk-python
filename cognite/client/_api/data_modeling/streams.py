@@ -40,6 +40,11 @@ class StreamsAPI(APIClient):
     async def create(self, items: StreamWrite | Sequence[StreamWrite]) -> Stream | StreamList:
         """`Create streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/createStream>`_.
 
+        Note:
+            This method sends the alpha ``cdf-version`` header so that the alpha field
+            ``settings.limits.max_unique_properties_with_data`` is returned, see
+            :class:`~cognite.client.data_classes.data_modeling.streams.StreamLimitSettings`.
+
         Args:
             items (StreamWrite | Sequence[StreamWrite]): One or more streams to create.
 
@@ -73,6 +78,7 @@ class StreamsAPI(APIClient):
             list_cls=StreamList,
             resource_cls=Stream,
             input_resource_cls=StreamWrite,
+            headers=self._alpha_version_header(),
         )
 
     async def list(self) -> StreamList:
@@ -81,6 +87,10 @@ class StreamsAPI(APIClient):
         Note:
             There is no paging limit parameter: the endpoint returns all streams in the project
             (projects are expected to have few streams).
+
+            This method sends the alpha ``cdf-version`` header so that the alpha field
+            ``settings.limits.max_unique_properties_with_data`` is returned, see
+            :class:`~cognite.client.data_classes.data_modeling.streams.StreamLimitSettings`.
 
         Returns:
             StreamList: The streams in the project.
@@ -95,15 +105,23 @@ class StreamsAPI(APIClient):
                 >>> res = client.data_modeling.streams.list()
         """
         self._warning.warn()
-        return await self._list(method="GET", list_cls=StreamList, resource_cls=Stream)
+        return await self._list(
+            method="GET", list_cls=StreamList, resource_cls=Stream, headers=self._alpha_version_header()
+        )
 
     async def retrieve(self, external_id: str, include_statistics: bool | None = None) -> Stream | None:
         """`Retrieve a stream <https://api-docs.cognite.com/20230101/tag/Streams/operation/getStream>`_.
 
+        Note:
+            This method sends the alpha ``cdf-version`` header so that the alpha field
+            ``settings.limits.max_unique_properties_with_data`` is returned, see
+            :class:`~cognite.client.data_classes.data_modeling.streams.StreamLimitSettings`.
+
         Args:
             external_id (str): External ID of the stream to retrieve.
             include_statistics (bool | None): When ``True``, usage statistics will be returned together
-                with stream settings. Computing statistics can be expensive.
+                with stream settings, i.e. the ``consumed`` values of the stream limits, including the number
+                of unique properties with data. Computing statistics can be expensive.
 
         Returns:
             Stream | None: The stream metadata (and optionally statistics), or ``None`` if not found.
@@ -129,6 +147,7 @@ class StreamsAPI(APIClient):
             cls=Stream,
             identifier=Identifier(external_id),
             params={"includeStatistics": include_statistics} if include_statistics is not None else None,
+            headers=self._alpha_version_header(),
         )
 
     async def delete(self, external_id: str | SequenceNotStr[str]) -> None:
