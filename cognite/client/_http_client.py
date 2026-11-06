@@ -331,6 +331,8 @@ class AsyncHTTPClientWithRetry:
                 raise CogniteRequestError from err
 
             else:
+                # Note: this try-else only runs if the try-block did not raise anything. Exceptions raised here are
+                # thus not caught by the excepts above and CogniteHTTPStatusError can escape (as we want it to):
                 if accepts_json:
                     # Cache .json() return value in order to avoid redecoding JSON if called multiple times
                     response.json = functools.cache(response.json)  # type: ignore [method-assign]
