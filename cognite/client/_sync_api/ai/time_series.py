@@ -168,7 +168,11 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
         return run_sync(self.__async_client.ai.time_series.impute(time_series=time_series))
 
     def forecast_dataframe(
-        self, df: pd.DataFrame, cohort: str | Mapping[str, str] | None = None, missing: pd.DataFrame | None = None
+        self,
+        df: pd.DataFrame,
+        cohort: str | Mapping[str, str] | None = None,
+        missing: pd.DataFrame | None = None,
+        include_all_quantiles: bool = False,
     ) -> pd.DataFrame:
         """
         Forecast the next 512 points of every column of a DataFrame.
@@ -188,10 +192,12 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 cohort. Columns not in the mapping are forecast independently.
             missing (pd.DataFrame | None): Booleans with the same index and columns as `df`, True for each datapoint
                 to hide from the model. By default, none is marked.
+            include_all_quantiles (bool): Include every quantile level instead of only the median, as
+                `(column, quantile level)` columns.
 
         Returns:
             pd.DataFrame: The forecast, like `to_pandas` of the result: a timezone-naive DatetimeIndex in UTC, and the
-                median in one column for every column of `df`.
+                median in one column for every column of `df`, or every quantile level with `include_all_quantiles`.
 
         Raises:
             ValueError: If the index isn't a DatetimeIndex, a column name isn't a string, a column is repeated or not
@@ -225,10 +231,18 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 ... )
                 >>> median = forecast["23-PT-1101"]
         """
-        return run_sync(self.__async_client.ai.time_series.forecast_dataframe(df=df, cohort=cohort, missing=missing))
+        return run_sync(
+            self.__async_client.ai.time_series.forecast_dataframe(
+                df=df, cohort=cohort, missing=missing, include_all_quantiles=include_all_quantiles
+            )
+        )
 
     def impute_dataframe(
-        self, df: pd.DataFrame, cohort: str | Mapping[str, str] | None = None, missing: pd.DataFrame | None = None
+        self,
+        df: pd.DataFrame,
+        cohort: str | Mapping[str, str] | None = None,
+        missing: pd.DataFrame | None = None,
+        include_all_quantiles: bool = False,
     ) -> pd.DataFrame:
         """
         Predict the datapoints of a DataFrame that are marked missing.
@@ -248,11 +262,13 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 cohort. Columns not in the mapping are imputed independently.
             missing (pd.DataFrame | None): Booleans with the same index and columns as `df`, True for each datapoint
                 to predict. By default, none is marked, so nothing is predicted.
+            include_all_quantiles (bool): Include every quantile level instead of only the median, as
+                `(column, quantile level)` columns.
 
         Returns:
             pd.DataFrame: The predictions, like `to_pandas` of the result: one row per timestamp marked missing in
                 any column, a timezone-naive DatetimeIndex in UTC, and the median in one column for every column of
-                `df`.
+                `df`, or every quantile level with `include_all_quantiles`.
 
         Raises:
             ValueError: If the index isn't a DatetimeIndex, a column name isn't a string, a column is repeated or not
@@ -276,4 +292,8 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 >>> imputed = client.ai.time_series.impute_dataframe(df, missing=df.isna())
                 >>> filled = df.fillna(imputed)  # doctest: +SKIP
         """
-        return run_sync(self.__async_client.ai.time_series.impute_dataframe(df=df, cohort=cohort, missing=missing))
+        return run_sync(
+            self.__async_client.ai.time_series.impute_dataframe(
+                df=df, cohort=cohort, missing=missing, include_all_quantiles=include_all_quantiles
+            )
+        )

@@ -192,6 +192,7 @@ class AITimeSeriesAPI(APIClient):
         df: pd.DataFrame,
         cohort: str | Mapping[str, str] | None = None,
         missing: pd.DataFrame | None = None,
+        include_all_quantiles: bool = False,
     ) -> pd.DataFrame:
         """Forecast the next 512 points of every column of a DataFrame.
 
@@ -210,10 +211,12 @@ class AITimeSeriesAPI(APIClient):
                 cohort. Columns not in the mapping are forecast independently.
             missing (pd.DataFrame | None): Booleans with the same index and columns as `df`, True for each datapoint
                 to hide from the model. By default, none is marked.
+            include_all_quantiles (bool): Include every quantile level instead of only the median, as
+                `(column, quantile level)` columns.
 
         Returns:
             pd.DataFrame: The forecast, like `to_pandas` of the result: a timezone-naive DatetimeIndex in UTC, and the
-                median in one column for every column of `df`.
+                median in one column for every column of `df`, or every quantile level with `include_all_quantiles`.
 
         Raises:
             ValueError: If the index isn't a DatetimeIndex, a column name isn't a string, a column is repeated or not
@@ -248,13 +251,14 @@ class AITimeSeriesAPI(APIClient):
                 >>> median = forecast["23-PT-1101"]
         """
         res = await self.forecast(_dataframe_to_input(df, cohort, missing))
-        return res.to_pandas()
+        return res.to_pandas(include_all_quantiles=include_all_quantiles)
 
     async def impute_dataframe(
         self,
         df: pd.DataFrame,
         cohort: str | Mapping[str, str] | None = None,
         missing: pd.DataFrame | None = None,
+        include_all_quantiles: bool = False,
     ) -> pd.DataFrame:
         """Predict the datapoints of a DataFrame that are marked missing.
 
@@ -273,11 +277,13 @@ class AITimeSeriesAPI(APIClient):
                 cohort. Columns not in the mapping are imputed independently.
             missing (pd.DataFrame | None): Booleans with the same index and columns as `df`, True for each datapoint
                 to predict. By default, none is marked, so nothing is predicted.
+            include_all_quantiles (bool): Include every quantile level instead of only the median, as
+                `(column, quantile level)` columns.
 
         Returns:
             pd.DataFrame: The predictions, like `to_pandas` of the result: one row per timestamp marked missing in
                 any column, a timezone-naive DatetimeIndex in UTC, and the median in one column for every column of
-                `df`.
+                `df`, or every quantile level with `include_all_quantiles`.
 
         Raises:
             ValueError: If the index isn't a DatetimeIndex, a column name isn't a string, a column is repeated or not
@@ -302,7 +308,7 @@ class AITimeSeriesAPI(APIClient):
                 >>> filled = df.fillna(imputed)  # doctest: +SKIP
         """
         res = await self.impute(_dataframe_to_input(df, cohort, missing))
-        return res.to_pandas()
+        return res.to_pandas(include_all_quantiles=include_all_quantiles)
 
     async def _forecast_or_impute(
         self, path: str, time_series: Sequence[ForecastInputTimeSeries], list_cls: type[T_ResultList]

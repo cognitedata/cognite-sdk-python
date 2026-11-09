@@ -331,6 +331,18 @@ class TestDataFrames:
         assert all("missing" not in point for point in sent)
         assert imputed.empty
 
+    def test_include_all_quantiles_returns_every_level(
+        self, cognite_client: CogniteClient, mock_forecast: HTTPXMock, mock_impute: HTTPXMock
+    ) -> None:
+        df = self.frame({"a": [1.0, math.nan, 3.0]})
+        every_level = [("a", q) for q in [0.05, 0.5, 0.95]]
+
+        forecast = cognite_client.ai.time_series.forecast_dataframe(df, include_all_quantiles=True)
+        imputed = cognite_client.ai.time_series.impute_dataframe(df, missing=df.isna(), include_all_quantiles=True)
+
+        assert list(forecast.columns) == every_level
+        assert list(imputed.columns) == every_level
+
     def test_a_single_cohort_applies_to_every_column(
         self, cognite_client: CogniteClient, mock_forecast: HTTPXMock
     ) -> None:
