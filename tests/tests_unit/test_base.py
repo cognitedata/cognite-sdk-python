@@ -33,6 +33,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.agents import Agent
+from cognite.client.data_classes.ai import ForecastResult, ImputeResult, QuantileDatapoint
 from cognite.client.data_classes.data_modeling import (
     EdgeListWithCursor,
     NodeListWithCursor,
@@ -410,6 +411,10 @@ class TestCogniteResource:
                     NumberHistogram,
                     TimeHistogram,
                     UniqueValues,
+                    # Their quantiles are a map keyed by quantile level, not an object that can gain fields:
+                    QuantileDatapoint,
+                    ForecastResult,
+                    ImputeResult,
                 },
             )
         ],
