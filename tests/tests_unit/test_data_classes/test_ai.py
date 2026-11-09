@@ -8,6 +8,7 @@ import pytest
 from cognite.client.data_classes.ai import (
     ForecastInputDatapoint,
     ForecastInputTimeSeries,
+    ForecastMetadata,
     ForecastResultList,
     ImputeResultList,
     QuantileDatapoint,
@@ -90,14 +91,33 @@ class TestForecastResultList:
         )
 
         assert [r.label for r in res] == ["a", "b", "c", "d"]
-        assert res.cohorts == ["train-b", "train-a"]
-        assert res.quantile_levels == [0.5]
+        assert res.metadata.cohorts == ["train-b", "train-a"]
+        assert res.metadata.quantile_levels == [0.5]
+
+    def test_dump_raw_returns_the_items_and_metadata_like_the_api(self) -> None:
+        res = ForecastResultList._load_raw_api_response([FORECAST_RESPONSE])
+
+        raw = res.dump_raw()
+
+        assert raw["metadata"] == FORECAST_RESPONSE["metadata"]
+        assert ForecastResultList._load_raw_api_response([raw]).dump_raw() == raw
+        assert res.dump_raw(camel_case=False)["metadata"] == {
+            "quantile_levels": [0.05, 0.5, 0.95],
+            "cohorts": ["compression-train-a"],
+        }
+
+    def test_list_built_from_results_alone_has_empty_metadata(self) -> None:
+        res = ForecastResultList._load_raw_api_response([FORECAST_RESPONSE])
+        empty = ForecastMetadata(quantile_levels=[], cohorts=[])
+
+        assert res[:1].metadata == empty
+        assert ForecastResultList.load(res.dump()).metadata == empty
 
     def test_load_response(self) -> None:
         res = ForecastResultList._load_raw_api_response([FORECAST_RESPONSE])
 
-        assert res.quantile_levels == [0.05, 0.5, 0.95]
-        assert res.cohorts == ["compression-train-a"]
+        assert res.metadata.quantile_levels == [0.05, 0.5, 0.95]
+        assert res.metadata.cohorts == ["compression-train-a"]
         first = res.get(label="23-PT-1101")
         assert first is not None
         assert first.cohort == "compression-train-a"

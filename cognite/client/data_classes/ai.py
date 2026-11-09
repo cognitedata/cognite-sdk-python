@@ -344,6 +344,23 @@ def _concat_columns(frames: dict[str, pd.DataFrame] | list[pd.DataFrame]) -> pd.
     return pd.concat(frames, axis=1)
 
 
+class ForecastMetadata(CogniteResource):
+    """The metadata of a forecast or impute response.
+
+    Args:
+        quantile_levels (list[float]): The quantile levels in every point's quantiles.
+        cohorts (list[str]): The distinct cohorts in the request. Time series without a cohort are not included.
+    """
+
+    def __init__(self, quantile_levels: list[float], cohorts: list[str]) -> None:
+        self.quantile_levels = quantile_levels
+        self.cohorts = cohorts
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        return cls(quantile_levels=resource["quantileLevels"], cohorts=resource["cohorts"])
+
+
 class ForecastResult(CogniteResource):
     """The forecast for one input series.
 
@@ -392,8 +409,8 @@ class ForecastResultList(CogniteResourceList[ForecastResult]):
 
     Args:
         resources (Sequence[ForecastResult]): One result per input series.
-        quantile_levels (list[float] | None): The quantile levels in every result.
-        cohorts (list[str] | None): The distinct cohorts in the request.
+        metadata (ForecastMetadata | None): The metadata of the response. Empty for a list built from results
+            alone, like a slice.
     """
 
     _RESOURCE = ForecastResult
@@ -401,22 +418,31 @@ class ForecastResultList(CogniteResourceList[ForecastResult]):
     def __init__(
         self,
         resources: Sequence[ForecastResult],
-        quantile_levels: list[float] | None = None,
-        cohorts: list[str] | None = None,
+        metadata: ForecastMetadata | None = None,
     ) -> None:
         super().__init__(resources)
-        self.quantile_levels = quantile_levels or []
-        self.cohorts = cohorts or []
+        self.metadata = metadata or ForecastMetadata(quantile_levels=[], cohorts=[])
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:
-        # The API puts the quantile levels and cohorts next to the items. Responses to the requests of one call
-        # have the same levels, and the cohorts are merged in the order the API lists them.
-        return cls(
-            [ForecastResult._load(item) for response in responses for item in response["items"]],
+        # Responses to the requests of one call have the same quantile levels, and their cohorts are merged in the
+        # order the API lists them.
+        metadata = ForecastMetadata(
             quantile_levels=responses[0]["metadata"]["quantileLevels"],
             cohorts=list(dict.fromkeys(c for response in responses for c in response["metadata"]["cohorts"])),
         )
+        return cls([ForecastResult._load(item) for response in responses for item in response["items"]], metadata)
+
+    def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the list the way the API returns it: the items, and the metadata.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+
+        Returns:
+            dict[str, Any]: The items and the metadata.
+        """
+        return {"items": self.dump(camel_case), "metadata": self.metadata.dump(camel_case)}
 
     def get(self, label: str) -> ForecastResult | None:  # type: ignore[override]
         """Get the result for an input series by its label (user-given).
@@ -441,7 +467,9 @@ class ForecastResultList(CogniteResourceList[ForecastResult]):
         """
         if include_all_quantiles:
             # Every series gets the same columns, even one without points.
-            return _concat_columns({r.label: _points_to_pandas(r.forecast, self.quantile_levels) for r in self.data})
+            return _concat_columns(
+                {r.label: _points_to_pandas(r.forecast, self.metadata.quantile_levels) for r in self.data}
+            )
         return _concat_columns([_median_to_pandas(r.label, r.forecast) for r in self.data])
 
 
@@ -493,8 +521,8 @@ class ImputeResultList(CogniteResourceList[ImputeResult]):
 
     Args:
         resources (Sequence[ImputeResult]): One result per input series.
-        quantile_levels (list[float] | None): The quantile levels in every result.
-        cohorts (list[str] | None): The distinct cohorts in the request.
+        metadata (ForecastMetadata | None): The metadata of the response. Empty for a list built from results
+            alone, like a slice.
     """
 
     _RESOURCE = ImputeResult
@@ -502,22 +530,31 @@ class ImputeResultList(CogniteResourceList[ImputeResult]):
     def __init__(
         self,
         resources: Sequence[ImputeResult],
-        quantile_levels: list[float] | None = None,
-        cohorts: list[str] | None = None,
+        metadata: ForecastMetadata | None = None,
     ) -> None:
         super().__init__(resources)
-        self.quantile_levels = quantile_levels or []
-        self.cohorts = cohorts or []
+        self.metadata = metadata or ForecastMetadata(quantile_levels=[], cohorts=[])
 
     @classmethod
     def _load_raw_api_response(cls, responses: list[dict[str, Any]]) -> Self:
-        # The API puts the quantile levels and cohorts next to the items. Responses to the requests of one call
-        # have the same levels, and the cohorts are merged in the order the API lists them.
-        return cls(
-            [ImputeResult._load(item) for response in responses for item in response["items"]],
+        # Responses to the requests of one call have the same quantile levels, and their cohorts are merged in the
+        # order the API lists them.
+        metadata = ForecastMetadata(
             quantile_levels=responses[0]["metadata"]["quantileLevels"],
             cohorts=list(dict.fromkeys(c for response in responses for c in response["metadata"]["cohorts"])),
         )
+        return cls([ImputeResult._load(item) for response in responses for item in response["items"]], metadata)
+
+    def dump_raw(self, camel_case: bool = True) -> dict[str, Any]:
+        """Dump the list the way the API returns it: the items, and the metadata.
+
+        Args:
+            camel_case (bool): Use camelCase for attribute names. Defaults to True.
+
+        Returns:
+            dict[str, Any]: The items and the metadata.
+        """
+        return {"items": self.dump(camel_case), "metadata": self.metadata.dump(camel_case)}
 
     def get(self, label: str) -> ImputeResult | None:  # type: ignore[override]
         """Get the result for an input series by its label.
@@ -544,5 +581,7 @@ class ImputeResultList(CogniteResourceList[ImputeResult]):
         """
         if include_all_quantiles:
             # Every series gets the same columns, even one without points.
-            return _concat_columns({r.label: _points_to_pandas(r.imputed, self.quantile_levels) for r in self.data})
+            return _concat_columns(
+                {r.label: _points_to_pandas(r.imputed, self.metadata.quantile_levels) for r in self.data}
+            )
         return _concat_columns([_median_to_pandas(r.label, r.imputed) for r in self.data])
