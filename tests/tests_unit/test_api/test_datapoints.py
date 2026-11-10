@@ -22,7 +22,12 @@ from pytest_httpx2 import HTTPXMock
 import cognite.client._api.datapoints_io as dps_io  # for mocking
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.datapoints_io import StateDatapointsPoster, _InsertDatapoint
-from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
+from cognite.client._proto.data_point_list_response_pb2 import (
+    TIMESERIES_TYPE_STRING,
+    DataPointListItem,
+    DataPointListResponse,
+)
+from cognite.client._proto.data_points_pb2 import StringAggregateDatapoint, StringAggregateDatapoints
 from cognite.client.data_classes import (
     Datapoint,
     Datapoints,
@@ -39,6 +44,7 @@ from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._time import datetime_to_ms
 from tests.utils import (
+    PANDAS_STR_DTYPE,
     PANDAS_TS_UNIT,
     get_or_raise,
     get_url,
@@ -450,6 +456,115 @@ class TestRetrieveWithGapFilling:
         items = [item for req in httpx2_mock.get_requests() for item in jsgz_load(req.content)["items"]]
         assert items
         assert all(item["fill"] == {"limit": "2h"} for item in items)
+
+
+STRING_AGGS = ["count", "count_bad", "duration_good", "interpolation", "step_interpolation"]
+
+
+@pytest.fixture
+def mock_string_aggregates(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    # The API omits interpolation in intervals before the first datapoint, which protobuf gives us as "".
+    # Counts are NaN when missing. The interpolated values are numeric-looking on purpose (must stay strings):
+    dps = [
+        StringAggregateDatapoint(timestamp=0, count=2, countBad=math.nan, durationGood=10),
+        StringAggregateDatapoint(
+            timestamp=10, count=math.nan, countBad=1, interpolation="1.5", stepInterpolation="1.5"
+        ),
+        StringAggregateDatapoint(
+            timestamp=20, count=1, countBad=math.nan, interpolation="abc", stepInterpolation="abc"
+        ),
+    ]
+    items = [
+        DataPointListItem(
+            id=i,
+            isString=True,
+            type=TIMESERIES_TYPE_STRING,
+            unitExternalId="length:m",
+            stringAggregateDatapoints=StringAggregateDatapoints(datapoints=dps),
+        )
+        for i in (1, 2)
+    ]
+    httpx2_mock.add_response(
+        method="POST",
+        url=get_url(async_client.time_series.data, "/timeseries/data/list"),
+        status_code=200,
+        content=DataPointListResponse(items=items).SerializeToString(),
+        is_reusable=True,
+    )
+    return httpx2_mock
+
+
+@pytest.mark.dsl
+class TestRetrieveStringAggregates:
+    # With a semaphore of 1, a single time series is fetched eagerly, while two use the chunking fetcher:
+    @pytest.mark.parametrize("ids", ([1], [1, 2]))
+    @pytest.mark.parametrize("use_numpy", (False, True))
+    @pytest.mark.usefixtures("mock_string_aggregates")
+    def test_retrieve(self, ids: list[int], use_numpy: bool, cognite_client: CogniteClient) -> None:
+        import numpy as np
+
+        retrieve: Any = (
+            cognite_client.time_series.data.retrieve_arrays if use_numpy else cognite_client.time_series.data.retrieve
+        )
+        with override_semaphore(1, target="datapoints"):
+            res = retrieve(id=ids, start=0, end=3000, granularity="1s", aggregates=STRING_AGGS)
+
+        for dps in res:
+            assert list(dps.interpolation) == list(dps.step_interpolation) == ["", "1.5", "abc"]
+            assert list(dps.count) == [2, 0, 1]
+            assert list(dps.count_bad) == [0, 1, 0]
+            assert list(dps.duration_good) == [10, 0, 0]
+            if use_numpy:
+                assert dps.interpolation.dtype == dps.step_interpolation.dtype == np.object_
+                assert dps.count.dtype == np.int64
+
+    @pytest.mark.usefixtures("mock_string_aggregates")
+    def test_retrieve_dataframe(self, cognite_client: CogniteClient) -> None:
+        df = cognite_client.time_series.data.retrieve_dataframe(
+            id=1, start=0, end=3000, granularity="1s", aggregates=STRING_AGGS, include_unit=True
+        )
+        # String time series have no physical unit for any aggregate:
+        assert df.columns.names == ["identifier", "aggregate"]
+        df = df.droplevel("identifier", axis=1)
+        assert df.columns.tolist() == sorted(STRING_AGGS)
+        assert df.dtypes.astype(str).tolist() == ["Int64", "Int64", "Int64", PANDAS_STR_DTYPE, PANDAS_STR_DTYPE]
+        assert df["interpolation"].tolist() == df["step_interpolation"].tolist() == ["", "1.5", "abc"]
+
+    @pytest.mark.parametrize("is_string, expected", [(True, ["1.5", "abc"]), (False, [1.5, 2.0])])
+    def test_load_datapoints_array(self, is_string: bool, expected: list) -> None:
+        values = ["1.5", "abc"] if is_string else [1.5, 2.0]
+        dps = DatapointsArray._load(
+            {
+                "id": 1,
+                "isString": is_string,
+                "isStep": False,
+                "type": "string" if is_string else "numeric",
+                "datapoints": [{"timestamp": i, "interpolation": v} for i, v in enumerate(values)],
+            }
+        )
+        assert dps.interpolation is not None
+        assert dps.interpolation.tolist() == expected
+
+    @pytest.mark.parametrize("use_numpy", (False, True))
+    def test_retrieve_empty(
+        self, use_numpy: bool, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
+        import numpy as np
+
+        item = DataPointListItem(id=1, isString=True, type=TIMESERIES_TYPE_STRING)
+        httpx2_mock.add_response(
+            method="POST",
+            url=get_url(async_client.time_series.data, "/timeseries/data/list"),
+            status_code=200,
+            content=DataPointListResponse(items=[item]).SerializeToString(),
+        )
+        retrieve: Any = (
+            cognite_client.time_series.data.retrieve_arrays if use_numpy else cognite_client.time_series.data.retrieve
+        )
+        dps = retrieve(id=1, start=0, end=3000, granularity="1s", aggregates=STRING_AGGS)
+        assert len(dps) == 0
+        if use_numpy:
+            assert dps.interpolation.dtype == dps.step_interpolation.dtype == np.object_
 
 
 class TestFetchAllDoesNotLeakTaskExceptions:
