@@ -1173,7 +1173,7 @@ class TestRetrieveStateDatapoints:
         # DatapointsArrayList.to_pandas() concatenates both to a shared index, thus necessarily adding a missing
         # row for the "good" array:
         df_from_arr_lst = arr_lst.to_pandas()
-        idx_expected = pd.to_datetime([1_700_000_000, 1_700_001_000, 1_700_002_000], unit="ms")
+        idx_expected = pd.to_datetime([1_700_000_000, 1_700_001_000, 1_700_002_000], unit="ms").as_unit(PANDAS_TS_UNIT)
         idx_expected.freq = pd.infer_freq(idx_expected)
         df_expected = pd.DataFrame(
             {

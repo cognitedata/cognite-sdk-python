@@ -38,10 +38,8 @@ def default_config() -> AsyncHTTPClientWithRetryConfig:
 URL = "https://example.com"
 
 
-def make_http_status_error(status_code: int) -> httpx2.HTTPStatusError:
-    request = httpx2.Request("GET", URL)
-    response = httpx2.Response(status_code=status_code, request=request)
-    return httpx2.HTTPStatusError(f"Error {status_code}", request=request, response=response)
+def make_error_response(status_code: int) -> httpx2.Response:
+    return httpx2.Response(status_code=status_code, request=httpx2.Request("GET", URL))
 
 
 @pytest.fixture
@@ -55,8 +53,8 @@ def connect_error() -> httpx2.ConnectError:
 
 
 @pytest.fixture
-def status_error_429() -> httpx2.HTTPStatusError:
-    return make_http_status_error(429)
+def response_429() -> httpx2.Response:
+    return make_error_response(429)
 
 
 @pytest.fixture
@@ -74,7 +72,7 @@ async def retry_http_client(
 
 class TestRetryTracker:
     def test_total_retries_exceeded(
-        self, default_config: AsyncHTTPClientWithRetryConfig, status_error_429: httpx2.HTTPStatusError
+        self, default_config: AsyncHTTPClientWithRetryConfig, response_429: httpx2.Response
     ) -> None:
         default_config._max_retries_total = 10
         rt = RetryTracker(URL, default_config)
@@ -84,16 +82,16 @@ class TestRetryTracker:
 
         assert rt.total == 12
         assert rt.should_retry_total is False
-        assert rt.should_retry_status_code(status_error_429) is False
+        assert rt.should_retry_status_code(response_429) is False
 
     def test_status_retries_exceeded(
-        self, default_config: AsyncHTTPClientWithRetryConfig, status_error_429: httpx2.HTTPStatusError
+        self, default_config: AsyncHTTPClientWithRetryConfig, response_429: httpx2.Response
     ) -> None:
         default_config._max_retries_status = 1
         rt = RetryTracker(URL, default_config)
         assert rt.should_retry_total is True
-        assert rt.should_retry_status_code(status_error_429) is True
-        assert rt.should_retry_status_code(status_error_429) is False
+        assert rt.should_retry_status_code(response_429) is True
+        assert rt.should_retry_status_code(response_429) is False
         assert rt.last_failed_reason is not None
         assert "429" in rt.last_failed_reason
 
@@ -119,17 +117,17 @@ class TestRetryTracker:
 
     def test_correct_retry_of_status(self, default_config: AsyncHTTPClientWithRetryConfig) -> None:
         rt = RetryTracker(URL, default_config)
-        assert rt.should_retry_status_code(make_http_status_error(500)) is False
+        assert rt.should_retry_status_code(make_error_response(500)) is False
         rt.config.status_codes_to_retry.add(500)
-        assert rt.should_retry_status_code(make_http_status_error(500)) is True
+        assert rt.should_retry_status_code(make_error_response(500)) is True
 
     def test_is_auto_retryable(self, default_config: AsyncHTTPClientWithRetryConfig) -> None:
         default_config._max_retries_status = 1
         rt = RetryTracker(URL, default_config)
 
         # 409 is not in the list of status codes to retry, but we set is_auto_retryable=True, which should override it
-        assert rt.should_retry_status_code(make_http_status_error(409), is_auto_retryable=True) is True
-        assert rt.should_retry_status_code(make_http_status_error(409), is_auto_retryable=False) is False
+        assert rt.should_retry_status_code(make_error_response(409), is_auto_retryable=True) is True
+        assert rt.should_retry_status_code(make_error_response(409), is_auto_retryable=False) is False
 
 
 class TestAsyncHTTPClientWithRetry:
@@ -174,6 +172,56 @@ class TestAsyncHTTPClientWithRetry:
 
         assert resp.status_code == 200
         assert len(httpx2_mock.get_requests()) == 2
+
+    async def test_stream_closes_failed_responses_before_retrying(
+        self,
+        retry_http_client: AsyncHTTPClientWithRetry,
+        httpx2_mock: HTTPXMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Streamed responses have unread bodies, so unless we close the failed ones, the pooled connection leaks
+        closed_status_codes: list[int] = []
+        original_aclose = httpx2.Response.aclose
+
+        async def spy_aclose(self: httpx2.Response) -> None:
+            closed_status_codes.append(self.status_code)
+            await original_aclose(self)
+
+        monkeypatch.setattr(httpx2.Response, "aclose", spy_aclose)
+        retry_header = {"cdf-is-auto-retryable": "true"}
+        httpx2_mock.add_response(method="GET", url=URL, status_code=409, headers=retry_header)
+        httpx2_mock.add_response(method="GET", url=URL, status_code=200)
+
+        async with retry_http_client.stream("GET", URL, semaphore=asyncio.BoundedSemaphore(1)) as resp:
+            assert resp.status_code == 200
+            # The failed response must already be closed while the successful one is still open:
+            assert closed_status_codes == [409]
+
+        assert closed_status_codes == [409, 200]
+
+    async def test_stream_closes_failed_responses_on_non_retryable_error(
+        self,
+        retry_http_client: AsyncHTTPClientWithRetry,
+        httpx2_mock: HTTPXMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        closed_status_codes: list[int] = []
+        original_aclose = httpx2.Response.aclose
+
+        async def spy_aclose(self: httpx2.Response) -> None:
+            closed_status_codes.append(self.status_code)
+            await original_aclose(self)
+
+        monkeypatch.setattr(httpx2.Response, "aclose", spy_aclose)
+        httpx2_mock.add_response(method="GET", url=URL, status_code=404, text="not found body")
+
+        with pytest.raises(CogniteHTTPStatusError) as exc_info:
+            async with retry_http_client.stream("GET", URL, semaphore=asyncio.BoundedSemaphore(1)):
+                pass
+
+        assert closed_status_codes == [404]
+        # The error body must still be readable by callers:
+        assert exc_info.value.response.text == "not found body"
 
 
 @pytest.fixture
