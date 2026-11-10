@@ -27,6 +27,7 @@ from cognite.client._proto.data_points_pb2 import (
     StringDatapoint,
 )
 from cognite.client.data_classes.data_modeling import NodeId
+from cognite.client.data_classes.datapoint_aggregates import _ObjectAggregateCamel
 from cognite.client.data_classes.datapoints import (
     DatapointsQuery,
     MaxDatapoint,
@@ -256,13 +257,17 @@ class DpsUnpackFns:
             # An aggregate is missing, fallback to slower `getattr`:
             return np.array([tuple(getattr(dp, agg, math.nan) for agg in aggregates) for dp in dps], dtype=np.float64)
 
+    # For string time series, these aggregates are strings:
+    interpolation: Callable[[AggregateDatapoint], str] = op.attrgetter("interpolation")
+    step_interpolation: Callable[[AggregateDatapoint], str] = op.attrgetter("stepInterpolation")
+
     @classmethod
     def extract_fn_for_object_agg(
         cls,
-        aggregate: Literal["minDatapoint", "maxDatapoint", "stateCount", "stateTransitions", "stateDuration"],
+        aggregate: _ObjectAggregateCamel,
         include_status: bool,
     ) -> Callable[
-        [AggregateDatapoint], MaxOrMinDatapoint | list[StateCount] | list[StateTransition] | list[StateDuration]
+        [AggregateDatapoint], MaxOrMinDatapoint | list[StateCount] | list[StateTransition] | list[StateDuration] | str
     ]:
         match aggregate, include_status:
             case "minDatapoint", False:
@@ -279,6 +284,10 @@ class DpsUnpackFns:
                 return cls.state_transitions
             case "stateDuration", _:
                 return cls.state_durations
+            case "interpolation", _:
+                return cls.interpolation
+            case "stepInterpolation", _:
+                return cls.step_interpolation
             case _:
                 raise ValueError(f"Unsupported {aggregate=} and/or {include_status=}")
 

@@ -36,6 +36,23 @@ OBJECT_AGGREGATES: frozenset[Literal["max_datapoint", "min_datapoint"]] = frozen
 _UNSUPPORTED_STATE_AGGS_CAMEL: frozenset[Literal["interpolation", "stepInterpolation"]] = frozenset(
     {"interpolation", "stepInterpolation"}
 )
+# For string time series, these aggregates return the (string) value of the time series, not a number:
+_STRING_VALUED_AGGS_CAMEL: frozenset[Literal["interpolation", "stepInterpolation"]] = frozenset(
+    {"interpolation", "stepInterpolation"}
+)
+STRING_VALUED_AGGS: frozenset[Literal["interpolation", "step_interpolation"]] = frozenset(
+    {"interpolation", "step_interpolation"}
+)
+# Aggregates that are not unpacked as numbers (stored per row as Python objects):
+_ObjectAggregateCamel: typing.TypeAlias = Literal[
+    "minDatapoint",
+    "maxDatapoint",
+    "stateCount",
+    "stateTransitions",
+    "stateDuration",
+    "interpolation",
+    "stepInterpolation",
+]
 # These are per-distinct-state breakdown aggregates (one entry per state, per interval):
 _STATE_AGGS_CAMEL: frozenset[Literal["stateCount", "stateTransitions", "stateDuration"]] = frozenset(
     {"stateCount", "stateTransitions", "stateDuration"}
