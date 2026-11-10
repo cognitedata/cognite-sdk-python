@@ -1048,9 +1048,10 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         # Developer note here: If you ask for datapoints to be returned in JSON, you get `count` as an integer.
         # Nice. However, when using protobuf, you get `double` xD
         self.all_aggregates = aggs_camel_case
-        # 'object_aggs' covers the classic "object" aggregates (min_datapoint/max_datapoint, one object per row),
-        # the state-only aggregates (state_count/state_transitions/state_duration, one *list* of objects per row)
-        # and, for string time series, the string-valued aggregates (interpolation/step_interpolation):
+        # In 'object_aggs' we store the following:
+        #  - Classic "object" aggregates, min_datapoint and max_datapoint, one object per row
+        #  - State-only aggregates, state_count, state_transitions and state_duration, one *list* of objects per row
+        #  - String-valued aggregates for string time series, interpolation and step_interpolation, one object per row
         object_aggs: frozenset[_ObjectAggregateCamel] = _OBJECT_AGGREGATES_CAMEL | _STATE_AGGS_CAMEL
         if is_string:
             object_aggs |= _STRING_VALUED_AGGS_CAMEL
