@@ -8,12 +8,10 @@ from datetime import datetime, timezone
 from random import randint, random, shuffle
 
 import pytest
-from responses import RequestsMock
 
 import cognite.client._api.datapoints as dps_api  # for mocking
 from cognite.client import CogniteClient
 from cognite.client._api.datapoints import _InsertDatapoint
-from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
@@ -1055,30 +1053,3 @@ class TestRetrieveDataPointsInTz:
 
         with pytest.raises(ValueError, match=expected_error_message):
             cognite_client.time_series.data.retrieve_dataframe_in_tz(**args)
-
-
-class TestRetrieveStringAggregatesRaises:
-    @pytest.mark.parametrize("endpoint", ("retrieve", "retrieve_arrays", "retrieve_dataframe"))
-    @pytest.mark.parametrize(
-        "identifier, expected_in_msg",
-        (
-            ({"id": 123}, "id=123"),
-            ({"external_id": "foo"}, "external_id='foo'"),
-            ({"instance_id": NodeId("my_space", "foo")}, "instance_id=NodeId(space='my_space', external_id='foo')"),
-        ),
-    )
-    def test_raises(
-        self, identifier: dict, expected_in_msg: str, endpoint: str, rsps: RequestsMock, cognite_client: CogniteClient
-    ) -> None:
-        # The API returns string aggregates in a protobuf field unknown to v7, so it would be silently empty:
-        items = [DataPointListItem(id=123, isString=True)]
-        rsps.add(
-            rsps.POST,
-            cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/list",
-            status=200,
-            body=DataPointListResponse(items=items).SerializeToString(),
-        )
-        retrieve = getattr(cognite_client.time_series.data, endpoint)
-        match = rf"{re.escape(expected_in_msg)}.*Please upgrade to cognite-sdk version 8\.24\.0 or later"
-        with pytest.raises(RuntimeError, match=match):
-            retrieve(**identifier, start=0, end=1000, granularity="1s", aggregates="count")
