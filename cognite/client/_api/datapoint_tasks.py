@@ -30,6 +30,7 @@ from cognite.client._proto.data_points_pb2 import (
     NumericDatapoint,
     StringDatapoint,
 )
+from cognite.client._version import __version__
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import (
     _INT_AGGREGATES,
@@ -1112,6 +1113,16 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
     @cached_property
     def offset_next(self) -> int:
         return granularity_to_ms(cast(str, self.query.granularity))
+
+    def _store_ts_info(self, res: DataPointListItem) -> None:
+        if res.isString:
+            # The API now supports (some) aggregates for string time series, but the protobuf definitions
+            # in this version of the SDK do not, so the result would silently be empty:
+            raise RuntimeError(
+                f"Aggregates for string time series (id={res.id}) are not supported in this version "
+                f"of the SDK ({__version__}). Please upgrade to cognite-sdk version 8.24.0 or later."
+            )
+        super()._store_ts_info(res)
 
     def _set_aggregate_vars(self, aggs_camel_case: list[str], use_numpy: bool, include_status: bool) -> None:
         # Developer note here: If you ask for datapoints to be returned in JSON, you get `count` as an integer.

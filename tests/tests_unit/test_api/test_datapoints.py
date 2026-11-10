@@ -8,10 +8,12 @@ from datetime import datetime, timezone
 from random import randint, random, shuffle
 
 import pytest
+from responses import RequestsMock
 
 import cognite.client._api.datapoints as dps_api  # for mocking
 from cognite.client import CogniteClient
 from cognite.client._api.datapoints import _InsertDatapoint
+from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
 from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
@@ -1053,3 +1055,20 @@ class TestRetrieveDataPointsInTz:
 
         with pytest.raises(ValueError, match=expected_error_message):
             cognite_client.time_series.data.retrieve_dataframe_in_tz(**args)
+
+
+class TestRetrieveStringAggregatesRaises:
+    @pytest.mark.parametrize("n_ts", (1, 2))
+    @pytest.mark.parametrize("endpoint", ("retrieve", "retrieve_arrays", "retrieve_dataframe"))
+    def test_raises(self, n_ts: int, endpoint: str, rsps: RequestsMock, cognite_client: CogniteClient) -> None:
+        # The API returns string aggregates in a protobuf field unknown to v7, so it would be silently empty:
+        items = [DataPointListItem(id=i, isString=True) for i in range(1, n_ts + 1)]
+        rsps.add(
+            rsps.POST,
+            cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/list",
+            status=200,
+            body=DataPointListResponse(items=items).SerializeToString(),
+        )
+        retrieve = getattr(cognite_client.time_series.data, endpoint)
+        with pytest.raises(RuntimeError, match=r"Please upgrade to cognite-sdk version 8\.24\.0 or later"):
+            retrieve(id=list(range(1, n_ts + 1)), start=0, end=1000, granularity="1s", aggregates="count")
