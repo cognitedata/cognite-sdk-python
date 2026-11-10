@@ -1118,9 +1118,10 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
         if res.isString:
             # The API now supports (some) aggregates for string time series, but the protobuf definitions
             # in this version of the SDK do not, so the result would silently be empty:
+            arg_name, value = self.query.identifier.as_tuple(camel_case=False)
             raise RuntimeError(
-                f"Aggregates for string time series (id={res.id}) are not supported in this version "
-                f"of the SDK ({__version__}). Please upgrade to cognite-sdk version 8.24.0 or later."
+                f"Aggregates for string time series ({arg_name}={value!r}) are not supported in this version of the SDK"
+                f"({__version__}). Please upgrade to cognite-sdk version 8.24.0 or later."
             )
         super()._store_ts_info(res)
 

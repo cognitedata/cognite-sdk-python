@@ -1058,11 +1058,20 @@ class TestRetrieveDataPointsInTz:
 
 
 class TestRetrieveStringAggregatesRaises:
-    @pytest.mark.parametrize("n_ts", (1, 2))
     @pytest.mark.parametrize("endpoint", ("retrieve", "retrieve_arrays", "retrieve_dataframe"))
-    def test_raises(self, n_ts: int, endpoint: str, rsps: RequestsMock, cognite_client: CogniteClient) -> None:
+    @pytest.mark.parametrize(
+        "identifier, expected_in_msg",
+        (
+            ({"id": 123}, "id=123"),
+            ({"external_id": "foo"}, "external_id='foo'"),
+            ({"instance_id": NodeId("my_space", "foo")}, "instance_id=NodeId(space='my_space', external_id='foo')"),
+        ),
+    )
+    def test_raises(
+        self, identifier: dict, expected_in_msg: str, endpoint: str, rsps: RequestsMock, cognite_client: CogniteClient
+    ) -> None:
         # The API returns string aggregates in a protobuf field unknown to v7, so it would be silently empty:
-        items = [DataPointListItem(id=i, isString=True) for i in range(1, n_ts + 1)]
+        items = [DataPointListItem(id=123, isString=True)]
         rsps.add(
             rsps.POST,
             cognite_client.time_series.data._get_base_url_with_base_path() + "/timeseries/data/list",
@@ -1070,5 +1079,6 @@ class TestRetrieveStringAggregatesRaises:
             body=DataPointListResponse(items=items).SerializeToString(),
         )
         retrieve = getattr(cognite_client.time_series.data, endpoint)
-        with pytest.raises(RuntimeError, match=r"Please upgrade to cognite-sdk version 8\.24\.0 or later"):
-            retrieve(id=list(range(1, n_ts + 1)), start=0, end=1000, granularity="1s", aggregates="count")
+        match = rf"{re.escape(expected_in_msg)}.*Please upgrade to cognite-sdk version 8\.24\.0 or later"
+        with pytest.raises(RuntimeError, match=match):
+            retrieve(**identifier, start=0, end=1000, granularity="1s", aggregates="count")
