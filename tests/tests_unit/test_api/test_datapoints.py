@@ -883,7 +883,7 @@ class TestPandasIntegration:
             type="numeric",
             timestamp=[1, 2, 3],
             average=[2, 3, 4],
-            step_interpolation=[3, 4, 5],
+            step_interpolation=[3.0, 4.0, 5.0],
         )
         expected_df = pd.DataFrame(
             # Since ID is not unique, we use stand-in column names initially, then replace:
@@ -923,7 +923,7 @@ class TestPandasIntegration:
             external_id="abc",
             timestamp=[1, 2, 3],
             average=[2, 3, 4],
-            step_interpolation=[3, 4, 5],
+            step_interpolation=[3.0, 4.0, 5.0],
         )
         expected_df = pd.DataFrame(
             {"abc": [2, 3, 4.0], "also-abc": [3, 4, 5.0]},
@@ -983,7 +983,7 @@ class TestPandasIntegration:
             type="numeric",
             timestamp=[1, 2, 3],
             average=[2, 3, 4],
-            step_interpolation=[3, 4, 5],
+            step_interpolation=[3.0, 4.0, 5.0],
         )
         d2 = Datapoints(
             id=0,
@@ -993,7 +993,7 @@ class TestPandasIntegration:
             external_id="foo",
             timestamp=[1, 2, 3],
             count=[2, 3, 4],
-            step_interpolation=[3, 4, 5],
+            step_interpolation=[3.0, 4.0, 5.0],
         )
         d3 = Datapoints(id=3, is_string=False, is_step=False, type="numeric", timestamp=[1, 3, 4], value=[1, 3, 4.0])
         dps_list = DatapointsList([d1, d2, d3])
