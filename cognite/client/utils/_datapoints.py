@@ -62,6 +62,10 @@ RawDatapointValue = float | str | tuple[int, str | None]
 DatapointsId = int | DatapointsQuery | Sequence[int | DatapointsQuery]
 DatapointsExternalId = str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]
 DatapointsInstanceId = NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]
+ObjectAggUnpackFn: TypeAlias = Callable[
+    [AggregateDatapoint],
+    MaxOrMinDatapoint | list[StateCount] | list[StateTransition] | list[StateDuration] | str,
+]
 
 _PROTO_TYPE_TO_STR: dict[TimeSeriesType, Literal["numeric", "string", "state", "unspecified"]] = {
     TIMESERIES_TYPE_UNSPECIFIED: "unspecified",  # 0
@@ -266,9 +270,17 @@ class DpsUnpackFns:
         cls,
         aggregate: _ObjectAggregateCamel,
         include_status: bool,
-    ) -> Callable[
-        [AggregateDatapoint], MaxOrMinDatapoint | list[StateCount] | list[StateTransition] | list[StateDuration] | str
-    ]:
+    ) -> ObjectAggUnpackFn:
+        status_independent: dict[str, ObjectAggUnpackFn] = {
+            "interpolation": cls.interpolation,
+            "stepInterpolation": cls.step_interpolation,
+            "stateCount": cls.state_counts,
+            "stateTransitions": cls.state_transitions,
+            "stateDuration": cls.state_durations,
+        }
+        if fn := status_independent.get(aggregate):
+            return fn
+
         match aggregate, include_status:
             case "minDatapoint", False:
                 return cls.min_datapoint
@@ -278,16 +290,6 @@ class DpsUnpackFns:
                 return cls.min_datapoint_with_status
             case "maxDatapoint", True:
                 return cls.max_datapoint_with_status
-            case "stateCount", _:
-                return cls.state_counts
-            case "stateTransitions", _:
-                return cls.state_transitions
-            case "stateDuration", _:
-                return cls.state_durations
-            case "interpolation", _:
-                return cls.interpolation
-            case "stepInterpolation", _:
-                return cls.step_interpolation
             case _:
                 raise ValueError(f"Unsupported {aggregate=} and/or {include_status=}")
 
