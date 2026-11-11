@@ -56,6 +56,9 @@ class CogniteProjectAccessError(CogniteException):
         except Exception:
             return None
 
+    def __repr__(self) -> str:
+        return str(self)
+
     def __str__(self) -> str:
         msg = (
             f"You don't have access to the requested CDF project={self.project!r}, reason: Unauthorized. "
@@ -239,6 +242,9 @@ class CogniteAPIError(CogniteMultiException):
         self.duplicated = duplicated
         self.extra = extra
         super().__init__(successful, failed, unknown, skipped)
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def __str__(self) -> str:
         msg = self.message
