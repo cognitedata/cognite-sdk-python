@@ -1139,8 +1139,8 @@ class DatapointsArray(CogniteResource):
                     array_by_attr[attr] = np.array(values, dtype="datetime64[ms]").astype("datetime64[ns]")
                 elif attr in _INT_AGGREGATES_CAMEL:
                     array_by_attr[attr] = np.array(values, dtype=np.int64)
-                elif dps_dct["isString"] and attr in _STRING_VALUED_AGGS_CAMEL:
-                    # Must not try float first, since e.g. "123" would silently be converted:
+                elif dps_dct["isString"] and (attr == "value" or attr in _STRING_VALUED_AGGS_CAMEL):
+                    # Must not try float first, since e.g. "123" or "nan" would silently be converted:
                     array_by_attr[attr] = np.array(values, dtype=np.object_)
                 else:
                     try:
