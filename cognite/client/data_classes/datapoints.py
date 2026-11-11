@@ -27,6 +27,7 @@ from cognite.client.data_classes._base import (
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
+    _STRING_VALUED_AGGS_CAMEL,
     ALL_SORTED_DP_AGGS,
     Aggregate,
 )
@@ -805,8 +806,8 @@ class Datapoint(CogniteResource):
         min_datapoint (MinDatapoint | MinDatapointWithStatus | None): Objects with the minimum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
         count (int | None): The number of raw datapoints in the aggregate interval.
         sum (float | None): The sum of the raw datapoints in the aggregate interval.
-        interpolation (float | None): The interpolated value at the beginning of the aggregate interval.
-        step_interpolation (float | None): The interpolated value at the beginning of the aggregate interval using stepwise interpretation.
+        interpolation (float | str | None): The interpolated value at the beginning of the aggregate interval. For string time series, this is a string.
+        step_interpolation (float | str | None): The interpolated value at the beginning of the aggregate interval using stepwise interpretation. For string time series, this is a string.
         continuous_variance (float | None): The variance of the interpolated underlying function.
         discrete_variance (float | None): The variance of the datapoint values.
         total_variation (float | None): The total variation of the interpolated underlying function.
@@ -837,8 +838,8 @@ class Datapoint(CogniteResource):
         min_datapoint: MinDatapoint | MinDatapointWithStatus | None = None,
         count: int | None = None,
         sum: float | None = None,
-        interpolation: float | None = None,
-        step_interpolation: float | None = None,
+        interpolation: float | str | None = None,
+        step_interpolation: float | str | None = None,
         continuous_variance: float | None = None,
         discrete_variance: float | None = None,
         total_variation: float | None = None,
@@ -1031,8 +1032,8 @@ class DatapointsArray(CogniteResource):
         min_datapoint: NumpyObjArray | None = None,
         count: NumpyInt64Array | None = None,
         sum: NumpyFloat64Array | None = None,
-        interpolation: NumpyFloat64Array | None = None,
-        step_interpolation: NumpyFloat64Array | None = None,
+        interpolation: NumpyFloat64Array | NumpyObjArray | None = None,
+        step_interpolation: NumpyFloat64Array | NumpyObjArray | None = None,
         continuous_variance: NumpyFloat64Array | None = None,
         discrete_variance: NumpyFloat64Array | None = None,
         total_variation: NumpyFloat64Array | None = None,
@@ -1138,6 +1139,9 @@ class DatapointsArray(CogniteResource):
                     array_by_attr[attr] = np.array(values, dtype="datetime64[ms]").astype("datetime64[ns]")
                 elif attr in _INT_AGGREGATES_CAMEL:
                     array_by_attr[attr] = np.array(values, dtype=np.int64)
+                elif dps_dct["isString"] and attr in _STRING_VALUED_AGGS_CAMEL:
+                    # Must not try float first, since e.g. "123" would silently be converted:
+                    array_by_attr[attr] = np.array(values, dtype=np.object_)
                 else:
                     try:
                         array_by_attr[attr] = np.array(values, dtype=np.float64)
@@ -1424,8 +1428,8 @@ class Datapoints(CogniteResource):
         min_datapoint (list[MinDatapoint] | list[MinDatapointWithStatus] | None): Objects with the minimum values and their timestamps in the aggregate intervals, optionally including status codes and symbols.
         count (list[int] | None): The number of raw datapoints per aggregate interval.
         sum (list[float] | None): The sum of the raw datapoints per aggregate interval.
-        interpolation (list[float] | None): The interpolated values at the beginning of each the aggregate interval.
-        step_interpolation (list[float] | None): The interpolated values at the beginning of each the aggregate interval using stepwise interpretation.
+        interpolation (list[float] | list[str] | None): The interpolated values at the beginning of each the aggregate interval. For string time series, these are strings.
+        step_interpolation (list[float] | list[str] | None): The interpolated values at the beginning of each the aggregate interval using stepwise interpretation. For string time series, these are strings.
         continuous_variance (list[float] | None): The variance of the interpolated underlying function.
         discrete_variance (list[float] | None): The variance of the datapoint values.
         total_variation (list[float] | None): The total variation of the interpolated underlying function.
@@ -1465,8 +1469,8 @@ class Datapoints(CogniteResource):
         min_datapoint: list[MinDatapoint] | list[MinDatapointWithStatus] | None = None,
         count: list[int] | None = None,
         sum: list[float] | None = None,
-        interpolation: list[float] | None = None,
-        step_interpolation: list[float] | None = None,
+        interpolation: list[float] | list[str] | None = None,
+        step_interpolation: list[float] | list[str] | None = None,
         continuous_variance: list[float] | None = None,
         discrete_variance: list[float] | None = None,
         total_variation: list[float] | None = None,
