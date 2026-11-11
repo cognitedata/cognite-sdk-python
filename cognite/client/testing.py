@@ -54,6 +54,7 @@ from cognite.client._api.iam.sessions import SessionsAPI
 from cognite.client._api.iam.token import TokenAPI
 from cognite.client._api.integrations import IntegrationsAPI
 from cognite.client._api.integrations.errors import IntegrationErrorsAPI
+from cognite.client._api.integrations.history import IntegrationHistoryAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.limits import LimitsAPI
 from cognite.client._api.metering import MeteringAPI
@@ -146,6 +147,7 @@ from cognite.client._sync_api.iam.sessions import SyncSessionsAPI
 from cognite.client._sync_api.iam.token import SyncTokenAPI
 from cognite.client._sync_api.integrations import SyncIntegrationsAPI
 from cognite.client._sync_api.integrations.errors import SyncIntegrationErrorsAPI
+from cognite.client._sync_api.integrations.history import SyncIntegrationHistoryAPI
 from cognite.client._sync_api.labels import SyncLabelsAPI
 from cognite.client._sync_api.limits import SyncLimitsAPI
 from cognite.client._sync_api.metering import SyncMeteringAPI
@@ -344,7 +346,13 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         flip_spec_set_on(self.iam)
 
         integrations_errors = create_autospec(IntegrationErrorsAPI, instance=True, spec_set=True)
-        self.integrations = create_autospec(IntegrationsAPI, instance=True, errors=integrations_errors)
+        integrations_history = create_autospec(IntegrationHistoryAPI, instance=True, spec_set=True)
+        self.integrations = create_autospec(
+            IntegrationsAPI,
+            instance=True,
+            errors=integrations_errors,
+            history=integrations_history,
+        )
         flip_spec_set_on(self.integrations)
 
         self.labels = create_autospec(LabelsAPI, instance=True, spec_set=True)
@@ -560,7 +568,13 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         flip_spec_set_on(self.iam)
 
         integrations_errors = create_autospec(SyncIntegrationErrorsAPI, instance=True, spec_set=True)
-        self.integrations = create_autospec(SyncIntegrationsAPI, instance=True, errors=integrations_errors)
+        integrations_history = create_autospec(SyncIntegrationHistoryAPI, instance=True, spec_set=True)
+        self.integrations = create_autospec(
+            SyncIntegrationsAPI,
+            instance=True,
+            errors=integrations_errors,
+            history=integrations_history,
+        )
         flip_spec_set_on(self.integrations)
 
         self.labels = create_autospec(SyncLabelsAPI, instance=True, spec_set=True)

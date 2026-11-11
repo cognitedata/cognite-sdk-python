@@ -447,6 +447,12 @@ class FakeCogniteResourceGenerator:
                 # This DatapointsArray will be a [value, status_code, status_symbol]:
                 for aggregate in ALL_SORTED_DP_AGGS:
                     keyword_arguments.pop(aggregate, None)
+                if "value" in keyword_arguments:
+                    # The values of a string time series must be strings (numeric-looking is on purpose, as
+                    # these must not be converted to floats when loading):
+                    import numpy as np
+
+                    keyword_arguments["value"] = np.array(list(map(str, keyword_arguments["value"])), dtype=np.object_)
             else:
                 for raw in ["value", "status_code", "status_symbol", "min_datapoint", "max_datapoint"]:
                     keyword_arguments.pop(raw, None)

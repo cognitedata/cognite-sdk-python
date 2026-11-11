@@ -18,6 +18,7 @@ from cognite.client.data_classes.datapoint_aggregates import (
     _STATE_AGGS_SNAKE,
     INT_AGGREGATES,
     OBJECT_AGGREGATES,
+    STRING_VALUED_AGGS,
 )
 from cognite.client.exceptions import CogniteImportError
 from cognite.client.utils._importing import local_import
@@ -442,6 +443,10 @@ class _DpsColumnInfo:
         elif self.aggregate in OBJECT_AGGREGATES:
             return np.array(self.data, dtype=np.object_)
 
+        elif self.is_string and self.aggregate in STRING_VALUED_AGGS:
+            # Same as for raw string datapoints: pandas infers 'object' (v2) or 'str' (v3):
+            return np.array(self.data, dtype=np.object_)
+
         elif self.aggregate in INT_AGGREGATES:
             return ensure_int_numpy(np.array(self.data, dtype=np.float64))
         else:
@@ -515,9 +520,9 @@ def _extract_raw_column_info(
 
 def get_unit_for_aggregate(dps: Datapoints | DatapointsArray, aggregate: str) -> str | None:
     # We show physical unit if the aggregate somewhat makes sense (e.g. average, but also (..)_variance).
-    # State time series have no notion of a physical unit for any of their aggregates (e.g. 'interpolation'
+    # State and string time series have no notion of a physical unit for any of their aggregates (e.g. 'interpolation'
     # is not well-defined for a discrete state), so we never show unit for these, regardless of the aggregate:
-    if dps.type == "state" or aggregate not in _AGGREGATES_WITH_UNIT:
+    if dps.type == "state" or dps.is_string or aggregate not in _AGGREGATES_WITH_UNIT:
         return None
     # Note the '... or None' is there because the API returns empty string when missing for some reason:
     return dps.unit_external_id or None
@@ -531,6 +536,7 @@ def _extract_aggregate_column_info_from_dps(
         _DpsColumnInfo(
             identifier,
             data=getattr(dps, agg),
+            is_string=dps.is_string,
             is_array=is_array,
             aggregate=agg,
             granularity=dps.granularity,

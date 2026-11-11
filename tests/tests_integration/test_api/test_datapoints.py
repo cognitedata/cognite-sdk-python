@@ -82,6 +82,7 @@ from cognite.client.utils._time import (
 )
 from cognite.client.utils.useful_types import SequenceNotStr
 from tests.utils import (
+    PANDAS_STR_DTYPE,
     PANDAS_TS_UNIT,
     get_or_raise,
     override_semaphore,
@@ -1173,7 +1174,7 @@ class TestRetrieveStateDatapoints:
         # DatapointsArrayList.to_pandas() concatenates both to a shared index, thus necessarily adding a missing
         # row for the "good" array:
         df_from_arr_lst = arr_lst.to_pandas()
-        idx_expected = pd.to_datetime([1_700_000_000, 1_700_001_000, 1_700_002_000], unit="ms")
+        idx_expected = pd.to_datetime([1_700_000_000, 1_700_001_000, 1_700_002_000], unit="ms").as_unit(PANDAS_TS_UNIT)
         idx_expected.freq = pd.infer_freq(idx_expected)
         df_expected = pd.DataFrame(
             {
@@ -2824,43 +2825,107 @@ class TestRetrieveAggregateDatapointsAPI:
                         aligned_start, _ = align_start_and_end_for_granularity(start, end, gran)
                         assert first_ts == aligned_start
 
-    @pytest.mark.parametrize(
-        "concurrency_limit, n_ts, mock_out_eager_or_chunk",
-        [
-            (1, 1, "ChunkingDpsFetcher"),
-            (5, 1, "ChunkingDpsFetcher"),
-            (5, 5, "ChunkingDpsFetcher"),
-            (1, 2, "EagerDpsFetcher"),
-            (1, 10, "EagerDpsFetcher"),
-            (9, 10, "EagerDpsFetcher"),
-            (9, 50, "EagerDpsFetcher"),
-        ],
-    )
-    @pytest.mark.skip(reason="string aggregates are about to be supported")
-    def test_retrieve_aggregates__string_ts_raises(
+    @pytest.mark.parametrize("granularity", ("1d", "7d", "30d"))
+    def test_retrieve_aggregates__string_ts(
         self,
-        concurrency_limit: int,
-        n_ts: int,
-        mock_out_eager_or_chunk: str,
+        granularity: str,
         weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
         retrieve_endpoints: list[Callable],
     ) -> None:
         _, string_ts = weekly_dps_ts
-        with (
-            override_semaphore(concurrency_limit, target="datapoints"),
-            patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)),
-        ):
-            ts_chunk = random.sample(string_ts, k=n_ts)
-            for endpoint in retrieve_endpoints:
-                with pytest.raises(CogniteAPIError) as exc:
-                    endpoint(
-                        granularity=random_granularity(),
-                        aggregates=random_aggregates(),
-                        id=[ts.id for ts in ts_chunk],
-                        ignore_unknown_ids=random.choice((True, False)),
-                    )
-                assert exc.value.code == 400
-                assert "Aggregates are not supported for string time series" in exc.value.message
+        ts = random.choice(string_ts)
+        start, end = 0, 365 * 24 * 3_600_000  # weekly values, i.e. ~52 raw datapoints
+        # The aggregate intervals may extend beyond the given time range, so we must align before counting raw dps:
+        aligned_start, aligned_end = align_start_and_end_for_granularity(start, end, granularity)
+        n_raw = len(retrieve_endpoints[0](id=ts.id, start=aligned_start, end=aligned_end))
+        for endpoint in retrieve_endpoints:
+            dps = endpoint(
+                id=ts.id,
+                start=start,
+                end=end,
+                granularity=granularity,
+                aggregates=["count", "count_good", "duration_good", "interpolation", "step_interpolation"],
+            )
+            assert sum(dps.count) == sum(dps.count_good) == n_raw
+            assert list(dps.interpolation) == list(dps.step_interpolation)
+            assert all(isinstance(value, str) for value in dps.interpolation)
+
+    @pytest.mark.parametrize("aggregate", ["average", "max", "min", "sum", "max_datapoint", "total_variation"])
+    def test_retrieve_aggregates__string_ts_numeric_only_raises(
+        self,
+        aggregate: str,
+        weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
+        retrieve_endpoints: list[Callable],
+    ) -> None:
+        _, string_ts = weekly_dps_ts
+        for endpoint in retrieve_endpoints:
+            with pytest.raises(CogniteAPIError, match="not valid for string time series") as exc:
+                endpoint(id=string_ts[0].id, start=0, end=365 * 24 * 3_600_000, granularity="1d", aggregates=aggregate)
+            assert exc.value.code == 400
+
+    @pytest.mark.parametrize("ignore_bad_datapoints", (True, False))
+    @pytest.mark.parametrize("treat_uncertain_as_bad", (True, False))
+    def test_retrieve_aggregates__string_ts_with_status_codes(
+        self,
+        ignore_bad_datapoints: bool,
+        treat_uncertain_as_bad: bool,
+        ts_status_codes: TimeSeriesList,
+        retrieve_endpoints: list[Callable],
+    ) -> None:
+        # This string time series has no good datapoints, only alternating bad and uncertain ones (daily):
+        _, string_ts, *_ = ts_status_codes
+        for endpoint in retrieve_endpoints:
+            dps = endpoint(
+                id=string_ts.id,
+                start=datetime(2023, 1, 1, tzinfo=timezone.utc),
+                end=datetime(2023, 1, 9, tzinfo=timezone.utc),
+                granularity="2d",
+                aggregates=[
+                    "count",
+                    "count_good",
+                    "count_uncertain",
+                    "count_bad",
+                    "interpolation",
+                    "step_interpolation",
+                ],
+                ignore_bad_datapoints=ignore_bad_datapoints,
+                treat_uncertain_as_bad=treat_uncertain_as_bad,
+            )
+            assert len(dps) == 4
+            # The status code counts are not affected by the settings:
+            assert list(dps.count_good) == [0, 0, 0, 0]
+            assert list(dps.count_uncertain) == list(dps.count_bad) == [1, 1, 1, 1]
+            # ...but 'count' (and interpolation) only considers good datapoints (where uncertain may count as good):
+            assert list(dps.count) == ([0, 0, 0, 0] if treat_uncertain_as_bad else [1, 1, 1, 1])
+            assert list(dps.interpolation) == list(dps.step_interpolation)
+            assert all(isinstance(value, str) for value in dps.interpolation)
+            if treat_uncertain_as_bad:
+                assert set(dps.interpolation) == {""}  # no good datapoints to interpolate from
+            else:
+                assert set(dps.interpolation) != {""}
+
+    @pytest.mark.parametrize("uniform_index", (False, True))
+    def test_retrieve_dataframe_aggregates__mixed_string_and_numeric_ts(
+        self,
+        uniform_index: bool,
+        cognite_client: CogniteClient,
+        weekly_dps_ts: tuple[TimeSeriesList, TimeSeriesList],
+    ) -> None:
+        numeric_ts, string_ts = weekly_dps_ts
+        num_xid, str_xid = random.choice(numeric_ts).external_id, random.choice(string_ts).external_id
+        aggregates = ["count", "interpolation", "step_interpolation"]
+        df = cognite_client.time_series.data.retrieve_dataframe(
+            external_id=[num_xid, str_xid],
+            start=0,
+            end=365 * 24 * 3_600_000,
+            granularity="7d",
+            aggregates=aggregates,
+            uniform_index=uniform_index,
+        )
+        assert df[num_xid].columns.tolist() == df[str_xid].columns.tolist() == aggregates
+        assert df[num_xid].dtypes.astype(str).tolist() == ["Int64", "float64", "float64"]
+        assert df[str_xid].dtypes.astype(str).tolist() == ["Int64", PANDAS_STR_DTYPE, PANDAS_STR_DTYPE]
+        assert df[str_xid]["interpolation"].map(type).eq(str).all()
 
     @pytest.mark.parametrize("granularity, lower_lim, upper_lim", (("h", 30, 1000), ("d", 1, 200)))
     def test_granularity_invariants(

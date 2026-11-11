@@ -180,6 +180,31 @@ class TestDatapointsArray:
         assert math.isnan(dps1["datapoints"][1]["value"])
         assert dps2["datapoints"][1]["value"] is None
 
+    @pytest.mark.parametrize(
+        "is_string, values, exp_dtype",
+        [
+            (True, ["1.5", "2"], "object"),
+            (True, ["nan", "inf"], "object"),
+            (True, ["1.5", "abc"], "object"),
+            (False, [1.5, 2.0], "float64"),
+        ],
+    )
+    def test_load_keeps_numeric_looking_strings(self, is_string: bool, values: list, exp_dtype: str) -> None:
+        # Before version 8.24.0, loading a string time series with only numeric-looking values (e.g. "1.5" or "nan")
+        # would silently convert them to floats, as float64 was always attempted first.
+        dps = DatapointsArray.load(
+            {
+                "id": 1,
+                "isString": is_string,
+                "isStep": False,
+                "type": "string" if is_string else "numeric",
+                "datapoints": [{"timestamp": i, "value": v} for i, v in enumerate(values)],
+            }
+        )
+        assert dps.value is not None
+        assert dps.value.dtype == exp_dtype
+        assert dps.value.tolist() == values
+
 
 @pytest.mark.dsl
 class TestStateDatapointsArray:

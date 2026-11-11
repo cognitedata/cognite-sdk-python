@@ -19,7 +19,7 @@ TIMESERIES_TYPE_STRING: TimeSeriesType
 TIMESERIES_TYPE_STATE: TimeSeriesType
 
 class DataPointListItem(_message.Message):
-    __slots__ = ("id", "externalId", "instanceId", "isString", "isStep", "unit", "nextCursor", "unitExternalId", "type", "numericDatapoints", "stringDatapoints", "aggregateDatapoints", "stateAggregateDatapoints", "stateDatapoints")
+    __slots__ = ("id", "externalId", "instanceId", "isString", "isStep", "unit", "nextCursor", "unitExternalId", "type", "numericDatapoints", "stringDatapoints", "aggregateDatapoints", "stringAggregateDatapoints", "stateAggregateDatapoints", "stateDatapoints")
     ID_FIELD_NUMBER: _ClassVar[int]
     EXTERNALID_FIELD_NUMBER: _ClassVar[int]
     INSTANCEID_FIELD_NUMBER: _ClassVar[int]
@@ -32,6 +32,7 @@ class DataPointListItem(_message.Message):
     NUMERICDATAPOINTS_FIELD_NUMBER: _ClassVar[int]
     STRINGDATAPOINTS_FIELD_NUMBER: _ClassVar[int]
     AGGREGATEDATAPOINTS_FIELD_NUMBER: _ClassVar[int]
+    STRINGAGGREGATEDATAPOINTS_FIELD_NUMBER: _ClassVar[int]
     STATEAGGREGATEDATAPOINTS_FIELD_NUMBER: _ClassVar[int]
     STATEDATAPOINTS_FIELD_NUMBER: _ClassVar[int]
     id: int
@@ -46,9 +47,10 @@ class DataPointListItem(_message.Message):
     numericDatapoints: _data_points_pb2.NumericDatapoints
     stringDatapoints: _data_points_pb2.StringDatapoints
     aggregateDatapoints: _data_points_pb2.AggregateDatapoints
+    stringAggregateDatapoints: _data_points_pb2.StringAggregateDatapoints
     stateAggregateDatapoints: _data_points_pb2.StateAggregateDatapoints
     stateDatapoints: _data_points_pb2.StateDatapoints
-    def __init__(self, id: _Optional[int] = ..., externalId: _Optional[str] = ..., instanceId: _Optional[_Union[_data_points_pb2.InstanceId, _Mapping]] = ..., isString: bool = ..., isStep: bool = ..., unit: _Optional[str] = ..., nextCursor: _Optional[str] = ..., unitExternalId: _Optional[str] = ..., type: _Optional[_Union[TimeSeriesType, str]] = ..., numericDatapoints: _Optional[_Union[_data_points_pb2.NumericDatapoints, _Mapping]] = ..., stringDatapoints: _Optional[_Union[_data_points_pb2.StringDatapoints, _Mapping]] = ..., aggregateDatapoints: _Optional[_Union[_data_points_pb2.AggregateDatapoints, _Mapping]] = ..., stateAggregateDatapoints: _Optional[_Union[_data_points_pb2.StateAggregateDatapoints, _Mapping]] = ..., stateDatapoints: _Optional[_Union[_data_points_pb2.StateDatapoints, _Mapping]] = ...) -> None: ...
+    def __init__(self, id: _Optional[int] = ..., externalId: _Optional[str] = ..., instanceId: _Optional[_Union[_data_points_pb2.InstanceId, _Mapping]] = ..., isString: bool = ..., isStep: bool = ..., unit: _Optional[str] = ..., nextCursor: _Optional[str] = ..., unitExternalId: _Optional[str] = ..., type: _Optional[_Union[TimeSeriesType, str]] = ..., numericDatapoints: _Optional[_Union[_data_points_pb2.NumericDatapoints, _Mapping]] = ..., stringDatapoints: _Optional[_Union[_data_points_pb2.StringDatapoints, _Mapping]] = ..., aggregateDatapoints: _Optional[_Union[_data_points_pb2.AggregateDatapoints, _Mapping]] = ..., stringAggregateDatapoints: _Optional[_Union[_data_points_pb2.StringAggregateDatapoints, _Mapping]] = ..., stateAggregateDatapoints: _Optional[_Union[_data_points_pb2.StateAggregateDatapoints, _Mapping]] = ..., stateDatapoints: _Optional[_Union[_data_points_pb2.StateDatapoints, _Mapping]] = ...) -> None: ...
 
 class DataPointListResponse(_message.Message):
     __slots__ = ("items",)

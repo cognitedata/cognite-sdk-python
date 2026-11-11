@@ -28,8 +28,10 @@ from cognite.client.data_classes.datapoint_aggregates import (
     _INT_AGGREGATES_CAMEL,
     _OBJECT_AGGREGATES_CAMEL,
     _STATE_AGGS_CAMEL,
+    _STRING_VALUED_AGGS_CAMEL,
     _UNSUPPORTED_STATE_AGGS_CAMEL,
     Aggregate,
+    _ObjectAggregateCamel,
 )
 from cognite.client.data_classes.datapoints import (
     Datapoints,
@@ -1017,8 +1019,14 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
     def _store_ts_info(self, res: DataPointListItem) -> None:
         super()._store_ts_info(res)
 
-        # We raise as soon as we learn the time series is state-based (only known once the API has responded),
-        # rather than waiting until we're deep into unpacking/result-building:
+        # We only learn the time series type once the API has responded (always before any datapoints are stored).
+        # For string time series, some aggregates are strings, so we redo the aggregate setup accordingly:
+        if res.isString:
+            self._set_aggregate_vars(self.all_aggregates, self.use_numpy, self.query.include_status, is_string=True)
+            return
+
+        # We raise as soon as we learn the time series is state-based, rather than waiting until we're deep
+        # into unpacking/result-building:
         if not self.is_state_dps:
             return
 
@@ -1034,13 +1042,20 @@ class BaseAggTaskOrchestrator(BaseTaskOrchestrator):
     def offset_next(self) -> int:
         return granularity_to_ms(cast(str, self.query.granularity))
 
-    def _set_aggregate_vars(self, aggs_camel_case: list[str], use_numpy: bool, include_status: bool) -> None:
+    def _set_aggregate_vars(
+        self, aggs_camel_case: list[str], use_numpy: bool, include_status: bool, is_string: bool = False
+    ) -> None:
         # Developer note here: If you ask for datapoints to be returned in JSON, you get `count` as an integer.
         # Nice. However, when using protobuf, you get `double` xD
         self.all_aggregates = aggs_camel_case
-        # 'object_aggs' covers both the classic "object" aggregates (min_datapoint/max_datapoint, one object per row)
-        # and the state-only aggregates (state_count/state_transitions/state_duration, one *list* of objects per row)
-        self.object_aggs = list((_OBJECT_AGGREGATES_CAMEL | _STATE_AGGS_CAMEL).intersection(aggs_camel_case))
+        # In 'object_aggs' we store the following:
+        #  - Classic "object" aggregates, min_datapoint and max_datapoint, one object per row
+        #  - State-only aggregates, state_count, state_transitions and state_duration, one *list* of objects per row
+        #  - String-valued aggregates for string time series, interpolation and step_interpolation, one object per row
+        object_aggs: frozenset[_ObjectAggregateCamel] = _OBJECT_AGGREGATES_CAMEL | _STATE_AGGS_CAMEL
+        if is_string:
+            object_aggs |= _STRING_VALUED_AGGS_CAMEL
+        self.object_aggs = list(object_aggs.intersection(aggs_camel_case))
         if self.object_aggs:
             self.object_data: dict[str, _DataContainer] = {agg: defaultdict(list) for agg in self.object_aggs}
             self.object_agg_unpack_fns = [

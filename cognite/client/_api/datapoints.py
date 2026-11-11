@@ -5,6 +5,7 @@ import datetime
 import functools
 import itertools
 import math
+import warnings
 from collections.abc import AsyncIterator, Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
@@ -103,6 +104,17 @@ class DatapointsAPI(APIClient):
     def _maybe_warn_if_gap_filling_is_used(self, queries: Iterable[DatapointsQuery]) -> None:
         if any(query.fill is not None for query in queries):
             self._gap_filling_warning.warn()
+
+    @staticmethod
+    def _maybe_warn_deprecated_identifier(identifiers: Iterable[Identifier]) -> None:
+        if any(identifier.is_id or identifier.is_external_id for identifier in identifiers):
+            warnings.warn(
+                "Identifying time series by 'id' or 'external_id' when working with datapoints is deprecated and is scheduled "
+                "for removal on 2027-12-31. Identify time series by 'instance_id' instead (as CogniteTimeSeries instances in "
+                "the core data model). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.",
+                DeprecationWarning,
+                stacklevel=3,
+            )
 
     def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
@@ -209,7 +221,7 @@ class DatapointsAPI(APIClient):
                 ...         print("Time series with id=123 has no more datapoints!")
 
             A likely use case for iterating datapoints is to clone data from one project to another, while keeping a low memory
-            footprint and without having to write very custom logic involving count aggregates (which won't work for string data)
+            footprint and without having to write very custom logic involving count aggregates
             or do time-domain splitting yourself.
 
             Here's an example of how to do so efficiently, while including bad- and uncertain data (``ignore_bad_datapoints=False``) and
@@ -257,6 +269,7 @@ class DatapointsAPI(APIClient):
             )
 
         user_queries = [queries] if (is_single := isinstance(queries, DatapointsQuery)) else queries
+        self._maybe_warn_deprecated_identifier(uq.identifier for uq in user_queries)
         dps_lst_cls: type[DatapointsArrayList | DatapointsList] = (
             DatapointsArrayList if return_arrays else DatapointsList
         )
@@ -594,7 +607,7 @@ class DatapointsAPI(APIClient):
             instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. Default: None (raw datapoints returned)
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. For string time series, only ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation`` and ``step_interpolation`` are available, where the latter two return strings. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -810,6 +823,7 @@ class DatapointsAPI(APIClient):
         )
         self.query_validator(parsed_queries := query.parse_into_queries())
         self._maybe_warn_if_gap_filling_is_used(parsed_queries)
+        self._maybe_warn_deprecated_identifier(q.identifier for q in parsed_queries)
         dps_lst = await self._select_dps_fetch_strategy(parsed_queries)(self, parsed_queries).fetch_all_datapoints()
 
         if not query.is_single_identifier:
@@ -979,7 +993,7 @@ class DatapointsAPI(APIClient):
             instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id or sequence of instance ids.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. Default: None (raw datapoints returned)
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. For string time series, only ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation`` and ``step_interpolation`` are available, where the latter two return strings. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, day or month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -1068,6 +1082,7 @@ class DatapointsAPI(APIClient):
         )
         self.query_validator(parsed_queries := query.parse_into_queries())
         self._maybe_warn_if_gap_filling_is_used(parsed_queries)
+        self._maybe_warn_deprecated_identifier(q.identifier for q in parsed_queries)
         dps_lst = await self._select_dps_fetch_strategy(parsed_queries)(
             self, parsed_queries
         ).fetch_all_datapoints_numpy()
@@ -1120,7 +1135,7 @@ class DatapointsAPI(APIClient):
             instance_id (NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery] | None): Instance id, DatapointsQuery or (mixed) sequence of these. See examples.
             start (int | str | datetime.datetime | None): Inclusive start. Default: 1970-01-01 UTC.
             end (int | str | datetime.datetime | None): Exclusive end. Default: "now"
-            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. Default: None (raw datapoints returned)
+            aggregates (Aggregate | str | list[Aggregate | str] | None): Single aggregate or list of aggregates to retrieve. Available options: ``average``, ``continuous_variance``, ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``discrete_variance``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation``, ``max``, ``max_datapoint``, ``min``, ``min_datapoint``, ``step_interpolation``, ``sum`` and ``total_variation``. For state time series, there's also ``state_count``, ``state_transitions`` and ``state_duration``. For string time series, only ``count``, ``count_bad``, ``count_good``, ``count_uncertain``, ``duration_bad``, ``duration_good``, ``duration_uncertain``, ``interpolation`` and ``step_interpolation`` are available, where the latter two return strings. Default: None (raw datapoints returned)
             granularity (str | None): The granularity to fetch aggregates at. Can be given as an abbreviation or spelled out for clarity: ``s/second(s)``, ``m/minute(s)``, ``h/hour(s)``, ``d/day(s)``, ``w/week(s)``, ``mo/month(s)``, ``q/quarter(s)``, or ``y/year(s)``. Examples: ``30s``, ``5m``, ``1day``, ``2weeks``. Default: None.
             timezone (str | datetime.timezone | ZoneInfo | None): For raw datapoints, which timezone to use when displaying (will not affect what is retrieved). For aggregates, which timezone to align to for granularity 'hour' and longer. Align to the start of the hour, -day or -month. For timezones of type Region/Location, like 'Europe/Oslo', pass a string or ``ZoneInfo`` instance. The aggregate duration will then vary, typically due to daylight saving time. You can also use a fixed offset from UTC by passing a string like '+04:00', 'UTC-7' or 'UTC-02:30' or an instance of ``datetime.timezone``. Note: Historical timezones with second offset are not supported, and timezones with minute offsets (e.g. UTC+05:30 or Asia/Kolkata) may take longer to execute.
             target_unit (str | None): The unit_external_id of the datapoints returned. If the time series does not have a unit_external_id that can be converted to the target_unit, an error will be returned. Cannot be used with target_unit_system.
@@ -1226,6 +1241,7 @@ class DatapointsAPI(APIClient):
         )
         self.query_validator(parsed_queries := query.parse_into_queries())
         self._maybe_warn_if_gap_filling_is_used(parsed_queries)
+        self._maybe_warn_deprecated_identifier(q.identifier for q in parsed_queries)
         fetcher = self._select_dps_fetch_strategy(parsed_queries)(self, parsed_queries)
 
         if not uniform_index:
@@ -1595,6 +1611,11 @@ class DatapointsAPI(APIClient):
             ignore_unknown_ids=ignore_unknown_ids,
             dps_client=self,
         )
+        self._maybe_warn_deprecated_identifier(
+            Identifier.load(id=dct.get("id"), external_id=dct.get("externalId"))
+            for dct in fetcher._all_identifiers
+            if "id" in dct or "externalId" in dct
+        )
         res = await fetcher.fetch_datapoints()
         if not fetcher.input_is_singleton:
             return LatestDatapointList._load(res)
@@ -1707,7 +1728,9 @@ class DatapointsAPI(APIClient):
                 >>> client.time_series.data.insert(data, external_id="foo")
         """
 
-        post_dps_object = Identifier.of_either(id, external_id, instance_id).as_dict()
+        identifier = Identifier.of_either(id, external_id, instance_id)
+        self._maybe_warn_deprecated_identifier([identifier])
+        post_dps_object = identifier.as_dict()
         post_dps_object["datapoints"] = datapoints
         await DatapointsPoster(self).insert([post_dps_object])
 
@@ -1815,6 +1838,12 @@ class DatapointsAPI(APIClient):
         """
         if not isinstance(datapoints, Sequence):
             raise TypeError("Input to 'insert_multiple' must be a list of dictionaries")
+        # Items identified by instance_id (or malformed ones, validated later by the poster) are skipped:
+        self._maybe_warn_deprecated_identifier(
+            Identifier(xid)
+            for dct in datapoints
+            if isinstance(dct, dict) and (xid := dct.get("id") or dct.get("external_id") or dct.get("externalId"))
+        )
         await DatapointsPoster(self).insert(datapoints)
 
     async def insert_states(self, items: StateDatapointsInsert | Sequence[StateDatapointsInsert]) -> None:
@@ -1986,8 +2015,9 @@ class DatapointsAPI(APIClient):
         if end_ms <= start_ms:
             raise ValueError(f"{end=} must be larger than {start=}")
 
-        identifier = Identifier.of_either(id, external_id, instance_id).as_dict()
-        delete_dps_object = {**identifier, "inclusiveBegin": start_ms, "exclusiveEnd": end_ms}
+        identifier = Identifier.of_either(id, external_id, instance_id)
+        self._maybe_warn_deprecated_identifier([identifier])
+        delete_dps_object = {**identifier.as_dict(), "inclusiveBegin": start_ms, "exclusiveEnd": end_ms}
         await self._delete_datapoints_ranges([delete_dps_object])
 
     async def delete_ranges(self, ranges: list[dict[str, Any]]) -> None:
@@ -2010,14 +2040,17 @@ class DatapointsAPI(APIClient):
                 >>> client.time_series.data.delete_ranges(ranges)
         """
         valid_ranges = []
+        identifiers = []
         for time_range in ranges:
             identifier = validate_user_input_dict_with_identifier(time_range, required_keys={"start", "end"})
+            identifiers.append(identifier)
             valid_range = dict(
                 **identifier.as_dict(),
                 inclusiveBegin=timestamp_to_ms(time_range["start"]),
                 exclusiveEnd=timestamp_to_ms(time_range["end"]),
             )
             valid_ranges.append(valid_range)
+        self._maybe_warn_deprecated_identifier(identifiers)
         await self._delete_datapoints_ranges(valid_ranges)
 
     async def _delete_datapoints_ranges(self, delete_range_objects: list[dict]) -> None:

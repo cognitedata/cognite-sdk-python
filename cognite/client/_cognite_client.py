@@ -87,6 +87,7 @@ if _should_build_docs := os.getenv("BUILD_COGNITE_SDK_DOCS") == "true":
         TokenAPI,
     )
     from cognite.client._api.integrations.errors import IntegrationErrorsAPI
+    from cognite.client._api.integrations.history import IntegrationHistoryAPI
     from cognite.client._api.postgres_gateway.tables import TablesAPI
     from cognite.client._api.postgres_gateway.users import UsersAPI
     from cognite.client._api.raw import RawDatabasesAPI, RawRowsAPI, RawTablesAPI  # type: ignore[attr-defined]
@@ -484,6 +485,7 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.simulators.runs = SimulatorRunsAPI  # type: ignore
     AsyncCogniteClient.simulators.logs = SimulatorLogsAPI  # type: ignore
     AsyncCogniteClient.integrations = IntegrationsAPI  # type: ignore
+    AsyncCogniteClient.integrations.history = IntegrationHistoryAPI  # type: ignore
     AsyncCogniteClient.integrations.errors = IntegrationErrorsAPI  # type: ignore
 
 
