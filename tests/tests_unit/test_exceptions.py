@@ -6,7 +6,7 @@ import pytest
 from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteAPIError, CogniteProjectAccessError
 from tests.utils import get_url
 
 if TYPE_CHECKING:
@@ -60,3 +60,22 @@ class TestAPIError:
             assert False, "Call did not raise exception"
         except CogniteAPIError as e:
             assert e.cluster == "api"
+
+
+@pytest.mark.parametrize("req_id", ["abc", None])
+@pytest.mark.parametrize(
+    "exc, kw",
+    (
+        (CogniteAPIError, {"message": "bla", "code": 400}),
+        (CogniteProjectAccessError, {"project": "proj", "maybe_projects": None}),
+    ),
+)
+def test_timestamp_is_in_exception_str(
+    exc: type[CogniteAPIError | CogniteProjectAccessError],
+    kw: dict[str, str | int | None],
+    req_id: str | None,
+) -> None:
+    exc_instance = exc(**kw, x_request_id=req_id)  # type: ignore [arg-type]
+    for s in repr(exc_instance), str(exc_instance):
+        assert f"X-Request-ID: {req_id or 'None'} | time: 2" in s  # todo: year 3000+ :wink:
+        assert s.endswith("Z")
