@@ -14,6 +14,24 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.24.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.23.0...v8.24.0) (2026-11-11)
+
+
+### Features
+
+* **ai:** add data classes for time series forecasting and imputation ([#2873](https://github.com/cognitedata/cognite-sdk-python/issues/2873)) ([e1ca668](https://github.com/cognitedata/cognite-sdk-python/commit/e1ca6681f9cd58675291978c446ff2bdf16cacaa))
+* **exceptions:** Add timestamp to the string representations of exceptions ([#2929](https://github.com/cognitedata/cognite-sdk-python/issues/2929)) ([8269018](https://github.com/cognitedata/cognite-sdk-python/commit/8269018f15cf8d01918857fba770beb8411dd018))
+* **streams:** expose maxUniquePropertiesWithData & consumption ([#2919](https://github.com/cognitedata/cognite-sdk-python/issues/2919)) ([a63c036](https://github.com/cognitedata/cognite-sdk-python/commit/a63c036a33925e8994476aceb4dd1faf68bfb303))
+* **string datapoints:** Add support for aggregate string datapoints ([#2926](https://github.com/cognitedata/cognite-sdk-python/issues/2926)) ([15faf86](https://github.com/cognitedata/cognite-sdk-python/commit/15faf86a152a2e6aa9e93ee2e328803d2e3fc8e1))
+* **transformations:** Added rotate keys api endpoint support in sdk ([#2921](https://github.com/cognitedata/cognite-sdk-python/issues/2921)) ([dd77f4c](https://github.com/cognitedata/cognite-sdk-python/commit/dd77f4cb65920cadf402f67d55dd5c5c71ebc23e))
+* **transformations:** Added sdk changes for connecting to new external data source apis ([#2895](https://github.com/cognitedata/cognite-sdk-python/issues/2895)) ([d7f60c1](https://github.com/cognitedata/cognite-sdk-python/commit/d7f60c10c2e3157ea5ca77e8dbc0134adf2b6d91))
+
+
+### Bug Fixes
+
+* **datapoints:** keep numeric-looking strings as strings in DatapointsArray.load ([#2927](https://github.com/cognitedata/cognite-sdk-python/issues/2927)) ([7cf8dbf](https://github.com/cognitedata/cognite-sdk-python/commit/7cf8dbfbec31e8ca0d6d818b0d28f83193780f01))
+* release pooled connections for failed streamed requests ([#2916](https://github.com/cognitedata/cognite-sdk-python/issues/2916)) ([cf657ce](https://github.com/cognitedata/cognite-sdk-python/commit/cf657cefabcc3dd611e722a6494af457f5c3d028))
+
 ## [8.23.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.22.0...v8.23.0) (2026-11-02)
 
 
