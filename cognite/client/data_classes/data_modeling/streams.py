@@ -55,17 +55,25 @@ class StreamLimitSettings(CogniteResource):
         max_records_total: StreamLimit,
         max_giga_bytes_total: StreamLimit,
         max_filtering_interval: str | None = None,
+        max_unique_properties_with_data: StreamLimit | None = None,
     ) -> None:
         self.max_records_total = max_records_total
         self.max_giga_bytes_total = max_giga_bytes_total
         self.max_filtering_interval = max_filtering_interval
+        self.max_unique_properties_with_data = max_unique_properties_with_data
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
+        max_unique_properties_with_data = resource.get("maxUniquePropertiesWithData")
         return cls(
             max_records_total=StreamLimit._load(resource["maxRecordsTotal"]),
             max_giga_bytes_total=StreamLimit._load(resource["maxGigaBytesTotal"]),
             max_filtering_interval=resource.get("maxFilteringInterval"),
+            max_unique_properties_with_data=(
+                StreamLimit._load(max_unique_properties_with_data)
+                if max_unique_properties_with_data is not None
+                else None
+            ),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -75,6 +83,8 @@ class StreamLimitSettings(CogniteResource):
         }
         if self.max_filtering_interval is not None:
             out["max_filtering_interval"] = self.max_filtering_interval
+        if self.max_unique_properties_with_data is not None:
+            out["max_unique_properties_with_data"] = self.max_unique_properties_with_data.dump(camel_case=camel_case)
         return convert_all_keys_to_camel_case(out) if camel_case else out
 
 
