@@ -92,6 +92,17 @@ YEAR_MS = {
 }
 DPS_TYPES = (Datapoints, DatapointsArray)
 DPS_LST_TYPES = (DatapointsList, DatapointsArrayList)
+STRING_TS_AGGREGATES = [
+    "count",
+    "count_good",
+    "count_uncertain",
+    "count_bad",
+    "duration_good",
+    "duration_uncertain",
+    "duration_bad",
+    "interpolation",
+    "step_interpolation",
+]
 TEST_PREFIX = "PYSDK integration test"
 
 
@@ -1777,7 +1788,6 @@ class TestRetrieveAggregateDatapointsAPI:
                         aligned_start, _ = align_start_and_end_for_granularity(start, end, gran)
                         assert first_ts == aligned_start
 
-    @pytest.mark.skip(reason="string aggregates are about to be supported")
     @pytest.mark.parametrize(
         "max_workers, n_ts, mock_out_eager_or_chunk",
         [
@@ -1790,7 +1800,7 @@ class TestRetrieveAggregateDatapointsAPI:
             (9, 50, "EagerDpsFetcher"),
         ],
     )
-    def test_retrieve_aggregates__string_ts_raises(
+    def test_retrieve_aggregates__string_ts_requires_v8(
         self,
         max_workers: int,
         n_ts: int,
@@ -1803,15 +1813,14 @@ class TestRetrieveAggregateDatapointsAPI:
         with set_max_workers(cognite_client, max_workers), patch(DATAPOINTS_API.format(mock_out_eager_or_chunk)):
             ts_chunk = random.sample(string_ts, k=n_ts)
             for endpoint in retrieve_endpoints:
-                with pytest.raises(CogniteAPIError) as exc:
+                # The API supports these aggregates for string time series, but v7 can't parse the response:
+                with pytest.raises(RuntimeError, match=r"Please upgrade to cognite-sdk version 8\.24\.0 or later"):
                     endpoint(
                         granularity=random_granularity(),
-                        aggregates=random_aggregates(),
+                        aggregates=random.sample(STRING_TS_AGGREGATES, k=random.randint(1, len(STRING_TS_AGGREGATES))),
                         id=[ts.id for ts in ts_chunk],
                         ignore_unknown_ids=random.choice((True, False)),
                     )
-                assert exc.value.code == 400
-                assert exc.value.message == "Aggregates are not supported for string time series on this endpoint"
 
     @pytest.mark.parametrize("granularity, lower_lim, upper_lim", (("h", 30, 1000), ("d", 1, 200)))
     def test_granularity_invariants(
