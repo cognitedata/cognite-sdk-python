@@ -69,6 +69,8 @@ class TestStreamsAPI:
         assert out[0].external_id == "st1"
         assert out[0].settings.limits.max_unique_properties_with_data is None
         assert out.dump() == stream_list_response["items"]
+        (request,) = httpx2_mock.get_requests()
+        assert request.headers["cdf-version"] == "20230101-alpha"
 
     def test_templates_list_parses_items_and_sends_alpha_header(
         self,
@@ -169,6 +171,7 @@ class TestStreamsAPI:
         assert isinstance(out, Stream)
         assert len(requests) == 1
         assert requests[0].url.path.endswith("/streams")
+        assert requests[0].headers["cdf-version"] == "20230101-alpha"
         assert jsgz_load(requests[0].content) == {
             "items": [{"externalId": "st1", "settings": {"template": {"name": "ImmutableTestStream"}}}]
         }
