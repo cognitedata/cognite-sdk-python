@@ -13,6 +13,13 @@ As of 2025-08-29, changes are grouped as follows
 - 🐛 Bug Fixes: Bug fixes.
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 
+## [7.95.1](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.95.0...cognite-sdk-python-v7.95.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* raise on string aggregate datapoints ([#2928](https://github.com/cognitedata/cognite-sdk-python/issues/2928)) ([e182f7e](https://github.com/cognitedata/cognite-sdk-python/commit/e182f7e66f929817ed7c71598e9f4051a95eda01))
+
 ## [7.95.0](https://github.com/cognitedata/cognite-sdk-python/compare/cognite-sdk-python-v7.94.2...cognite-sdk-python-v7.95.0) (2026-11-02)
 
 
