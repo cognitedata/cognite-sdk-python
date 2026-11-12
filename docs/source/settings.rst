@@ -125,6 +125,7 @@ Concurrency is configured separately for the following API categories (*but more
 - **datapoints**: Time series datapoints API endpoints
 - **data_modeling**: Data Modeling API endpoints (has additional operation types, see below)
 - **files**: Files API endpoints (has additional operation types and one global limit, see below)
+- **ai_time_series**: Time series forecasting and imputation API endpoints
 
 This happens when specific API endpoints have greatly different performance characteristics (higher- or lower throughput)
 that in turn warrant having their own concurrency settings (to unlock better performance, or for protection):

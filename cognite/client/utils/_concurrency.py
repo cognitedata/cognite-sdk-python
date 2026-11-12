@@ -427,6 +427,8 @@ class ConcurrencySettings:
         )
         self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
         self._records = RecordsGlobalConcurrencyConfig(self, read=1, write=2)
+        # Time series forecasting and imputation run model inference, so they get a small budget of their own:
+        self._ai_time_series = CRUDConcurrency(self, "ai_time_series", read=1, write=1, delete=1)
 
     @functools.cached_property
     def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
@@ -476,6 +478,10 @@ class ConcurrencySettings:
     def records(self) -> RecordsGlobalConcurrencyConfig:
         return self._records
 
+    @property
+    def ai_time_series(self) -> CRUDConcurrency:
+        return self._ai_time_series
+
     def __repr__(self) -> str:
         frozen_str = " (frozen)" if self.__frozen else ""
         return (
@@ -486,6 +492,7 @@ class ConcurrencySettings:
             f"  data_modeling={self._data_modeling},\n"
             f"  files={self._files},\n"
             f"  records={self._records},\n"
+            f"  ai_time_series={self._ai_time_series},\n"
             f"){frozen_str}"
         )
 

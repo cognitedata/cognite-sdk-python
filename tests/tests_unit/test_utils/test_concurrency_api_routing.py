@@ -17,6 +17,7 @@ import pytest
 from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient
+from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from tests.utils import fresh_concurrency_state
 
@@ -150,6 +151,20 @@ class TestSemaphoreRoutingSpecialResponses:
         )
         await async_client.raw.rows.retrieve("db1", "t1", "k1")
         assert_routed(semaphore_spy, "raw", "read")
+
+    async def test_ai_time_series_write(
+        self, async_client: AsyncCogniteClient, semaphore_spy: list[SemCall], httpx2_mock: HTTPXMock
+    ) -> None:
+        # forecast parses the response metadata, so supply the full response shape:
+        httpx2_mock.add_response(
+            method="POST",
+            url=re.compile(r".*/ai/timeseries/forecast$"),
+            status_code=200,
+            json={"items": [{"label": "a", "forecast": []}], "metadata": {"quantileLevels": [0.5], "cohorts": []}},
+        )
+        series = ForecastInputTimeSeries("a", [ForecastInputDatapoint(0, 1.0), ForecastInputDatapoint(60_000, 1.0)])
+        await async_client.ai.time_series.forecast(series)
+        assert_routed(semaphore_spy, "ai_time_series", "write")
 
 
 class TestStrictFixtureCatchesMissingSemaphore:

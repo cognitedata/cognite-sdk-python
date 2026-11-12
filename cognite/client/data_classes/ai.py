@@ -10,6 +10,7 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.data_classes.data_modeling import NodeId
+from cognite.client.utils._auxiliary import remove_duplicates_keep_order
 from cognite.client.utils._importing import local_import
 from cognite.client.utils._pandas_helpers import to_pandas_datetime_index
 from cognite.client.utils._time import timestamp_to_ms
@@ -429,7 +430,7 @@ class ForecastResultList(CogniteResourceList[ForecastResult]):
         # order the API lists them.
         metadata = ForecastMetadata(
             quantile_levels=responses[0]["metadata"]["quantileLevels"],
-            cohorts=list(dict.fromkeys(c for response in responses for c in response["metadata"]["cohorts"])),
+            cohorts=remove_duplicates_keep_order(c for response in responses for c in response["metadata"]["cohorts"]),
         )
         return cls([ForecastResult._load(item) for response in responses for item in response["items"]], metadata)
 
@@ -541,7 +542,7 @@ class ImputeResultList(CogniteResourceList[ImputeResult]):
         # order the API lists them.
         metadata = ForecastMetadata(
             quantile_levels=responses[0]["metadata"]["quantileLevels"],
-            cohorts=list(dict.fromkeys(c for response in responses for c in response["metadata"]["cohorts"])),
+            cohorts=remove_duplicates_keep_order(c for response in responses for c in response["metadata"]["cohorts"]),
         )
         return cls([ImputeResult._load(item) for response in responses for item in response["items"]], metadata)
 
