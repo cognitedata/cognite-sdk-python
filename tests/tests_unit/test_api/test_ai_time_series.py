@@ -9,6 +9,7 @@ from httpx2 import Request, Response
 from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
+from cognite.client._api.ai.utils import size_as_sent
 from cognite.client.config import global_config
 from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries
 from cognite.client.exceptions import CogniteAPIError
@@ -179,7 +180,6 @@ class TestForecast:
         self,
         use_gzip: bool,
         cognite_client: CogniteClient,
-        async_client: AsyncCogniteClient,
         mock_forecast: HTTPXMock,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
@@ -189,7 +189,7 @@ class TestForecast:
         cognite_client.ai.time_series.forecast(inputs)
 
         [request] = mock_forecast.get_requests()
-        assert async_client.ai.time_series._size_as_sent(inputs) == len(request.content)
+        assert size_as_sent(inputs) == len(request.content)
 
     async def test_async_client(self, async_client: AsyncCogniteClient, mock_forecast: HTTPXMock) -> None:
         res = await async_client.ai.time_series.forecast([series("21-PT-1019")])

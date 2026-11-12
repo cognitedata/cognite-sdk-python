@@ -3,6 +3,12 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, TypeVar
 
+from cognite.client._api.ai.utils import (
+    group_series_by_cohort,
+    pack_series_requests,
+    request_body,
+    validate_series_groups,
+)
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.ai import (
     ForecastInputTimeSeries,
@@ -12,7 +18,6 @@ from cognite.client.data_classes.ai import (
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._experimental import FeaturePreviewWarning
-from cognite.client.utils._forecasting import split_into_requests
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient, ClientConfig
@@ -161,7 +166,9 @@ class AITimeSeriesAPI(APIClient):
         if duplicates := find_duplicates(s.label for s in series):
             raise ValueError(f"Labels must be unique within a call. Duplicated labels: {duplicates}.")
 
-        requests = split_into_requests(series, self._size_as_sent)
+        groups = group_series_by_cohort(series)
+        validate_series_groups(series, groups)
+        requests = pack_series_requests(series, groups)
         tasks = [AsyncSDKTask(self._post_chunk, path, request) for request in requests]
         # Results are only returned all together, so stop sending the others once one request fails.
         summary = await execute_async_tasks(tasks, fail_fast=True)
@@ -173,19 +180,10 @@ class AITimeSeriesAPI(APIClient):
         by_label = {item.label: item for item in loaded}
         return list_cls([by_label[s.label] for s in series], loaded.metadata)
 
-    @staticmethod
-    def _request_body(series: Sequence[ForecastInputTimeSeries]) -> dict[str, Any]:
-        return {"items": [s.dump(camel_case=True) for s in series]}
-
-    def _size_as_sent(self, series: Sequence[ForecastInputTimeSeries]) -> int:
-        # Serialized like _post does it, so this is the size of the body it sends: gzip'd unless that's disabled.
-        content = self._handle_json_dump(self._request_body(series), {}) or b""
-        return len(content.encode() if isinstance(content, str) else content)
-
     async def _post_chunk(self, path: str, series: Sequence[ForecastInputTimeSeries]) -> dict[str, Any]:
         response = await self._post(
             self._RESOURCE_PATH + path,
-            json=self._request_body(series),
+            json=request_body(series),
             headers=self._beta_version_header(),
             semaphore=self._get_semaphore("write"),
         )
