@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import itertools
 import random
 from collections.abc import Sequence
+from unittest import mock
 
 import pytest
 
+from cognite.client import global_config
 from cognite.client._api.ai import utils
 from cognite.client._api.ai.utils import (
     MAX_REQUEST_BYTES,
@@ -80,3 +83,55 @@ class TestSplitIntoRequests:
 
     def test_empty_input_returns_no_requests(self) -> None:
         assert _split([]) == []
+
+
+def _random_walk(label: str, seed: int, cohort: str | None = None) -> ForecastInputTimeSeries:
+    rng = random.Random(seed)
+    values = itertools.accumulate(rng.uniform(-1, 1) for _ in range(300))
+    datapoints = [ForecastInputDatapoint(60_000 * k, v) for k, v in enumerate(values)]
+    return ForecastInputTimeSeries(label, datapoints, cohort)
+
+
+def _labels(requests: list[list[ForecastInputTimeSeries]]) -> list[list[str]]:
+    return [[s.label for s in r] for r in requests]
+
+
+@pytest.mark.parametrize("gzip_disabled", [False, True], ids=["gzip", "no-gzip"])
+class TestSplitIntoRequestsAsSent:
+    @pytest.fixture(autouse=True)
+    def set_gzip(self, gzip_disabled: bool, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(global_config, "disable_gzip", gzip_disabled)
+
+    def test_combined_body_that_fits_is_one_request(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        a, b = _random_walk("a", seed=1), _random_walk("b", seed=1)
+        limit = utils.size_as_sent([a, b])
+        assert utils.size_as_sent([a]) + utils.size_as_sent([b]) > limit
+        monkeypatch.setattr(utils, "MAX_REQUEST_BYTES", limit)
+
+        assert _labels(_split([a, b])) == [["a", "b"]]
+
+    @pytest.mark.parametrize(
+        "bytes_over, expected", [(0, [["x", "y"]]), (1, [["x"], ["y"]])], ids=["at-limit", "one-byte-over"]
+    )
+    def test_body_at_the_limit_fits_and_one_byte_over_splits(
+        self, bytes_over: int, expected: list[list[str]], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        x, y = _random_walk("x", seed=2), _random_walk("y", seed=3)
+        monkeypatch.setattr(utils, "MAX_REQUEST_BYTES", utils.size_as_sent([x, y]) - bytes_over)
+
+        assert _labels(_split([x, y])) == expected
+
+    def test_non_contiguous_cohort_is_measured_in_the_order_sent(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        series = [
+            _random_walk("p", seed=4, cohort="c"),
+            _random_walk("q", seed=5),
+            _random_walk("r", seed=6, cohort="c"),
+        ]
+        monkeypatch.setattr(utils, "MAX_REQUEST_BYTES", utils.size_as_sent(series))
+
+        with mock.patch.object(utils, "size_as_sent", wraps=utils.size_as_sent) as size_as_sent:
+            assert _labels(_split(series)) == [["p", "q", "r"]]
+
+        measured = [[s.label for s in call.args[0]] for call in size_as_sent.call_args_list]
+        assert ["p", "q", "r"] in measured
+        assert ["p", "r", "q"] not in measured
