@@ -150,3 +150,11 @@ class TestFunctionCallLogEntry:
 
         assert entry._format(with_timestamps=True) == "line one"
         assert entry._format(with_timestamps=False) == "line one"
+
+    def test_format_with_default_empty_message(self) -> None:
+        # The API drops empty messages, so blank stdout/stderr lines come back as timestamp-only entries.
+        entry = FunctionCallLogEntry(timestamp=1794381050516)
+
+        assert entry.message == ""
+        assert entry.timestamp == 1794381050516
+        assert entry._format(with_timestamps=False) == ""

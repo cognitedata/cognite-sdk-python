@@ -790,13 +790,13 @@ class FunctionCallLogEntry(CogniteResource):
     """A log entry for a function call.
 
     Args:
-        message (str): Single line from stdout / stderr.
+        message (str): Single line from stdout / stderr. The API omits this field for empty lines, in which case it is an empty string.
         timestamp (int | None): The number of milliseconds since 00:00:00 Thursday, 1 January 1970, Coordinated Universal Time (UTC), minus leap seconds.
     """
 
     def __init__(
         self,
-        message: str,
+        message: str = "",
         timestamp: int | None = None,
     ) -> None:
         self.timestamp = timestamp
@@ -804,7 +804,7 @@ class FunctionCallLogEntry(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
-        return cls(timestamp=resource.get("timestamp"), message=resource["message"])
+        return cls(timestamp=resource.get("timestamp"), message=resource.get("message") or "")
 
     def _format(self, with_timestamps: bool = False) -> str:
         ts = ""
