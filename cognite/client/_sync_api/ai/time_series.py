@@ -30,27 +30,26 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
         model can use the relationships between them. A time series without an underlying pattern, such as random
         noise, a flat line, or a setpoint changed by an operator, will not give a useful forecast.
 
-        The time series are sent in as many requests as needed to stay within the API's limits of 32 time series and
-        5 MiB per request. A cohort is always sent in one request.
-
         Note:
             This endpoint is in beta, and is called with the beta ``cdf-version`` header.
 
         Args:
             time_series (Sequence[ForecastInputTimeSeries]): The time series to forecast. Each needs a unique label
-                and 2 to 8192 evenly spaced datapoints, at least one of which has a value and is not marked missing.
-                Time series in a cohort must have identical timestamps.
+                and between 2 and 8192 evenly spaced datapoints, at least one of which has a value and is not marked
+                missing. Time series in a cohort must have identical timestamps.
 
         Returns:
             ForecastResultList: One result per input time series, in input order. `quantile_levels` lists the levels
                 in every point's quantiles; use 0.5, the median, as a single predicted value.
 
         Raises:
-            ValueError: If no time series are given, a label is repeated, or a cohort doesn't fit in one request.
+            ValueError: If no time series are given, a label is repeated, a cohort has more than 32 time series, or a
+                time series or cohort is over 5 MiB on its own. These are the API's limits for one request, and a
+                cohort is always sent in one request.
 
         Examples:
 
-            Forecast a time series, and get the forecast as a DataFrame with one column per quantile level:
+            Forecast a time series, and get the median forecast as a DataFrame:
 
                 >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> from cognite.client.data_classes.ai import (
@@ -98,19 +97,15 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
         quantiles. The API doesn't decide what is anomalous. Time series in the same cohort are imputed jointly, so
         the model can also use the other time series in the cohort.
 
-        A datapoint marked missing is hidden from the model, whatever its value, and returned. A datapoint with value
-        None and not marked missing is hidden from the model but not returned.
-
-        The time series are sent in as many requests as needed to stay within the API's limits of 32 time series and
-        5 MiB per request. A cohort is always sent in one request.
-
         Note:
+            A datapoint marked missing is hidden from the model, whatever its value, and returned. A datapoint with value
+            None and not marked missing is hidden from the model but not returned.
+
             This endpoint is in beta, and is called with the beta ``cdf-version`` header.
 
         Args:
             time_series (Sequence[ForecastInputTimeSeries]): The time series, with the datapoints to predict marked
-                missing. Each needs a unique label and 2 to 8192 evenly spaced datapoints, at least one of which has
-                a value and is not marked missing. Time series in a cohort must have identical timestamps.
+                missing. They have the same requirements as in `forecast`.
 
         Returns:
             ImputeResultList: One result per input time series, in input order, with one point per datapoint marked
@@ -118,7 +113,9 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 single predicted value.
 
         Raises:
-            ValueError: If no time series are given, a label is repeated, or a cohort doesn't fit in one request.
+            ValueError: If no time series are given, a label is repeated, a cohort has more than 32 time series, or a
+                time series or cohort is over 5 MiB on its own. These are the API's limits for one request, and a
+                cohort is always sent in one request.
 
         Examples:
 
