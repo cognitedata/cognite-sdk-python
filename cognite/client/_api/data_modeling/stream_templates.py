@@ -17,7 +17,7 @@ class StreamTemplatesAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
-            api_maturity="alpha", sdk_maturity="alpha", feature_name="Stream templates"
+            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Stream templates"
         )
 
     async def list(self) -> StreamTemplateInfoList:
@@ -25,9 +25,6 @@ class StreamTemplatesAPI(APIClient):
 
         Lists the stream templates streams can be created from in the project, together with their limits
         and lifecycle settings. Templates with no streams provisioned are not included.
-
-        Note:
-            This endpoint is in alpha, and is called with the alpha ``cdf-version`` header.
 
         Returns:
             StreamTemplateInfoList: The available stream templates, sorted by name.
@@ -46,5 +43,4 @@ class StreamTemplatesAPI(APIClient):
             method="GET",
             list_cls=StreamTemplateInfoList,
             resource_cls=StreamTemplateInfo,
-            headers=self._alpha_version_header(),
         )

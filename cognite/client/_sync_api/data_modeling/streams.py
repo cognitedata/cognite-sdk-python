@@ -34,11 +34,6 @@ class SyncStreamsAPI(SyncAPIClient):
         """
         `Create streams <https://api-docs.cognite.com/20230101/tag/Streams/operation/createStream>`_.
 
-        Note:
-            This method sends the alpha ``cdf-version`` header so that the alpha field
-            ``settings.limits.max_unique_properties_with_data`` is returned, see
-            :class:`~cognite.client.data_classes.data_modeling.streams.StreamLimitSettings`.
-
         Args:
             items (StreamWrite | Sequence[StreamWrite]): One or more streams to create.
 
@@ -76,10 +71,6 @@ class SyncStreamsAPI(SyncAPIClient):
             There is no paging limit parameter: the endpoint returns all streams in the project
             (projects are expected to have few streams).
 
-            This method sends the alpha ``cdf-version`` header so that the alpha field
-            ``settings.limits.max_unique_properties_with_data`` is returned, see
-            :class:`~cognite.client.data_classes.data_modeling.streams.StreamLimitSettings`.
-
         Returns:
             StreamList: The streams in the project.
 
@@ -97,11 +88,6 @@ class SyncStreamsAPI(SyncAPIClient):
     def retrieve(self, external_id: str, include_statistics: bool | None = None) -> Stream | None:
         """
         `Retrieve a stream <https://api-docs.cognite.com/20230101/tag/Streams/operation/getStream>`_.
-
-        Note:
-            This method sends the alpha ``cdf-version`` header so that the alpha field
-            ``settings.limits.max_unique_properties_with_data`` is returned, see
-            :class:`~cognite.client.data_classes.data_modeling.streams.StreamLimitSettings`.
 
         Args:
             external_id (str): External ID of the stream to retrieve.

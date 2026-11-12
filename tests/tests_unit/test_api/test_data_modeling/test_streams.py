@@ -70,9 +70,9 @@ class TestStreamsAPI:
         assert out[0].settings.limits.max_unique_properties_with_data is None
         assert out.dump() == stream_list_response["items"]
         (request,) = httpx2_mock.get_requests()
-        assert request.headers["cdf-version"] == "20230101-alpha"
+        assert request.headers["cdf-version"] == "20230101"
 
-    def test_templates_list_parses_items_and_sends_alpha_header(
+    def test_templates_list_parses_items(
         self,
         cognite_client: CogniteClient,
         httpx2_mock: HTTPXMock,
@@ -111,7 +111,7 @@ class TestStreamsAPI:
         assert out[0].settings.lifecycle["retainedAfterSoftDelete"].value == "PT168H"
         assert out.dump() == response["items"]
         (request,) = httpx2_mock.get_requests()
-        assert request.headers["cdf-version"] == "20230101-alpha"
+        assert request.headers["cdf-version"] == "20230101"
 
     def test_retrieve_include_statistics_query(
         self,
@@ -129,7 +129,7 @@ class TestStreamsAPI:
         requests = httpx2_mock.get_requests()
         assert len(requests) == 1
         assert requests[0].url.params["includeStatistics"].lower() == "true"
-        assert requests[0].headers["cdf-version"] == "20230101-alpha"
+        assert requests[0].headers["cdf-version"] == "20230101"
 
     def test_retrieve_parses_max_unique_properties_with_data(
         self,
@@ -171,7 +171,7 @@ class TestStreamsAPI:
         assert isinstance(out, Stream)
         assert len(requests) == 1
         assert requests[0].url.path.endswith("/streams")
-        assert requests[0].headers["cdf-version"] == "20230101-alpha"
+        assert requests[0].headers["cdf-version"] == "20230101"
         assert jsgz_load(requests[0].content) == {
             "items": [{"externalId": "st1", "settings": {"template": {"name": "ImmutableTestStream"}}}]
         }
