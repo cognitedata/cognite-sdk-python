@@ -25,9 +25,6 @@ class SyncStreamTemplatesAPI(SyncAPIClient):
         Lists the stream templates streams can be created from in the project, together with their limits
         and lifecycle settings. Templates with no streams provisioned are not included.
 
-        Note:
-            This endpoint is in alpha, and is called with the alpha ``cdf-version`` header.
-
         Returns:
             StreamTemplateInfoList: The available stream templates, sorted by name.
 
