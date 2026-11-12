@@ -83,8 +83,8 @@ def pack_series_requests(
 ) -> list[list[ForecastInputTimeSeries]]:
     """Pack the groups into requests of at most 32 series and 5 MiB, never splitting a group across requests.
 
-    Each group is measured on its own and the sizes are added up, so the size of a request is approximate.
-    The series keep their input order within each request.
+    Each request takes as many consecutive groups as fit, measured on its body as it will be sent, with the series
+    in input order, so that the API's error locations (`items[i]`) match the input.
 
     Args:
         series (Sequence[ForecastInputTimeSeries]): All series for one call.
@@ -94,18 +94,30 @@ def pack_series_requests(
     Returns:
         list[list[ForecastInputTimeSeries]]: The series for each request.
     """
-    requests: list[list[int]] = []
-    request_bytes = 0
-    for group in groups:
-        group_bytes = size_as_sent([series[position] for position in group])
-        if (
-            not requests
-            or len(requests[-1]) + len(group) > MAX_SERIES_PER_REQUEST
-            or request_bytes + group_bytes > MAX_REQUEST_BYTES
-        ):
-            requests.append([])
-            request_bytes = 0
-        requests[-1].extend(group)
-        request_bytes += group_bytes
-    # Keep the input order within each request, so that the API's error locations (`items[i]`) match it.
-    return [[series[position] for position in sorted(request)] for request in requests]
+
+    def request_of(first: int, n_groups: int) -> list[ForecastInputTimeSeries]:
+        positions = sorted(position for group in groups[first : first + n_groups] for position in group)
+        return [series[position] for position in positions]
+
+    requests = []
+    first = 0
+    while first < len(groups):
+        most, n_series = 1, len(groups[first])
+        while first + most < len(groups) and n_series + len(groups[first + most]) <= MAX_SERIES_PER_REQUEST:
+            n_series += len(groups[first + most])
+            most += 1
+        # The most that fit is tried first, which is the only measurement when everything left fits. Otherwise,
+        # search for it: a single group fits, as it is validated.
+        taken, too_many = 1, most
+        if size_as_sent(request_of(first, most)) <= MAX_REQUEST_BYTES:
+            taken = most
+        else:
+            while taken + 1 < too_many:
+                middle = (taken + too_many) // 2
+                if size_as_sent(request_of(first, middle)) <= MAX_REQUEST_BYTES:
+                    taken = middle
+                else:
+                    too_many = middle
+        requests.append(request_of(first, taken))
+        first += taken
+    return requests
