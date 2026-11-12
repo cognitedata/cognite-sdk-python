@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import math
 import random
+from dataclasses import FrozenInstanceError
 
 import pytest
 
@@ -11,6 +13,7 @@ from cognite.client.data_classes.data_modeling.data_types import (
     ListablePropertyType,
     PropertyType,
     PropertyTypeWithUnit,
+    StateSetEntry,
     Text,
     UnitReference,
 )
@@ -22,6 +25,58 @@ class TestDirectRelationReference:
         data = {"space": "mySpace", "externalId": "myId"}
 
         assert data == DirectRelationReference.load(data).dump(camel_case=True)
+
+
+class TestStateSetEntry:
+    @pytest.mark.parametrize("num_key", ("numericValue", "numeric_value"))
+    @pytest.mark.parametrize("str_key", ("stringValue", "string_value"))
+    @pytest.mark.parametrize("description", ("foo", None))
+    def test_load_supported_casing(self, num_key: str, str_key: str, description: str | None) -> None:
+        data = {num_key: 1, str_key: "ON", "description": description}
+        if description is None:
+            data.pop("description")
+
+        entry = StateSetEntry.load(data)
+        expected = StateSetEntry(1, "ON", description)
+        assert entry == expected
+
+        dumped = entry.dump(camel_case=True)
+        new_entry = StateSetEntry.load(dumped)
+        assert new_entry == entry == expected
+
+    @pytest.mark.parametrize("value", [-(2**31) - 1, 2**31])
+    def test_numeric_value_must_be_in_signed_32_bit_range(self, value: int) -> None:
+        with pytest.raises(ValueError, match=r"signed 32-bit range"):
+            StateSetEntry(numeric_value=value, string_value="foo")
+
+    @pytest.mark.parametrize(("value", "expected"), [(0.0, 0), (1.0, 1), (-2.0, -2)])
+    def test_numeric_value_accepts_integral_float(self, value: float, expected: int) -> None:
+        entry = StateSetEntry(numeric_value=value, string_value="valid")  # type: ignore[arg-type]
+        assert entry.numeric_value == expected
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            # Next representable float above 1.0:
+            math.nextafter(1.0, math.inf),
+            # Previous representable float below 1.0:
+            math.nextafter(1.0, -math.inf),
+            1.5,
+            -42.1,
+            "1",
+            [1],
+            None,
+        ],
+    )
+    def test_numeric_value_rejects_non_int32_compatible(self, value: object) -> None:
+        with pytest.raises(TypeError, match=r"int32-compatible integer"):
+            StateSetEntry(numeric_value=value, string_value="foo")  # type: ignore[arg-type]
+
+    def test_is_frozen(self) -> None:
+        entry = StateSetEntry(numeric_value=1, string_value="ON")
+
+        with pytest.raises(FrozenInstanceError):
+            entry.numeric_value = 2  # type: ignore [misc]
 
 
 class TestPropertyType:

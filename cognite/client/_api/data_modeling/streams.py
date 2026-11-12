@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, overload
 
+from cognite.client._api.data_modeling.stream_templates import StreamTemplatesAPI
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling.streams import (
     Stream,
@@ -23,6 +24,7 @@ class StreamsAPI(APIClient):
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
+        self.templates = StreamTemplatesAPI(config, api_version, cognite_client)
         self._CREATE_LIMIT = 1
         self._DELETE_LIMIT = 1
         self._warning = FeaturePreviewWarning(
@@ -52,14 +54,14 @@ class StreamsAPI(APIClient):
                 >>> from cognite.client.data_classes.data_modeling.streams import (
                 ...     StreamWrite,
                 ...     StreamTemplate,
-                ...     StreamTemplateWriteSettings,
+                ...     StreamWriteSettings,
                 ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.streams.create(
                 ...     StreamWrite(
                 ...         external_id="my-stream",
-                ...         settings=StreamTemplateWriteSettings(
+                ...         settings=StreamWriteSettings(
                 ...             template=StreamTemplate(name="ImmutableTestStream"),
                 ...         ),
                 ...     )
@@ -101,7 +103,8 @@ class StreamsAPI(APIClient):
         Args:
             external_id (str): External ID of the stream to retrieve.
             include_statistics (bool | None): When ``True``, usage statistics will be returned together
-                with stream settings. Computing statistics can be expensive.
+                with stream settings, i.e. the ``consumed`` values of the stream limits, including the number
+                of unique properties with data. Computing statistics can be expensive.
 
         Returns:
             Stream | None: The stream metadata (and optionally statistics), or ``None`` if not found.

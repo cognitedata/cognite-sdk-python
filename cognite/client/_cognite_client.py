@@ -19,6 +19,7 @@ from cognite.client._api.functions import FunctionsAPI
 from cognite.client._api.geospatial import GeospatialAPI
 from cognite.client._api.hosted_extractors import HostedExtractorsAPI
 from cognite.client._api.iam import IAMAPI
+from cognite.client._api.integrations import IntegrationsAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.limits import LimitsAPI
 from cognite.client._api.metering import MeteringAPI
@@ -35,7 +36,12 @@ from cognite.client._api.vision import VisionAPI
 from cognite.client._api.workflows import WorkflowAPI
 from cognite.client._api_client import APIClient
 from cognite.client.config import ClientConfig, global_config
-from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
+from cognite.client.credentials import (
+    CredentialProvider,
+    InteractivePrompt,
+    OAuthClientCredentials,
+    OAuthInteractive,
+)
 from cognite.client.utils._auxiliary import load_resource_to_dict
 
 if TYPE_CHECKING:
@@ -55,6 +61,7 @@ if _should_build_docs := os.getenv("BUILD_COGNITE_SDK_DOCS") == "true":
     from cognite.client._api.data_modeling.space_statistics import SpaceStatisticsAPI
     from cognite.client._api.data_modeling.spaces import SpacesAPI
     from cognite.client._api.data_modeling.statistics import StatisticsAPI
+    from cognite.client._api.data_modeling.stream_templates import StreamTemplatesAPI
     from cognite.client._api.data_modeling.streams import StreamsAPI
     from cognite.client._api.data_modeling.time_series import DataModelingTimeSeriesAPI
     from cognite.client._api.data_modeling.views import ViewsAPI
@@ -79,6 +86,8 @@ if _should_build_docs := os.getenv("BUILD_COGNITE_SDK_DOCS") == "true":
         SessionsAPI,
         TokenAPI,
     )
+    from cognite.client._api.integrations.errors import IntegrationErrorsAPI
+    from cognite.client._api.integrations.history import IntegrationHistoryAPI
     from cognite.client._api.postgres_gateway.tables import TablesAPI
     from cognite.client._api.postgres_gateway.users import UsersAPI
     from cognite.client._api.raw import RawDatabasesAPI, RawRowsAPI, RawTablesAPI  # type: ignore[attr-defined]
@@ -100,6 +109,7 @@ if _should_build_docs := os.getenv("BUILD_COGNITE_SDK_DOCS") == "true":
         ThreeDRevisionsAPI,
     )
     from cognite.client._api.transformations import (  # type: ignore[attr-defined]
+        TransformationExternalDataSourcesAPI,
         TransformationJobsAPI,
         TransformationNotificationsAPI,
         TransformationSchedulesAPI,
@@ -167,6 +177,7 @@ class AsyncCogniteClient:
         self.workflows = WorkflowAPI(self._config, self._API_VERSION, self)
         self.units = UnitAPI(self._config, self._API_VERSION, self)
         self.simulators = SimulatorsAPI(self._config, self._API_VERSION, self)
+        self.integrations = IntegrationsAPI(self._config, self._API_VERSION, self)
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 
@@ -318,6 +329,8 @@ class AsyncCogniteClient:
         tenant_id: str,
         client_id: str,
         client_name: str | None = None,
+        prompt: InteractivePrompt | None = None,
+        login_hint: str | None = None,
     ) -> AsyncCogniteClient:
         """
         Create an AsyncCogniteClient with default configuration using the interactive flow.
@@ -334,11 +347,15 @@ class AsyncCogniteClient:
             tenant_id (str): The Azure tenant ID.
             client_id (str): The Azure client ID.
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
+            prompt (InteractivePrompt | None): What the browser asks you the first time you sign in, e.g. ``"select_account"`` to pick which account to use. See the note on account selection in :class:`~cognite.client.credentials.OAuthInteractive`. Default: None
+            login_hint (str | None): Username (e.g. email) of the account to sign in with. See the note on account selection in :class:`~cognite.client.credentials.OAuthInteractive`. Default: None
 
         Returns:
             AsyncCogniteClient: An AsyncCogniteClient instance with default configurations.
         """
-        credentials = OAuthInteractive.default_for_entra_id(tenant_id, client_id, cdf_cluster)
+        credentials = OAuthInteractive.default_for_entra_id(
+            tenant_id, client_id, cdf_cluster, prompt=prompt, login_hint=login_hint
+        )
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod
@@ -430,6 +447,7 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.transformations.notifications = TransformationNotificationsAPI  # type: ignore
     AsyncCogniteClient.transformations.jobs = TransformationJobsAPI  # type: ignore
     AsyncCogniteClient.transformations.schema = TransformationSchemaAPI  # type: ignore
+    AsyncCogniteClient.transformations.external_data_sources = TransformationExternalDataSourcesAPI  # type: ignore
     AsyncCogniteClient.diagrams = DiagramsAPI  # type: ignore
     AsyncCogniteClient.annotations = AnnotationsAPI  # type: ignore
     AsyncCogniteClient.functions = FunctionsAPI  # type: ignore
@@ -446,6 +464,7 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.data_modeling.statistics = StatisticsAPI  # type: ignore
     AsyncCogniteClient.data_modeling.statistics.spaces = SpaceStatisticsAPI  # type: ignore
     AsyncCogniteClient.data_modeling.streams = StreamsAPI  # type: ignore
+    AsyncCogniteClient.data_modeling.streams.templates = StreamTemplatesAPI  # type: ignore
     AsyncCogniteClient.data_modeling.records = RecordsAPI  # type: ignore
     AsyncCogniteClient.data_modeling.time_series = DataModelingTimeSeriesAPI  # type: ignore
     AsyncCogniteClient.documents = DocumentsAPI  # type: ignore
@@ -465,6 +484,9 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.simulators.routines.revisions = SimulatorRoutineRevisionsAPI  # type: ignore
     AsyncCogniteClient.simulators.runs = SimulatorRunsAPI  # type: ignore
     AsyncCogniteClient.simulators.logs = SimulatorLogsAPI  # type: ignore
+    AsyncCogniteClient.integrations = IntegrationsAPI  # type: ignore
+    AsyncCogniteClient.integrations.history = IntegrationHistoryAPI  # type: ignore
+    AsyncCogniteClient.integrations.errors = IntegrationErrorsAPI  # type: ignore
 
 
 if _should_build_docs:

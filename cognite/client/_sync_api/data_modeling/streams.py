@@ -1,6 +1,5 @@
 """
 ===============================================================================
-3bfd805fbceb341bb437635ac632d5ad
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,16 +7,14 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, overload
+from typing import overload
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._sync_api.data_modeling.stream_templates import SyncStreamTemplatesAPI
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.data_modeling.streams import Stream, StreamList, StreamWrite
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncStreamsAPI(SyncAPIClient):
@@ -25,6 +22,7 @@ class SyncStreamsAPI(SyncAPIClient):
 
     def __init__(self, async_client: AsyncCogniteClient) -> None:
         self.__async_client = async_client
+        self.templates = SyncStreamTemplatesAPI(async_client)
 
     @overload
     def create(self, items: StreamWrite) -> Stream: ...
@@ -50,14 +48,14 @@ class SyncStreamsAPI(SyncAPIClient):
                 >>> from cognite.client.data_classes.data_modeling.streams import (
                 ...     StreamWrite,
                 ...     StreamTemplate,
-                ...     StreamTemplateWriteSettings,
+                ...     StreamWriteSettings,
                 ... )
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.streams.create(
                 ...     StreamWrite(
                 ...         external_id="my-stream",
-                ...         settings=StreamTemplateWriteSettings(
+                ...         settings=StreamWriteSettings(
                 ...             template=StreamTemplate(name="ImmutableTestStream"),
                 ...         ),
                 ...     )
@@ -94,7 +92,8 @@ class SyncStreamsAPI(SyncAPIClient):
         Args:
             external_id (str): External ID of the stream to retrieve.
             include_statistics (bool | None): When ``True``, usage statistics will be returned together
-                with stream settings. Computing statistics can be expensive.
+                with stream settings, i.e. the ``consumed`` values of the stream limits, including the number
+                of unique properties with data. Computing statistics can be expensive.
 
         Returns:
             Stream | None: The stream metadata (and optionally statistics), or ``None`` if not found.

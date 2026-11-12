@@ -29,9 +29,9 @@ class CogniteExtractorDataApply(_CogniteExtractorDataProperties, TypedNodeApply)
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite extractor datum.
-        extracted_data (dict | None | Omitted): Unstructured information extracted from source system
+        extracted_data (dict | Omitted | None): Unstructured information extracted from source system
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -39,9 +39,9 @@ class CogniteExtractorDataApply(_CogniteExtractorDataProperties, TypedNodeApply)
         space: str,
         external_id: str,
         *,
-        extracted_data: dict | None | Omitted = OMITTED,
+        extracted_data: dict | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.extracted_data = extracted_data
@@ -111,24 +111,24 @@ class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply)
     Args:
         space (str): The space where the node is located.
         external_id (str): The external id of the Cognite extractor file.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        assets (list[DirectRelationReference | tuple[str, str]] | None | Omitted): List of assets this file relates to
-        mime_type (str | None | Omitted): MIME type of the file
-        directory (str | None | Omitted): Contains the path elements from the source (for when the source system has a file system hierarchy or similar)
-        category (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to an instance of CogniteFileCategory representing the detected categorization/class for the file
-        extracted_data (dict | None | Omitted): Unstructured information extracted from source system
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        assets (list[DirectRelationReference | tuple[str, str]] | Omitted | None): List of assets this file relates to
+        mime_type (str | Omitted | None): MIME type of the file
+        directory (str | Omitted | None): Contains the path elements from the source (for when the source system has a file system hierarchy or similar)
+        category (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to an instance of CogniteFileCategory representing the detected categorization/class for the file
+        extracted_data (dict | Omitted | None): Unstructured information extracted from source system
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -136,24 +136,24 @@ class CogniteExtractorFileApply(_CogniteExtractorFileProperties, TypedNodeApply)
         space: str,
         external_id: str,
         *,
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
-        assets: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
-        mime_type: str | None | Omitted = OMITTED,
-        directory: str | None | Omitted = OMITTED,
-        category: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        extracted_data: dict | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
+        assets: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
+        mime_type: str | Omitted | None = OMITTED,
+        directory: str | Omitted | None = OMITTED,
+        category: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        extracted_data: dict | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.name = name
@@ -311,24 +311,24 @@ class CogniteExtractorTimeSeriesApply(_CogniteExtractorTimeSeriesProperties, Typ
         external_id (str): The external id of the Cognite extractor time series.
         is_step (bool): Defines whether the time series is a step series or not.
         time_series_type (Literal['numeric', 'string']): Defines data type of the data points.
-        name (str | None | Omitted): Name of the instance
-        description (str | None | Omitted): Description of the instance
-        tags (list[str] | None | Omitted): Text based labels for generic use, limited to 1000
-        aliases (list[str] | None | Omitted): Alternative names for the node
-        source_id (str | None | Omitted): Identifier from the source system
-        source_context (str | None | Omitted): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
-        source (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation to a source system
-        source_created_time (datetime | None | Omitted): When the instance was created in source system (if available)
-        source_updated_time (datetime | None | Omitted): When the instance was last updated in the source system (if available)
-        source_created_user (str | None | Omitted): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_updated_user (str | None | Omitted): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
-        source_unit (str | None | Omitted): Unit as specified in the source system
-        unit (DirectRelationReference | tuple[str, str] | None | Omitted): direct relation to the unit of the time series
-        assets (list[DirectRelationReference | tuple[str, str]] | None | Omitted): The asset field.
-        equipment (list[DirectRelationReference | tuple[str, str]] | None | Omitted): The equipment field.
-        extracted_data (dict | None | Omitted): Unstructured information extracted from source system
+        name (str | Omitted | None): Name of the instance
+        description (str | Omitted | None): Description of the instance
+        tags (list[str] | Omitted | None): Text based labels for generic use, limited to 1000
+        aliases (list[str] | Omitted | None): Alternative names for the node
+        source_id (str | Omitted | None): Identifier from the source system
+        source_context (str | Omitted | None): Context of the source id. For systems where the sourceId is globally unique, the sourceContext is expected to not be set.
+        source (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation to a source system
+        source_created_time (datetime | Omitted | None): When the instance was created in source system (if available)
+        source_updated_time (datetime | Omitted | None): When the instance was last updated in the source system (if available)
+        source_created_user (str | Omitted | None): User identifier from the source system on who created the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_updated_user (str | Omitted | None): User identifier from the source system on who last updated the source data. This identifier is not guaranteed to match the user identifiers in CDF
+        source_unit (str | Omitted | None): Unit as specified in the source system
+        unit (DirectRelationReference | tuple[str, str] | Omitted | None): direct relation to the unit of the time series
+        assets (list[DirectRelationReference | tuple[str, str]] | Omitted | None): The asset field.
+        equipment (list[DirectRelationReference | tuple[str, str]] | Omitted | None): The equipment field.
+        extracted_data (dict | Omitted | None): Unstructured information extracted from source system
         existing_version (int | None): Fail the ingestion request if the node's version is greater than or equal to this value. If no existingVersion is specified, the ingestion will always overwrite any existing data for the node (for the specified container or node). If existingVersion is set to 0, the upsert will behave as an insert, so it will fail the bulk if the item already exists. If skipOnVersionConflict is set on the ingestion request, then the item will be skipped instead of failing the ingestion request.
-        type (DirectRelationReference | tuple[str, str] | None | Omitted): Direct relation pointing to the type node.
+        type (DirectRelationReference | tuple[str, str] | Omitted | None): Direct relation pointing to the type node.
     """
 
     def __init__(
@@ -338,24 +338,24 @@ class CogniteExtractorTimeSeriesApply(_CogniteExtractorTimeSeriesProperties, Typ
         *,
         is_step: bool,
         time_series_type: Literal["numeric", "string"],
-        name: str | None | Omitted = OMITTED,
-        description: str | None | Omitted = OMITTED,
-        tags: list[str] | None | Omitted = OMITTED,
-        aliases: list[str] | None | Omitted = OMITTED,
-        source_id: str | None | Omitted = OMITTED,
-        source_context: str | None | Omitted = OMITTED,
-        source: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        source_created_time: datetime | None | Omitted = OMITTED,
-        source_updated_time: datetime | None | Omitted = OMITTED,
-        source_created_user: str | None | Omitted = OMITTED,
-        source_updated_user: str | None | Omitted = OMITTED,
-        source_unit: str | None | Omitted = OMITTED,
-        unit: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
-        assets: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
-        equipment: list[DirectRelationReference | tuple[str, str]] | None | Omitted = OMITTED,
-        extracted_data: dict | None | Omitted = OMITTED,
+        name: str | Omitted | None = OMITTED,
+        description: str | Omitted | None = OMITTED,
+        tags: list[str] | Omitted | None = OMITTED,
+        aliases: list[str] | Omitted | None = OMITTED,
+        source_id: str | Omitted | None = OMITTED,
+        source_context: str | Omitted | None = OMITTED,
+        source: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        source_created_time: datetime | Omitted | None = OMITTED,
+        source_updated_time: datetime | Omitted | None = OMITTED,
+        source_created_user: str | Omitted | None = OMITTED,
+        source_updated_user: str | Omitted | None = OMITTED,
+        source_unit: str | Omitted | None = OMITTED,
+        unit: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
+        assets: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
+        equipment: list[DirectRelationReference | tuple[str, str]] | Omitted | None = OMITTED,
+        extracted_data: dict | Omitted | None = OMITTED,
         existing_version: int | None = None,
-        type: DirectRelationReference | tuple[str, str] | None | Omitted = OMITTED,
+        type: DirectRelationReference | tuple[str, str] | Omitted | None = OMITTED,
     ) -> None:
         TypedNodeApply.__init__(self, space, external_id, existing_version, type)
         self.is_step = is_step

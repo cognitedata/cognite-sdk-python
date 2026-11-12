@@ -4,15 +4,16 @@ import re
 from collections.abc import Callable
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_modeling.streams import (
     Stream,
     StreamList,
     StreamTemplate,
-    StreamTemplateWriteSettings,
+    StreamTemplateInfoList,
     StreamWrite,
+    StreamWriteSettings,
 )
 from tests.utils import jsgz_load
 
@@ -56,53 +57,121 @@ class TestStreamsAPI:
     def test_list_parses_items(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         streams_base_url: str,
         stream_list_response: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET", url=re.compile(re.escape(streams_base_url) + r"(?:\?.+)?$"), json=stream_list_response
         )
         out = cognite_client.data_modeling.streams.list()
         assert isinstance(out, StreamList)
         assert out[0].external_id == "st1"
+        assert out[0].settings.limits.max_unique_properties_with_data is None
+        assert out.dump() == stream_list_response["items"]
+        (request,) = httpx2_mock.get_requests()
+        assert request.headers["cdf-version"] == "20230101"
+
+    def test_templates_list_parses_items(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        streams_base_url: str,
+    ) -> None:
+        response = {
+            "items": [
+                {
+                    "name": "ImmutableTestStream",
+                    "type": "Immutable",
+                    "maxStreams": {"provisioned": 2},
+                    "settings": {
+                        "limits": {
+                            "maxRecordsTotal": {
+                                "type": "fixed",
+                                "name": "Maximum total number of records",
+                                "value": 1000,
+                            },
+                        },
+                        "lifecycle": {
+                            "retainedAfterSoftDelete": {"type": "fixed", "name": "Soft delete", "value": "PT168H"},
+                            "dataDeletedAfter": {"type": "fixed", "name": "Data retention", "value": "infinity"},
+                        },
+                    },
+                }
+            ]
+        }
+        httpx2_mock.add_response(
+            method="GET", url=re.compile(re.escape(streams_base_url + "/templates") + r"(?:\?.+)?$"), json=response
+        )
+        out = cognite_client.data_modeling.streams.templates.list()
+        assert isinstance(out, StreamTemplateInfoList)
+        assert out[0].name == "ImmutableTestStream"
+        assert out[0].max_streams == 2
+        assert out[0].settings.limits["maxRecordsTotal"].value == 1000
+        assert out[0].settings.lifecycle["retainedAfterSoftDelete"].value == "PT168H"
+        assert out.dump() == response["items"]
+        (request,) = httpx2_mock.get_requests()
+        assert request.headers["cdf-version"] == "20230101"
 
     def test_retrieve_include_statistics_query(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         streams_base_url: str,
         stream_response: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=re.compile(re.escape(streams_base_url) + r"/st1(?:\?.+)?$"),
             json=stream_response,
         )
         cognite_client.data_modeling.streams.retrieve("st1", include_statistics=True)
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 1
         assert requests[0].url.params["includeStatistics"].lower() == "true"
+        assert requests[0].headers["cdf-version"] == "20230101"
+
+    def test_retrieve_parses_max_unique_properties_with_data(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        streams_base_url: str,
+        stream_response: dict,
+    ) -> None:
+        stream_response["settings"]["limits"]["maxUniquePropertiesWithData"] = {"provisioned": 1000, "consumed": 42}
+        httpx2_mock.add_response(
+            method="GET",
+            url=re.compile(re.escape(streams_base_url) + r"/st1(?:\?.+)?$"),
+            json=stream_response,
+        )
+        out = cognite_client.data_modeling.streams.retrieve("st1", include_statistics=True)
+        assert isinstance(out, Stream)
+        unique_properties = out.settings.limits.max_unique_properties_with_data
+        assert unique_properties is not None
+        assert unique_properties.provisioned == 1000
+        assert unique_properties.consumed == 42
+        assert out.dump() == stream_response
 
     def test_create_posts_single_item(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         streams_base_url: str,
         stream_list_response: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST", url=re.compile(re.escape(streams_base_url) + r"$"), json=stream_list_response
         )
         w = StreamWrite(
             "st1",
-            StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream")),
+            StreamWriteSettings(StreamTemplate("ImmutableTestStream")),
         )
         out = cognite_client.data_modeling.streams.create(w)
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert isinstance(out, Stream)
         assert len(requests) == 1
         assert requests[0].url.path.endswith("/streams")
+        assert requests[0].headers["cdf-version"] == "20230101"
         assert jsgz_load(requests[0].content) == {
             "items": [{"externalId": "st1", "settings": {"template": {"name": "ImmutableTestStream"}}}]
         }
@@ -110,18 +179,18 @@ class TestStreamsAPI:
     def test_create_chunks_multiple_items(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         streams_base_url: str,
         make_stream_response: Callable[..., dict],
     ) -> None:
         url_pattern = re.compile(re.escape(streams_base_url) + r"$")
-        httpx_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("a", 1)]})
-        httpx_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("b", 2)]})
-        tpl = StreamTemplateWriteSettings(StreamTemplate("ImmutableTestStream"))
+        httpx2_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("a", 1)]})
+        httpx2_mock.add_response(method="POST", url=url_pattern, json={"items": [make_stream_response("b", 2)]})
+        tpl = StreamWriteSettings(StreamTemplate("ImmutableTestStream"))
         a = StreamWrite("a", tpl)
         b = StreamWrite("b", tpl)
         out = cognite_client.data_modeling.streams.create([a, b])
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert isinstance(out, StreamList)
         assert [stream.external_id for stream in out] == ["a", "b"]
         assert len(requests) == 2
@@ -133,14 +202,14 @@ class TestStreamsAPI:
     def test_delete_chunks_multiple_items(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         streams_base_url: str,
     ) -> None:
         url_pattern = re.compile(re.escape(streams_base_url) + r"/delete$")
-        httpx_mock.add_response(method="POST", url=url_pattern, json={})
-        httpx_mock.add_response(method="POST", url=url_pattern, json={})
+        httpx2_mock.add_response(method="POST", url=url_pattern, json={})
+        httpx2_mock.add_response(method="POST", url=url_pattern, json={})
         cognite_client.data_modeling.streams.delete(["a", "b"])
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 2
         assert [jsgz_load(request.content) for request in requests] == [
             {"items": [{"externalId": "a"}]},

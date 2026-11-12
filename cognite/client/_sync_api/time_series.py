@@ -1,6 +1,5 @@
 """
 ===============================================================================
-6019e3c2ccde3aafc9dd27ac6379507a
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.time_series import SortSpec
@@ -26,9 +25,6 @@ from cognite.client.data_classes.time_series import (
 )
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncTimeSeriesAPI(SyncAPIClient):
@@ -115,6 +111,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         Iterate over time series
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Fetches time series as they are iterated over, so you keep a limited number of objects in memory.
 
         Args:
@@ -141,6 +140,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
 
         Yields:
             TimeSeries | TimeSeriesList: yields TimeSeries one by one if chunk_size is not specified, else TimeSeriesList objects.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            You can list these like any other Data Modeling instance, or through the dedicated helper :meth:`client.data_modeling.time_series.list <cognite.client.AsyncCogniteClient.data_modeling.time_series.list>` with ``time_series_type="state"``.
         """  # noqa: DOC404
         yield from SyncIterator(
             self.__async_client.time_series(
@@ -172,6 +175,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> TimeSeries | None:
         """
         `Retrieve a single time series by id <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getTimeSeriesByIds>`_.
+
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | None): ID
@@ -207,6 +213,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> TimeSeriesList:
         """
         `Retrieve multiple time series by id <https://api-docs.cognite.com/20230101/tag/Time-series/operation/getTimeSeriesByIds>`_.
+
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -244,12 +253,19 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `Count of time series matching the specified filters and search <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count.
             filter (TimeSeriesFilter | dict[str, Any] | None): The filter to narrow down time series to count requiring exact match.
 
         Returns:
             int: The number of time series matching the specified filters and search.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Aggregation of state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.aggregate <cognite.client.AsyncCogniteClient.data_modeling.instances.aggregate>`.
 
         Examples:
 
@@ -279,6 +295,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `Find approximate property count for time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             property (TimeSeriesProperty | str | list[str]): The property to count the cardinality of.
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
@@ -286,6 +305,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
             filter (TimeSeriesFilter | dict[str, Any] | None): The filter to narrow down the time series to count requiring exact match.
         Returns:
             int: The number of properties matching the specified filters and search.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Aggregation of state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.aggregate <cognite.client.AsyncCogniteClient.data_modeling.instances.aggregate>`.
 
         Examples:
 
@@ -326,6 +349,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `Find approximate paths count for time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
@@ -333,6 +359,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
             filter (TimeSeriesFilter | dict[str, Any] | None): The filter to narrow down the time series to count requiring exact match.
         Returns:
             int: The number of properties matching the specified filters and search.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Aggregation of state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.aggregate <cognite.client.AsyncCogniteClient.data_modeling.instances.aggregate>`.
 
         Examples:
 
@@ -362,6 +392,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `Get unique properties with counts for time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             property (TimeSeriesProperty | str | list[str]): The property to group by.
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
@@ -370,6 +403,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
 
         Returns:
             UniqueResultList: List of unique values of time series matching the specified filters and search.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Aggregation of state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.aggregate <cognite.client.AsyncCogniteClient.data_modeling.instances.aggregate>`.
 
         Examples:
 
@@ -430,6 +467,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `Get unique paths with counts for time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/aggregateTimeSeries>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             path (TimeSeriesProperty | str | list[str]): The scope in every document to aggregate properties. The only value allowed now is ["metadata"]. It means to aggregate only metadata properties (aka keys).
             advanced_filter (Filter | dict[str, Any] | None): The filter to narrow down the time series to count cardinality.
@@ -438,6 +478,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
 
         Returns:
             UniqueResultList: List of unique values of time series matching the specified filters and search.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Aggregation of state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.aggregate <cognite.client.AsyncCogniteClient.data_modeling.instances.aggregate>`.
 
         Examples:
 
@@ -467,6 +511,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `Create one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/postTimeSeries>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             time_series (TimeSeries | TimeSeriesWrite | Sequence[TimeSeries] | Sequence[TimeSeriesWrite]): TimeSeries or list of TimeSeries to create.
 
@@ -495,6 +542,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> None:
         """
         `Delete one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/deleteTimeSeries>`_.
+
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -540,6 +590,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
     ) -> TimeSeries | TimeSeriesList:
         """
         `Update one or more time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/alterTimeSeries>`_.
+
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             item (TimeSeries | TimeSeriesWrite | TimeSeriesUpdate | Sequence[TimeSeries | TimeSeriesWrite | TimeSeriesUpdate]): Time series to update
@@ -603,6 +656,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         Upsert time series, i.e., update if it exists, and create if it does not exist.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
             Note this is a convenience method that handles the upserting for you by first calling update on all items,
             and if any of them fail because they do not exist, it will create them instead.
 
@@ -645,6 +701,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `Search for time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/searchTimeSeries>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -656,6 +715,10 @@ class SyncTimeSeriesAPI(SyncAPIClient):
 
         Returns:
             TimeSeriesList: List of requested time series.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            Searching state time series must go through the generic Data Modeling endpoint instead: :meth:`client.data_modeling.instances.search <cognite.client.AsyncCogniteClient.data_modeling.instances.search>`.
 
         Examples:
 
@@ -702,6 +765,9 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         """
         `List time series <https://api-docs.cognite.com/20230101/tag/Time-series/operation/listTimeSeries>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Time Series API is deprecated and is scheduled for removal on 2027-12-31. Create and query time series as CogniteTimeSeries instances in the core data model (data point operations remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             name (str | None): Name of the time series. Often referred to as tag.
             unit (str | None): Unit of the time series.
@@ -727,11 +793,15 @@ class SyncTimeSeriesAPI(SyncAPIClient):
         Returns:
             TimeSeriesList: The requested time series.
 
-        .. note::
+        Note:
             When using `partitions`, there are few considerations to keep in mind:
                 * `limit` has to be set to `None` (or `-1`).
                 * API may reject requests if you specify more than 10 partitions. When Cognite enforces this behavior, the requests result in a 400 Bad Request status.
                 * Partitions are done independently of sorting: there's no guarantee of the sort order between elements from different partitions. For this reason providing a `sort` parameter when using `partitions` is not allowed.
+
+        Note:
+            State time series are never returned by this method as they are a Data Modeling-only feature (the API leaves them out by default).
+            You can list these like any other Data Modeling instance, or through the dedicated helper :meth:`client.data_modeling.time_series.list <cognite.client.AsyncCogniteClient.data_modeling.time_series.list>` with ``time_series_type="state"``.
 
         Examples:
 
