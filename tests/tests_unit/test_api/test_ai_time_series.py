@@ -11,7 +11,7 @@ from pytest_httpx2 import HTTPXMock
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api.ai.utils import size_as_sent
 from cognite.client.config import global_config
-from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries
+from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries, ForecastResultList
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from tests.utils import get_url, jsgz_load
@@ -166,6 +166,15 @@ class TestForecast:
 
         assert err.value.failed == [f"s{i}" for i in range(32)]
         assert sorted(err.value.successful + err.value.skipped) == sorted(f"s{i}" for i in range(32, 40))
+
+    def test_empty_input_returns_no_results_without_a_request(
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
+        res = cognite_client.ai.time_series.forecast([])
+
+        assert isinstance(res, ForecastResultList)
+        assert len(res) == 0
+        assert httpx2_mock.get_requests() == []
 
     def test_duplicate_labels_are_rejected(self, cognite_client: CogniteClient) -> None:
         with pytest.raises(ValueError, match=re.escape("Duplicated labels: {'21-PT-1019'}")):

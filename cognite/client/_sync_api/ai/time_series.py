@@ -43,9 +43,9 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 in every point's quantiles; use 0.5, the median, as a single predicted value.
 
         Raises:
-            ValueError: If no time series are given, a label is repeated, a cohort has more than 32 time series, or a
-                time series or cohort is over 5 MiB on its own. These are the API's limits for one request, and a
-                cohort is always sent in one request.
+            ValueError: If a label is repeated, a cohort has more than 32 time series, or a time series or cohort is
+                over 5 MiB on its own. These are the API's limits for one request, and a cohort is always sent in one
+                request.
 
         Examples:
 
@@ -113,9 +113,9 @@ class SyncAITimeSeriesAPI(SyncAPIClient):
                 single predicted value.
 
         Raises:
-            ValueError: If no time series are given, a label is repeated, a cohort has more than 32 time series, or a
-                time series or cohort is over 5 MiB on its own. These are the API's limits for one request, and a
-                cohort is always sent in one request.
+            ValueError: If a label is repeated, a cohort has more than 32 time series, or a time series or cohort is
+                over 5 MiB on its own. These are the API's limits for one request, and a cohort is always sent in one
+                request.
 
         Examples:
 

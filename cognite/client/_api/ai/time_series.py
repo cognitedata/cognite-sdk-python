@@ -56,9 +56,9 @@ class AITimeSeriesAPI(APIClient):
                 in every point's quantiles; use 0.5, the median, as a single predicted value.
 
         Raises:
-            ValueError: If no time series are given, a label is repeated, a cohort has more than 32 time series, or a
-                time series or cohort is over 5 MiB on its own. These are the API's limits for one request, and a
-                cohort is always sent in one request.
+            ValueError: If a label is repeated, a cohort has more than 32 time series, or a time series or cohort is
+                over 5 MiB on its own. These are the API's limits for one request, and a cohort is always sent in one
+                request.
 
         Examples:
 
@@ -125,9 +125,9 @@ class AITimeSeriesAPI(APIClient):
                 single predicted value.
 
         Raises:
-            ValueError: If no time series are given, a label is repeated, a cohort has more than 32 time series, or a
-                time series or cohort is over 5 MiB on its own. These are the API's limits for one request, and a
-                cohort is always sent in one request.
+            ValueError: If a label is repeated, a cohort has more than 32 time series, or a time series or cohort is
+                over 5 MiB on its own. These are the API's limits for one request, and a cohort is always sent in one
+                request.
 
         Examples:
 
@@ -159,7 +159,7 @@ class AITimeSeriesAPI(APIClient):
         self._warning.warn()
         series = list(time_series)
         if not series:
-            raise ValueError("Pass at least one time series.")
+            return list_cls([])
         if duplicates := find_duplicates(s.label for s in series):
             raise ValueError(f"Labels must be unique within a call. Duplicated labels: {duplicates}.")
 
