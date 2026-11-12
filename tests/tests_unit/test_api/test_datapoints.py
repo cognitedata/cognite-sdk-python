@@ -10,31 +10,55 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from copy import deepcopy
 from datetime import datetime, timezone
-from random import randint, random, shuffle
+from random import choice, randint, random, shuffle
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
-from httpx import Response
-from pytest_httpx import HTTPXMock
+from httpx2 import Response
+from pytest_httpx2 import HTTPXMock
 
-import cognite.client._api.datapoints as dps_api  # for mocking
+import cognite.client._api.datapoints_io as dps_io  # for mocking
 from cognite.client import AsyncCogniteClient
-from cognite.client._api.datapoints import _InsertDatapoint
-from cognite.client.data_classes import Datapoint, Datapoints, DatapointsList, LatestDatapointQuery
+from cognite.client._api.datapoints_io import StateDatapointsPoster, _InsertDatapoint
+from cognite.client._proto.data_point_list_response_pb2 import (
+    TIMESERIES_TYPE_STRING,
+    DataPointListItem,
+    DataPointListResponse,
+)
+from cognite.client._proto.data_points_pb2 import StringAggregateDatapoint, StringAggregateDatapoints
+from cognite.client.data_classes import (
+    Datapoint,
+    Datapoints,
+    DatapointsArray,
+    DatapointsList,
+    GapFillOptions,
+    LatestDatapointQuery,
+    StateDatapointsInsert,
+    StateDatapointWrite,
+)
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import LatestDatapoint, LatestDatapointList
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._time import datetime_to_ms
-from tests.utils import get_or_raise, get_url, jsgz_load, random_gamma_dist_integer
+from tests.utils import (
+    PANDAS_STR_DTYPE,
+    PANDAS_TS_UNIT,
+    get_or_raise,
+    get_url,
+    jsgz_load,
+    override_semaphore,
+    random_gamma_dist_integer,
+)
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
 
 
 @pytest.fixture
-def mock_retrieve_latest(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> Iterator[HTTPXMock]:
+def mock_retrieve_latest(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> Iterator[HTTPXMock]:
     def request_callback(request: Any) -> Response:
         payload = jsgz_load(request.content)
 
@@ -55,18 +79,18 @@ def mock_retrieve_latest(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient
             )
         return Response(200, headers={}, json={"items": items})
 
-    httpx_mock.add_callback(
+    httpx2_mock.add_callback(
         request_callback,
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         match_headers={"content-type": "application/json"},
     )
-    yield httpx_mock
+    yield httpx2_mock
 
 
 @pytest.fixture
-def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_retrieve_latest_empty(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=200,
@@ -77,12 +101,12 @@ def mock_retrieve_latest_empty(httpx_mock: HTTPXMock, async_client: AsyncCognite
             ]
         },
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_retrieve_latest_with_failure(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=200,
@@ -93,13 +117,13 @@ def mock_retrieve_latest_with_failure(httpx_mock: HTTPXMock, async_client: Async
             ]
         },
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data/latest"),
         status_code=500,
         json={"error": {"code": 500, "message": "Internal Server Error"}},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class TestGetLatest:
@@ -121,6 +145,7 @@ class TestGetLatest:
         res = cognite_client.time_series.data.retrieve_latest(id=1, before=10)
         assert isinstance(res, LatestDatapoint)
         assert 9 == datetime_to_ms(get_or_raise(res.timestamp))
+        assert 9 == res.timestamp_ms
         assert isinstance(res.value, float)
 
     def test_retrieve_latest_multiple_ts_with_before(
@@ -136,6 +161,8 @@ class TestGetLatest:
         res = cognite_client.time_series.data.retrieve_latest(id=1)
         assert isinstance(res, LatestDatapoint)
         assert not res.has_datapoint
+        with pytest.raises(ValueError, match="No datapoint exists"):
+            res.timestamp_ms
 
     def test_retrieve_latest_multiple_ts_empty(
         self, cognite_client: CogniteClient, mock_retrieve_latest_empty: HTTPXMock
@@ -210,26 +237,26 @@ class TestGetLatest:
 
 
 @pytest.fixture
-def mock_post_datapoints(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_post_datapoints(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data"),
         status_code=200,
         json={},
         is_reusable=True,
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_post_datapoints_400(httpx_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    httpx_mock.add_response(
+def mock_post_datapoints_400(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data, "/timeseries/data"),
         status_code=400,
         json={"error": {"message": "Ts not found", "missing": [{"externalId": "does_not_exist"}]}},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.mark.allow_no_semaphore(
@@ -403,6 +430,143 @@ class TestInsertDatapoints:
         assert all(dump_sem_held), "dp.dump() was called outside the semaphore context"
 
 
+class TestRetrieveWithGapFilling:
+    # With a semaphore of 1, a single time series is fetched eagerly, while two use the chunking fetcher:
+    @pytest.mark.parametrize("ids", ([1], [1, 2]))
+    def test_fill_is_sent_and_warns(
+        self, ids: list[int], cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST",
+            url=get_url(async_client.time_series.data, "/timeseries/data/list"),
+            status_code=200,
+            content=DataPointListResponse(items=[DataPointListItem(id=i) for i in ids]).SerializeToString(),
+            is_reusable=True,
+        )
+        with override_semaphore(1, target="datapoints"), pytest.warns(FeaturePreviewWarning, match="gap filling"):
+            cognite_client.time_series.data.retrieve(
+                id=ids,
+                start=0,
+                end=24 * 3_600_000,
+                aggregates="average",
+                granularity="1h",
+                fill=GapFillOptions(limit="2h"),
+            )
+
+        items = [item for req in httpx2_mock.get_requests() for item in jsgz_load(req.content)["items"]]
+        assert items
+        assert all(item["fill"] == {"limit": "2h"} for item in items)
+
+
+STRING_AGGS = ["count", "count_bad", "duration_good", "interpolation", "step_interpolation"]
+
+
+@pytest.fixture
+def mock_string_aggregates(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+    # The API omits interpolation in intervals before the first datapoint, which protobuf gives us as "".
+    # Counts are NaN when missing. The interpolated values are numeric-looking on purpose (must stay strings):
+    dps = [
+        StringAggregateDatapoint(timestamp=0, count=2, countBad=math.nan, durationGood=10),
+        StringAggregateDatapoint(
+            timestamp=10, count=math.nan, countBad=1, interpolation="1.5", stepInterpolation="1.5"
+        ),
+        StringAggregateDatapoint(
+            timestamp=20, count=1, countBad=math.nan, interpolation="abc", stepInterpolation="abc"
+        ),
+    ]
+    items = [
+        DataPointListItem(
+            id=i,
+            isString=True,
+            type=TIMESERIES_TYPE_STRING,
+            unitExternalId="length:m",
+            stringAggregateDatapoints=StringAggregateDatapoints(datapoints=dps),
+        )
+        for i in (1, 2)
+    ]
+    httpx2_mock.add_response(
+        method="POST",
+        url=get_url(async_client.time_series.data, "/timeseries/data/list"),
+        status_code=200,
+        content=DataPointListResponse(items=items).SerializeToString(),
+        is_reusable=True,
+    )
+    return httpx2_mock
+
+
+@pytest.mark.dsl
+class TestRetrieveStringAggregates:
+    # With a semaphore of 1, a single time series is fetched eagerly, while two use the chunking fetcher:
+    @pytest.mark.parametrize("ids", ([1], [1, 2]))
+    @pytest.mark.parametrize("use_numpy", (False, True))
+    @pytest.mark.usefixtures("mock_string_aggregates")
+    def test_retrieve(self, ids: list[int], use_numpy: bool, cognite_client: CogniteClient) -> None:
+        import numpy as np
+
+        retrieve: Any = (
+            cognite_client.time_series.data.retrieve_arrays if use_numpy else cognite_client.time_series.data.retrieve
+        )
+        with override_semaphore(1, target="datapoints"):
+            res = retrieve(id=ids, start=0, end=3000, granularity="1s", aggregates=STRING_AGGS)
+
+        for dps in res:
+            assert list(dps.interpolation) == list(dps.step_interpolation) == ["", "1.5", "abc"]
+            assert list(dps.count) == [2, 0, 1]
+            assert list(dps.count_bad) == [0, 1, 0]
+            assert list(dps.duration_good) == [10, 0, 0]
+            if use_numpy:
+                assert dps.interpolation.dtype == dps.step_interpolation.dtype == np.object_
+                assert dps.count.dtype == np.int64
+
+    @pytest.mark.usefixtures("mock_string_aggregates")
+    def test_retrieve_dataframe(self, cognite_client: CogniteClient) -> None:
+        df = cognite_client.time_series.data.retrieve_dataframe(
+            id=1, start=0, end=3000, granularity="1s", aggregates=STRING_AGGS, include_unit=True
+        )
+        # String time series have no physical unit for any aggregate:
+        assert df.columns.names == ["identifier", "aggregate"]
+        df = df.droplevel("identifier", axis=1)
+        assert df.columns.tolist() == sorted(STRING_AGGS)
+        assert df.dtypes.astype(str).tolist() == ["Int64", "Int64", "Int64", PANDAS_STR_DTYPE, PANDAS_STR_DTYPE]
+        assert df["interpolation"].tolist() == df["step_interpolation"].tolist() == ["", "1.5", "abc"]
+
+    @pytest.mark.parametrize("is_string, expected", [(True, ["1.5", "abc"]), (False, [1.5, 2.0])])
+    def test_load_datapoints_array(self, is_string: bool, expected: list) -> None:
+        values = ["1.5", "abc"] if is_string else [1.5, 2.0]
+        dps = DatapointsArray._load(
+            {
+                "id": 1,
+                "isString": is_string,
+                "isStep": False,
+                "type": "string" if is_string else "numeric",
+                "datapoints": [{"timestamp": i, "interpolation": v} for i, v in enumerate(values)],
+            }
+        )
+        assert dps.interpolation is not None
+        assert dps.interpolation.tolist() == expected
+
+    @pytest.mark.parametrize("use_numpy", (False, True))
+    def test_retrieve_empty(
+        self, use_numpy: bool, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
+        import numpy as np
+
+        item = DataPointListItem(id=1, isString=True, type=TIMESERIES_TYPE_STRING)
+        httpx2_mock.add_response(
+            method="POST",
+            url=get_url(async_client.time_series.data, "/timeseries/data/list"),
+            status_code=200,
+            content=DataPointListResponse(items=[item]).SerializeToString(),
+        )
+        retrieve: Any = (
+            cognite_client.time_series.data.retrieve_arrays if use_numpy else cognite_client.time_series.data.retrieve
+        )
+        dps = retrieve(id=1, start=0, end=3000, granularity="1s", aggregates=STRING_AGGS)
+        assert len(dps) == 0
+        if use_numpy:
+            assert dps.interpolation.dtype == dps.step_interpolation.dtype == np.object_
+
+
 class TestFetchAllDoesNotLeakTaskExceptions:
     """Regression tests for the following scenario:
 
@@ -439,7 +603,7 @@ class TestFetchAllDoesNotLeakTaskExceptions:
 
     async def test_eager_fetcher(self) -> None:
         # We need to skip __init__ so we use this horrible method:
-        fetcher = object.__new__(dps_api.EagerDpsFetcher)
+        fetcher = object.__new__(dps_io.EagerDpsFetcher)
         fetcher.all_queries = []
 
         fails_eventually = self._make_fails_eventually(itertools.count())
@@ -462,7 +626,7 @@ class TestFetchAllDoesNotLeakTaskExceptions:
         assert not captured, f"asyncio reported unhandled exception(s): {captured}"
 
     async def test_chunking_fetcher(self) -> None:
-        fetcher = object.__new__(dps_api.ChunkingDpsFetcher)
+        fetcher = object.__new__(dps_io.ChunkingDpsFetcher)
         fetcher.semaphore = asyncio.BoundedSemaphore(1)
         fetcher.agg_subtask_pool, fetcher.raw_subtask_pool = [], []
         fetcher.subtask_pools = (fetcher.agg_subtask_pool, fetcher.raw_subtask_pool)
@@ -489,15 +653,15 @@ class TestFetchAllDoesNotLeakTaskExceptions:
 
 @pytest.fixture
 def mock_delete_datapoints(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> HTTPXMock:
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST",
         url=get_url(async_client.time_series.data) + "/timeseries/data/delete",
         status_code=200,
         json={},
     )
-    return httpx_mock
+    return httpx2_mock
 
 
 class TestDeleteDatapoints:
@@ -704,7 +868,9 @@ class TestPandasIntegration:
         import pandas as pd
 
         d = Datapoint(timestamp=0, value=2, max=3)
-        expected_df = pd.DataFrame({"value": [2], "max": [3]}, index=[pd.Timestamp(0, unit="ms")])
+        expected_df = pd.DataFrame(
+            {"value": [2], "max": [3]}, index=[pd.Timestamp(0, unit="ms").as_unit(PANDAS_TS_UNIT)]
+        )
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(), check_like=True)
 
     def test_datapoints(self) -> None:
@@ -717,12 +883,12 @@ class TestPandasIntegration:
             type="numeric",
             timestamp=[1, 2, 3],
             average=[2, 3, 4],
-            step_interpolation=[3, 4, 5],
+            step_interpolation=[3.0, 4.0, 5.0],
         )
         expected_df = pd.DataFrame(
             # Since ID is not unique, we use stand-in column names initially, then replace:
             {"first-col": [2, 3, 4.0], "second-col": [3, 4, 5.0]},
-            index=pd.to_datetime(range(1, 4), unit="ms"),
+            index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples(
             [(1, "average"), (1, "step_interpolation")],
@@ -734,11 +900,15 @@ class TestPandasIntegration:
         import pandas as pd
 
         d = Datapoints(id=1, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], average=[2, 3, 4])
-        expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame(
+            {1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT)
+        )
         expected_df.columns = pd.Index([1], name="identifier")
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=False))
 
-        expected_df = pd.DataFrame({1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame(
+            {1: [2, 3, 4.0]}, index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT)
+        )
         expected_df.columns = pd.MultiIndex.from_tuples([(1, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, d.to_pandas(include_aggregate_name=True))
 
@@ -753,11 +923,11 @@ class TestPandasIntegration:
             external_id="abc",
             timestamp=[1, 2, 3],
             average=[2, 3, 4],
-            step_interpolation=[3, 4, 5],
+            step_interpolation=[3.0, 4.0, 5.0],
         )
         expected_df = pd.DataFrame(
             {"abc": [2, 3, 4.0], "also-abc": [3, 4, 5.0]},
-            index=pd.to_datetime(range(1, 4), unit="ms"),
+            index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples(
             [("abc", "average"), ("abc", "step_interpolation")],
@@ -813,7 +983,7 @@ class TestPandasIntegration:
             type="numeric",
             timestamp=[1, 2, 3],
             average=[2, 3, 4],
-            step_interpolation=[3, 4, 5],
+            step_interpolation=[3.0, 4.0, 5.0],
         )
         d2 = Datapoints(
             id=0,
@@ -823,7 +993,7 @@ class TestPandasIntegration:
             external_id="foo",
             timestamp=[1, 2, 3],
             count=[2, 3, 4],
-            step_interpolation=[3, 4, 5],
+            step_interpolation=[3.0, 4.0, 5.0],
         )
         d3 = Datapoints(id=3, is_string=False, is_step=False, type="numeric", timestamp=[1, 3, 4], value=[1, 3, 4.0])
         dps_list = DatapointsList([d1, d2, d3])
@@ -835,7 +1005,7 @@ class TestPandasIntegration:
                 "col4": [3, 4, 5, None],
                 "col5": [1, None, 3, 4.0],
             },
-            index=pd.to_datetime(range(1, 5), unit="ms"),
+            index=pd.to_datetime(range(1, 5), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples(
             [(1, "average"), (1, "step_interpolation"), ("foo", "count"), ("foo", "step_interpolation"), (3, "")],
@@ -849,7 +1019,9 @@ class TestPandasIntegration:
         d1 = Datapoints(id=2, is_string=False, is_step=False, type="numeric", timestamp=[1, 2, 3], max=[2, 3, 4])
         d2 = Datapoints(id=3, is_string=False, is_step=False, type="numeric", timestamp=[1, 3], average=[1, 3])
         dps_list = DatapointsList([d1, d2])
-        expected_df = pd.DataFrame({1: [2, 3, 4.0], 2: [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms"))
+        expected_df = pd.DataFrame(
+            {1: [2, 3, 4.0], 2: [1, None, 3]}, index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT)
+        )
         expected_df.columns = pd.MultiIndex.from_tuples([(2, "max"), (3, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
         expected_df.columns = pd.Index([2, 3], name="identifier")
@@ -863,7 +1035,7 @@ class TestPandasIntegration:
         dps_list = DatapointsList([d1, d2])
         expected_df = pd.DataFrame(
             {1: [2, 3, 4.0], 2: [1, None, 3]},
-            index=pd.to_datetime(range(1, 4), unit="ms"),
+            index=pd.to_datetime(range(1, 4), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.MultiIndex.from_tuples([(2, "max"), (2, "average")], names=["identifier", "aggregate"])
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
@@ -880,7 +1052,7 @@ class TestPandasIntegration:
 
         expected_df = pd.DataFrame(
             {1: [1, 2, 3, None, None], 2: [None, None, 3, 4, 5]},
-            index=pd.to_datetime(range(1, 6), unit="ms"),
+            index=pd.to_datetime(range(1, 6), unit="ms").as_unit(PANDAS_TS_UNIT),
         )
         expected_df.columns = pd.Index([1, 2], name="identifier")
         pd.testing.assert_frame_equal(expected_df, dps_list.to_pandas(), check_freq=False)
@@ -1168,7 +1340,7 @@ class TestDatapointsPoster:
         async def override_insert_dps(self: Any, payload: list[dict]) -> None:
             calls.append(deepcopy(payload))
 
-        monkeypatch.setattr(dps_api.DatapointsPoster, "_insert_datapoints", override_insert_dps)
+        monkeypatch.setattr(dps_io.DatapointsPoster, "_insert_datapoints", override_insert_dps)
         dps_limit, ts_limit, last_chunk_size = limits
         monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", dps_limit)
         monkeypatch.setattr(async_client.time_series.data, "_POST_DPS_OBJECTS_LIMIT", ts_limit)
@@ -1195,7 +1367,7 @@ class TestDatapointsPoster:
         async def override_insert_dps(self: Any, payload: list[dict]) -> None:
             calls.append(deepcopy(payload))
 
-        monkeypatch.setattr(dps_api.DatapointsPoster, "_insert_datapoints", override_insert_dps)
+        monkeypatch.setattr(dps_io.DatapointsPoster, "_insert_datapoints", override_insert_dps)
         dps_limit, ts_limit = randint(200, 2000), randint(2, 20)
         dps_client = cognite_client.time_series.data
         monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", dps_limit)
@@ -1226,3 +1398,229 @@ class TestDatapointsPoster:
             assert 0 < n_dps <= dps_limit
             assert 0 < len(call) <= ts_limit
         assert expected_n_dps == tot_n_dps
+
+    @pytest.mark.parametrize(
+        "ts_type, exp_msg",
+        [
+            ("numeric", r"^Only raw datapoints are supported when inserting data from ``Datapoints``$"),
+            (
+                "state",
+                r"^State time series are not supported by this method. Use ``insert_states`` instead when inserting data from ``Datapoints``$",
+            ),
+        ],
+    )
+    def test_insert_aggregate_or_state_datapoints_object_raises(self, ts_type: str, exp_msg: str) -> None:
+        dps = Datapoints(id=1, is_string=False, is_step=False, type=ts_type, timestamp=[1, 2])  # type: ignore [arg-type]
+        with pytest.raises(ValueError, match=exp_msg):
+            dps_io.DatapointsPoster._verify_dps_object_for_insertion(dps)
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("ts_type, expected", [("numeric", False), ("state", True)])
+    def test_is_state(self, ts_type: str, expected: bool) -> None:
+        dps = Datapoints(id=1, is_string=False, is_step=False, type=ts_type, timestamp=[1, 2])  # type: ignore [arg-type]
+        assert dps.is_state is expected
+        assert DatapointsArray(id=1, is_string=False, is_step=False, type=ts_type).is_state is expected  # type: ignore [arg-type]
+
+
+class TestInsertStatesWithRetrievedDatapoints:
+    @pytest.fixture
+    def sent(self, monkeypatch: MonkeyPatch) -> list[dict[str, Any]]:
+        sent: list[dict[str, Any]] = []
+
+        async def fake_insert(self: Any, chunk: list[StateDatapointsInsert]) -> None:
+            sent.extend(item.dump() for item in chunk)
+
+        monkeypatch.setattr(dps_io.StateDatapointsPoster, "_insert_datapoints", fake_insert)
+        return sent
+
+    @staticmethod
+    def make_dps(xid: str = "source") -> Datapoints:
+        # Note: The identifiers on the object are not used, the target is given by StateDatapointsInsert:
+        return Datapoints(
+            id=1,
+            instance_id=NodeId("sp", xid),
+            is_string=False,
+            is_step=True,
+            type="state",
+            timestamp=[1000, 2000],
+            numeric_states=[0, None],  # type: ignore [list-item]
+            status_code=[0, 0x80000000],
+            status_symbol=["Good", "Bad"],
+        )
+
+    def test_datapoints_are_merged_and_dumped_for_the_given_target(
+        self, cognite_client: CogniteClient, sent: list[dict[str, Any]]
+    ) -> None:
+        target = NodeId("sp", "target")
+        explicit = StateDatapointsInsert(target, [StateDatapointWrite(3000, 1)])
+        cognite_client.time_series.data.insert_states(
+            [
+                StateDatapointsInsert(target, self.make_dps()),
+                StateDatapointsInsert(("sp", "other"), self.make_dps("whatever")),
+                explicit,
+            ]
+        )
+        by_target = {d["instanceId"]["externalId"]: d["datapoints"] for d in sent}
+        assert by_target["target"] == [
+            {"timestamp": 1000, "numericValue": 0},
+            {"timestamp": 2000, "status": {"code": 0x80000000}},
+            {"timestamp": 3000, "numericValue": 1},
+        ]
+        assert len(by_target["other"]) == 2
+        assert set(by_target) == {"target", "other"}
+
+    def test_chunking_is_applied_to_retrieved_datapoints(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, monkeypatch: MonkeyPatch, sent: list
+    ) -> None:
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 1)
+        cognite_client.time_series.data.insert_states(StateDatapointsInsert(NodeId("sp", "t"), self.make_dps()))
+        assert [len(d["datapoints"]) for d in sent] == [1, 1]
+
+    def test_empty_retrieved_datapoints_are_skipped(self, cognite_client: CogniteClient, sent: list) -> None:
+        empty = Datapoints(
+            id=1, is_string=False, is_step=True, type="state", timestamp=[], numeric_states=[], string_states=[]
+        )
+        target, other = NodeId("sp", "target"), NodeId("sp", "other")
+        cognite_client.time_series.data.insert_states(StateDatapointsInsert(target, empty))
+        assert sent == []  # nothing to insert, so no request at all
+
+        # ...and when mixed with non-empty, only those are sent (also for the same target):
+        cognite_client.time_series.data.insert_states(
+            [
+                StateDatapointsInsert(target, empty),
+                StateDatapointsInsert(other, empty),
+                StateDatapointsInsert(target, self.make_dps()),
+            ]
+        )
+        assert [d["instanceId"]["externalId"] for d in sent] == ["target"]
+        assert len(sent[0]["datapoints"]) == 2
+
+    def test_invalid_datapoints_raise_early(self) -> None:
+        with pytest.raises(TypeError, match="'Datapoints' or 'DatapointsArray', not <class 'str'>"):
+            StateDatapointsInsert(NodeId("sp", "t"), "bad")  # type: ignore [arg-type]
+        with pytest.raises(ValueError, match="Only datapoints from state time series"):
+            StateDatapointsInsert(
+                NodeId("sp", "t"), Datapoints(id=1, is_string=False, is_step=True, type="numeric", value=[1.0])
+            )
+
+
+def create_state_dps_poster(dps_limit: int, ts_limit: int) -> StateDatapointsPoster:
+    # In these unit tests, we don't need the actual DatapointsAPI instance, we just need the
+    # two limit attributes to be set:
+    return StateDatapointsPoster(
+        dps_client=SimpleNamespace(_DPS_INSERT_LIMIT=dps_limit, _POST_DPS_OBJECTS_LIMIT=ts_limit),  # type: ignore [arg-type]
+    )
+
+
+def create_state_dps_insert_items(*args: tuple[Any, list[int]]) -> list[StateDatapointsInsert]:
+    def maybe_dict_maybe_dataclass(ts: int) -> dict[str, int] | StateDatapointWrite:
+        if choice((True, False)):
+            return {"timestamp": ts, "numeric_value": randint(-2, 2)}
+        return StateDatapointWrite(ts, numeric_value=randint(-2, 2))
+
+    return [
+        StateDatapointsInsert(
+            instance_id=instance_id,
+            datapoints=[maybe_dict_maybe_dataclass(ts) for ts in dps],
+        )
+        for instance_id, dps in args
+    ]
+
+
+class TestStateDatapointsPoster:
+    def test_chunks_single_ts_within_dps_limit(self) -> None:
+        poster = create_state_dps_poster(dps_limit=10, ts_limit=100)
+        items = create_state_dps_insert_items((NodeId("sp", "a"), list(range(5))))
+        chunks = tuple(poster._create_payload_chunks(items))  # consume entire iterator
+        assert len(chunks) == 1
+        assert len(chunks[0][0].datapoints) == 5
+
+    def test_chunks_single_ts_split_across_dps_limit(self) -> None:
+        poster = create_state_dps_poster(dps_limit=3, ts_limit=100)
+        items = create_state_dps_insert_items((NodeId("sp", "a"), list(range(7))))
+        chunks = tuple(poster._create_payload_chunks(items))
+        assert len(chunks) == 3
+        assert [len(c[0].datapoints) for c in chunks] == [3, 3, 1]
+
+    def test_chunks_respects_ts_limit(self) -> None:
+        poster = create_state_dps_poster(dps_limit=100, ts_limit=2)
+        items = create_state_dps_insert_items(
+            (NodeId("sp", "a"), [1]),
+            (NodeId("sp", "b"), [2]),
+            (NodeId("sp", "c"), [3]),
+        )
+        chunks = tuple(poster._create_payload_chunks(items))
+        assert len(chunks) == 2
+        assert len(chunks[0]) == 2
+        assert len(chunks[1]) == 1
+
+    def test_chunks_both_limits_interact(self) -> None:
+        poster = create_state_dps_poster(dps_limit=4, ts_limit=2)
+        items = create_state_dps_insert_items(
+            (NodeId("sp", "A"), [1]),
+            (NodeId("sp", "B"), [2, 3]),
+            (NodeId("sp", "C"), [4, 5, 6, 7, 8]),
+        )
+        chunks = tuple(poster._create_payload_chunks(items))
+        assert len(chunks) == 3
+        c1, c2, c3 = chunks
+        assert (len(c1), len(c2), len(c3)) == (2, 1, 1)
+
+        # We expect first chunk to be from A and B (hits ts-limit)
+        # Second chunk to be from C (hits dps-limit)
+        # Third chunk to be from C (last remaining dps)
+        timestamps = [
+            [
+                dp.timestamp if isinstance(dp, StateDatapointWrite) else dp["timestamp"]
+                for insert in chunk
+                for dp in insert._to_datapoint_writes()
+            ]
+            for chunk in chunks
+        ]
+        assert timestamps == [[1, 2, 3], [4, 5, 6, 7], [8]]
+
+        assert c1[0].instance_id == NodeId("sp", "A")
+        assert c1[1].instance_id == NodeId("sp", "B")
+        assert c2[0].instance_id == NodeId("sp", "C")
+        assert c3[0].instance_id == NodeId("sp", "C")
+
+    def test_chunks_empty_items_produce_no_chunks(self) -> None:
+        poster = create_state_dps_poster(dps_limit=10, ts_limit=10)
+        assert tuple(poster._create_payload_chunks([])) == ()
+
+    @pytest.mark.parametrize(
+        "id_a, id_b, exp_a, exp_b",
+        [
+            (NodeId("sp", "a"), NodeId("sp", "b"), 2, 1),
+            (("sp", "a"), ("sp", "b"), 2, 1),
+            (NodeId("sp", "a"), ("sp", "b"), 2, 1),  # mixed forms, distinct nodes
+            (("sp", "x"), NodeId("sp", "x"), 3, 3),  # same node expressed as tuple vs NodeId
+        ],
+    )
+    def test_insert_merges_duplicate_instance_ids(self, id_a: Any, id_b: Any, exp_a: int, exp_b: int) -> None:
+        items = [
+            StateDatapointsInsert(id_a, [StateDatapointWrite(1000, numeric_value=0)]),
+            StateDatapointsInsert(id_b, [StateDatapointWrite(2000, numeric_value=1)]),
+            StateDatapointsInsert(id_a, [StateDatapointWrite(3000, numeric_value=2)]),
+        ]
+        result_iter = StateDatapointsPoster._merge_duplicates(items)
+        assert result_iter is not None
+
+        result = tuple(result_iter)
+        assert all(isinstance(i.instance_id, NodeId) for i in result)
+
+        id_a_node, id_b_node = NodeId.load(id_a), NodeId.load(id_b)
+        a_items = [i for i in result if NodeId.load(i.instance_id) == id_a_node]
+        b_items = [i for i in result if NodeId.load(i.instance_id) == id_b_node]
+        assert sum(len(i.datapoints) for i in a_items) == exp_a
+        assert sum(len(i.datapoints) for i in b_items) == exp_b
+
+        # datapoints per node should keep insertion order:
+        a_ts = [dp.timestamp for i in a_items for dp in i.datapoints]  # type: ignore [union-attr]
+        b_ts = [dp.timestamp for i in b_items for dp in i.datapoints]  # type: ignore [union-attr]
+        assert a_ts == sorted(a_ts)
+        assert b_ts == sorted(b_ts)
+
+    def test_insert_all_empty_is_noop(self) -> None:
+        items = [StateDatapointsInsert(NodeId("sp", "ts"), [])]
+        assert StateDatapointsPoster._merge_duplicates(items) is None

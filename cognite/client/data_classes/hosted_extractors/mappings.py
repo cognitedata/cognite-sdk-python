@@ -282,6 +282,5 @@ class MappingUpdate(CogniteUpdate):
 
 
 _INPUTMAPPING_CLASS_BY_TYPE: dict[str, type[InputMapping]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
-    for subclass in InputMapping.__subclasses__()
+    subclass._type: subclass for subclass in InputMapping.__subclasses__()
 }

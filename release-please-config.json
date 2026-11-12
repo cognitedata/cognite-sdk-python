@@ -6,7 +6,8 @@
       "release-type": "python",
       "package-name": "cognite-sdk-python",
       "extra-files": [
-        "cognite/client/_version.py"
+        "cognite/client/_version.py",
+        "uv.lock"
       ],
       "changelog-sections": [
         { "type": "feat", "section": "Features" },

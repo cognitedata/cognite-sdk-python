@@ -157,6 +157,15 @@ class RecordsAPI(APIClient):
                 ...     ),
                 ...     stream_id="my-stream",
                 ... )
+
+            Ingest a record through a view:
+
+                >>> from cognite.client.data_classes.data_modeling.records import RecordViewId
+                >>> source = RecordSource(
+                ...     RecordViewId("my-space", "my-view", "v1"), {"temperature": 22.5}
+                ... )
+                >>> record = RecordWrite("my-space", "rec-2", sources=[source])
+                >>> client.data_modeling.records.ingest(record, stream_id="my-stream")
         """
         self._warning.warn()
         item_list: list[RecordWrite] = [items] if isinstance(items, RecordWrite) else list(items)
@@ -231,6 +240,9 @@ class RecordsAPI(APIClient):
         include_typing: bool = False,
     ) -> RecordsAggregation:
         """`Aggregate records from a stream <https://api-docs.cognite.com/20230101/tag/Records/operation/aggregateRecords>`_.
+
+        Aggregate properties may reference multiple containers or a single view, but cannot
+        mix views and containers. This restriction does not apply to filters or target units.
 
         Args:
             aggregates (Mapping[str, Aggregate | dict[str, Any]]): Aggregate request tree keyed
@@ -369,6 +381,7 @@ class RecordsAPI(APIClient):
         filter: Filter | None = None,
         sources: Sequence[RecordSourceSelector] | None = None,
         sort: Sequence[InstanceSort] | InstanceSort | None = None,
+        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
         limit: int = 10,
         include_typing: bool = False,
     ) -> RecordList:
@@ -382,8 +395,10 @@ class RecordsAPI(APIClient):
             last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
                 immutable streams** (must include a lower bound).
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
+            sources (Sequence[RecordSourceSelector] | None): Which container or view properties to return.
             sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
+            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
+                to another unit.
             limit (int): Maximum number of records to return (1-1000). This endpoint returns a single
                 page and does not paginate, so a larger limit is an error rather than a silent cap.
             include_typing (bool): If True, include property type information on the returned
@@ -404,6 +419,20 @@ class RecordsAPI(APIClient):
                 ...     last_updated_time=TimeRange(gt=1705341600000),
                 ...     limit=100,
                 ... )
+
+            Return temperatures converted to degrees Fahrenheit:
+
+                >>> from cognite.client.data_classes.data_modeling.data_types import UnitReference
+                >>> from cognite.client.data_classes.data_modeling.records import RecordTargetUnit
+                >>> res = client.data_modeling.records.filter(
+                ...     stream_id="my-stream",
+                ...     target_units=[
+                ...         RecordTargetUnit(
+                ...             ["my-space", "my-container", "temperature"],
+                ...             UnitReference("temperature:deg_f"),
+                ...         )
+                ...     ],
+                ... )
         """
         self._warning.warn()
         _validate_filter_limit(limit)
@@ -415,6 +444,8 @@ class RecordsAPI(APIClient):
         if sort is not None:
             sort_list = [sort] if isinstance(sort, InstanceSort) else list(sort)
             other_params["sort"] = [spec.dump() for spec in sort_list]
+        if target_units is not None:
+            other_params["targetUnits"] = self._dump_target_units(target_units)
         if include_typing:
             other_params["includeTyping"] = True
 
@@ -489,7 +520,7 @@ class RecordsAPI(APIClient):
             cursor (str | None): Resume from a cursor from a previously yielded chunk. Mutually
                 exclusive with ``initialize_cursor``.
             filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container properties to return.
+            sources (Sequence[RecordSourceSelector] | None): Which container or view properties to return.
             target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
                 to another unit.
             chunk_size (int): Number of records per yielded chunk, between 1 and 1000. Defaults to 1000.

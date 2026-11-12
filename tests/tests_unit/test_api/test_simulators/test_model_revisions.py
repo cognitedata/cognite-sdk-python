@@ -1,5 +1,5 @@
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.simulators import SimulatorModelRevision, SimulatorModelRevisionWrite
@@ -31,7 +31,7 @@ class TestModelRevisions:
         self,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         delete_kw: dict,
     ) -> None:
         write_input = SimulatorModelRevisionWrite(
@@ -39,7 +39,7 @@ class TestModelRevisions:
             model_external_id="sdk-test-model",
             file_id=1,
         )
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.simulators.models.revisions, "/simulators/models/revisions"),
             json={
@@ -60,4 +60,4 @@ class TestModelRevisions:
             "deleteOldest": delete_kw.get("delete_oldest", False),
             "items": [write_input.dump()],
         }
-        assert expected_request_body == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert expected_request_body == jsgz_load(httpx2_mock.get_requests()[0].content)

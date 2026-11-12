@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.agents import ImageContent, Message
@@ -93,12 +93,12 @@ def chat_response_body() -> dict:
 class TestAgentChat:
     def test_chat_simple_message(
         self,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
         chat_response_body: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat"),
             status_code=200,
@@ -110,7 +110,7 @@ class TestAgentChat:
             agent_external_id="my_agent", messages=Message("What can you help me with?")
         )
 
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         payload = jsgz_load(request.content)
         assert payload == {
             "agentExternalId": "my_agent",
@@ -330,12 +330,12 @@ class TestMultimodalMessage:
 
     def test_chat_with_multimodal_message(
         self,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
         chat_response_body: dict,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat"),
             status_code=200,
@@ -353,7 +353,7 @@ class TestMultimodalMessage:
             ),
         )
 
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         payload = jsgz_load(request.content)
         assert payload == {
             "agentExternalId": "my_agent",

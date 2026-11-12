@@ -9,6 +9,7 @@ Streams
    :template: custom-automethods-template.rst
 
    AsyncCogniteClient.data_modeling.streams
+   AsyncCogniteClient.data_modeling.streams.templates
 
 Streams data classes
 ^^^^^^^^^^^^^^^^^^^^

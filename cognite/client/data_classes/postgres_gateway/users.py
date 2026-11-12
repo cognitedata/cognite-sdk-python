@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC
-from dataclasses import dataclass
-from typing import Any, Literal, NoReturn
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Literal, NoReturn
 
 from typing_extensions import Self
 
@@ -19,7 +19,9 @@ from cognite.client.data_classes._base import (
 
 @dataclass
 class SessionCredentials(CogniteResource):
-    nonce: str
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"nonce"})
+
+    nonce: str = field(repr=False)
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -114,6 +116,8 @@ class UserCreated(User):
         session_id (int | None): ID of the session tied to this user.
 
     """
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"password"})
 
     def __init__(
         self,

@@ -198,6 +198,14 @@ linkcheck_anchors_ignore = [
     "ssl-certificate-configuration",
 ]
 
+# support.cognite.com redirects to the Zendesk help center. Cloudflare bot
+# protection in front of that host answers linkcheck with 403 often enough to
+# fail CI, while browsers still reach the page.
+linkcheck_ignore = [
+    r"https://support\.cognite\.com/?",
+    r"https://cognite\.zendesk\.com/hc/en-us/?",
+]
+
 # Patch Sphinx to hide @overload signatures in docs
 # Sphinx's autodoc uses ModuleAnalyzer.overloads via the parser
 # We patch the analyze method to clear overloads after parsing

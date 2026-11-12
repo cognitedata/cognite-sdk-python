@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias
 
 from typing_extensions import Self
 
@@ -18,6 +18,7 @@ from cognite.client.data_classes._base import (
 )
 from cognite.client.data_classes.capabilities import Capability, ProjectCapabilityList
 from cognite.client.utils._importing import local_import
+from cognite.client.utils._pandas_helpers import to_pandas_timestamp
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -272,7 +273,7 @@ class GroupList(WriteableCogniteResourceList[GroupWrite, Group], NameTransformer
         key = "deletedTime" if camel_case else "deleted_time"
         if convert_timestamps and key in df:
             pd = local_import("pandas")
-            df.loc[df[key] == pd.Timestamp(-1, unit="ms"), key] = pd.NaT
+            df.loc[df[key] == to_pandas_timestamp(-1), key] = pd.NaT
         return df
 
 
@@ -437,6 +438,8 @@ class CreatedSession(CogniteResource):
         client_id (str | None): Client ID in identity provider. Returned only if the session was created using client credentials
     """
 
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"nonce"})
+
     def __init__(
         self,
         id: int,
@@ -561,6 +564,8 @@ class ClientCredentials(CogniteResource):
         client_id (str): Client ID from identity provider.
         client_secret (str): Client secret from identity provider.
     """
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"client_secret"})
 
     def __init__(self, client_id: str, client_secret: str) -> None:
         self.client_id = client_id

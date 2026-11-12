@@ -1,5 +1,20 @@
 ---
 repos:
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.13.0
+    hooks:
+      - id: uv-lock
+
+  - repo: local
+    hooks:
+      - id: uv-lock-release-please
+        name: mark uv.lock version for release-please
+        entry: python scripts/mark_uv_lock_version.py
+        language: system
+        files: ^(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+
   # We use a local ruff hook so that the ruff version matches the one in dev-dependencies
   - repo: local
     hooks:
@@ -33,7 +48,7 @@ repos:
     hooks:
       - id: mypy
         name: mypy
-        entry: poetry run dmypy run -- cognite tests
+        entry: uv run dmypy run -- cognite tests
         files: ^.*.(py|pyi)$
         language: system
         pass_filenames: false
@@ -71,3 +86,5 @@ repos:
     hooks:
     - id: codespell
       files: ^cognite/.*
+      args:
+        - --write-changes

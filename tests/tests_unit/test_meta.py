@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import inspect
+import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -243,3 +246,84 @@ def test_constants_are_importable() -> None:
     from cognite.client._constants import OMITTED, Omitted
 
     assert isinstance(OMITTED, Omitted)
+
+
+SECRET_ISH_ATTRIBUTE_PATTERN = re.compile(r"secret|password|passphrase|nonce", re.IGNORECASE)
+
+
+@pytest.fixture
+def attributes_exempt_from_sensitive_marking() -> set[tuple[str, str]]:
+    # (class name, attr) pairs whose name matches SECRET_ISH_ATTRIBUTE_PATTERN but that do not
+    # themselves hold "credential material", so they should stay visible in debug logs and str() etc.
+    #
+    # NOTE: Adding an entry here requires justification on why the value is safe to log:
+    return {
+        # These four hold a NonceCredentials object, and it lists its own 'nonce' field, so the
+        # secret is taken care of one level down:
+        ("Transformation", "source_nonce"),
+        ("Transformation", "destination_nonce"),
+        ("TransformationWrite", "source_nonce"),
+        ("TransformationWrite", "destination_nonce"),
+    }
+
+
+@pytest.mark.parametrize("cls", sorted(all_non_test_subclasses(CogniteResource), key=str))
+def test_credential_attributes_are_marked_sensitive(
+    cls: type[CogniteResource], attributes_exempt_from_sensitive_marking: set[tuple[str, str]]
+) -> None:
+    # Attempt to catch the next credential field that gets added without being listed in _SENSITIVE_FIELDS
+    marked = cls._SENSITIVE_FIELDS
+    for name in inspect.signature(cls.__init__).parameters:
+        if name in {"self", "args", "kwargs"} or not SECRET_ISH_ATTRIBUTE_PATTERN.search(name):
+            continue
+        assert name in marked or (cls.__name__, name) in attributes_exempt_from_sensitive_marking, (
+            f"{cls.__name__}.{name} looks like it holds a credential but is missing from "
+            f"{cls.__name__}._SENSITIVE_FIELDS — add it there so it gets redacted logs. "
+            f"If not a credential, add ({cls.__name__!r}, {name!r}) to the attributes_exempt_from_sensitive_marking"
+            "allowlist with a comment explaining why the value is safe to log."
+        )
+
+
+FIND_MISSING_SENSITIVE_FIELDS_SCRIPT = """
+import importlib, pkgutil, sys
+
+import cognite.client.data_classes as data_classes  # all the registry itself imports
+from cognite.client.utils._redaction import sensitive_fields
+
+known = sensitive_fields()
+visible = known.anywhere | {key for keys in known.by_discriminator.values() for key in keys}
+
+for module_info in pkgutil.walk_packages(data_classes.__path__, f"{data_classes.__name__}."):
+    importlib.import_module(module_info.name)
+
+missing = {
+    f"{obj.__module__}.{obj.__name__}.{field}"
+    for name, module in list(sys.modules.items())
+    if name.startswith("cognite.client.data_classes")
+    for obj in vars(module).values()
+    if isinstance(obj, type) and obj.__dict__.get("_SENSITIVE_FIELDS")
+    for field in obj.__dict__["_SENSITIVE_FIELDS"]
+    if field not in visible
+}
+if missing:
+    print("\\n".join(sorted(missing)))
+    raise SystemExit(1)
+"""
+
+
+def test_every_declaration_is_visible_from_the_package_root() -> None:
+    """The registry only imports the 'cognite.client.data_classes' package, so every declared sensitive
+    field must be reachable.
+
+    A credential field declared in a module that the package root does not pull in would be missing from
+    the registry, and so never redacted. This test guards against that. It has to run in a subprocess as
+    by the time pytest 'gets here', everything is imported already, which hides the very thing we check.
+    """
+    result = subprocess.run(
+        [sys.executable, "-c", FIND_MISSING_SENSITIVE_FIELDS_SCRIPT], capture_output=True, text=True
+    )
+    assert result.returncode == 0, (
+        "These credential fields are not reachable from 'import cognite.client.data_classes', so "
+        f"they would never be redacted:\n{result.stdout}{result.stderr}\n"
+        "Re-export the module from the package root, or add imports directly inside sensitive_fields()."
+    )

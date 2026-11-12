@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import asyncio
 import ssl
-from collections.abc import Iterator
+import warnings
+from collections.abc import AsyncIterator, Iterator
 
-import httpx
+import httpx2
 import pytest
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client._http_client import (
+    AsyncHTTPClientWithRetry,
     AsyncHTTPClientWithRetryConfig,
     NoCookiesPlease,
     RetryTracker,
@@ -14,6 +18,7 @@ from cognite.client._http_client import (
     get_global_async_httpx_client,
 )
 from cognite.client.config import global_config
+from cognite.client.exceptions import CogniteHTTPStatusError
 from cognite.client.response import CogniteHTTPResponse
 
 
@@ -33,30 +38,41 @@ def default_config() -> AsyncHTTPClientWithRetryConfig:
 URL = "https://example.com"
 
 
-def make_http_status_error(status_code: int) -> httpx.HTTPStatusError:
-    request = httpx.Request("GET", URL)
-    response = httpx.Response(status_code=status_code, request=request)
-    return httpx.HTTPStatusError(f"Error {status_code}", request=request, response=response)
+def make_error_response(status_code: int) -> httpx2.Response:
+    return httpx2.Response(status_code=status_code, request=httpx2.Request("GET", URL))
 
 
 @pytest.fixture
-def timeout_error() -> httpx.TimeoutException:
-    return httpx.ReadTimeout("read timeout")
+def timeout_error() -> httpx2.TimeoutException:
+    return httpx2.ReadTimeout("read timeout")
 
 
 @pytest.fixture
-def connect_error() -> httpx.ConnectError:
-    return httpx.ConnectError("connection error")
+def connect_error() -> httpx2.ConnectError:
+    return httpx2.ConnectError("connection error")
 
 
 @pytest.fixture
-def status_error_429() -> httpx.HTTPStatusError:
-    return make_http_status_error(429)
+def response_429() -> httpx2.Response:
+    return make_error_response(429)
+
+
+@pytest.fixture
+async def retry_http_client(
+    default_config: AsyncHTTPClientWithRetryConfig,
+) -> AsyncIterator[AsyncHTTPClientWithRetry]:
+    default_config._max_retries_status = 1
+    async with httpx2.AsyncClient() as httpx_client:
+        yield AsyncHTTPClientWithRetry(
+            default_config,
+            refresh_auth_header=lambda headers: None,
+            httpx_async_client=httpx_client,
+        )
 
 
 class TestRetryTracker:
     def test_total_retries_exceeded(
-        self, default_config: AsyncHTTPClientWithRetryConfig, status_error_429: httpx.HTTPStatusError
+        self, default_config: AsyncHTTPClientWithRetryConfig, response_429: httpx2.Response
     ) -> None:
         default_config._max_retries_total = 10
         rt = RetryTracker(URL, default_config)
@@ -66,21 +82,21 @@ class TestRetryTracker:
 
         assert rt.total == 12
         assert rt.should_retry_total is False
-        assert rt.should_retry_status_code(status_error_429) is False
+        assert rt.should_retry_status_code(response_429) is False
 
     def test_status_retries_exceeded(
-        self, default_config: AsyncHTTPClientWithRetryConfig, status_error_429: httpx.HTTPStatusError
+        self, default_config: AsyncHTTPClientWithRetryConfig, response_429: httpx2.Response
     ) -> None:
         default_config._max_retries_status = 1
         rt = RetryTracker(URL, default_config)
         assert rt.should_retry_total is True
-        assert rt.should_retry_status_code(status_error_429) is True
-        assert rt.should_retry_status_code(status_error_429) is False
+        assert rt.should_retry_status_code(response_429) is True
+        assert rt.should_retry_status_code(response_429) is False
         assert rt.last_failed_reason is not None
         assert "429" in rt.last_failed_reason
 
     def test_read_retries_exceeded(
-        self, default_config: AsyncHTTPClientWithRetryConfig, timeout_error: httpx.TimeoutException
+        self, default_config: AsyncHTTPClientWithRetryConfig, timeout_error: httpx2.TimeoutException
     ) -> None:
         default_config._max_retries_read = 1
         rt = RetryTracker(URL, default_config)
@@ -90,7 +106,7 @@ class TestRetryTracker:
         assert "ReadTimeout" in rt.last_failed_reason
 
     def test_connect_retries_exceeded(
-        self, default_config: AsyncHTTPClientWithRetryConfig, connect_error: httpx.ConnectError
+        self, default_config: AsyncHTTPClientWithRetryConfig, connect_error: httpx2.ConnectError
     ) -> None:
         default_config._max_retries_connect = 1
         rt = RetryTracker(URL, default_config)
@@ -101,17 +117,111 @@ class TestRetryTracker:
 
     def test_correct_retry_of_status(self, default_config: AsyncHTTPClientWithRetryConfig) -> None:
         rt = RetryTracker(URL, default_config)
-        assert rt.should_retry_status_code(make_http_status_error(500)) is False
+        assert rt.should_retry_status_code(make_error_response(500)) is False
         rt.config.status_codes_to_retry.add(500)
-        assert rt.should_retry_status_code(make_http_status_error(500)) is True
+        assert rt.should_retry_status_code(make_error_response(500)) is True
 
     def test_is_auto_retryable(self, default_config: AsyncHTTPClientWithRetryConfig) -> None:
         default_config._max_retries_status = 1
         rt = RetryTracker(URL, default_config)
 
         # 409 is not in the list of status codes to retry, but we set is_auto_retryable=True, which should override it
-        assert rt.should_retry_status_code(make_http_status_error(409), is_auto_retryable=True) is True
-        assert rt.should_retry_status_code(make_http_status_error(409), is_auto_retryable=False) is False
+        assert rt.should_retry_status_code(make_error_response(409), is_auto_retryable=True) is True
+        assert rt.should_retry_status_code(make_error_response(409), is_auto_retryable=False) is False
+
+
+class TestAsyncHTTPClientWithRetry:
+    @pytest.mark.parametrize(
+        "headers",
+        [
+            {},
+            {"cdf-is-auto-retryable": "false"},
+            {"cdf-is-auto-retryable": "False"},
+        ],
+    )
+    async def test_auto_retryable_header_does_not_retry(
+        self,
+        retry_http_client: AsyncHTTPClientWithRetry,
+        httpx2_mock: HTTPXMock,
+        headers: dict[str, str],
+    ) -> None:
+        httpx2_mock.add_response(method="GET", url=URL, status_code=409, headers=headers)
+
+        with pytest.raises(CogniteHTTPStatusError):
+            await retry_http_client.request("GET", URL, headers={}, semaphore=asyncio.BoundedSemaphore(1))
+
+        assert len(httpx2_mock.get_requests()) == 1
+
+    @pytest.mark.parametrize(
+        "headers",
+        [
+            {"cdf-is-auto-retryable": "true"},
+            {"cdf-is-auto-retryable": "True"},
+        ],
+    )
+    async def test_auto_retryable_true_header_retries(
+        self,
+        retry_http_client: AsyncHTTPClientWithRetry,
+        httpx2_mock: HTTPXMock,
+        headers: dict[str, str],
+    ) -> None:
+        httpx2_mock.add_response(method="GET", url=URL, status_code=409, headers=headers)
+        httpx2_mock.add_response(method="GET", url=URL, status_code=200)
+
+        resp = await retry_http_client.request("GET", URL, headers={}, semaphore=asyncio.BoundedSemaphore(1))
+
+        assert resp.status_code == 200
+        assert len(httpx2_mock.get_requests()) == 2
+
+    async def test_stream_closes_failed_responses_before_retrying(
+        self,
+        retry_http_client: AsyncHTTPClientWithRetry,
+        httpx2_mock: HTTPXMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        # Streamed responses have unread bodies, so unless we close the failed ones, the pooled connection leaks
+        closed_status_codes: list[int] = []
+        original_aclose = httpx2.Response.aclose
+
+        async def spy_aclose(self: httpx2.Response) -> None:
+            closed_status_codes.append(self.status_code)
+            await original_aclose(self)
+
+        monkeypatch.setattr(httpx2.Response, "aclose", spy_aclose)
+        retry_header = {"cdf-is-auto-retryable": "true"}
+        httpx2_mock.add_response(method="GET", url=URL, status_code=409, headers=retry_header)
+        httpx2_mock.add_response(method="GET", url=URL, status_code=200)
+
+        async with retry_http_client.stream("GET", URL, semaphore=asyncio.BoundedSemaphore(1)) as resp:
+            assert resp.status_code == 200
+            # The failed response must already be closed while the successful one is still open:
+            assert closed_status_codes == [409]
+
+        assert closed_status_codes == [409, 200]
+
+    async def test_stream_closes_failed_responses_on_non_retryable_error(
+        self,
+        retry_http_client: AsyncHTTPClientWithRetry,
+        httpx2_mock: HTTPXMock,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        closed_status_codes: list[int] = []
+        original_aclose = httpx2.Response.aclose
+
+        async def spy_aclose(self: httpx2.Response) -> None:
+            closed_status_codes.append(self.status_code)
+            await original_aclose(self)
+
+        monkeypatch.setattr(httpx2.Response, "aclose", spy_aclose)
+        httpx2_mock.add_response(method="GET", url=URL, status_code=404, text="not found body")
+
+        with pytest.raises(CogniteHTTPStatusError) as exc_info:
+            async with retry_http_client.stream("GET", URL, semaphore=asyncio.BoundedSemaphore(1)):
+                pass
+
+        assert closed_status_codes == [404]
+        # The error body must still be readable by callers:
+        assert exc_info.value.response.text == "not found body"
 
 
 @pytest.fixture
@@ -139,7 +249,7 @@ class TestGetGlobalAsyncHttpxClient:
 
         assert len(client._mounts) == 1
 
-        # If the below asserts fail due to httpx/httpcore private API changes, just keep the assert above.
+        # If the below asserts fail due to httpx2/httpcore2 private API changes, just keep the assert above.
         (transport,) = client._mounts.values()
         assert transport._pool._proxy_url.host == b"magicenvproxy"  # type: ignore[union-attr]
         assert transport._pool._proxy_url.port == 666  # type: ignore[union-attr]
@@ -167,10 +277,45 @@ class TestGetGlobalAsyncHttpxClient:
         assert pool._ssl_context.verify_mode == ssl.CERT_NONE  # disable_ssl should cause this
         assert pool._ssl_context.check_hostname is False
 
+    async def test_pyodide_client_never_passes_ignored_options(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        # when using pyodide, we should not pass any of the unsupported options to httpx2.AsyncClient
+        monkeypatch.setattr("cognite.client._http_client._RUNNING_IN_PYODIDE", True)
+        monkeypatch.setattr(global_config, "max_connection_pool_size", 69)
+        monkeypatch.setattr(global_config, "disable_ssl", True)
+        monkeypatch.setattr(global_config, "proxy", "http://explicit:1234")
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")  # actual warnings are tested separately
+            client = get_global_async_httpx_client()
+
+        assert not client._mounts  # proxy was not forwarded
+
+        pool = client._transport._pool  # type: ignore[attr-defined]
+        assert pool._max_connections != 69  # limits was not forwarded
+        assert pool._ssl_context.verify_mode == ssl.CERT_REQUIRED  # verify was not forwarded
+
+    async def test_pyodide_client_warns_about_settings_with_no_effect(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("cognite.client._http_client._RUNNING_IN_PYODIDE", True)
+        monkeypatch.setattr(global_config, "disable_ssl", True)
+        monkeypatch.setattr(global_config, "proxy", "http://explicit:1234")
+
+        with pytest.warns(
+            RuntimeWarning,
+            match="global_config.disable_ssl.*global_config.proxy.*no effect when running in a browser",
+        ):
+            get_global_async_httpx_client()
+
+    async def test_pyodide_client_no_warning_at_default_settings(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("cognite.client._http_client._RUNNING_IN_PYODIDE", True)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # fail the test if anything warns
+            get_global_async_httpx_client()
+
 
 def make_response(status_code: int) -> CogniteHTTPResponse:
-    request = httpx.Request("GET", URL)
-    return CogniteHTTPResponse(httpx.Response(status_code=status_code, request=request))
+    request = httpx2.Request("GET", URL)
+    return CogniteHTTPResponse(httpx2.Response(status_code=status_code, request=request))
 
 
 class TestCogniteHTTPResponseRepr:
