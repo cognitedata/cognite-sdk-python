@@ -11,7 +11,13 @@ from pytest_httpx2 import HTTPXMock
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api.ai.utils import size_as_sent
 from cognite.client.config import global_config
-from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries, ForecastResultList
+from cognite.client.data_classes.ai import (
+    ForecastInputDatapoint,
+    ForecastInputTimeSeries,
+    ForecastResult,
+    ForecastResultList,
+    ImputeResult,
+)
 from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._experimental import FeaturePreviewWarning
 from tests.utils import get_url, jsgz_load
@@ -102,6 +108,14 @@ class TestForecast:
         result = res.get(label="24-TT-3001")
         assert result is not None
         assert [p.timestamp for p in result.forecast] == [120_000, 180_000, 240_000]
+
+    def test_single_time_series_returns_a_single_result(
+        self, cognite_client: CogniteClient, mock_forecast: HTTPXMock
+    ) -> None:
+        res = cognite_client.ai.time_series.forecast(series("24-TT-3001"))
+
+        assert isinstance(res, ForecastResult)
+        assert res.label == "24-TT-3001"
 
     def test_large_request_is_split_and_results_keep_input_order(
         self, cognite_client: CogniteClient, mock_forecast: HTTPXMock
@@ -224,6 +238,14 @@ class TestImpute:
         result = res.get(label="21-PT-1019")
         assert result is not None
         assert [p.timestamp for p in result.imputed] == [60_000]
+
+    def test_single_time_series_returns_a_single_result(
+        self, cognite_client: CogniteClient, mock_impute: HTTPXMock
+    ) -> None:
+        res = cognite_client.ai.time_series.impute(series("21-PT-1019"))
+
+        assert isinstance(res, ImputeResult)
+        assert res.label == "21-PT-1019"
 
 
 class TestBetaApi:
