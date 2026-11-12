@@ -60,6 +60,21 @@ class SyncStreamsAPI(SyncAPIClient):
                 ...         ),
                 ...     )
                 ... )
+
+            Create a stream whose records are deleted after 7 days, instead of using the retention of the template:
+
+                >>> from cognite.client.data_classes.data_modeling.streams import (
+                ...     StreamLifecycleWriteSettings,
+                ... )
+                >>> res = client.data_modeling.streams.create(
+                ...     StreamWrite(
+                ...         external_id="my-stream-with-retention",
+                ...         settings=StreamWriteSettings(
+                ...             template=StreamTemplate(name="ImmutableTestStream"),
+                ...             lifecycle=StreamLifecycleWriteSettings(data_deleted_after="PT168H"),
+                ...         ),
+                ...     )
+                ... )
         """
         return run_sync(self.__async_client.data_modeling.streams.create(items=items))
 
