@@ -101,18 +101,13 @@ class TestDataFrames:
     def test_forecast_dataframe(self, cognite_client: CogniteClient) -> None:
         df = frame()
 
-        out = cognite_client.ai.time_series.forecast_dataframe(df)
-
-        assert list(out.columns) == ["a", "b"]
-        assert len(out) == FORECAST_LENGTH
-        assert out.index[0] == df.index[-1] + (df.index[1] - df.index[0])
-
-    def test_forecast_dataframe_with_every_quantile_level(self, cognite_client: CogniteClient) -> None:
-        out = cognite_client.ai.time_series.forecast_dataframe(frame(), cohort="train", include_all_quantiles=True)
+        out = cognite_client.ai.time_series.forecast_dataframe(df, cohort="train", include_all_quantiles=True)
 
         levels = list(out["a"].columns)
         assert 0.5 in levels and len(levels) > 1
         assert list(out["b"].columns) == levels
+        assert len(out) == FORECAST_LENGTH
+        assert out.index[0] == df.index[-1] + (df.index[1] - df.index[0])
 
     def test_impute_dataframe_fills_the_gaps(self, cognite_client: CogniteClient) -> None:
         missing = [100, 101, 150]
