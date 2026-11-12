@@ -671,7 +671,7 @@ class FakeCogniteResourceGenerator:
         return "".join(self._random.choices(sample_from, k=k))
 
     @classmethod
-    def _type_checking(cls) -> dict[str, type]:
+    def _type_checking(cls) -> dict[str, Any]:
         """
         When calling the get_type_hints function, it imports the module with the function TYPE_CHECKING is set to False.
 

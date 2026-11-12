@@ -174,22 +174,22 @@ class _FullDatapointsQuery:
         else:
             self._raise_on_wrong_ts_identifier_type(identifier, arg_name, exp_type)
 
-        parsed_queries = []
-        for query in user_queries:
+        parsed_queries: list[DatapointsQuery] = []
+        for user_query in user_queries:
             # We merge 'defaults' and the given user query; the query takes precedence:
-            if isinstance(query, exp_type):
-                id_dct = {arg_name: query}
+            if isinstance(user_query, exp_type):
+                id_dct = {arg_name: user_query}
                 query = DatapointsQuery(**self.top_level_defaults, **id_dct)  # type: ignore [arg-type]
 
-            elif isinstance(query, DatapointsQuery):
-                if query.identifier.name() != arg_name:
+            elif isinstance(user_query, DatapointsQuery):
+                if user_query.identifier.name() != arg_name:
                     raise ValueError(
                         f"DatapointsQuery passed by {arg_name} is missing required field {arg_name!r}. "
-                        f"Did you mean to pass it by {query.identifier.name()}?"
+                        f"Did you mean to pass it by {user_query.identifier.name()}?"
                     )
-                query = DatapointsQuery(**self.top_level_defaults | query.dump())
+                query = DatapointsQuery(**self.top_level_defaults | user_query.dump())
             else:
-                self._raise_on_wrong_ts_identifier_type(query, arg_name, exp_type)
+                self._raise_on_wrong_ts_identifier_type(user_query, arg_name, exp_type)
 
             parsed_queries.append(query)
         return parsed_queries
