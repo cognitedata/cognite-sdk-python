@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from cognite.client._api.ai.utils import (
     group_series_by_cohort,
@@ -34,6 +35,13 @@ class AITimeSeriesAPI(APIClient):
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="beta", sdk_maturity="alpha", feature_name="Time series forecasting and imputation"
+        )
+
+    def _get_semaphore(self, operation: Literal["read", "write", "delete"]) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        return global_config.concurrency_settings.ai_time_series._semaphore_factory(
+            operation, project=self._cognite_client.config.project
         )
 
     @overload
