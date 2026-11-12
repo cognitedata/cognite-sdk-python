@@ -5,8 +5,8 @@ from collections.abc import Sequence
 
 import pytest
 
+from cognite.client._api.ai.utils import MAX_REQUEST_BYTES, MAX_SERIES_PER_REQUEST, split_into_requests
 from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries
-from cognite.client.utils._forecasting import MAX_REQUEST_BYTES, MAX_SERIES_PER_REQUEST, split_into_requests
 
 COHORTS = [None] * 12 + [f"train-{i}" for i in range(12)]
 
