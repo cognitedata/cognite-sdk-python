@@ -327,23 +327,17 @@ class TestValidateAggregatesFunction:
     `aggregates` argument and every bucket aggregate's nested `aggregates`.
     """
 
-    def test_none_passes_through(self) -> None:
-        assert _validate_aggregates(None) is None
-
-    def test_mapping_of_aggregate_instances_passes_through_unchanged(self) -> None:
-        aggs = {"avg_temp": Average(["sp", "c", "temp"]), "n": Count()}
-        assert _validate_aggregates(aggs) is aggs
-
-    def test_mapping_of_raw_dicts_passes_through_unchanged(self) -> None:
-        aggs = {"avg_temp": {"avg": {"property": ["sp", "c", "temp"]}}}
-        assert _validate_aggregates(aggs) is aggs
-
-    def test_valid_nested_aggregates_inside_a_raw_dict_passes(self) -> None:
-        aggs = {
-            "buckets": {
-                "uniqueValues": {"property": ["sp", "c", "player"], "aggregates": {"n": Count()}},
-            }
-        }
+    @pytest.mark.parametrize(
+        "aggs",
+        [
+            None,
+            {"avg_temp": Average(["sp", "c", "temp"]), "n": Count()},
+            {"avg_temp": {"avg": {"property": ["sp", "c", "temp"]}}},
+            {"buckets": {"uniqueValues": {"property": ["sp", "c", "player"], "aggregates": {"n": Count()}}}},
+        ],
+        ids=["none", "aggregate-instances", "raw-dicts", "nested-aggregates-in-raw-dict"],
+    )
+    def test_valid_aggregates_pass_through_unchanged(self, aggs: dict[str, Any] | None) -> None:
         assert _validate_aggregates(aggs) is aggs
 
     def test_recurses_two_levels_deep_to_find_an_invalid_shape(self) -> None:
