@@ -6,7 +6,7 @@ from collections.abc import Collection
 import pytest
 
 from cognite.client import CogniteClient
-from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries
+from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries, ForecastResultList
 
 START_MS = 1_790_812_800_000  # 2026-10-01T00:00:00Z
 STEP_MS = 60_000
@@ -28,45 +28,47 @@ def signal(
     return ForecastInputTimeSeries(label, datapoints, cohort)
 
 
-class TestForecast:
-    def test_forecast_a_single_time_series(self, cognite_client: CogniteClient) -> None:
-        res = cognite_client.ai.time_series.forecast([signal("a")])
+@pytest.fixture(scope="module")
+def forecast_result(cognite_client: CogniteClient) -> ForecastResultList:
+    """One call, shared by the tests below to stay within the API's rate limit. 40 series are over the limit of 32
+    per request, so it is split in two, with a cohort of two series that are far apart in the input."""
+    cohorts = {"series-3": "train", "series-37": "train"}
+    return cognite_client.ai.time_series.forecast(
+        [signal(f"series-{i}", cohorts.get(f"series-{i}"), phase=i) for i in range(40)]
+    )
 
-        assert [r.label for r in res] == ["a"]
-        assert 0.5 in res.metadata.quantile_levels
-        forecast = res[0].forecast
-        assert len(forecast) == FORECAST_LENGTH
+
+class TestForecast:
+    def test_a_call_over_the_series_limit_is_split_and_keeps_the_input_order(
+        self, forecast_result: ForecastResultList
+    ) -> None:
+        assert [r.label for r in forecast_result] == [f"series-{i}" for i in range(40)]
+        assert all(len(r.forecast) == FORECAST_LENGTH for r in forecast_result)
+
+    def test_forecast_continues_the_history_with_every_quantile_level(
+        self, forecast_result: ForecastResultList
+    ) -> None:
+        levels = forecast_result.metadata.quantile_levels
+
+        assert 0.5 in levels
+        forecast = forecast_result[0].forecast
         # The forecast continues at the interval of the history, one step after its last point:
         assert [p.timestamp for p in forecast[:2]] == [START_MS + 200 * STEP_MS, START_MS + 201 * STEP_MS]
-        assert all(set(p.quantiles) == set(res.metadata.quantile_levels) for p in forecast)
+        assert all(set(p.quantiles) == set(levels) for p in forecast)
+
+    def test_forecast_time_series_in_a_cohort(self, forecast_result: ForecastResultList) -> None:
+        assert forecast_result.metadata.cohorts == ["train"]
+        assert {r.label for r in forecast_result if r.cohort == "train"} == {"series-3", "series-37"}
 
     @pytest.mark.dsl
-    def test_forecast_to_pandas_has_the_median_by_default(self, cognite_client: CogniteClient) -> None:
-        res = cognite_client.ai.time_series.forecast([signal("a"), signal("b", phase=1.0)])
+    def test_forecast_to_pandas_has_the_median_by_default(self, forecast_result: ForecastResultList) -> None:
+        labels = [r.label for r in forecast_result]
 
-        assert list(res.to_pandas().columns) == ["a", "b"]
-        assert len(res.to_pandas()) == FORECAST_LENGTH
-        assert list(res.to_pandas(include_all_quantiles=True).columns) == [
-            (label, q) for label in ["a", "b"] for q in res.metadata.quantile_levels
+        assert list(forecast_result.to_pandas().columns) == labels
+        assert len(forecast_result.to_pandas()) == FORECAST_LENGTH
+        assert list(forecast_result.to_pandas(include_all_quantiles=True).columns) == [
+            (label, q) for label in labels for q in forecast_result.metadata.quantile_levels
         ]
-
-    def test_forecast_time_series_in_a_cohort(self, cognite_client: CogniteClient) -> None:
-        res = cognite_client.ai.time_series.forecast(
-            [signal("a", cohort="train"), signal("b", cohort="train", phase=1.0), signal("c", phase=2.0)]
-        )
-
-        assert res.metadata.cohorts == ["train"]
-        assert [(r.label, r.cohort) for r in res] == [("a", "train"), ("b", "train"), ("c", None)]
-
-    def test_a_call_over_the_series_limit_is_split_and_keeps_the_input_order(
-        self, cognite_client: CogniteClient
-    ) -> None:
-        labels = [f"series-{i}" for i in range(40)]
-
-        res = cognite_client.ai.time_series.forecast([signal(label, phase=i) for i, label in enumerate(labels)])
-
-        assert [r.label for r in res] == labels
-        assert all(len(r.forecast) == FORECAST_LENGTH for r in res)
 
 
 class TestImpute:
