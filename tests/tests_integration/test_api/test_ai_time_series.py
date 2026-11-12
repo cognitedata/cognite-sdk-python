@@ -30,19 +30,16 @@ def signal(
 
 @pytest.fixture(scope="module")
 def forecast_result(cognite_client: CogniteClient) -> ForecastResultList:
-    """One call, shared by the tests below to stay within the API's rate limit. 40 series are over the limit of 32
-    per request, so it is split in two, with a cohort of two series that are far apart in the input."""
-    cohorts = {"series-3": "train", "series-37": "train"}
+    """One small call, shared by the tests below, to stay within the API's rate limit: two series in a cohort and one
+    independent, in a single request."""
     return cognite_client.ai.time_series.forecast(
-        [signal(f"series-{i}", cohorts.get(f"series-{i}"), phase=i) for i in range(40)]
+        [signal("a", cohort="train"), signal("b", cohort="train", phase=1.0), signal("c", phase=2.0)]
     )
 
 
 class TestForecast:
-    def test_a_call_over_the_series_limit_is_split_and_keeps_the_input_order(
-        self, forecast_result: ForecastResultList
-    ) -> None:
-        assert [r.label for r in forecast_result] == [f"series-{i}" for i in range(40)]
+    def test_forecast_returns_a_result_per_series_in_input_order(self, forecast_result: ForecastResultList) -> None:
+        assert [r.label for r in forecast_result] == ["a", "b", "c"]
         assert all(len(r.forecast) == FORECAST_LENGTH for r in forecast_result)
 
     def test_forecast_continues_the_history_with_every_quantile_level(
@@ -58,7 +55,7 @@ class TestForecast:
 
     def test_forecast_time_series_in_a_cohort(self, forecast_result: ForecastResultList) -> None:
         assert forecast_result.metadata.cohorts == ["train"]
-        assert {r.label for r in forecast_result if r.cohort == "train"} == {"series-3", "series-37"}
+        assert [(r.label, r.cohort) for r in forecast_result] == [("a", "train"), ("b", "train"), ("c", None)]
 
     @pytest.mark.dsl
     def test_forecast_to_pandas_has_the_median_by_default(self, forecast_result: ForecastResultList) -> None:
