@@ -1,13 +1,10 @@
 """
 ===============================================================================
-6defd31848f249cb0e2c41bc254d5b8b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
-
-from typing import TYPE_CHECKING
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api.data_modeling.containers import SyncContainersAPI
@@ -22,9 +19,6 @@ from cognite.client._sync_api.data_modeling.streams import SyncStreamsAPI
 from cognite.client._sync_api.data_modeling.time_series import SyncDataModelingTimeSeriesAPI
 from cognite.client._sync_api.data_modeling.views import SyncViewsAPI
 from cognite.client._sync_api_client import SyncAPIClient
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncDataModelingAPI(SyncAPIClient):

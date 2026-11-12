@@ -25,7 +25,7 @@ To start the devcontainer in Github CodeSpaces, use the "Open in Github Codespac
 - Go to the repository at <https://github.com/cognitedata/cognite-sdk-python>.
 - Click the green `Code` button, and choose the `Codespaces` panel.
 - Click the "Create codespace" or + (plus) sign to create a codespace with the default setup based on the master branch. Alternatively use the triple dot menu, where you can configure a custom setup, for example if more memory is needed.
-- Wait for the devcontainer to start up and eventually see that a terminal session with the poetry python environment loaded.
+- Wait for the devcontainer to start up and eventually see that a terminal session with the uv virtual environment loaded.
 
 To start the devcontainer in Docker, use the "Open in Dev Container (Docker)" link above, or follow these manual steps.
 
@@ -41,10 +41,10 @@ A shell will open in the dev container, and you can start working with the code.
 
 If something fails, or you want to check what happens behind the scenes, you can check the creation log with CTRL+Shift+P -> "View creation log".
 
-## Poetry
+## uv
 
-Poetry install will be run as part of setup.
-You can see that the poetry based python environment is used in the terminal window. The shell may have to be restarted to get the poetry environment activated.
+`uv sync` runs as part of setup and creates a `.venv` in the repository.
+You can see that this environment is used in the terminal window. The shell may have to be restarted before it is activated.
 
 ## Running and debugging tests
 

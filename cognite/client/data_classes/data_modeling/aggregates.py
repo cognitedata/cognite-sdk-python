@@ -28,9 +28,10 @@ from typing import Any, ClassVar
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource
+from cognite.client.data_classes.data_modeling._validation import validate_property_path
+from cognite.client.data_classes.data_modeling.ids import PropertyPath
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import convert_all_keys_to_snake_case, to_snake_case
-from cognite.client.utils.useful_types import SequenceNotStr
 
 
 def _dump_aggregate_value(value: Any) -> Any:
@@ -106,12 +107,12 @@ class Aggregate(CogniteResource):
 
 
 class Average(Aggregate):
-    """Average aggregate over a container property."""
+    """Average aggregate over a container or view property."""
 
     _aggregate_name = "avg"
 
-    def __init__(self, property: SequenceNotStr[str]) -> None:
-        self.property = list(property)
+    def __init__(self, property: PropertyPath) -> None:
+        self.property = validate_property_path(property)
 
     def _dump_body(self) -> dict[str, Any]:
         return {"property": self.property}
@@ -122,8 +123,8 @@ class Count(Aggregate):
 
     _aggregate_name = "count"
 
-    def __init__(self, property: SequenceNotStr[str] | None = None) -> None:
-        self.property = list(property) if property is not None else None
+    def __init__(self, property: PropertyPath | None = None) -> None:
+        self.property = validate_property_path(property) if property is not None else None
 
     def _dump_body(self) -> dict[str, Any]:
         return {"property": self.property} if self.property is not None else {}
@@ -134,8 +135,8 @@ class Min(Aggregate):
 
     _aggregate_name = "min"
 
-    def __init__(self, property: SequenceNotStr[str]) -> None:
-        self.property = list(property)
+    def __init__(self, property: PropertyPath) -> None:
+        self.property = validate_property_path(property)
 
     def _dump_body(self) -> dict[str, Any]:
         return {"property": self.property}
@@ -146,20 +147,20 @@ class Max(Aggregate):
 
     _aggregate_name = "max"
 
-    def __init__(self, property: SequenceNotStr[str]) -> None:
-        self.property = list(property)
+    def __init__(self, property: PropertyPath) -> None:
+        self.property = validate_property_path(property)
 
     def _dump_body(self) -> dict[str, Any]:
         return {"property": self.property}
 
 
 class Sum(Aggregate):
-    """Sum aggregate over a container property."""
+    """Sum aggregate over a container or view property."""
 
     _aggregate_name = "sum"
 
-    def __init__(self, property: SequenceNotStr[str]) -> None:
-        self.property = list(property)
+    def __init__(self, property: PropertyPath) -> None:
+        self.property = validate_property_path(property)
 
     def _dump_body(self) -> dict[str, Any]:
         return {"property": self.property}
@@ -172,11 +173,11 @@ class UniqueValues(Aggregate):
 
     def __init__(
         self,
-        property: SequenceNotStr[str],
+        property: PropertyPath,
         aggregates: Mapping[str, Aggregate | dict[str, Any]] | None = None,
         size: int | None = None,
     ):
-        self.property = list(property)
+        self.property = validate_property_path(property)
         self.aggregates = aggregates
         self.size = size
 
@@ -196,12 +197,12 @@ class NumberHistogram(Aggregate):
 
     def __init__(
         self,
-        property: SequenceNotStr[str],
+        property: PropertyPath,
         interval: float,
         aggregates: Mapping[str, Aggregate | dict[str, Any]] | None = None,
         hard_bounds: Mapping[str, float] | None = None,
     ) -> None:
-        self.property = list(property)
+        self.property = validate_property_path(property)
         self.interval = interval
         self.aggregates = aggregates
         self.hard_bounds = hard_bounds
@@ -222,7 +223,7 @@ class TimeHistogram(Aggregate):
 
     def __init__(
         self,
-        property: SequenceNotStr[str],
+        property: PropertyPath,
         *,
         calendar_interval: str | None = None,
         fixed_interval: str | None = None,
@@ -231,7 +232,7 @@ class TimeHistogram(Aggregate):
     ) -> None:
         if (calendar_interval is None) == (fixed_interval is None):
             raise ValueError("Exactly one of calendar_interval or fixed_interval must be specified")
-        self.property = list(property)
+        self.property = validate_property_path(property)
         self.calendar_interval = calendar_interval
         self.fixed_interval = fixed_interval
         self.aggregates = aggregates

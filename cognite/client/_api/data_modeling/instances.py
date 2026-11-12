@@ -4,6 +4,7 @@ import asyncio
 import inspect
 import logging
 import random
+from collections import UserList
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Sequence
 from datetime import datetime, timedelta, timezone
 from typing import (
@@ -130,7 +131,16 @@ class _TypedNodeOrEdgeListAdapter:
 
 
 class _NodeOrEdgeApplyResultList(CogniteResourceList):
-    _RESOURCE = (NodeApplyResult, EdgeApplyResult)  # type: ignore[assignment]
+    def __init__(self, resources: Sequence[NodeApplyResult | EdgeApplyResult]) -> None:
+        if resources and not isinstance(resources[0], (NodeApplyResult, EdgeApplyResult)):
+            raise TypeError(
+                f"All resources for class '{self.__class__.__name__}' must be of type "
+                f"'{NodeApplyResult.__name__}' or '{EdgeApplyResult.__name__}', not '{type(resources[0])}'."
+            )
+        # Mixed node/edge adapter: intentionally opts out of the single-resource `_RESOURCE` contract.
+        # `CogniteResourceList.__init__` requires `_RESOURCE` and enforces a single resource type,
+        # so we initialize list storage via `UserList.__init__` directly.
+        UserList.__init__(self, resources)
 
     @classmethod
     def _load(cls, resource_list: Iterable[dict[str, Any]] | str) -> _NodeOrEdgeApplyResultList:
@@ -632,14 +642,20 @@ class InstancesAPI(APIClient):
         )
 
         class _NodeOrEdgeList(CogniteResourceList):
-            _RESOURCE = (node_cls, edge_cls)  # type: ignore[assignment]
-
             def __init__(
                 self,
                 resources: list[Node | Edge],
                 typing: TypeInformation | None,
             ):
-                super().__init__(resources)
+                if resources and not isinstance(resources[0], (node_cls, edge_cls)):
+                    raise TypeError(
+                        f"All resources for class '{self.__class__.__name__}' must be of type "
+                        f"'{node_cls.__name__}' or '{edge_cls.__name__}', not '{type(resources[0])}'."
+                    )
+                # Mixed node/edge adapter: intentionally opts out of the single-resource `_RESOURCE` contract.
+                # `CogniteResourceList.__init__` requires `_RESOURCE` and enforces a single resource type,
+                # so we initialize list storage via `UserList.__init__` directly.
+                UserList.__init__(self, resources)
                 self.typing = typing
 
             @classmethod
@@ -1864,7 +1880,7 @@ class InstancesAPI(APIClient):
                 ...     backup_on_exit=True,
                 ... )
                 >>> def do_work(nodes: NodeList) -> None:
-                ...     print(len(nodes))  # ¯\_(ツ)_/¯
+                ...     print(len(nodes))
                 >>>
                 >>> async with session:  # doctest: +SKIP
                 ...     await session.sync_until_live()

@@ -33,6 +33,7 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResourceList,
 )
 from cognite.client.data_classes.agents import Agent
+from cognite.client.data_classes.ai import ForecastResult, ImputeResult, QuantileDatapoint
 from cognite.client.data_classes.data_modeling import (
     EdgeListWithCursor,
     NodeListWithCursor,
@@ -61,7 +62,7 @@ from cognite.client.exceptions import CogniteMissingClientError
 from cognite.client.testing import CogniteClientMock
 from cognite.client.utils import _json_extended as _json
 from tests.tests_unit.conftest import DefaultResourceGenerator
-from tests.utils import FakeCogniteResourceGenerator, all_concrete_subclasses
+from tests.utils import PANDAS_TS_UNIT, FakeCogniteResourceGenerator, all_concrete_subclasses
 
 
 class MyResource(CogniteResourceWithClientRef):
@@ -410,6 +411,10 @@ class TestCogniteResource:
                     NumberHistogram,
                     TimeHistogram,
                     UniqueValues,
+                    # Their quantiles are a map keyed by quantile level, not an object that can gain fields:
+                    QuantileDatapoint,
+                    ForecastResult,
+                    ImputeResult,
                 },
             )
         ],
@@ -606,7 +611,9 @@ class TestCogniteResourceList:
         expected_df = pd.DataFrame(
             {
                 "varA": [1, 2],
-                "lastUpdatedTime": [pd.Timestamp(60, unit="ms"), pd.NaT],
+                "lastUpdatedTime": pd.array(
+                    [pd.Timestamp(60, unit="ms"), pd.NaT], dtype=f"datetime64[{PANDAS_TS_UNIT}]"
+                ),
                 "varB": [None, 3],
             },
         )

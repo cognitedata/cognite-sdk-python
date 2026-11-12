@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from httpx import Request as HttpxRequest
+from httpx2 import Request as HttpxRequest
 
 from cognite.client._constants import _RUNNING_IN_PYODIDE
 from cognite.client.utils import _json_extended as _json
@@ -34,6 +35,7 @@ class CogniteProjectAccessError(CogniteException):
         self, project: str, x_request_id: str | None, maybe_projects: list[str] | None, cluster: str | None = None
     ) -> None:
         self.x_request_id = x_request_id
+        self.timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
         self.cluster = cluster
         self.project = project
         self.maybe_projects = maybe_projects
@@ -54,6 +56,9 @@ class CogniteProjectAccessError(CogniteException):
         except Exception:
             return None
 
+    def __repr__(self) -> str:
+        return str(self)
+
     def __str__(self) -> str:
         msg = (
             f"You don't have access to the requested CDF project={self.project!r}, reason: Unauthorized. "
@@ -61,7 +66,7 @@ class CogniteProjectAccessError(CogniteException):
         )
         if self.maybe_projects:
             msg += f". Did you intend to use one of: {self.maybe_projects}?"
-        msg += f" | code: 401 | X-Request-ID: {self.x_request_id}"
+        msg += f" | code: 401 | X-Request-ID: {self.x_request_id} | time: {self.timestamp}"
         if self.cluster:
             msg += f" | cluster: {self.cluster}"
         return msg
@@ -117,7 +122,7 @@ class CogniteHTTPStatusError(CogniteRequestError):
 
     @staticmethod
     def get_error_type(status_code: int) -> str:
-        # Shamelessly stolen from httpx (we don't use their message directly as it is way too long)
+        # Shamelessly stolen from httpx2 (we don't use their message directly as it is way too long)
         return {
             1: "Informational response",
             3: "Redirect response",
@@ -232,10 +237,14 @@ class CogniteAPIError(CogniteMultiException):
         self.code = code
         self.project = project
         self.x_request_id = x_request_id
+        self.timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%SZ")
         self.missing = missing
         self.duplicated = duplicated
         self.extra = extra
         super().__init__(successful, failed, unknown, skipped)
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def __str__(self) -> str:
         msg = self.message
@@ -244,7 +253,7 @@ class CogniteAPIError(CogniteMultiException):
         elif self.duplicated:
             msg += f", duplicated: {self._truncate_elements(self.duplicated)}"
 
-        msg += f" | code: {self.code} | X-Request-ID: {self.x_request_id}"
+        msg += f" | code: {self.code} | X-Request-ID: {self.x_request_id} | time: {self.timestamp}"
         if self.cluster:
             msg += f" | cluster: {self.cluster}"
         if self.project:

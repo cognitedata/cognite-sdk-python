@@ -71,7 +71,7 @@ process_fns_names = "data_set", "asset_subtree"
 
 
 class TestProcessIdentifiers:
-    @pytest.mark.parametrize("fn, name", zip(process_fns, process_fns_names))
+    @pytest.mark.parametrize("fn, name", list(zip(process_fns, process_fns_names)))
     def test_all_process_fns_bad_input(self, fn: Callable[..., Any], name: str) -> None:
         exp_match = rf"^{name}_ids must be of type int or Sequence\[int\]\. Found <class 'str'>$"
         with pytest.raises(TypeError, match=exp_match):
