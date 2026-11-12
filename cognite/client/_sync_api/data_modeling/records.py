@@ -172,9 +172,9 @@ class SyncRecordsAPI(SyncAPIClient):
         aggregates: Mapping[str, Aggregate | dict[str, Any]],
         *,
         stream_id: str,
-        last_updated_time: TimeRange | None = None,
+        last_updated_time: TimeRange | dict[str, Any] | None = None,
         filter: Filter | dict[str, Any] | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         include_typing: bool = False,
     ) -> RecordsAggregation:
         """
@@ -187,10 +187,10 @@ class SyncRecordsAPI(SyncAPIClient):
             aggregates (Mapping[str, Aggregate | dict[str, Any]]): Aggregate request tree keyed
                 by client-defined aggregate IDs.
             stream_id (str): External ID of the stream to aggregate from.
-            last_updated_time (TimeRange | None): Filter records by last-updated time.
+            last_updated_time (TimeRange | dict[str, Any] | None): Filter records by last-updated time.
                 **Required** for immutable streams (must include a lower bound).
             filter (Filter | dict[str, Any] | None): Filter expression.
-            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Unit conversion specification.
+            target_units (RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None): Unit conversion specification.
             include_typing (bool): Include property type metadata in the response.
 
         Returns:
@@ -309,11 +309,11 @@ class SyncRecordsAPI(SyncAPIClient):
         self,
         stream_id: str,
         *,
-        last_updated_time: TimeRange | None = None,
-        filter: Filter | None = None,
-        sources: Sequence[RecordSourceSelector] | None = None,
-        sort: Sequence[InstanceSort] | InstanceSort | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        last_updated_time: TimeRange | dict[str, Any] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sources: RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None = None,
+        sort: InstanceSort | Sequence[InstanceSort | dict[str, Any]] | dict[str, Any] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         limit: int = 10,
         include_typing: bool = False,
     ) -> RecordList:
@@ -325,12 +325,12 @@ class SyncRecordsAPI(SyncAPIClient):
 
         Args:
             stream_id (str): External ID of the stream to query.
-            last_updated_time (TimeRange | None): Filter by last-updated time. **Required for
+            last_updated_time (TimeRange | dict[str, Any] | None): Filter by last-updated time. **Required for
                 immutable streams** (must include a lower bound).
-            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container or view properties to return.
-            sort (Sequence[InstanceSort] | InstanceSort | None): Sort specification(s); up to 5.
-            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
+            filter (Filter | dict[str, Any] | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None): Which container or view properties to return.
+            sort (InstanceSort | Sequence[InstanceSort | dict[str, Any]] | dict[str, Any] | None): Sort specification(s); up to 5.
+            target_units (RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None): Properties to convert
                 to another unit.
             limit (int): Maximum number of records to return (1-1000). This endpoint returns a single
                 page and does not paginate, so a larger limit is an error rather than a silent cap.
@@ -386,9 +386,9 @@ class SyncRecordsAPI(SyncAPIClient):
         stream_id: str,
         *,
         initialize_cursor: str,
-        filter: Filter | None = None,
-        sources: Sequence[RecordSourceSelector] | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sources: RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         chunk_size: int = 1000,
         include_typing: bool = False,
     ) -> Iterator[SyncRecordList]: ...
@@ -399,9 +399,9 @@ class SyncRecordsAPI(SyncAPIClient):
         stream_id: str,
         *,
         cursor: str,
-        filter: Filter | None = None,
-        sources: Sequence[RecordSourceSelector] | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sources: RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         chunk_size: int = 1000,
         include_typing: bool = False,
     ) -> Iterator[SyncRecordList]: ...
@@ -412,9 +412,9 @@ class SyncRecordsAPI(SyncAPIClient):
         *,
         initialize_cursor: str | None = None,
         cursor: str | None = None,
-        filter: Filter | None = None,
-        sources: Sequence[RecordSourceSelector] | None = None,
-        target_units: RecordTargetUnits | Sequence[RecordTargetUnit] | None = None,
+        filter: Filter | dict[str, Any] | None = None,
+        sources: RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None = None,
+        target_units: RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None = None,
         chunk_size: int = 1000,
         include_typing: bool = False,
     ) -> Iterator[SyncRecordList]:
@@ -439,9 +439,9 @@ class SyncRecordsAPI(SyncAPIClient):
                 Mutually exclusive with ``cursor``.
             cursor (str | None): Resume from a cursor from a previously yielded chunk. Mutually
                 exclusive with ``initialize_cursor``.
-            filter (Filter | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
-            sources (Sequence[RecordSourceSelector] | None): Which container or view properties to return.
-            target_units (RecordTargetUnits | Sequence[RecordTargetUnit] | None): Properties to convert
+            filter (Filter | dict[str, Any] | None): Filter expression (see :mod:`cognite.client.data_classes.filters`).
+            sources (RecordSourceSelector | Sequence[RecordSourceSelector | dict[str, Any]] | None): Which container or view properties to return.
+            target_units (RecordTargetUnits | RecordTargetUnit | Sequence[RecordTargetUnit | dict[str, Any]] | None): Properties to convert
                 to another unit.
             chunk_size (int): Number of records per yielded chunk, between 1 and 1000. Defaults to 1000.
             include_typing (bool): If True, include property type information on each yielded
