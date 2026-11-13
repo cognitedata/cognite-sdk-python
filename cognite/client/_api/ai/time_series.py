@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from cognite.client._api.ai.utils import (
@@ -12,6 +12,7 @@ from cognite.client._api.ai.utils import (
 )
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.ai import (
+    ForecastInputDatapoint,
     ForecastInputTimeSeries,
     ForecastResult,
     ForecastResultList,
@@ -21,8 +22,11 @@ from cognite.client.data_classes.ai import (
 from cognite.client.utils._auxiliary import find_duplicates
 from cognite.client.utils._concurrency import AsyncSDKTask, execute_async_tasks
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._importing import local_import
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from cognite.client import AsyncCogniteClient, ClientConfig
 
 T_ResultList = TypeVar("T_ResultList", ForecastResultList, ImputeResultList)
@@ -183,6 +187,129 @@ class AITimeSeriesAPI(APIClient):
             return (await self._forecast_or_impute("/impute", [time_series], ImputeResultList))[0]
         return await self._forecast_or_impute("/impute", time_series, ImputeResultList)
 
+    async def forecast_dataframe(
+        self,
+        df: pd.DataFrame,
+        cohort: str | Mapping[str, str] | None = None,
+        missing: pd.DataFrame | None = None,
+        include_all_quantiles: bool = False,
+    ) -> pd.DataFrame:
+        """Forecast the next 512 points of every column of a DataFrame.
+
+        Each column is one time series, labelled by its column name. A NaN value is a gap with no reading, sent as a
+        datapoint without a value, so the model doesn't see it. A datapoint marked in `missing` is hidden from the
+        model, whatever its value, for example to exclude a segment of the history. See `forecast` for how the
+        forecast is made.
+
+        Note:
+            This endpoint is in beta, and is called with the beta ``cdf-version`` header.
+
+        Args:
+            df (pd.DataFrame): The history, one numeric column per time series, named by its label, with an evenly
+                spaced DatetimeIndex of 2 to 8192 timestamps. A timezone-naive index is taken to be in UTC.
+            cohort (str | Mapping[str, str] | None): A cohort for every column, or a mapping from column name to
+                cohort. Columns not in the mapping are forecast independently.
+            missing (pd.DataFrame | None): Booleans with the same index and columns as `df`, True for each datapoint
+                to hide from the model. By default, none is marked.
+            include_all_quantiles (bool): Include every quantile level instead of only the median, as
+                `(column, quantile level)` columns.
+
+        Returns:
+            pd.DataFrame: The forecast, like `to_pandas` of the result: a timezone-naive DatetimeIndex in UTC, and the
+                median in one column for every column of `df`, or every quantile level with `include_all_quantiles`.
+
+        Raises:
+            ValueError: If the index isn't a DatetimeIndex, a column name isn't a string, a column is repeated or not
+                numeric, a value is infinite,
+                the cohort mapping names a column that isn't in the DataFrame, or `missing` isn't booleans with the same
+                index and columns as `df`. Also for the reasons `forecast` raises.
+
+        Examples:
+
+            Forecast two compressor pressures jointly and a temperature independently, and get the median forecast
+            of one of them:
+
+                >>> import pandas as pd
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> df = pd.DataFrame(
+                ...     {
+                ...         "23-PT-1101": [42.1, 42.4, 42.9],
+                ...         "23-PT-1201": [39.8, 40.1, 40.0],
+                ...         "24-TT-3001": [31.0, 31.2, 30.9],
+                ...     },
+                ...     index=pd.date_range("2026-10-01", periods=3, freq="1min"),
+                ... )
+                >>> forecast = client.ai.time_series.forecast_dataframe(
+                ...     df,
+                ...     cohort={
+                ...         "23-PT-1101": "compression-train-a",
+                ...         "23-PT-1201": "compression-train-a",
+                ...     },
+                ... )
+                >>> median = forecast["23-PT-1101"]
+        """
+        res = await self.forecast(_dataframe_to_input(df, cohort, missing))
+        return res.to_pandas(include_all_quantiles=include_all_quantiles)
+
+    async def impute_dataframe(
+        self,
+        df: pd.DataFrame,
+        cohort: str | Mapping[str, str] | None = None,
+        missing: pd.DataFrame | None = None,
+        include_all_quantiles: bool = False,
+    ) -> pd.DataFrame:
+        """Predict the datapoints of a DataFrame that are marked missing.
+
+        Each column is one time series, labelled by its column name. A datapoint marked in `missing` is hidden from
+        the model, whatever its value, and predicted: mark the gaps to fill them, or observed values to compare them
+        with their predictions. A NaN value that isn't marked is a gap with no reading: the model doesn't see it, and
+        it isn't predicted. See `impute` for how the prediction is made.
+
+        Note:
+            This endpoint is in beta, and is called with the beta ``cdf-version`` header.
+
+        Args:
+            df (pd.DataFrame): The time series, one numeric column per time series, named by its label, with an
+                evenly spaced DatetimeIndex of 2 to 8192 timestamps. A timezone-naive index is taken to be in UTC.
+            cohort (str | Mapping[str, str] | None): A cohort for every column, or a mapping from column name to
+                cohort. Columns not in the mapping are imputed independently.
+            missing (pd.DataFrame | None): Booleans with the same index and columns as `df`, True for each datapoint
+                to predict. By default, none is marked, so nothing is predicted.
+            include_all_quantiles (bool): Include every quantile level instead of only the median, as
+                `(column, quantile level)` columns.
+
+        Returns:
+            pd.DataFrame: The predictions, like `to_pandas` of the result: one row per timestamp marked missing in
+                any column, a timezone-naive DatetimeIndex in UTC, and the median in one column for every column of
+                `df`, or every quantile level with `include_all_quantiles`.
+
+        Raises:
+            ValueError: If the index isn't a DatetimeIndex, a column name isn't a string, a column is repeated or not
+                numeric, a value is infinite,
+                the cohort mapping names a column that isn't in the DataFrame, or `missing` isn't booleans with the same
+                index and columns as `df`. Also for the reasons `impute` raises.
+
+        Examples:
+
+            Fill the gaps in a pressure measurement with the predicted median:
+
+                >>> import numpy as np
+                >>> import pandas as pd
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
+                >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
+                >>> df = pd.DataFrame(
+                ...     {"21-PT-1019": [42.1, np.nan, 42.9]},
+                ...     index=pd.date_range("2026-10-01", periods=3, freq="1min"),
+                ... )
+                >>> imputed = client.ai.time_series.impute_dataframe(df, missing=df.isna())
+                >>> filled = df.fillna(imputed)  # doctest: +SKIP
+        """
+        res = await self.impute(_dataframe_to_input(df, cohort, missing))
+        return res.to_pandas(include_all_quantiles=include_all_quantiles)
+
     async def _forecast_or_impute(
         self, path: str, time_series: Sequence[ForecastInputTimeSeries], list_cls: type[T_ResultList]
     ) -> T_ResultList:
@@ -215,3 +342,40 @@ class AITimeSeriesAPI(APIClient):
             semaphore=self._get_semaphore("write"),
         )
         return response.json()
+
+
+def _dataframe_to_input(
+    df: pd.DataFrame, cohort: str | Mapping[str, str] | None, missing: pd.DataFrame | None = None
+) -> list[ForecastInputTimeSeries]:
+    np, pd = local_import("numpy", "pandas")
+    if not isinstance(df.index, pd.DatetimeIndex):
+        raise ValueError(f"DataFrame index must be `pd.DatetimeIndex`, got: {type(df.index)}")
+    if df.columns.has_duplicates:
+        raise ValueError(f"DataFrame columns must be unique. Duplicated cols: {find_duplicates(df.columns)}.")
+    if non_string := [col for col in df.columns if not isinstance(col, str)]:
+        raise ValueError(f"DataFrame column names must be strings, the labels of the time series. Not: {non_string}.")
+    if non_numeric := [
+        col for col in df.columns if not pd.api.types.is_numeric_dtype(df[col]) or pd.api.types.is_bool_dtype(df[col])
+    ]:
+        raise ValueError(f"DataFrame columns must be numeric. Non-numeric cols: {non_numeric}.")
+    if np.isinf(df.select_dtypes(include="number")).any(axis=None):
+        raise ValueError("DataFrame contains one or more (+/-) Infinity.")
+    if isinstance(cohort, Mapping) and (unknown := [col for col in cohort if col not in df.columns]):
+        raise ValueError(f"The cohort mapping names columns that aren't in the DataFrame: {unknown}.")
+    if missing is None:
+        missing = pd.DataFrame(False, index=df.index, columns=df.columns)
+    elif not (
+        missing.index.equals(df.index)
+        and missing.columns.equals(df.columns)
+        and all(pd.api.types.is_bool_dtype(missing[col]) for col in missing.columns)
+    ):
+        raise ValueError("missing must be booleans with the same index and columns as the DataFrame.")
+
+    idx = df.index.to_numpy("datetime64[ms]").astype(np.int64).tolist()
+    series = []
+    for column, col in df.items():
+        values = [None if isna else float(value) for value, isna in zip(col.tolist(), col.isna().tolist())]
+        datapoints = list(map(ForecastInputDatapoint, idx, values, missing[column].tolist()))
+        column_cohort = cohort.get(column) if isinstance(cohort, Mapping) else cohort
+        series.append(ForecastInputTimeSeries(column, datapoints, column_cohort))
+    return series
