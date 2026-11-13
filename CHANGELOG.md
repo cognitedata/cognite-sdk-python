@@ -14,6 +14,20 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.25.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.24.0...v8.25.0) (2026-11-13)
+
+
+### Features
+
+* **ai:** add time series forecasting and imputation with client.ai.time_series ([#2875](https://github.com/cognitedata/cognite-sdk-python/issues/2875)) ([4838984](https://github.com/cognitedata/cognite-sdk-python/commit/483898496dd37a5931b57ee36d435409e8e7a43c))
+* **streams:** stop sending alpha cdf-version header for streams and stream templates ([#2931](https://github.com/cognitedata/cognite-sdk-python/issues/2931)) ([c9239bf](https://github.com/cognitedata/cognite-sdk-python/commit/c9239bf51c1227682b06cd7affe19fa5d3bd1aab))
+
+
+### Bug Fixes
+
+* **functions:** handle call log entries without a message ([#2933](https://github.com/cognitedata/cognite-sdk-python/issues/2933)) ([8508fab](https://github.com/cognitedata/cognite-sdk-python/commit/8508fab41e169935606af286320474babfee7f41))
+* **records:** reject two lower or two upper bounds in TimeRange ([#2752](https://github.com/cognitedata/cognite-sdk-python/issues/2752)) ([565238e](https://github.com/cognitedata/cognite-sdk-python/commit/565238e261c648aee2f0ce52f421ddeceb71d243))
+
 ## [8.24.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.23.0...v8.24.0) (2026-11-11)
 
 
