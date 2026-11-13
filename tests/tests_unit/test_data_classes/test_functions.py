@@ -150,3 +150,19 @@ class TestFunctionCallLogEntry:
 
         assert entry._format(with_timestamps=True) == "line one"
         assert entry._format(with_timestamps=False) == "line one"
+
+    @pytest.mark.parametrize(
+        "resource",
+        [
+            pytest.param({"timestamp": 1794381050516}, id="message key missing"),
+            pytest.param({"timestamp": 1794381050516, "message": None}, id="message is null"),
+            pytest.param({"timestamp": 1794381050516, "message": ""}, id="message is empty string"),
+        ],
+    )
+    def test_load_blank_line_gives_empty_message(self, resource: dict[str, int | str | None]) -> None:
+        # The API drops empty messages, so blank stdout/stderr lines come back as timestamp-only entries.
+        entry = FunctionCallLogEntry.load(resource)
+
+        assert entry.message == ""
+        assert entry.timestamp == 1794381050516
+        assert entry._format(with_timestamps=False) == ""
