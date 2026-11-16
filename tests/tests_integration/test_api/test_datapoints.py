@@ -2848,6 +2848,8 @@ class TestRetrieveAggregateDatapointsAPI:
             )
             assert sum(dps.count) == sum(dps.count_good) == n_raw
             assert list(dps.interpolation) == list(dps.step_interpolation)
+            # The test data starts before the requested range, so there is always something to interpolate from.
+            # Missing values (None) are covered by the status code test below:
             assert all(isinstance(value, str) for value in dps.interpolation)
 
     @pytest.mark.parametrize("aggregate", ["average", "max", "min", "sum", "max_datapoint", "total_variation"])
@@ -2898,11 +2900,65 @@ class TestRetrieveAggregateDatapointsAPI:
             # ...but 'count' (and interpolation) only considers good datapoints (where uncertain may count as good):
             assert list(dps.count) == ([0, 0, 0, 0] if treat_uncertain_as_bad else [1, 1, 1, 1])
             assert list(dps.interpolation) == list(dps.step_interpolation)
-            assert all(isinstance(value, str) for value in dps.interpolation)
             if treat_uncertain_as_bad:
-                assert set(dps.interpolation) == {""}  # no good datapoints to interpolate from
+                # No good datapoints to interpolate from, so every value is missing (None), never "":
+                assert list(dps.interpolation) == [None, None, None, None]
             else:
-                assert set(dps.interpolation) != {""}
+                # Daily values (see scripts/create_ts_for_integration_tests.py, seed 123456789) are, from 2023-01-01:
+                #   bad, uncertain, bad, uncertain, bad, uncertain, uncertain, bad
+                # Uncertain datapoints now count as good. The value at the start of each 2-day interval is that of the
+                # latest datapoint at or before it, and is missing (None) when there is none, or when it is bad:
+                #   2023-01-01: bad dp at the start, nothing earlier -> missing
+                #   2023-01-03: bad dp at the start -> if bad dps are ignored, carried from 2023-01-02, else missing
+                #   2023-01-05: bad dp at the start -> if bad dps are ignored, carried from 2023-01-04, else missing
+                #   2023-01-07: uncertain dp exactly at the start -> its value
+                assert list(dps.interpolation) == [
+                    None,
+                    "str--742261.8504551277" if ignore_bad_datapoints else None,
+                    "str-560151.8597733112" if ignore_bad_datapoints else None,
+                    "-770209.7493542824",
+                ]
+
+    @pytest.mark.allow_no_semaphore(
+        "Test inserts datapoints; DatapointsAPI._insert_datapoints holds the semaphore via outer "
+        "'async with' and passes None to _post to avoid double-acquiring."
+    )
+    def test_retrieve_aggregates__string_ts_empty_string_is_not_missing(
+        self, cognite_client: CogniteClient, retrieve_endpoints: list[Callable]
+    ) -> None:
+        # An empty string is a valid string value and must be distinguishable from a missing value (None).
+        ts = cognite_client.time_series.create(TimeSeriesWrite(is_string=True))
+        try:
+            cognite_client.time_series.data.insert(
+                id=ts.id,
+                datapoints=[
+                    (10_000, "bad", StatusCode.Bad),
+                    (20_000, "", StatusCode.Good),
+                    (30_000, "bad", StatusCode.Bad),
+                    (40_000, "abc", StatusCode.Good),
+                ],
+            )
+            for endpoint in retrieve_endpoints:
+                dps = endpoint(
+                    id=ts.id,
+                    start=10_000,
+                    end=50_000,
+                    granularity="10s",
+                    aggregates=["count", "count_bad", "interpolation", "step_interpolation"],
+                )
+                assert [convert_any_ts_to_integer(t) for t in dps.timestamp] == [10_000, 20_000, 30_000, 40_000]
+                assert list(dps.count) == [0, 1, 0, 1]
+                assert list(dps.count_bad) == [1, 0, 1, 0]
+                # 10s: only a bad datapoint, so there is nothing to interpolate from: missing (None)
+                # 20s: a good datapoint with the value "" exactly at the start
+                # 30s: a bad datapoint exactly at the start (bad dps are not ignored by default), so it is missing (None),
+                #      and notably not "" even though "" is the latest good value
+                # 40s: a good datapoint with the value "abc" exactly at the start
+                expected = [None, "", None, "abc"]
+                assert list(dps.interpolation) == expected
+                assert list(dps.step_interpolation) == expected
+        finally:
+            cognite_client.time_series.delete(id=ts.id)
 
     @pytest.mark.parametrize("uniform_index", (False, True))
     def test_retrieve_dataframe_aggregates__mixed_string_and_numeric_ts(
