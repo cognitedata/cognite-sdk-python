@@ -21,7 +21,6 @@ from cognite.client.data_classes.data_modeling.views import (
     ViewList,
     ViewUsedFor,
 )
-from cognite.client.utils._experimental import FeaturePreviewWarning
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
@@ -44,12 +43,6 @@ class ViewsAPI(APIClient):
         self._DELETE_LIMIT = 100
         self._RETRIEVE_LIMIT = 100
         self._CREATE_LIMIT = 100
-        self._warn_on_record_views = FeaturePreviewWarning(
-            api_maturity="General Availability", sdk_maturity="alpha", feature_name="Views for Records"
-        )
-
-    def _record_views_alpha_warn(self) -> None:
-        self._warn_on_record_views.warn()
 
     def _get_semaphore(self, operation: Literal["read_schema", "write_schema"]) -> asyncio.BoundedSemaphore:
         from cognite.client import global_config
@@ -110,8 +103,6 @@ class ViewsAPI(APIClient):
             View | ViewList: yields View one by one if chunk_size is not specified, else ViewList objects.
         """  # noqa: DOC404
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global, used_for)
-        if filter_.used_for and "record" in filter_.used_for:
-            self._record_views_alpha_warn()
         async for item in self._list_generator(
             list_cls=ViewList,
             resource_cls=View,
@@ -238,8 +229,6 @@ class ViewsAPI(APIClient):
                 ...     view_list  # do something with the views
         """
         filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global, used_for)
-        if filter_.used_for and "record" in filter_.used_for:
-            self._record_views_alpha_warn()
 
         return await self._list(
             list_cls=ViewList,
@@ -366,9 +355,6 @@ class ViewsAPI(APIClient):
                 ... )
                 >>> res = client.data_modeling.views.apply(record_view)
         """
-        views = [view] if isinstance(view, (ViewApply, RecordViewApply)) else list(view)
-        if any(isinstance(v, RecordViewApply) for v in views):
-            self._record_views_alpha_warn()
         return await self._create_multiple(
             list_cls=ViewList,
             resource_cls=View,
