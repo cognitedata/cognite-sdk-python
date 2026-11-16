@@ -64,7 +64,7 @@ DatapointsExternalId = str | DatapointsQuery | SequenceNotStr[str | DatapointsQu
 DatapointsInstanceId = NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]
 ObjectAggUnpackFn: TypeAlias = Callable[
     [AggregateDatapoint],
-    MaxOrMinDatapoint | list[StateCount] | list[StateTransition] | list[StateDuration] | str,
+    MaxOrMinDatapoint | list[StateCount] | list[StateTransition] | list[StateDuration] | str | None,
 ]
 
 _PROTO_TYPE_TO_STR: dict[TimeSeriesType, Literal["numeric", "string", "state", "unspecified"]] = {
@@ -261,9 +261,15 @@ class DpsUnpackFns:
             # An aggregate is missing, fallback to slower `getattr`:
             return np.array([tuple(getattr(dp, agg, math.nan) for agg in aggregates) for dp in dps], dtype=np.float64)
 
-    # For string time series, these aggregates are strings:
-    interpolation: Callable[[AggregateDatapoint], str] = op.attrgetter("interpolation")
-    step_interpolation: Callable[[AggregateDatapoint], str] = op.attrgetter("stepInterpolation")
+    # For string time series, these aggregates are optional strings. Field presence lets us tell an empty string
+    # apart from a missing value (e.g. an interval before the first datapoint), which is returned as None:
+    @staticmethod
+    def interpolation(dp: AggregateDatapoint) -> str | None:
+        return dp.interpolation if dp.HasField("interpolation") else None  # type: ignore [return-value]
+
+    @staticmethod
+    def step_interpolation(dp: AggregateDatapoint) -> str | None:
+        return dp.stepInterpolation if dp.HasField("stepInterpolation") else None  # type: ignore [return-value]
 
     @classmethod
     def extract_fn_for_object_agg(

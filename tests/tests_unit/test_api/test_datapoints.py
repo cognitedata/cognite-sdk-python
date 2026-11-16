@@ -463,7 +463,8 @@ STRING_AGGS = ["count", "count_bad", "duration_good", "interpolation", "step_int
 
 @pytest.fixture
 def mock_string_aggregates(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
-    # The API omits interpolation in intervals before the first datapoint, which protobuf gives us as "".
+    # The API omits interpolation in intervals before the first datapoint (None), which is distinct from an empty
+    # string value (the last datapoint below has interpolation=""):
     # Counts are NaN when missing. The interpolated values are numeric-looking on purpose (must stay strings):
     dps = [
         StringAggregateDatapoint(timestamp=0, count=2, countBad=math.nan, durationGood=10),
@@ -473,6 +474,7 @@ def mock_string_aggregates(httpx2_mock: HTTPXMock, async_client: AsyncCogniteCli
         StringAggregateDatapoint(
             timestamp=20, count=1, countBad=math.nan, interpolation="abc", stepInterpolation="abc"
         ),
+        StringAggregateDatapoint(timestamp=30, count=1, interpolation="", stepInterpolation=""),
     ]
     items = [
         DataPointListItem(
@@ -510,10 +512,10 @@ class TestRetrieveStringAggregates:
             res = retrieve(id=ids, start=0, end=3000, granularity="1s", aggregates=STRING_AGGS)
 
         for dps in res:
-            assert list(dps.interpolation) == list(dps.step_interpolation) == ["", "1.5", "abc"]
-            assert list(dps.count) == [2, 0, 1]
-            assert list(dps.count_bad) == [0, 1, 0]
-            assert list(dps.duration_good) == [10, 0, 0]
+            assert list(dps.interpolation) == list(dps.step_interpolation) == [None, "1.5", "abc", ""]
+            assert list(dps.count) == [2, 0, 1, 1]
+            assert list(dps.count_bad) == [0, 1, 0, 0]
+            assert list(dps.duration_good) == [10, 0, 0, 0]
             if use_numpy:
                 assert dps.interpolation.dtype == dps.step_interpolation.dtype == np.object_
                 assert dps.count.dtype == np.int64
@@ -528,7 +530,10 @@ class TestRetrieveStringAggregates:
         df = df.droplevel("identifier", axis=1)
         assert df.columns.tolist() == sorted(STRING_AGGS)
         assert df.dtypes.astype(str).tolist() == ["Int64", "Int64", "Int64", PANDAS_STR_DTYPE, PANDAS_STR_DTYPE]
-        assert df["interpolation"].tolist() == df["step_interpolation"].tolist() == ["", "1.5", "abc"]
+        # A missing value is None (object dtype, pandas v2) or NaN (str dtype, pandas v3), but never an empty string:
+        for agg in ("interpolation", "step_interpolation"):
+            assert df[agg].isna().tolist() == [True, False, False, False]
+            assert df[agg].tolist()[1:] == ["1.5", "abc", ""]
 
     @pytest.mark.parametrize("is_string, expected", [(True, ["1.5", "abc"]), (False, [1.5, 2.0])])
     def test_load_datapoints_array(self, is_string: bool, expected: list) -> None:
