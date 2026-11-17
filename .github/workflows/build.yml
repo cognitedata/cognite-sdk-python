@@ -77,7 +77,9 @@ jobs:
   test_full:
     runs-on: ${{ matrix.os }}
     needs: check_lock
-    timeout-minutes: 15
+    # Stacked PRs: only run for the bottom PR, to avoid overloading the backend APIs.
+    if: ${{ !github.event.pull_request.stack || github.event.pull_request.stack.base.ref == github.event.pull_request.base.ref }}
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
