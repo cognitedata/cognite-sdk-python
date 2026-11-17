@@ -24,6 +24,7 @@ from cognite.client._proto.data_points_pb2 import (
     NumericDatapoint,
     StateAggregate,
     StateDatapoint,
+    StringAggregateDatapoint,
     StringDatapoint,
 )
 from cognite.client.data_classes.data_modeling import NodeId
@@ -64,7 +65,7 @@ DatapointsExternalId = str | DatapointsQuery | SequenceNotStr[str | DatapointsQu
 DatapointsInstanceId = NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]
 ObjectAggUnpackFn: TypeAlias = Callable[
     [AggregateDatapoint],
-    MaxOrMinDatapoint | list[StateCount] | list[StateTransition] | list[StateDuration] | str,
+    MaxOrMinDatapoint | list[StateCount] | list[StateTransition] | list[StateDuration] | str | None,
 ]
 
 _PROTO_TYPE_TO_STR: dict[TimeSeriesType, Literal["numeric", "string", "state", "unspecified"]] = {
@@ -261,9 +262,15 @@ class DpsUnpackFns:
             # An aggregate is missing, fallback to slower `getattr`:
             return np.array([tuple(getattr(dp, agg, math.nan) for agg in aggregates) for dp in dps], dtype=np.float64)
 
-    # For string time series, these aggregates are strings:
-    interpolation: Callable[[AggregateDatapoint], str] = op.attrgetter("interpolation")
-    step_interpolation: Callable[[AggregateDatapoint], str] = op.attrgetter("stepInterpolation")
+    # For string time series, these aggregates are optional strings. Field presence lets us tell an empty string
+    # apart from a missing value (e.g. an interval before the first datapoint), which is returned as None:
+    @staticmethod
+    def interpolation(dp: StringAggregateDatapoint) -> str | None:
+        return dp.interpolation if dp.HasField("interpolation") else None
+
+    @staticmethod
+    def step_interpolation(dp: StringAggregateDatapoint) -> str | None:
+        return dp.stepInterpolation if dp.HasField("stepInterpolation") else None
 
     @classmethod
     def extract_fn_for_object_agg(
@@ -272,8 +279,9 @@ class DpsUnpackFns:
         include_status: bool,
     ) -> ObjectAggUnpackFn:
         status_independent: dict[str, ObjectAggUnpackFn] = {
-            "interpolation": cls.interpolation,
-            "stepInterpolation": cls.step_interpolation,
+            # These two only ever receive StringAggregateDatapoint (string time series), not AggregateDatapoint:
+            "interpolation": cls.interpolation,  # type: ignore [dict-item]
+            "stepInterpolation": cls.step_interpolation,  # type: ignore [dict-item]
             "stateCount": cls.state_counts,
             "stateTransitions": cls.state_transitions,
             "stateDuration": cls.state_durations,
