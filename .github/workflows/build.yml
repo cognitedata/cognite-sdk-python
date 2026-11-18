@@ -4,6 +4,10 @@ name: build
 on:
   merge_group:
   pull_request:
+  # Manual runs, e.g. to run integration tests on the full OS/Python matrix for a risky PR. Not needed for
+  # releases (release-please PRs get the full matrix automatically, see RUN_INTEGRATION below). To trigger:
+  #   - GitHub UI: Actions tab -> "build" -> "Run workflow" -> pick branch, tick the box
+  #   - CLI:       gh workflow run build.yml --ref <branch> -f full_integration=true
   workflow_dispatch:
     inputs:
       full_integration:
