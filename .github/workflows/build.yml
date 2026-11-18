@@ -4,6 +4,12 @@ name: build
 on:
   merge_group:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      full_integration:
+        description: "Run integration tests on the full OS/Python matrix (default: only the windows/lowest-Python cell)"
+        type: boolean
+        default: false
 
 concurrency:
   group: pr-${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -78,11 +84,26 @@ jobs:
     runs-on: ${{ matrix.os }}
     needs: check_lock
     timeout-minutes: 15
+    env:
+      # Integration tests hit a shared CDF project, so running them on every matrix cell multiplies load and
+      # flakiness. By default only the cell tagged `integration: true` below (windows + lowest supported Python,
+      # which is also the cell that reports coverage) runs them; the others run unit tests only. The full matrix
+      # runs integration tests for release-please PRs (both the PR itself and its merge-queue run) and on manual request.
+      RUN_INTEGRATION: >-
+        ${{ matrix.integration
+        || inputs.full_integration
+        || startsWith(github.head_ref, 'release-please--')
+        || startsWith(github.event.merge_group.head_commit.message, 'chore(master): release') }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        include:
+          # When bumping the lowest supported Python, update this cell (it drives integration tests + coverage):
+          - os: windows-latest
+            python-version: "3.10"
+            integration: true
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - uses: ./.github/actions/setup
@@ -90,7 +111,12 @@ jobs:
           python_version: ${{ matrix.python-version }}
           extra: all
 
-      - name: Test full
+      - name: Test unit only
+        if: env.RUN_INTEGRATION != 'true'
+        run: uv run pytest --durations=10 --ignore=tests/tests_integration -n8 --dist loadscope --maxfail 20
+
+      - name: Test full (unit + integration)
+        if: env.RUN_INTEGRATION == 'true'
         env:
           LOGIN_FLOW: client_credentials
           COGNITE_CLIENT_SECRET: ${{ secrets.IDP_CLIENT_SECRET_CI }}
@@ -105,6 +131,6 @@ jobs:
 
       - uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
         # Report code coverage from windows runner; xdist + ubuntu gives incorrect results
-        if: matrix.os == 'windows-latest' && matrix.python-version == '3.10'
+        if: matrix.integration
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

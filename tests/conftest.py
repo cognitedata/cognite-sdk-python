@@ -136,6 +136,9 @@ def shuffle_test_modules(items: list[pytest.Item]) -> None:
     default, every runner hits the exact same Cognite CDF endpoints simultaneously, causing high peak
     traffic, increasing the chance for rate-limit errors on shared resources.
 
+    Note: by default only a single matrix cell runs the integration tests on PRs (see build.yml), so this
+    mostly matters for release-please PRs and manual full-matrix runs, where all cells hit CDF at once.
+
     How this function works:
     - Deterministic per matrix job: Generates a seed based on GITHUB_RUN_ID, GITHUB_JOB,
       RUNNER_OS, and the Python version. This forces each matrix runner (e.g., Linux 3.10
