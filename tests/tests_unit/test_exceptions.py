@@ -61,6 +61,25 @@ class TestAPIError:
         except CogniteAPIError as e:
             assert e.cluster == "api"
 
+    def test_api_error_with_non_string_message(
+        self, httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    ) -> None:
+        validation_errors = [{"type": "value_error", "loc": ["body", "tools", 0], "msg": "Invalid schema"}]
+        httpx2_mock.add_response(
+            method="GET",
+            url=get_url(async_client.assets, "/any"),
+            status_code=400,
+            json={"error": {"message": validation_errors, "code": 400}},
+        )
+        with pytest.raises(CogniteAPIError) as exc_info:
+            cognite_client.get(url=f"/api/v1/projects/{cognite_client.config.project}/any")
+
+        err = exc_info.value
+        assert err.message == validation_errors
+        assert '"msg":"Invalid schema"' in str(err)
+        assert '"loc":["body","tools",0]' in str(err)
+        assert "| code: 400" in str(err)
+
 
 @pytest.mark.parametrize("req_id", ["abc", None])
 @pytest.mark.parametrize(

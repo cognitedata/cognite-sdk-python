@@ -247,7 +247,8 @@ class CogniteAPIError(CogniteMultiException):
         return str(self)
 
     def __str__(self) -> str:
-        msg = self.message
+        # Some APIs return a non-string message, e.g. a list of validation errors:
+        msg = self.message if isinstance(self.message, str) else _json.dumps(self.message)
         if self.missing:
             msg += f", missing: {self._truncate_elements(self.missing)}"
         elif self.duplicated:
