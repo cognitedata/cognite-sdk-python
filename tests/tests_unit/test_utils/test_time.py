@@ -69,7 +69,8 @@ class TestDatetimeToMsIsoTimestamp:
     @pytest.mark.skipif(platform.system() == "Windows", reason="Overriding timezone is too much hassle on Windows")
     def test_timezone_unaware(self) -> None:
         input_datetime = datetime(2021, 1, 1, 0, 0, 0, 0)
-        with tmp_set_envvar("TZ", "CET"):
+        # Use a canonical IANA name: legacy aliases like "CET" are missing from tzdata on newer Ubuntu images
+        with tmp_set_envvar("TZ", "Europe/Paris"):
             call_time_tzset()
             assert datetime_to_ms_iso_timestamp(input_datetime) == "2021-01-01T00:00:00.000+01:00"
 
