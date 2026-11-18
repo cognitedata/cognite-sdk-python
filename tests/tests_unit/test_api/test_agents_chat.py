@@ -166,6 +166,44 @@ class TestAgentChat:
         call_args = async_client.agents._post.call_args
         assert call_args[1]["json"]["cursor"] == "previous_cursor_123"
 
+    def test_chat_with_retention_policy(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, chat_response_body: dict
+    ) -> None:
+        async_client.agents._post = AsyncMock(return_value=MagicMock(json=lambda: chat_response_body))  # type: ignore[method-assign]
+
+        cognite_client.agents.chat(
+            agent_external_id="my_agent",
+            messages=Message("Hello"),
+            retention_policy="persisted",
+        )
+
+        body = async_client.agents._post.call_args[1]["json"]
+        assert body["retentionPolicy"] == "persisted"
+
+    def test_chat_with_tool_confirmation_mode(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, chat_response_body: dict
+    ) -> None:
+        async_client.agents._post = AsyncMock(return_value=MagicMock(json=lambda: chat_response_body))  # type: ignore[method-assign]
+
+        cognite_client.agents.chat(
+            agent_external_id="my_agent",
+            messages=Message("Run the data quality check function"),
+            tool_confirmation_mode="dangerouslyAllowAll",
+        )
+
+        body = async_client.agents._post.call_args[1]["json"]
+        assert body["toolConfirmationMode"] == "dangerouslyAllowAll"
+
+    def test_chat_omits_optional_params_by_default(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, chat_response_body: dict
+    ) -> None:
+        async_client.agents._post = AsyncMock(return_value=MagicMock(json=lambda: chat_response_body))  # type: ignore[method-assign]
+
+        cognite_client.agents.chat(agent_external_id="my_agent", messages=Message("Hello"))
+
+        body = async_client.agents._post.call_args[1]["json"]
+        assert set(body) == {"agentExternalId", "messages"}
+
     def test_chat_multiple_messages(
         self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, chat_response_body: dict
     ) -> None:
