@@ -174,7 +174,7 @@ class _FullDatapointsQuery:
         else:
             self._raise_on_wrong_ts_identifier_type(identifier, arg_name, exp_type)
 
-        parsed_queries = []
+        parsed_queries: list[DatapointsQuery] = []
         for query in user_queries:
             # We merge 'defaults' and the given user query; the query takes precedence:
             if isinstance(query, exp_type):
