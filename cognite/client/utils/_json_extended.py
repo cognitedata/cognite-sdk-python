@@ -56,13 +56,13 @@ loads = json.loads
 # As opposed to protobuf, datapoints in JSON returns out-of-range float values as strings. This means
 # we're forced to do a lookup for every single datapoint we try to insert (and read in retrieve_latest
 # when not ignoring bad)... so we allow some ugly optimizations in the translation code:
-_FLOAT_API_MAPPING = MappingProxyType({"Infinity": math.inf, "-Infinity": -math.inf, "NaN": math.nan})
+FLOAT_API_MAPPING = MappingProxyType({"Infinity": math.inf, "-Infinity": -math.inf, "NaN": math.nan})
 _FLOAT_API_MAPPING_REVERSE = MappingProxyType({math.inf: "Infinity", -math.inf: "-Infinity", math.nan: "NaN"})
 
 
 def convert_to_float(value: float | str | None) -> float | None:
     if value.__class__ is str:  # like this abomination; faster than float(value)
-        return _FLOAT_API_MAPPING[value]
+        return FLOAT_API_MAPPING[value]
     return value  # type: ignore [return-value]
 
 
