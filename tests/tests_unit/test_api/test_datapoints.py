@@ -495,7 +495,6 @@ class TestInsertDatapointsProtobuf:
                 {"id": 2, "datapoints": [(1, "a"), (2, "")]},
                 {"id": 3, "datapoints": [(1, None), (2, 7.0)]},
                 {"id": 4, "datapoints": [(1, None), (2, "x")]},
-                {"id": 5, "datapoints": [(1, None)]},  # unknown type: defaults to numeric
             ]
         )
         items = _decode_insert_request(mock_post_datapoints.get_requests()[0]).items
@@ -504,8 +503,44 @@ class TestInsertDatapointsProtobuf:
             "stringDatapoints",
             "numericDatapoints",
             "stringDatapoints",
-            "numericDatapoints",
         ]
+
+    @pytest.mark.parametrize("dps", ([(1, None)], [(1, "NaN"), (2, "Infinity")]))
+    @pytest.mark.parametrize("is_string, expected", ((True, "stringDatapoints"), (False, "numericDatapoints")))
+    def test_ambiguous_series_type_is_looked_up(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        mock_post_datapoints: HTTPXMock,
+        dps: list,
+        is_string: bool,
+        expected: str,
+    ) -> None:
+        mock_post_datapoints.add_response(
+            method="POST",
+            url=get_url(async_client.time_series, "/timeseries/byids"),
+            json={"items": [{"id": 1, "isString": is_string, "isStep": False, "createdTime": 0, "lastUpdatedTime": 0}]},
+        )
+        cognite_client.time_series.data.insert(dps, id=1)
+        (item,) = _decode_insert_request(
+            mock_post_datapoints.get_requests(url=get_url(async_client.time_series.data, "/timeseries/data"))[0]
+        ).items
+        assert item.WhichOneof("datapointType") == expected
+
+    def test_ambiguous_series_type_defaults_to_numeric_if_lookup_fails(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, mock_post_datapoints: HTTPXMock
+    ) -> None:
+        mock_post_datapoints.add_response(
+            method="POST",
+            url=get_url(async_client.time_series, "/timeseries/byids"),
+            status_code=403,
+            json={"error": {"code": 403, "message": "Forbidden"}},
+        )
+        cognite_client.time_series.data.insert([(1, None)], id=1)  # type: ignore [arg-type]
+        (item,) = _decode_insert_request(
+            mock_post_datapoints.get_requests(url=get_url(async_client.time_series.data, "/timeseries/data"))[0]
+        ).items
+        assert item.WhichOneof("datapointType") == "numericDatapoints"
 
     def test_missing_values_and_status_are_sent(
         self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock

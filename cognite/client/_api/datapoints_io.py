@@ -42,9 +42,11 @@ from cognite.client.data_classes import (
     LatestDatapointQuery,
     StateDatapointsInsert,
     StateDatapointWrite,
+    TimeSeries,
+    TimeSeriesList,
 )
 from cognite.client.data_classes.data_modeling import NodeId
-from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
+from cognite.client.exceptions import CogniteAPIError, CogniteException, CogniteNotFoundError
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import (
     exactly_one_is_not_none,
@@ -673,6 +675,7 @@ class DatapointsPoster(_DatapointsInserter[_InsertDatapoint]):
 
     async def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
         if to_insert := self._verify_and_prepare_dps_objects(dps_object_lst):
+            await self._lookup_undecided_types(to_insert)
             await self._insert_all(to_insert)
 
     def _verify_and_prepare_dps_objects(
@@ -689,16 +692,44 @@ class DatapointsPoster(_DatapointsInserter[_InsertDatapoint]):
                 self._is_string[identifier] = dps.is_string
 
         for identifier, dps in dps_to_insert.items():
-            if identifier not in self._is_string:
-                self._is_string[identifier] = self._infer_is_string(dps)
+            if identifier not in self._is_string and (is_string := self._infer_is_string(dps)) is not None:
+                self._is_string[identifier] = is_string
         return list(dps_to_insert.items())
 
     @staticmethod
-    def _infer_is_string(dps: list[_InsertDatapoint]) -> bool:
+    def _infer_is_string(dps: list[_InsertDatapoint]) -> bool | None:
         # Use the first value that is neither missing nor one of the strings the (JSON) API uses for out-of-range
-        # floats. If there is no such value, we default to numeric:
+        # floats. If there is no such value, the type can't be known from the data (None):
+        # TODO (v9): This is costly&annoying but it's necessary in order to switch from JSON to protobuf without
+        # doing a major version release. Require the user input to define what the data is (numeric/string).
         first = next((v for dp in dps if (v := dp.value) is not None and v not in _json.FLOAT_API_MAPPING), None)
-        return isinstance(first, str)
+        return None if first is None else isinstance(first, str)
+
+    async def _lookup_undecided_types(self, to_insert: list[tuple[Identifier, list[_InsertDatapoint]]]) -> None:
+        # If the input datapoints are all missing and/or 'NaN'/'Infinity' literals, they don'tt tell us if the time series
+        # is numeric or string, so we ask the API. This used to not be a problem when we used JSON, as the backend would
+        # happily accept these out-of-range float literals as valid numeric values.
+        # If this lookup fails, e.g. no read access, we guess numeric (which will be overwhelmingly the correct option),
+        # and just let if fail during the actual insert.
+        # Note: We use the private method to avoid the deprecation warning of the public time series API.
+        # TODO (v9): Require the user input to define what the data is (numeric/string).
+        undecided = [identifier for identifier, _ in to_insert if identifier not in self._is_string]
+        if not undecided:
+            return
+        known: dict[Identifier, bool] = {}
+        try:
+            lookup = IdentifierSequence(undecided, is_singleton=False)
+            found = await self.dps_client._cognite_client.time_series._retrieve_multiple(
+                list_cls=TimeSeriesList, resource_cls=TimeSeries, identifiers=lookup, ignore_unknown_ids=True
+            )
+            for ts in found:
+                for ts_identifier in (ts.id, ts.external_id, ts.instance_id):
+                    if ts_identifier is not None:
+                        known[Identifier(ts_identifier)] = bool(ts.is_string)
+        except CogniteException:
+            pass
+        for identifier in undecided:
+            self._is_string[identifier] = known.get(identifier, False)
 
     def _to_proto_item(self, identifier: Identifier, dps: Sequence[_InsertDatapoint]) -> DataPointInsertionItem:
         dumped = [dp.to_proto_dict() for dp in dps]
