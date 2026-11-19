@@ -6,6 +6,7 @@ import gzip
 import heapq
 import itertools
 import math
+import warnings
 from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
 from collections.abc import AsyncIterator, Iterable, Iterator, MutableSequence, Sequence
@@ -726,8 +727,14 @@ class DatapointsPoster(_DatapointsInserter[_InsertDatapoint]):
                 for ts_identifier in (ts.id, ts.external_id, ts.instance_id):
                     if ts_identifier is not None:
                         known[Identifier(ts_identifier)] = bool(ts.is_string)
-        except CogniteException:
-            pass
+        except CogniteException as err:
+            warnings.warn(
+                "The SDK was unable to tell if the time series being inserted into are numeric or string, as the datapoints "
+                "have no values to infer it from, and looking up the time series failed (do you lack read access?). "
+                f"{type(err).__name__}: {err}. Will continue with insert assuming numeric for {len(undecided)} time series, "
+                "which will fail if any of them are string.",
+                stacklevel=2,
+            )
         for identifier in undecided:
             self._is_string[identifier] = known.get(identifier, False)
 

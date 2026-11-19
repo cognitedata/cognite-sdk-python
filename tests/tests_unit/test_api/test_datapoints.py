@@ -536,7 +536,8 @@ class TestInsertDatapointsProtobuf:
             status_code=403,
             json={"error": {"code": 403, "message": "Forbidden"}},
         )
-        cognite_client.time_series.data.insert([(1, None)], id=1)  # type: ignore [arg-type]
+        with pytest.warns(UserWarning, match=r"assuming numeric for 1 time series"):
+            cognite_client.time_series.data.insert([(1, None)], id=1)  # type: ignore [arg-type]
         (item,) = _decode_insert_request(
             mock_post_datapoints.get_requests(url=get_url(async_client.time_series.data, "/timeseries/data"))[0]
         ).items
