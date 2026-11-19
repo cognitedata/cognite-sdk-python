@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import gzip
 import heapq
 import itertools
 import math
@@ -12,6 +13,7 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
+    Generic,
     Literal,
     NamedTuple,
     TypeGuard,
@@ -26,9 +28,11 @@ from cognite.client._api.datapoint_tasks import (
     BaseTaskOrchestrator,
 )
 from cognite.client._proto.data_point_insertion_request_pb2 import (
+    DataPointInsertionItem,
     DataPointInsertionRequest,
 )
 from cognite.client._proto.data_point_list_response_pb2 import DataPointListItem, DataPointListResponse
+from cognite.client.config import global_config
 from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
@@ -37,6 +41,7 @@ from cognite.client.data_classes import (
     DatapointsQuery,
     LatestDatapointQuery,
     StateDatapointsInsert,
+    StateDatapointWrite,
 )
 from cognite.client.data_classes.data_modeling import NodeId
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
@@ -558,7 +563,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
 
 class _InsertDatapoint(NamedTuple):
     ts: int | datetime.datetime
-    value: str | float
+    value: str | float | None
     status_code: int | None = None
     status_symbol: str | None = None
 
@@ -568,39 +573,107 @@ class _InsertDatapoint(NamedTuple):
             return cls(dct["timestamp"], dct["value"], status.get("code"), status.get("symbol"))
         return cls(dct["timestamp"], dct["value"])
 
-    def dump(self) -> dict[str, Any]:
-        dumped: dict[str, Any] = {"timestamp": timestamp_to_ms(self.ts), "value": self.value}
+    def to_proto_dict(self) -> dict[str, Any]:
+        # The shape protobuf expects for both NumericDatapoint and StringDatapoint. Note: Protobuf supports
+        # NaN and +/- Infinity natively, and a missing value (None) is signalled with 'nullValue':
+        dumped: dict[str, Any] = {"timestamp": timestamp_to_ms(self.ts)}
+        if self.value is None:
+            dumped["nullValue"] = True
+        else:
+            dumped["value"] = self.value
+
         if self.status_code:  # also skip if 0
             dumped["status"] = {"code": self.status_code}
         if self.status_symbol and self.status_symbol != "Good":
             dumped.setdefault("status", {})["symbol"] = self.status_symbol
-        # Out-of-range float values must be passed as strings:
-        dumped["value"] = _json.convert_nonfinite_float_to_str(dumped["value"])
         return dumped
 
 
-class DatapointsPoster:
+class _DatapointsInserter(ABC, Generic[_T]):
+    """Shared chunking, request building, posting and error reporting for inserting datapoints.
+
+    Subclasses are responsible for turning user input into a list of (identifier, datapoints) pairs, and
+    for describing how a single such pair maps to the protobuf insertion item. Everything else is shared.
+    """
+
+    _api_subversion: str | None = None
+
     def __init__(self, dps_client: DatapointsAPI) -> None:
         self.dps_client = dps_client
         self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
         self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
 
-    async def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
-        to_insert = self._verify_and_prepare_dps_objects(dps_object_lst)
-        if not to_insert:
-            return
-        # To ensure we stay below the max limit on objects per request, we first chunk based on it:
-        # (with 10k limit this is almost always just one chunk)
-        tasks = [
-            AsyncSDKTask(self._insert_datapoints, task)
-            for chunk in split_into_chunks(to_insert, self.ts_limit)
-            for task in self._create_payload_tasks(chunk)
-        ]
+    @abstractmethod
+    def _to_proto_item(self, identifier: Identifier, dps: Sequence[_T]) -> DataPointInsertionItem:
+        raise NotImplementedError
+
+    async def _insert_all(self, to_insert: list[tuple[Identifier, list[_T]]]) -> None:
+        tasks = [AsyncSDKTask(self._insert_datapoints, chunk) for chunk in self._create_payload_chunks(to_insert)]
         summary = await execute_async_tasks(tasks)
         summary.raise_compound_exception_if_failed_tasks(
             task_unwrap_fn=itemgetter(0),
-            task_list_element_unwrap_fn=IdentifierSequenceCore.extract_identifiers,
+            task_list_element_unwrap_fn=lambda pair: pair[0].as_dict(),
         )
+
+    def _create_payload_chunks(
+        self, items: Iterable[tuple[Identifier, list[_T]]]
+    ) -> Iterator[list[tuple[Identifier, list[_T]]]]:
+        # We need to chunk efficiently while also respecting both the "number of ts per request" limit and the
+        # "max number of datapoints per request" limit:
+        chunk: list[tuple[Identifier, list[_T]]] = []
+        n_dps_left = self.dps_limit
+        for identifier, dps in items:
+            offset, n_dps = 0, len(dps)
+            while offset < n_dps:
+                end = offset + n_dps_left
+                slice_ = dps[offset:end]
+                offset = end
+                chunk.append((identifier, slice_))
+                n_dps_left -= len(slice_)
+                if n_dps_left == 0 or len(chunk) >= self.ts_limit:
+                    yield chunk
+                    chunk = []
+                    n_dps_left = self.dps_limit
+        if chunk:
+            yield chunk
+
+    def _build_request(self, chunk: list[tuple[Identifier, list[_T]]]) -> bytes:
+        items = []
+        for identifier, dps in chunk:
+            try:
+                items.append(self._to_proto_item(identifier, dps))
+            except TypeError as err:
+                raise TypeError(
+                    f"Unable to insert datapoints into time series {identifier.as_dict(camel_case=False)}: {err}"
+                ) from err
+        content = DataPointInsertionRequest(items=items).SerializeToString()
+        return content if global_config.disable_gzip else gzip.compress(content)
+
+    async def _insert_datapoints(self, chunk: list[tuple[Identifier, list[_T]]]) -> None:
+        # Acquire the semaphore before building the (potentially large) protobuf message:
+        async with self.dps_client._get_semaphore("write"):
+            headers = {"content-type": "application/protobuf"}
+            if not global_config.disable_gzip:
+                headers["content-encoding"] = "gzip"
+            await self.dps_client._post(
+                url_path=self.dps_client._RESOURCE_PATH,
+                content=self._build_request(chunk),
+                headers=headers,
+                api_subversion=self._api_subversion,
+                semaphore=None,  # Already holding the semaphore above
+            )
+
+
+class DatapointsPoster(_DatapointsInserter[_InsertDatapoint]):
+    def __init__(self, dps_client: DatapointsAPI) -> None:
+        super().__init__(dps_client)
+        # We don't know the type of the time series we insert into, so we decide it once per series (and not per
+        # chunk, as a chunk may e.g. contain only missing values):
+        self._is_string: dict[Identifier, bool] = {}
+
+    async def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
+        if to_insert := self._verify_and_prepare_dps_objects(dps_object_lst):
+            await self._insert_all(to_insert)
 
     def _verify_and_prepare_dps_objects(
         self, dps_object_lst: list[dict[str, Any]]
@@ -612,7 +685,40 @@ class DatapointsPoster:
             identifier = validate_user_input_dict_with_identifier(obj, required_keys={"datapoints"})
             validated_dps = self._parse_and_validate_dps(obj["datapoints"])
             dps_to_insert[identifier].extend(validated_dps)
+            if isinstance(dps := obj["datapoints"], (Datapoints, DatapointsArray)):
+                self._is_string[identifier] = dps.is_string
+
+        for identifier, dps in dps_to_insert.items():
+            if identifier not in self._is_string:
+                self._is_string[identifier] = self._infer_is_string(dps)
         return list(dps_to_insert.items())
+
+    @staticmethod
+    def _infer_is_string(dps: list[_InsertDatapoint]) -> bool:
+        # Use the first value that is neither missing nor one of the strings the (JSON) API uses for out-of-range
+        # floats. If there is no such value, we default to numeric:
+        first = next((v for dp in dps if (v := dp.value) is not None and v not in _json.FLOAT_API_MAPPING), None)
+        return isinstance(first, str)
+
+    def _to_proto_item(self, identifier: Identifier, dps: Sequence[_InsertDatapoint]) -> DataPointInsertionItem:
+        dumped = [dp.to_proto_dict() for dp in dps]
+        try:
+            if self._is_string[identifier]:
+                return DataPointInsertionItem(**identifier.as_dict(), stringDatapoints={"datapoints": dumped})
+
+            for dct in dumped:
+                # For backwards compatibility, we accept 'NaN', 'Infinity' and '-Infinity' for numeric time series:
+                if dct.get("value").__class__ is str:
+                    try:
+                        dct["value"] = _json.FLOAT_API_MAPPING[dct["value"]]
+                    except KeyError:
+                        raise TypeError(f"expected a number, got the string {dct['value']!r}") from None
+            return DataPointInsertionItem(**identifier.as_dict(), numericDatapoints={"datapoints": dumped})
+
+        except TypeError as err:
+            raise TypeError(
+                f"{err}. Make sure all values in a series are of the same type (all numeric or all strings)."
+            ) from err
 
     def _parse_and_validate_dps(self, dps: Datapoints | DatapointsArray | list[tuple | dict]) -> list[_InsertDatapoint]:
         if isinstance(dps, Datapoints):
@@ -656,49 +762,6 @@ class DatapointsPoster:
         # Not a real type guard, see '_dps_are_insert_ready'.
         return isinstance(dps[0], dict)
 
-    def _create_payload_tasks(
-        self, post_dps_objects: list[tuple[Identifier, list[_InsertDatapoint]]]
-    ) -> Iterator[list[dict[str, Any]]]:
-        payload = []
-        n_left = self.dps_limit
-        for identifier, dps in post_dps_objects:
-            for next_chunk, is_full in self._split_datapoints(dps, n_left, self.dps_limit):
-                payload.append({**identifier.as_dict(), "datapoints": next_chunk})
-                if is_full:
-                    yield payload
-                    payload = []
-                    n_left = self.dps_limit
-                else:
-                    n_left -= len(next_chunk)
-        if payload:
-            yield payload
-
-    async def _insert_datapoints(self, payload: list[dict[str, Any]]) -> None:
-        # Acquire the semaphore before converting to memory-intensive format:
-        async with self.dps_client._get_semaphore("write"):
-            for dct in payload:
-                dct["datapoints"] = [dp.dump() for dp in dct["datapoints"]]
-            await self.dps_client._post(
-                url_path=self.dps_client._RESOURCE_PATH,
-                json={"items": payload},
-                headers=None,
-                semaphore=None,  # Already holding the semaphore above
-            )
-        # ...and clean up after insert
-        # (needed because a ref preventing gc is held to these until the whole job is done):
-        for dct in payload:
-            dct["datapoints"].clear()
-
-    @staticmethod
-    def _split_datapoints(lst: list[_T], n_first: int, n: int) -> Iterator[tuple[list[_T], bool]]:
-        # Returns chunks with a boolean answering "are we there yet"
-        chunk = lst[:n_first]
-        yield chunk, len(chunk) == n_first
-
-        for i in range(n_first, len(lst), n):
-            chunk = lst[i : i + n]
-            yield chunk, len(chunk) == n
-
     @staticmethod
     def _verify_dps_object_for_insertion(dps: Datapoints | DatapointsArray) -> None:
         if dps.is_state:
@@ -739,73 +802,33 @@ class DatapointsPoster:
         return list(map(_InsertDatapoint, timestamps, values, dps.status_code.tolist()))
 
 
-class StateDatapointsPoster:
-    # This is very similar to the existing class DatapointsPoster, but for good reasons:
-    # - State datapoints are different enough from regular datapoints that it is good to separate logic
-    # - State datapoints are only supported for instance ID identifiers
-    # - DatapointsPoster uses JSON, while this uses protobuf binary encoding for efficiency!
-    def __init__(self, dps_client: DatapointsAPI) -> None:
-        self.dps_client = dps_client
-        self.dps_limit = self.dps_client._DPS_INSERT_LIMIT
-        self.ts_limit = self.dps_client._POST_DPS_OBJECTS_LIMIT
+class StateDatapointsPoster(_DatapointsInserter[StateDatapointWrite | dict[str, Any]]):
+    # State datapoints are only supported for instance ID identifiers, and are still in beta
+    _api_subversion = "beta"
 
     async def insert(self, items: Sequence[StateDatapointsInsert]) -> None:
-        if (deduped := self._merge_duplicates(items)) is None:
-            return
-        tasks = [AsyncSDKTask(self._insert_datapoints, chunk) for chunk in self._create_payload_chunks(deduped)]
-        summary = await execute_async_tasks(tasks)
-        summary.raise_compound_exception_if_failed_tasks(
-            task_unwrap_fn=lambda task: [NodeId.load(obj.instance_id) for obj in task[0]],
-            task_list_element_unwrap_fn=lambda node_id: {
-                "instance_id": node_id.dump(camel_case=False, include_instance_type=False)
-            },
-        )
+        if to_insert := self._merge_duplicates(items):
+            await self._insert_all(to_insert)
 
     @staticmethod
-    def _merge_duplicates(items: Sequence[StateDatapointsInsert]) -> Iterator[StateDatapointsInsert] | None:
+    def _merge_duplicates(
+        items: Sequence[StateDatapointsInsert],
+    ) -> list[tuple[Identifier, list[StateDatapointWrite | dict[str, Any]]]]:
         # The Time Series API rejects duplicate instanceId entries within a single request with 422,
         # so we need to merge any potential duplicates upfront:
-        merged: defaultdict[NodeId, list] = defaultdict(list)
+        merged: defaultdict[Identifier, list[StateDatapointWrite | dict[str, Any]]] = defaultdict(list)
         for obj in items:
             if obj.datapoints:
-                merged[NodeId.load(obj.instance_id)].extend(obj._to_datapoint_writes())
-        if merged:
-            return itertools.starmap(StateDatapointsInsert, merged.items())
-        return None
+                merged[Identifier(NodeId.load(obj.instance_id))].extend(obj._to_datapoint_writes())
+        return list(merged.items())
 
-    def _create_payload_chunks(self, items: Iterable[StateDatapointsInsert]) -> Iterator[list[StateDatapointsInsert]]:
-        # We need to chunk efficiently while also respecting both the "number of ts per request" limit and the
-        # "max number of datapoints per request" limit:
-        chunk: list[StateDatapointsInsert] = []
-        n_dps_left = self.dps_limit
-        for elem in items:
-            dps = elem.datapoints
-            offset, n_dps = 0, len(dps)
-            while offset < n_dps:
-                end = offset + n_dps_left
-                slice_ = dps[offset:end]
-                offset = end
-                chunk.append(StateDatapointsInsert(elem.instance_id, slice_))
-                n_dps_left -= len(slice_)
-                if n_dps_left == 0 or len(chunk) >= self.ts_limit:
-                    yield chunk
-                    chunk = []
-                    n_dps_left = self.dps_limit
-        if chunk:
-            yield chunk
-
-    async def _insert_datapoints(self, chunk: list[StateDatapointsInsert]) -> None:
-        # Acquire the semaphore before building the (potentially large) protobuf message:
-        async with self.dps_client._get_semaphore("write"):
-            content = DataPointInsertionRequest(items=[item._to_proto_dict() for item in chunk]).SerializeToString()
-            await self.dps_client._post(
-                url_path=self.dps_client._RESOURCE_PATH,
-                content=content,
-                headers={"content-type": "application/protobuf"},
-                api_subversion="beta",
-                semaphore=None,
-            )
-            del content  # why not
+    def _to_proto_item(
+        self, identifier: Identifier, dps: Sequence[StateDatapointWrite | dict[str, Any]]
+    ) -> DataPointInsertionItem:
+        return DataPointInsertionItem(
+            **identifier.as_dict(),
+            stateDatapoints={"datapoints": [StateDatapointWrite.load(dp).dump() for dp in dps]},
+        )
 
 
 class RetrieveLatestDpsFetcher:

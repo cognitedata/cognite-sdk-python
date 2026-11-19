@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import asyncio
 import gc
+import gzip
 import itertools
 import math
 import re
 import unittest
 from collections.abc import Iterator
 from contextlib import contextmanager
-from copy import deepcopy
 from datetime import datetime, timezone
 from random import choice, randint, random, shuffle
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -22,6 +22,7 @@ from pytest_httpx2 import HTTPXMock
 import cognite.client._api.datapoints_io as dps_io  # for mocking
 from cognite.client import AsyncCogniteClient
 from cognite.client._api.datapoints_io import StateDatapointsPoster, _InsertDatapoint
+from cognite.client._proto.data_point_insertion_request_pb2 import DataPointInsertionRequest
 from cognite.client._proto.data_point_list_response_pb2 import (
     TIMESERIES_TYPE_STRING,
     DataPointListItem,
@@ -42,6 +43,7 @@ from cognite.client.data_classes.data_modeling.ids import NodeId
 from cognite.client.data_classes.datapoints import LatestDatapoint, LatestDatapointList
 from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils._experimental import FeaturePreviewWarning
+from cognite.client.utils._identifier import Identifier
 from cognite.client.utils._time import datetime_to_ms
 from tests.utils import (
     PANDAS_STR_DTYPE,
@@ -236,6 +238,42 @@ class TestGetLatest:
                 cognite_client.time_series.data.retrieve_latest(id=[123, ldq, ldq, 123])
 
 
+def _decode_insert_request(request: Any) -> DataPointInsertionRequest:
+    content = request.content
+    if request.headers.get("content-encoding") == "gzip":
+        content = gzip.decompress(content)
+    return DataPointInsertionRequest.FromString(content)
+
+
+def proto_insert_load(request: Any) -> dict[str, Any]:
+    """Decode a protobuf insertion request into the shape of the equivalent JSON payload"""
+    items = []
+    for item in _decode_insert_request(request).items:
+        match item.WhichOneof("timeSeriesReference"):
+            case "instanceId":
+                dct: dict[str, Any] = {
+                    "instanceId": {"space": item.instanceId.space, "externalId": item.instanceId.externalId}
+                }
+            case name:
+                dct = {name: getattr(item, name)}
+
+        dps = getattr(item, item.WhichOneof("datapointType"))
+        dct["datapoints"] = [
+            {
+                "timestamp": dp.timestamp,
+                "value": None if dp.nullValue else dp.value,
+                **(
+                    {"status": {k: v for k, v in (("code", dp.status.code), ("symbol", dp.status.symbol)) if v}}
+                    if dp.HasField("status")
+                    else {}
+                ),
+            }
+            for dp in dps.datapoints
+        ]
+        items.append(dct)
+    return {"items": items}
+
+
 @pytest.fixture
 def mock_post_datapoints(httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
     httpx2_mock.add_response(
@@ -260,7 +298,7 @@ def mock_post_datapoints_400(httpx2_mock: HTTPXMock, async_client: AsyncCogniteC
 
 
 @pytest.mark.allow_no_semaphore(
-    "DatapointsAPI._insert_datapoints holds the semaphore via outer 'async with' for memory "
+    "The datapoints poster holds the semaphore via outer 'async with' for memory "
     "backpressure, then passes None to _post to avoid double-acquiring."
 )
 class TestInsertDatapoints:
@@ -270,7 +308,7 @@ class TestInsertDatapoints:
         assert res is None
         assert {
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]}]
-        } == jsgz_load(mock_post_datapoints.get_requests()[0].content)
+        } == proto_insert_load(mock_post_datapoints.get_requests()[0])
 
     def test_insert_dicts(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         dps: list[dict] = [{"timestamp": i * 1e11, "value": i} for i in range(1, 11)]
@@ -278,7 +316,7 @@ class TestInsertDatapoints:
         assert res is None
         assert {
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]}]
-        } == jsgz_load(mock_post_datapoints.get_requests()[0].content)
+        } == proto_insert_load(mock_post_datapoints.get_requests()[0])
 
     def test_by_external_id(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
         dps = [(i * 1e11, i) for i in range(1, 11)]
@@ -287,7 +325,7 @@ class TestInsertDatapoints:
             "items": [
                 {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]}
             ]
-        } == jsgz_load(mock_post_datapoints.get_requests()[0].content)
+        } == proto_insert_load(mock_post_datapoints.get_requests()[0])
 
     @pytest.mark.parametrize("ts_key, value_key", [("timestamp", "values"), ("timstamp", "value")])
     def test_invalid_datapoints_keys(self, cognite_client: CogniteClient, ts_key: str, value_key: str) -> None:
@@ -307,7 +345,7 @@ class TestInsertDatapoints:
         dps = [(i * 1e11, i) for i in range(1, 11)]
         res = cognite_client.time_series.data.insert(dps, id=1)
         assert res is None
-        request_bodies = [jsgz_load(call.content) for call in mock_post_datapoints.get_requests()]
+        request_bodies = [proto_insert_load(call) for call in mock_post_datapoints.get_requests()]
         assert {
             "items": [{"id": 1, "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 6)]}]
         } in request_bodies
@@ -330,7 +368,7 @@ class TestInsertDatapoints:
         dps_objects: list[dict] = [{"externalId": "1", "datapoints": dps}, {"id": 1, "datapoints": dps}]
         res = cognite_client.time_series.data.insert_multiple(dps_objects)
         assert res is None
-        request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
+        request_body = proto_insert_load(mock_post_datapoints.get_requests()[0])
         assert {
             "items": [
                 {"externalId": "1", "datapoints": [{"timestamp": int(i * 1e11), "value": i} for i in range(1, 11)]},
@@ -359,7 +397,7 @@ class TestInsertDatapoints:
         dps_objects: list[dict] = [{"id": i, "datapoints": dps} for i in range(1, 101)]
         cognite_client.time_series.data.insert_multiple(dps_objects)
         assert 1 == len(mock_post_datapoints.get_requests())
-        request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
+        request_body = proto_insert_load(mock_post_datapoints.get_requests()[0])
         for i, dps in enumerate(request_body["items"], 1):
             assert i == dps["id"]
 
@@ -414,20 +452,20 @@ class TestInsertDatapoints:
 
         monkeypatch.setattr(async_client.time_series.data, "_get_semaphore", lambda _op: _MockSemaphore())
 
-        original_dump = _InsertDatapoint.dump
+        original_dump = _InsertDatapoint.to_proto_dict
 
         def tracking_dump(self: _InsertDatapoint) -> dict:
             dump_sem_held.append(sem_held)
             return original_dump(self)
 
-        monkeypatch.setattr(_InsertDatapoint, "dump", tracking_dump)
+        monkeypatch.setattr(_InsertDatapoint, "to_proto_dict", tracking_dump)
 
         monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 5)
         dps = [(i * 1e11, i) for i in range(50)]
         cognite_client.time_series.data.insert(dps, id=1)
 
         assert len(dump_sem_held) == 50
-        assert all(dump_sem_held), "dp.dump() was called outside the semaphore context"
+        assert all(dump_sem_held), "dp.to_proto_dict() was called outside the semaphore context"
 
 
 class TestRetrieveWithGapFilling:
@@ -1081,7 +1119,7 @@ class TestPandasIntegration:
         )
         res = cognite_client.time_series.data.insert_dataframe(df)
         assert res is None
-        request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
+        request_body = proto_insert_load(mock_post_datapoints.get_requests()[0])
         assert {
             "items": [
                 {
@@ -1111,7 +1149,7 @@ class TestPandasIntegration:
         )
         res = cognite_client.time_series.data.insert_dataframe(df)
         assert res is None
-        request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
+        request_body = proto_insert_load(mock_post_datapoints.get_requests()[0])
         expected_body = {
             "items": [
                 {
@@ -1145,7 +1183,7 @@ class TestPandasIntegration:
         )
         cognite_client.time_series.data.insert_dataframe(df)
 
-        request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
+        request_body = proto_insert_load(mock_post_datapoints.get_requests()[0])
         expected_body = {
             "items": [
                 {
@@ -1190,7 +1228,7 @@ class TestPandasIntegration:
         )
         res = cognite_client.time_series.data.insert_dataframe(df, dropna=True)
         assert res is None
-        request_body = jsgz_load(mock_post_datapoints.get_requests()[0].content)
+        request_body = proto_insert_load(mock_post_datapoints.get_requests()[0])
         assert {
             "items": [
                 {
@@ -1342,8 +1380,8 @@ class TestDatapointsPoster:
         calls = []
         dps_client = cognite_client.time_series.data
 
-        async def override_insert_dps(self: Any, payload: list[dict]) -> None:
-            calls.append(deepcopy(payload))
+        async def override_insert_dps(self: Any, chunk: list[tuple[Identifier, list]]) -> None:
+            calls.append([{**ident.as_dict(), "datapoints": list(dps)} for ident, dps in chunk])
 
         monkeypatch.setattr(dps_io.DatapointsPoster, "_insert_datapoints", override_insert_dps)
         dps_limit, ts_limit, last_chunk_size = limits
@@ -1369,8 +1407,8 @@ class TestDatapointsPoster:
         calls = []
         dps_client = cognite_client.time_series.data
 
-        async def override_insert_dps(self: Any, payload: list[dict]) -> None:
-            calls.append(deepcopy(payload))
+        async def override_insert_dps(self: Any, chunk: list[tuple[Identifier, list]]) -> None:
+            calls.append([{**ident.as_dict(), "datapoints": list(dps)} for ident, dps in chunk])
 
         monkeypatch.setattr(dps_io.DatapointsPoster, "_insert_datapoints", override_insert_dps)
         dps_limit, ts_limit = randint(200, 2000), randint(2, 20)
@@ -1432,8 +1470,8 @@ class TestInsertStatesWithRetrievedDatapoints:
     def sent(self, monkeypatch: MonkeyPatch) -> list[dict[str, Any]]:
         sent: list[dict[str, Any]] = []
 
-        async def fake_insert(self: Any, chunk: list[StateDatapointsInsert]) -> None:
-            sent.extend(item.dump() for item in chunk)
+        async def fake_insert(self: Any, chunk: list[tuple[Identifier, list]]) -> None:
+            sent.extend(StateDatapointsInsert(ident.as_primitive(), dps).dump() for ident, dps in chunk)
 
         monkeypatch.setattr(dps_io.StateDatapointsPoster, "_insert_datapoints", fake_insert)
         return sent
@@ -1533,61 +1571,50 @@ def create_state_dps_insert_items(*args: tuple[Any, list[int]]) -> list[StateDat
 
 
 class TestStateDatapointsPoster:
+    @staticmethod
+    def make_items(*args: tuple[Any, list[int]]) -> list[tuple[Identifier, list]]:
+        return StateDatapointsPoster._merge_duplicates(create_state_dps_insert_items(*args))
+
     def test_chunks_single_ts_within_dps_limit(self) -> None:
         poster = create_state_dps_poster(dps_limit=10, ts_limit=100)
-        items = create_state_dps_insert_items((NodeId("sp", "a"), list(range(5))))
-        chunks = tuple(poster._create_payload_chunks(items))  # consume entire iterator
+        chunks = tuple(poster._create_payload_chunks(self.make_items((NodeId("sp", "a"), list(range(5))))))
         assert len(chunks) == 1
-        assert len(chunks[0][0].datapoints) == 5
+        assert len(chunks[0][0][1]) == 5
 
     def test_chunks_single_ts_split_across_dps_limit(self) -> None:
         poster = create_state_dps_poster(dps_limit=3, ts_limit=100)
-        items = create_state_dps_insert_items((NodeId("sp", "a"), list(range(7))))
-        chunks = tuple(poster._create_payload_chunks(items))
-        assert len(chunks) == 3
-        assert [len(c[0].datapoints) for c in chunks] == [3, 3, 1]
+        chunks = tuple(poster._create_payload_chunks(self.make_items((NodeId("sp", "a"), list(range(7))))))
+        assert [len(c[0][1]) for c in chunks] == [3, 3, 1]
 
     def test_chunks_respects_ts_limit(self) -> None:
         poster = create_state_dps_poster(dps_limit=100, ts_limit=2)
-        items = create_state_dps_insert_items(
-            (NodeId("sp", "a"), [1]),
-            (NodeId("sp", "b"), [2]),
-            (NodeId("sp", "c"), [3]),
-        )
+        items = self.make_items((NodeId("sp", "a"), [1]), (NodeId("sp", "b"), [2]), (NodeId("sp", "c"), [3]))
         chunks = tuple(poster._create_payload_chunks(items))
-        assert len(chunks) == 2
-        assert len(chunks[0]) == 2
-        assert len(chunks[1]) == 1
+        assert [len(c) for c in chunks] == [2, 1]
 
     def test_chunks_both_limits_interact(self) -> None:
         poster = create_state_dps_poster(dps_limit=4, ts_limit=2)
-        items = create_state_dps_insert_items(
+        items = self.make_items(
             (NodeId("sp", "A"), [1]),
             (NodeId("sp", "B"), [2, 3]),
             (NodeId("sp", "C"), [4, 5, 6, 7, 8]),
         )
         chunks = tuple(poster._create_payload_chunks(items))
-        assert len(chunks) == 3
-        c1, c2, c3 = chunks
-        assert (len(c1), len(c2), len(c3)) == (2, 1, 1)
+        assert [len(c) for c in chunks] == [2, 1, 1]
 
         # We expect first chunk to be from A and B (hits ts-limit)
         # Second chunk to be from C (hits dps-limit)
         # Third chunk to be from C (last remaining dps)
         timestamps = [
-            [
-                dp.timestamp if isinstance(dp, StateDatapointWrite) else dp["timestamp"]
-                for insert in chunk
-                for dp in insert._to_datapoint_writes()
-            ]
+            [dp.timestamp if isinstance(dp, StateDatapointWrite) else dp["timestamp"] for _, dps in chunk for dp in dps]
             for chunk in chunks
         ]
         assert timestamps == [[1, 2, 3], [4, 5, 6, 7], [8]]
-
-        assert c1[0].instance_id == NodeId("sp", "A")
-        assert c1[1].instance_id == NodeId("sp", "B")
-        assert c2[0].instance_id == NodeId("sp", "C")
-        assert c3[0].instance_id == NodeId("sp", "C")
+        assert [[ident.as_primitive() for ident, _ in chunk] for chunk in chunks] == [
+            [NodeId("sp", "A"), NodeId("sp", "B")],
+            [NodeId("sp", "C")],
+            [NodeId("sp", "C")],
+        ]
 
     def test_chunks_empty_items_produce_no_chunks(self) -> None:
         poster = create_state_dps_poster(dps_limit=10, ts_limit=10)
@@ -1608,24 +1635,21 @@ class TestStateDatapointsPoster:
             StateDatapointsInsert(id_b, [StateDatapointWrite(2000, numeric_value=1)]),
             StateDatapointsInsert(id_a, [StateDatapointWrite(3000, numeric_value=2)]),
         ]
-        result_iter = StateDatapointsPoster._merge_duplicates(items)
-        assert result_iter is not None
-
-        result = tuple(result_iter)
-        assert all(isinstance(i.instance_id, NodeId) for i in result)
+        result = StateDatapointsPoster._merge_duplicates(items)
+        assert all(ident.is_instance_id for ident, _ in result)
 
         id_a_node, id_b_node = NodeId.load(id_a), NodeId.load(id_b)
-        a_items = [i for i in result if NodeId.load(i.instance_id) == id_a_node]
-        b_items = [i for i in result if NodeId.load(i.instance_id) == id_b_node]
-        assert sum(len(i.datapoints) for i in a_items) == exp_a
-        assert sum(len(i.datapoints) for i in b_items) == exp_b
+        a_dps = [dp for ident, dps in result if ident.as_primitive() == id_a_node for dp in dps]
+        b_dps = [dp for ident, dps in result if ident.as_primitive() == id_b_node for dp in dps]
+        assert len(a_dps) == exp_a
+        assert len(b_dps) == exp_b
 
         # datapoints per node should keep insertion order:
-        a_ts = [dp.timestamp for i in a_items for dp in i.datapoints]  # type: ignore [union-attr]
-        b_ts = [dp.timestamp for i in b_items for dp in i.datapoints]  # type: ignore [union-attr]
+        a_ts = [cast(StateDatapointWrite, dp).timestamp for dp in a_dps]
+        b_ts = [cast(StateDatapointWrite, dp).timestamp for dp in b_dps]
         assert a_ts == sorted(a_ts)
         assert b_ts == sorted(b_ts)
 
     def test_insert_all_empty_is_noop(self) -> None:
         items = [StateDatapointsInsert(NodeId("sp", "ts"), [])]
-        assert StateDatapointsPoster._merge_duplicates(items) is None
+        assert StateDatapointsPoster._merge_duplicates(items) == []
