@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING, Literal, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.agents import Agent, AgentList, AgentUpsert
@@ -336,6 +336,8 @@ class AgentsAPI(APIClient):
         messages: Message | ActionResult | Sequence[Message | ActionResult],
         cursor: str | None = None,
         actions: Sequence[Action] | None = None,
+        retention_policy: Literal["temporary", "persisted"] | None = None,
+        tool_confirmation_mode: Literal["default", "dangerouslyAllowAll"] | None = None,
     ) -> AgentChatResponse:
         """`Chat with an agent <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_.
 
@@ -348,6 +350,14 @@ class AgentsAPI(APIClient):
             cursor (str | None): The cursor to use for continuation of a conversation. Use this to
                 create multi-turn conversations, as the cursor will keep track of the conversation state.
             actions (Sequence[Action] | None): A list of client-side actions that can be called by the agent.
+            retention_policy (Literal['temporary', 'persisted'] | None): Retention class for the conversation.
+                "persisted" retains the conversation until explicitly deleted. "temporary" (the API default) can
+                result in the conversation being deleted at any time. Only honored when starting a conversation,
+                ignored when a cursor is given.
+            tool_confirmation_mode (Literal['default', 'dangerouslyAllowAll'] | None): Controls whether tools that
+                require user confirmation prompt for approval. "default" (the API default) enforces the standard
+                confirmation requirements, while "dangerouslyAllowAll" bypasses approval for tools executed during
+                this request, including in subagents. Not persisted across turns, so it must be passed with each request.
 
         Returns:
             AgentChatResponse: The response from the agent.
@@ -371,6 +381,14 @@ class AgentsAPI(APIClient):
                 ...     agent_external_id="my_agent",
                 ...     messages=Message("Tell me more about that"),
                 ...     cursor=response.cursor,
+                ... )
+
+            Start a conversation that is retained until explicitly deleted:
+
+                >>> response = client.agents.chat(
+                ...     agent_external_id="my_agent",
+                ...     messages=Message("What can you help me with?"),
+                ...     retention_policy="persisted",
                 ... )
 
             Send multiple messages at once:
@@ -484,6 +502,12 @@ class AgentsAPI(APIClient):
 
         if actions is not None:
             body["actions"] = [action.dump(camel_case=True) for action in actions]
+
+        if retention_policy is not None:
+            body["retentionPolicy"] = retention_policy
+
+        if tool_confirmation_mode is not None:
+            body["toolConfirmationMode"] = tool_confirmation_mode
 
         response = await self._post(
             url_path=self._RESOURCE_PATH + "/chat", json=body, semaphore=self._get_semaphore("write")
