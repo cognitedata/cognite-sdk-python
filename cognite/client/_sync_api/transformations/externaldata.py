@@ -114,7 +114,7 @@ class SyncTransformationExternalDataSourcesAPI(SyncAPIClient):
         self, external_id: str | SequenceNotStr[str], ignore_unknown_ids: bool = False
     ) -> ExternalDataSource | ExternalDataSourceList | None:
         """
-        `Retrieve one or more external data sources by external ID <https://api-docs.cognite.com/20230101-alpha/tag/Transformation-External-Data-Sources/operation/getExternalDataSourcesByExternalIds>`_.
+        `Retrieve one or more external data sources by external ID <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/getExternalDataSourcesByExternalIds>`_.
 
         The API accepts at most 100 external IDs per request; larger inputs are split into several requests
         automatically. The external IDs must be unique. A data source you do not have access to is treated as missing.
@@ -270,7 +270,7 @@ class SyncTransformationExternalDataSourcesAPI(SyncAPIClient):
         self, rotation: ExternalDataSourceRotateKeys | Sequence[ExternalDataSourceRotateKeys]
     ) -> ExternalDataSourceRotatedKeys | ExternalDataSourceRotatedKeysList:
         """
-        `Rotate the keys of Snowflake external data sources <https://api-docs.cognite.com/20230101-alpha/tag/Transformation-External-Data-Sources/operation/rotateExternalDataSourceKeys>`_.
+        `Rotate the keys of Snowflake external data sources <https://api-docs.cognite.com/20230101-beta/tag/Transformation-External-Data-Sources/operation/rotateExternalDataSourceKeys>`_.
 
         The server generates a new key pair for each data source and returns the new public key, which you must
         register with the Snowflake user. Only Snowflake data sources support this. The operation is atomic: if any
