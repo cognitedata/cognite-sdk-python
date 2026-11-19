@@ -29,6 +29,7 @@ from cognite.client._proto.data_point_list_response_pb2 import (
     DataPointListResponse,
 )
 from cognite.client._proto.data_points_pb2 import StringAggregateDatapoint, StringAggregateDatapoints
+from cognite.client.config import global_config
 from cognite.client.data_classes import (
     Datapoint,
     Datapoints,
@@ -466,6 +467,130 @@ class TestInsertDatapoints:
 
         assert len(dump_sem_held) == 50
         assert all(dump_sem_held), "dp.to_proto_dict() was called outside the semaphore context"
+
+
+@pytest.mark.allow_no_semaphore("Semaphore is held by the poster itself, then passed as None to _post")
+class TestInsertDatapointsProtobuf:
+    def test_headers(self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock) -> None:
+        cognite_client.time_series.data.insert([(1, 1.0)], id=1)
+        headers = mock_post_datapoints.get_requests()[0].headers
+        assert headers["content-type"] == "application/protobuf"
+        assert headers["content-encoding"] == "gzip"
+
+    def test_gzip_can_be_disabled(
+        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock, monkeypatch: MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(global_config, "disable_gzip", True)
+        cognite_client.time_series.data.insert([(1, 1.0)], id=1)
+        request = mock_post_datapoints.get_requests()[0]
+        assert "content-encoding" not in request.headers
+        assert _decode_insert_request(request).items[0].numericDatapoints.datapoints[0].value == 1.0
+
+    def test_numeric_and_string_series_are_sent_as_the_right_type(
+        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock
+    ) -> None:
+        cognite_client.time_series.data.insert_multiple(
+            [
+                {"id": 1, "datapoints": [(1, 1.5), (2, 3)]},
+                {"id": 2, "datapoints": [(1, "a"), (2, "")]},
+                {"id": 3, "datapoints": [(1, None), (2, 7.0)]},
+                {"id": 4, "datapoints": [(1, None), (2, "x")]},
+                {"id": 5, "datapoints": [(1, None)]},  # unknown type: defaults to numeric
+            ]
+        )
+        items = _decode_insert_request(mock_post_datapoints.get_requests()[0]).items
+        assert [i.WhichOneof("datapointType") for i in items] == [
+            "numericDatapoints",
+            "stringDatapoints",
+            "numericDatapoints",
+            "stringDatapoints",
+            "numericDatapoints",
+        ]
+
+    def test_missing_values_and_status_are_sent(
+        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock
+    ) -> None:
+        dps = [
+            {"timestamp": 1, "value": None, "status": {"code": 0x80000000, "symbol": "Bad"}},
+            {"timestamp": 2, "value": 0.0},
+            {"timestamp": 3, "value": 5, "status": {"symbol": "Uncertain"}},
+        ]
+        cognite_client.time_series.data.insert(dps, id=1)  # type: ignore [arg-type]
+        bad, good, uncertain = (
+            _decode_insert_request(mock_post_datapoints.get_requests()[0]).items[0].numericDatapoints.datapoints
+        )
+        assert bad.nullValue and bad.status.code == 0x80000000 and bad.status.symbol == "Bad"
+        assert not good.nullValue and good.value == 0.0 and not good.HasField("status")
+        assert uncertain.status.symbol == "Uncertain" and uncertain.status.code == 0
+
+    def test_nonfinite_floats_are_sent_natively(
+        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock
+    ) -> None:
+        cognite_client.time_series.data.insert([(1, math.nan), (2, math.inf), (3, -math.inf)], id=1)
+        dps = _decode_insert_request(mock_post_datapoints.get_requests()[0]).items[0].numericDatapoints.datapoints
+        assert math.isnan(dps[0].value)
+        assert [dps[1].value, dps[2].value] == [math.inf, -math.inf]
+
+    def test_series_type_is_decided_per_series_not_per_chunk(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        mock_post_datapoints: HTTPXMock,
+        monkeypatch: MonkeyPatch,
+    ) -> None:
+        # The last chunk of this string series only contains a missing value:
+        monkeypatch.setattr(async_client.time_series.data, "_DPS_INSERT_LIMIT", 2)
+        cognite_client.time_series.data.insert([(1, "a"), (2, "b"), (3, None)], id=1)  # type: ignore [arg-type]
+        kinds = [
+            item.WhichOneof("datapointType")
+            for req in mock_post_datapoints.get_requests()
+            for item in _decode_insert_request(req).items
+        ]
+        assert kinds == ["stringDatapoints", "stringDatapoints"]
+
+    @pytest.mark.dsl
+    @pytest.mark.parametrize("dps_cls", [Datapoints, DatapointsArray])
+    def test_string_datapoints_object_with_only_missing_values(
+        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock, dps_cls: type
+    ) -> None:
+        import numpy as np
+
+        dps: Datapoints | DatapointsArray
+        if dps_cls is Datapoints:
+            dps = Datapoints(
+                id=1,
+                is_string=True,
+                is_step=False,
+                type="string",
+                timestamp=[1, 2],
+                value=[None, None],  # type: ignore [arg-type]
+            )
+        else:
+            dps = DatapointsArray(
+                id=1,
+                is_string=True,
+                is_step=False,
+                type="string",
+                timestamp=np.array([1, 2], dtype="datetime64[ms]"),
+                value=np.array([None, None], dtype=object),
+            )
+        cognite_client.time_series.data.insert(dps, id=2)
+        (item,) = _decode_insert_request(mock_post_datapoints.get_requests()[0]).items
+        assert item.WhichOneof("datapointType") == "stringDatapoints"
+        assert [dp.nullValue for dp in item.stringDatapoints.datapoints] == [True, True]
+
+    def test_nonfinite_float_strings_are_accepted_for_numeric_series(
+        self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock
+    ) -> None:
+        cognite_client.time_series.data.insert([(1, "NaN"), (2, "Infinity"), (3, "-Infinity"), (4, 1.0)], id=1)  # type: ignore [arg-type]
+        (item,) = _decode_insert_request(mock_post_datapoints.get_requests()[0]).items
+        nan, pos_inf, neg_inf, one = item.numericDatapoints.datapoints
+        assert math.isnan(nan.value)
+        assert [pos_inf.value, neg_inf.value, one.value] == [math.inf, -math.inf, 1.0]
+
+    def test_mixed_value_types_raise_with_identifier(self, cognite_client: CogniteClient) -> None:
+        with pytest.raises(TypeError, match=r"time series \{'external_id': 'mixed'\}.*same type"):
+            cognite_client.time_series.data.insert([(1, 1.0), (2, "a")], external_id="mixed")  # type: ignore [arg-type]
 
 
 class TestRetrieveWithGapFilling:
