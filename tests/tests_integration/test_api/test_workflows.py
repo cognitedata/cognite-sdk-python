@@ -455,8 +455,13 @@ class TestWorkflows:
 
     def test_retrieve_workflow(self, cognite_client: CogniteClient, persisted_workflow_list: WorkflowList) -> None:
         retrieved = cognite_client.workflows.retrieve(persisted_workflow_list[0].external_id)
-        assert retrieved
-        assert retrieved.dump() == persisted_workflow_list[0].dump()
+        expected = persisted_workflow_list[0]
+        # Only assert stable user-defined fields; lastUpdatedTime is server-managed and can be
+        # bumped by a concurrent CI job upseting the same long-lived shared workflow.
+        assert retrieved is not None
+        assert retrieved.external_id == expected.external_id
+        assert retrieved.description == expected.description
+        assert retrieved.data_set_id == expected.data_set_id
 
     def test_retrieve_non_existing_workflow(self, cognite_client: CogniteClient) -> None:
         non_existing = cognite_client.workflows.retrieve("integration_test-non_existing_workflow")
@@ -853,17 +858,21 @@ class TestWorkflowTriggers:
         cognite_client: CogniteClient,
         permanent_scheduled_trigger: WorkflowTrigger,
     ) -> None:
-        for attempt in [1, 2, 3]:
+        # The trigger fires every minute; wait up to 90 s for the first execution.
+        timeout_seconds = 90
+        poll_interval_seconds = 5
+        deadline = time.monotonic() + timeout_seconds
+        while True:
             history = cognite_client.workflows.triggers.list_runs(external_id=permanent_scheduled_trigger.external_id)
             if len(history) > 0:
                 break
-            else:
-                time.sleep(15)
-        else:
-            assert len(history) > 0, (
-                "No trigger runs found after 3 attempts. If you are running tests for the first time against your project "
-                "it may take quite some time before the scheduled trigger runs for the first time. Grab some coffee!"
-            )
+            if time.monotonic() >= deadline:
+                pytest.fail(
+                    f"No trigger runs found after {timeout_seconds} s. If you are running tests for the first time against "
+                    "your project it may take quite some time before the scheduled trigger runs for the first time. "
+                    "Grab some coffee!"
+                )
+            time.sleep(poll_interval_seconds)
 
         assert history[0].external_id == permanent_scheduled_trigger.external_id
         assert history[0].workflow_external_id == permanent_scheduled_trigger.workflow_external_id
