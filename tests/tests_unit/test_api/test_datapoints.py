@@ -477,6 +477,18 @@ class TestInsertDatapointsProtobuf:
         assert headers["content-type"] == "application/protobuf"
         assert headers["content-encoding"] == "gzip"
 
+    def test_cdf_version_header_is_beta_prefixed_for_state_datapoints_only(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, mock_post_datapoints: HTTPXMock
+    ) -> None:
+        sub = async_client.time_series.data._api_subversion
+        cognite_client.time_series.data.insert([(1, 1.0)], id=1)
+        cognite_client.time_series.data.insert_states(
+            StateDatapointsInsert(NodeId("sp", "xid"), [StateDatapointWrite(1, 0)])
+        )
+        normal, state = mock_post_datapoints.get_requests()
+        assert normal.headers["cdf-version"] == sub
+        assert state.headers["cdf-version"] == f"{sub}-beta"
+
     def test_gzip_can_be_disabled(
         self, cognite_client: CogniteClient, mock_post_datapoints: HTTPXMock, monkeypatch: MonkeyPatch
     ) -> None:
@@ -624,9 +636,19 @@ class TestInsertDatapointsProtobuf:
         assert math.isnan(nan.value)
         assert [pos_inf.value, neg_inf.value, one.value] == [math.inf, -math.inf, 1.0]
 
-    def test_mixed_value_types_raise_with_identifier(self, cognite_client: CogniteClient) -> None:
-        with pytest.raises(TypeError, match=r"time series \{'external_id': 'mixed'\}.*same type"):
-            cognite_client.time_series.data.insert([(1, 1.0), (2, "a")], external_id="mixed")  # type: ignore [arg-type]
+    @pytest.mark.parametrize(
+        "dps, error",
+        (
+            ([(1, 1.0), (2, "a")], r"expected a number, got the string 'a'"),  # numeric series, bad string
+            ([(1, "a"), (2, 1.0)], r".+"),  # string series, number (error text comes from protobuf)
+        ),
+    )
+    def test_mixed_value_types_raise_with_identifier_and_hint(
+        self, cognite_client: CogniteClient, dps: list, error: str
+    ) -> None:
+        match = rf"^Unable to insert datapoints into time series external_id='mixed': {error}\. Make sure all values .* same type"
+        with pytest.raises(TypeError, match=match):
+            cognite_client.time_series.data.insert(dps, external_id="mixed")
 
 
 class TestRetrieveWithGapFilling:
