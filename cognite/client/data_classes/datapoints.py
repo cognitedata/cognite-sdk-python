@@ -273,12 +273,6 @@ class StateDatapointsInsert:
             ],
         }
 
-    def _to_proto_dict(self) -> dict[str, Any]:
-        # Dumps the data in a shape that the protobuf constructor expects for DataPointInsertionItem
-        dumped = self.dump(camel_case=True)
-        dumped["stateDatapoints"] = {"datapoints": dumped.pop("datapoints")}
-        return dumped
-
     @staticmethod
     def _verify_consistent_lengths(
         dps: Datapoints | DatapointsArray,
