@@ -2,21 +2,19 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 import pytest
 from _pytest.mark import ParameterSet
 
 import cognite.client.data_classes.filters as f
+from cognite.client import AsyncCogniteClient
 from cognite.client._api.data_modeling.instances import InstancesAPI
 from cognite.client.data_classes._base import EnumProperty
 from cognite.client.data_classes.data_modeling import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.data_types import DirectRelationReference
 from cognite.client.data_classes.filters import Filter, UnknownFilter
 from tests.utils import all_subclasses
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 
 def load_and_dump_equals_data() -> Iterator[ParameterSet]:
@@ -305,7 +303,7 @@ def test_unknown_filter_type() -> None:
     assert unknown.dump() == {"unknown": {}}
 
 
-@pytest.mark.parametrize("property_cls", filter(lambda cls: hasattr(cls, "metadata_key"), all_subclasses(EnumProperty)))
+@pytest.mark.parametrize("property_cls", [cls for cls in all_subclasses(EnumProperty) if hasattr(cls, "metadata_key")])
 def test_user_given_metadata_keys_are_not_camel_cased(property_cls: type) -> None:
     # Bug prior to 6.32.4 would dump user given keys in camelCase
     flt = f.Equals(property_cls.metadata_key("key_foo_Bar_baz"), "value_foo Bar_baz")  # type: ignore [attr-defined]
@@ -403,8 +401,10 @@ class TestSpaceFilter:
             f.SpaceFilter(["s1", "s2"], "edge"),
         ],
     )
-    def test_space_filter_passes_verification(self, cognite_client: CogniteClient, space_filter: f.SpaceFilter) -> None:
-        cognite_client.data_modeling.instances._validate_filter(space_filter)
+    def test_space_filter_passes_verification(
+        self, async_client: AsyncCogniteClient, space_filter: f.SpaceFilter
+    ) -> None:
+        async_client.data_modeling.instances._validate_filter(space_filter)
         assert True
 
 
@@ -421,8 +421,8 @@ class TestIsNullFilter:
         with pytest.raises(TypeError, match=exp_msg):
             f.IsNull("prop")  # type: ignore [arg-type]
 
-    def test_is_null_filter_passes_verification(self, cognite_client: CogniteClient) -> None:
-        cognite_client.data_modeling.instances._validate_filter(f.IsNull(["node", "space"]))
+    def test_is_null_filter_passes_verification(self, async_client: AsyncCogniteClient) -> None:
+        async_client.data_modeling.instances._validate_filter(f.IsNull(["node", "space"]))
         assert True
 
     def test_is_null_filter_passes_isinstance_checks(self) -> None:

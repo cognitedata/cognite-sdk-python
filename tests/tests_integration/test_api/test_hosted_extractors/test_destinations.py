@@ -11,8 +11,11 @@ from cognite.client.data_classes.hosted_extractors import (
     DestinationWrite,
     SessionWrite,
 )
-from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
+from tests.tests_integration.test_api.test_hosted_extractors.conftest import (
+    DESTINATION_FOR_TESTING_PREFIX,
+    UPDATE_DESTINATION_PREFIX,
+)
 
 
 class TestDestinations:
@@ -20,7 +23,7 @@ class TestDestinations:
         self, cognite_client: CogniteClient, fresh_session: SessionWrite, a_data_set: DataSet
     ) -> None:
         my_dest = DestinationWrite(
-            external_id=f"myNewDestinationForTesting-{random_string(10)}",
+            external_id=f"{DESTINATION_FOR_TESTING_PREFIX}{random_string(10)}",
             credentials=fresh_session,
         )
         created: Destination | None = None
@@ -37,10 +40,11 @@ class TestDestinations:
 
             cognite_client.hosted_extractors.destinations.delete(created.external_id)
 
-            with pytest.raises(CogniteAPIError):
-                cognite_client.hosted_extractors.destinations.retrieve(created.external_id)
-
-            cognite_client.hosted_extractors.destinations.retrieve(created.external_id, ignore_unknown_ids=True)
+            assert cognite_client.hosted_extractors.destinations.retrieve(created.external_id) is None
+            assert (
+                cognite_client.hosted_extractors.destinations.retrieve(created.external_id, ignore_unknown_ids=True)
+                is None
+            )
 
         finally:
             if created:
@@ -56,7 +60,7 @@ class TestDestinations:
         self, cognite_client: CogniteClient, fresh_session: SessionWrite, a_data_set: DataSet
     ) -> None:
         my_dest = DestinationWrite(
-            external_id=f"toupdate-{random_string(10)}",
+            external_id=f"{UPDATE_DESTINATION_PREFIX}{random_string(10)}",
             credentials=fresh_session,
         )
 

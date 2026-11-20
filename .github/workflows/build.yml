@@ -4,62 +4,123 @@ name: build
 on:
   merge_group:
   pull_request:
-    branches: [master]
+  # Manual runs, e.g. to run integration tests on the full OS/Python matrix for a risky PR. Not needed for
+  # releases (release-please PRs get the full matrix automatically, see RUN_INTEGRATION below). To trigger:
+  #   - GitHub UI: Actions tab -> "build" -> "Run workflow" -> pick branch, tick the box
+  #   - CLI:       gh workflow run build.yml --ref <branch> -f full_integration=true
+  workflow_dispatch:
+    inputs:
+      full_integration:
+        description: "Run integration tests on the full OS/Python matrix (default: only the windows/lowest-Python cell)"
+        type: boolean
+        default: false
 
 concurrency:
-  group: pr-${{ github.workflow }}-${{ github.head_ref }}
+  group: pr-${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
+  check_lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.13.0"
+      - name: Verify uv.lock is up to date with pyproject.toml
+        run: uv lock --check
+
   lint:
     runs-on: ubuntu-latest
+    needs: check_lock
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - uses: ./.github/actions/setup
         with:
-          extras: "-E pandas"
+          extra: pandas
       - name: Linting and static code checks
-        run: pre-commit run --all-files --show-diff-on-failure
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+
+  verify-sync-codegen:
+    runs-on: ubuntu-latest
+    needs: check_lock
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: ./.github/actions/setup
+        with:
+          extra: pandas
+      - name: Ensures sync code is up-to-date, with no stale files
+        run: uv run python scripts/sync_client_codegen/main.py verify
 
   build_docs:
     runs-on: ubuntu-latest
+    needs: check_lock
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - uses: ./.github/actions/setup
+      - name: Run docs linkcheck
+        working-directory: ./docs
+        run: uv run make linkcheck SPHINXOPTS="-W"
       - name: Build docs
-        run: cd docs && make html SPHINXOPTS="-W --keep-going"
+        working-directory: ./docs
+        run: uv run make html SPHINXOPTS="-W"
 
   build_package:
     runs-on: ubuntu-latest
+    needs: check_lock
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - uses: ./.github/actions/setup
       - name: Build package
-        run: poetry build
+        run: uv build
 
   test_core:
     runs-on: ubuntu-latest
+    needs: check_lock
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - uses: ./.github/actions/setup
       - name: Test core
-        run: pytest tests/tests_unit -n8 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
+        run: uv run pytest tests/tests_unit -n6 --dist loadscope --maxfail 10 -m 'not dsl' --test-deps-only-core
 
   test_full:
     runs-on: ${{ matrix.os }}
+    needs: check_lock
+    timeout-minutes: 15
+    env:
+      # Integration tests hit a shared CDF project, so running them on every matrix cell multiplies load and
+      # flakiness. By default only the cell tagged `integration: true` below (windows + lowest supported Python,
+      # which is also the cell that reports coverage) runs them; the others run unit tests only. The full matrix
+      # runs integration tests for release-please PRs (both the PR itself and its merge-queue run) and on manual request.
+      RUN_INTEGRATION: >-
+        ${{ matrix.integration
+        || inputs.full_integration
+        || startsWith(github.head_ref, 'release-please--')
+        || startsWith(github.event.merge_group.head_commit.message, 'chore(master): release') }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+        include:
+          # When bumping the lowest supported Python, update this cell (it drives integration tests + coverage):
+          - os: windows-latest
+            python-version: "3.10"
+            integration: true
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
       - uses: ./.github/actions/setup
         with:
           python_version: ${{ matrix.python-version }}
-          extras: "-E all"
+          extra: all
 
-      - name: Test full
+      - name: Test unit only
+        if: env.RUN_INTEGRATION != 'true'
+        run: uv run pytest --durations=10 --ignore=tests/tests_integration -n8 --dist loadscope --maxfail 20
+
+      - name: Test full (unit + integration)
+        if: env.RUN_INTEGRATION == 'true'
         env:
           LOGIN_FLOW: client_credentials
           COGNITE_CLIENT_SECRET: ${{ secrets.IDP_CLIENT_SECRET_CI }}
@@ -70,9 +131,10 @@ jobs:
           COGNITE_BASE_URL: ${{ vars.CDF_BASE_URL_CI }}
           COGNITE_CLIENT_NAME: python-sdk-integration-tests
         # Testpaths are defined in the pytest.ini file:
-        run: pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
+        run: uv run pytest --durations=10 --cov --cov-report term --cov-report xml:coverage.xml -n8 --dist loadscope --reruns 2 --maxfail 20
 
-      - uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5
-        if: matrix.os == 'windows-latest' && matrix.python-version == '3.10'
+      - uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
+        # Report code coverage from windows runner; xdist + ubuntu gives incorrect results
+        if: matrix.integration
         with:
           token: ${{ secrets.CODECOV_TOKEN }}

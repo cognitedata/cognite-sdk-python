@@ -1,0 +1,400 @@
+from __future__ import annotations
+
+import math
+import operator as op
+import warnings
+from collections import defaultdict
+from collections.abc import Callable, Iterator, Sequence
+from itertools import chain
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, cast
+
+from google.protobuf.internal.containers import RepeatedCompositeFieldContainer
+
+from cognite.client._constants import NUMPY_IS_AVAILABLE
+from cognite.client._proto.data_point_list_response_pb2 import (
+    TIMESERIES_TYPE_NUMERIC,
+    TIMESERIES_TYPE_STATE,
+    TIMESERIES_TYPE_STRING,
+    TIMESERIES_TYPE_UNSPECIFIED,
+    DataPointListItem,
+    TimeSeriesType,
+)
+from cognite.client._proto.data_points_pb2 import (
+    AggregateDatapoint,
+    NumericDatapoint,
+    StateAggregate,
+    StateDatapoint,
+    StringAggregateDatapoint,
+    StringDatapoint,
+)
+from cognite.client.data_classes.data_modeling import NodeId
+from cognite.client.data_classes.datapoint_aggregates import _ObjectAggregateCamel
+from cognite.client.data_classes.datapoints import (
+    DatapointsQuery,
+    MaxDatapoint,
+    MaxDatapointWithStatus,
+    MaxOrMinDatapoint,
+    MinDatapoint,
+    MinDatapointWithStatus,
+    StateCount,
+    StateDuration,
+    StateTransition,
+)
+from cognite.client.utils.useful_types import SequenceNotStr
+
+if NUMPY_IS_AVAILABLE:
+    import numpy as np
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
+
+AggregateDatapoints = RepeatedCompositeFieldContainer[AggregateDatapoint]
+NumericDatapoints = RepeatedCompositeFieldContainer[NumericDatapoint]
+StringDatapoints = RepeatedCompositeFieldContainer[StringDatapoint]
+StateDatapoints = RepeatedCompositeFieldContainer[StateDatapoint]
+
+DatapointAny = AggregateDatapoint | NumericDatapoint | StringDatapoint | StateDatapoint
+DatapointsAny = AggregateDatapoints | NumericDatapoints | StringDatapoints | StateDatapoints
+
+DatapointRaw = NumericDatapoint | StringDatapoint | StateDatapoint
+DatapointsRaw = NumericDatapoints | StringDatapoints | StateDatapoints
+
+RawDatapointValue = float | str | tuple[int, str | None]
+DatapointsId = int | DatapointsQuery | Sequence[int | DatapointsQuery]
+DatapointsExternalId = str | DatapointsQuery | SequenceNotStr[str | DatapointsQuery]
+DatapointsInstanceId = NodeId | DatapointsQuery | Sequence[NodeId | DatapointsQuery]
+ObjectAggUnpackFn: TypeAlias = Callable[
+    [AggregateDatapoint],
+    MaxOrMinDatapoint | list[StateCount] | list[StateTransition] | list[StateDuration] | str | None,
+]
+
+_PROTO_TYPE_TO_STR: dict[TimeSeriesType, Literal["numeric", "string", "state", "unspecified"]] = {
+    TIMESERIES_TYPE_UNSPECIFIED: "unspecified",  # 0
+    TIMESERIES_TYPE_NUMERIC: "numeric",  # 1
+    TIMESERIES_TYPE_STRING: "string",  # 2
+    TIMESERIES_TYPE_STATE: "state",  # 3
+}
+
+
+class DpsUnpackFns:
+    ts: Callable[[DatapointAny], int] = op.attrgetter("timestamp")
+    raw_dp: Callable[[DatapointRaw], RawDatapointValue] = op.attrgetter("value")
+
+    @staticmethod
+    def state_num_and_str_dp(dp: StateDatapoint) -> tuple[int, str | None]:
+        # A state data point can have a numeric value, but no string value. This happens if the numeric value
+        # is no longer part of the state set. The safe way to handle this is to use `.HasField("stringValue")`,
+        # however since string values are enforced to be at least 1 character long, we use the significantly
+        # faster `or None`.
+        #
+        # Timings for 100k state datapoints (the per request limit):
+        # >>> [dp.stringValue or None for dp in proto_dps]
+        # 10.7 ms ± 123 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+        # >>> [dp.stringValue if dp.HasField("stringValue") else None for dp in proto_dps]
+        # 16.8 ms ± 95.1 μs per loop (mean ± std. dev. of 7 runs, 100 loops each)
+        return dp.numericValue, dp.stringValue or None
+
+    @staticmethod
+    def custom_from_aggregates(lst: list[str]) -> Callable[[AggregateDatapoint], tuple[float, ...]]:
+        return op.attrgetter(*lst)
+
+    # Status is a nested object in the response (code+symbol). Since most dps is expected to be good
+    # (code 0), status is not returned for these:
+    status_code: Callable[[DatapointRaw], int] = op.attrgetter("status.code")  # Gives 0 by default when missing
+
+    @staticmethod
+    def status_symbol(dp: DatapointRaw) -> str:
+        return dp.status.symbol or "Good"  # Gives empty str when missing, so we set 'Good' manually
+
+    # When datapoints with bad status codes are not ignored, value may be missing:
+    @staticmethod
+    def nullable_raw_dp(dp: DatapointRaw) -> float | str:
+        # We pretend like float is always returned to not break every dps annot. in the entire SDK..
+        return dp.value if not dp.nullValue else None  # type: ignore [return-value, union-attr]
+
+    @staticmethod
+    def nullable_raw_state_dp(dp: StateDatapoint) -> tuple[int, str | None] | tuple[None, None]:
+        if dp.HasField("numericValue"):  # no need to also check stringValue, either both are set or none
+            return dp.numericValue, dp.stringValue or None  # see state_num_and_str_dp for why we use `or None`
+        return None, None
+
+    # minDatapoint and maxDatapoint are also objects in the response. The proto lookups doesn't fail,
+    # so we must be very careful to only attach status codes if requested.
+    @staticmethod
+    def min_datapoint(agg_dp: AggregateDatapoint) -> MinDatapoint:
+        dp = agg_dp.minDatapoint
+        return MinDatapoint(dp.timestamp, dp.value)
+
+    @staticmethod
+    def max_datapoint(agg_dp: AggregateDatapoint) -> MaxDatapoint:
+        dp = agg_dp.maxDatapoint
+        return MaxDatapoint(dp.timestamp, dp.value)
+
+    @classmethod
+    def min_datapoint_with_status(cls, agg_dp: AggregateDatapoint) -> MinDatapointWithStatus:
+        dp = agg_dp.minDatapoint
+        return MinDatapointWithStatus(dp.timestamp, dp.value, cls.status_code(dp), cls.status_symbol(dp))
+
+    @classmethod
+    def max_datapoint_with_status(cls, agg_dp: AggregateDatapoint) -> MaxDatapointWithStatus:
+        dp = agg_dp.maxDatapoint
+        return MaxDatapointWithStatus(dp.timestamp, dp.value, cls.status_code(dp), cls.status_symbol(dp))
+
+    @staticmethod
+    def state_count_entry(sa: StateAggregate) -> StateCount:
+        return StateCount(sa.numericValue, sa.stringValue or None, state_count=sa.stateCount)
+
+    @staticmethod
+    def state_transition_entry(sa: StateAggregate) -> StateTransition:
+        return StateTransition(sa.numericValue, sa.stringValue or None, state_transitions=sa.stateTransitions)
+
+    @staticmethod
+    def state_duration_entry(sa: StateAggregate) -> StateDuration:
+        return StateDuration(sa.numericValue, sa.stringValue or None, state_duration=sa.stateDuration)
+
+    @classmethod
+    def state_counts(cls, agg_dp: AggregateDatapoint) -> list[StateCount]:
+        return [cls.state_count_entry(sa) for sa in agg_dp.stateAggregates]
+
+    @classmethod
+    def state_transitions(cls, agg_dp: AggregateDatapoint) -> list[StateTransition]:
+        return [cls.state_transition_entry(sa) for sa in agg_dp.stateAggregates]
+
+    @classmethod
+    def state_durations(cls, agg_dp: AggregateDatapoint) -> list[StateDuration]:
+        return [cls.state_duration_entry(sa) for sa in agg_dp.stateAggregates]
+
+    # --------------- #
+    # Above are functions that operate on single elements
+    # Below are functions that operate on containers
+    # --------------- #
+    @classmethod
+    def extract_timestamps(cls, dps: DatapointsAny) -> list[int]:
+        return list(map(cls.ts, dps))
+
+    @classmethod
+    def extract_timestamps_numpy(cls, dps: DatapointsAny) -> npt.NDArray[np.int64]:
+        return np.fromiter(map(cls.ts, dps), dtype=np.int64, count=len(dps))
+
+    @classmethod
+    def extract_raw_dps(cls, dps: DatapointsRaw) -> list[float | str]:  # Actually: exclusively either one
+        return list(map(cls.raw_dp, dps))  # type: ignore [arg-type]
+
+    @classmethod
+    def extract_raw_dps_numpy(cls, dps: DatapointsRaw, dtype: type[np.float64] | type[np.object_]) -> npt.NDArray[Any]:
+        return np.fromiter(map(cls.raw_dp, dps), dtype=dtype, count=len(dps))
+
+    @classmethod
+    def extract_nullable_raw_dps(cls, dps: DatapointsRaw) -> list[float | str]:  # actually list of [... | None]
+        return list(map(cls.nullable_raw_dp, dps))
+
+    @classmethod
+    def extract_nullable_raw_dps_numpy(
+        cls, dps: DatapointsRaw, dtype: type[np.float64] | type[np.object_]
+    ) -> tuple[npt.NDArray[Any], list[int]]:
+        # This is a very hot loop, thus we make some ugly optimizations:
+        values = [None] * len(dps)
+        missing: list[int] = []
+        add_missing = missing.append
+        for i, dp in enumerate(map(cls.nullable_raw_dp, dps)):
+            # we use list because of its significantly lower overhead than numpy on single element access:
+            values[i] = dp  # type: ignore [call-overload]
+            if dp is None:
+                add_missing(i)
+        arr = np.array(values, dtype=dtype)
+        return arr, missing
+
+    @classmethod
+    def extract_raw_num_and_str_state_dps(cls, dps: StateDatapoints) -> list[tuple[int, str | None]]:
+        return list(map(cls.state_num_and_str_dp, dps))
+
+    @classmethod
+    def extract_nullable_raw_num_and_str_state_dps(cls, dps: StateDatapoints) -> list[tuple[int | None, str | None]]:
+        return list(map(cls.nullable_raw_state_dp, dps))
+
+    # --------------- #
+    # Status code related extract functions:
+    # --------------- #
+
+    @classmethod
+    def extract_status_code(cls, dps: DatapointsRaw) -> list[int]:
+        return list(map(cls.status_code, dps))
+
+    @classmethod
+    def extract_status_code_numpy(cls, dps: DatapointsRaw) -> npt.NDArray[np.uint32]:
+        return np.fromiter(map(cls.status_code, dps), dtype=np.uint32, count=len(dps))
+
+    @classmethod
+    def extract_status_symbol(cls, dps: DatapointsRaw) -> list[str]:
+        return list(map(cls.status_symbol, dps))
+
+    @classmethod
+    def extract_status_symbol_numpy(cls, dps: DatapointsRaw) -> npt.NDArray[np.object_]:
+        return np.fromiter(map(cls.status_symbol, dps), dtype=np.object_, count=len(dps))
+
+    @staticmethod
+    def extract_aggregates(
+        dps: AggregateDatapoints,
+        aggregates: list[str],
+        unpack_fn: Callable[[AggregateDatapoint], tuple[float, ...]],
+    ) -> list:
+        try:
+            # Fast method uses multi-key unpacking:
+            return list(map(unpack_fn, dps))
+        except AttributeError:
+            # An aggregate is missing, fallback to slower `getattr`:
+            if len(aggregates) == 1:
+                return [getattr(dp, aggregates[0], None) for dp in dps]
+            else:
+                return [tuple(getattr(dp, agg, None) for agg in aggregates) for dp in dps]
+
+    @staticmethod
+    def extract_numeric_aggregates_numpy(
+        dps: AggregateDatapoints,
+        aggregates: list[str],
+        unpack_fn: Callable[[AggregateDatapoint], tuple[float, ...]],
+        dtype: np.dtype[Any],
+    ) -> npt.NDArray[np.float64]:
+        try:
+            # Fast method uses multi-key unpacking:
+            return np.fromiter(map(unpack_fn, dps), dtype=dtype, count=len(dps))
+        except AttributeError:
+            # An aggregate is missing, fallback to slower `getattr`:
+            return np.array([tuple(getattr(dp, agg, math.nan) for agg in aggregates) for dp in dps], dtype=np.float64)
+
+    # For string time series, these aggregates are optional strings. Field presence lets us tell an empty string
+    # apart from a missing value (e.g. an interval before the first datapoint), which is returned as None:
+    @staticmethod
+    def interpolation(dp: StringAggregateDatapoint) -> str | None:
+        return dp.interpolation if dp.HasField("interpolation") else None
+
+    @staticmethod
+    def step_interpolation(dp: StringAggregateDatapoint) -> str | None:
+        return dp.stepInterpolation if dp.HasField("stepInterpolation") else None
+
+    @classmethod
+    def extract_fn_for_object_agg(
+        cls,
+        aggregate: _ObjectAggregateCamel,
+        include_status: bool,
+    ) -> ObjectAggUnpackFn:
+        status_independent: dict[str, ObjectAggUnpackFn] = {
+            # These two only ever receive StringAggregateDatapoint (string time series), not AggregateDatapoint:
+            "interpolation": cls.interpolation,  # type: ignore [dict-item]
+            "stepInterpolation": cls.step_interpolation,  # type: ignore [dict-item]
+            "stateCount": cls.state_counts,
+            "stateTransitions": cls.state_transitions,
+            "stateDuration": cls.state_durations,
+        }
+        if fn := status_independent.get(aggregate):
+            return fn
+
+        match aggregate, include_status:
+            case "minDatapoint", False:
+                return cls.min_datapoint
+            case "maxDatapoint", False:
+                return cls.max_datapoint
+            case "minDatapoint", True:
+                return cls.min_datapoint_with_status
+            case "maxDatapoint", True:
+                return cls.max_datapoint_with_status
+            case _:
+                raise ValueError(f"Unsupported {aggregate=} and/or {include_status=}")
+
+
+def ensure_int(val: float, change_nan_to: int = 0) -> int:
+    if math.isnan(val):
+        return change_nan_to
+    return int(val)
+
+
+def ensure_int_numpy(arr: npt.NDArray[np.float64]) -> npt.NDArray[np.int64]:
+    return np.nan_to_num(arr, copy=False, nan=0.0, posinf=np.inf, neginf=-np.inf).astype(np.int64)
+
+
+def decide_numpy_dtype_from_is_string(is_string: bool) -> type:
+    return np.object_ if is_string else np.float64
+
+
+def get_datapoints_from_proto(res: DataPointListItem) -> DatapointsAny:
+    if (dp_type := res.WhichOneof("datapointType")) is not None:
+        return getattr(res, dp_type).datapoints
+    return cast(DatapointsAny, [])
+
+
+def proto_type_to_str(ts_type: TimeSeriesType) -> Literal["numeric", "string", "state", "unspecified", "unknown"]:
+    try:
+        return _PROTO_TYPE_TO_STR[ts_type]
+    except KeyError:
+        pass
+
+    from cognite.client._version import __version__
+
+    warnings.warn(
+        f"Unknown time series type ({ts_type}) received from the API. "
+        "Please upgrade to a newer version of the Cognite SDK to handle this type "
+        f"(current version={__version__!r}).",
+        UserWarning,
+        stacklevel=3,
+    )
+    return "unknown"
+
+
+def get_ts_info_from_proto(res: DataPointListItem) -> dict[str, int | str | bool | NodeId | None]:
+    # Note: When 'unit_external_id' is returned, regular 'unit' is ditched
+    if res.instanceId and res.instanceId.space:  # res.instanceId evaluates to True even when empty :eyes:
+        instance_id = NodeId(res.instanceId.space, res.instanceId.externalId)
+    else:
+        instance_id = None
+    return {
+        "id": res.id,
+        "external_id": res.externalId,
+        "is_string": res.isString,
+        "is_step": res.isStep,
+        "type": proto_type_to_str(res.type),
+        "unit": res.unit,
+        "unit_external_id": res.unitExternalId,
+        "instance_id": instance_id,
+    }
+
+
+_DataContainer: TypeAlias = defaultdict[tuple[float, ...], list]
+
+
+def datapoints_in_order(container: _DataContainer) -> Iterator[list]:
+    return chain.from_iterable(container[k] for k in sorted(container))
+
+
+def create_array_from_dps_container(container: _DataContainer) -> npt.NDArray:
+    return np.hstack(list(datapoints_in_order(container)))
+
+
+def create_object_array_from_container(container: _DataContainer) -> npt.NDArray[np.object_]:
+    # We don't use a simple `np.array(..., dtype=np.object_)` call here as numpy very helpfully
+    # builds a proper N-dimensional array instead of the 1D array-of-objects we actually want:
+    count = sum(len(chunk) for chunk in datapoints_in_order(container))
+    return np.fromiter(chain.from_iterable(datapoints_in_order(container)), dtype=np.object_, count=count)
+
+
+def create_aggregates_arrays_from_dps_container(container: _DataContainer, n_aggs: int) -> list[npt.NDArray]:
+    all_aggs_arr = np.vstack(list(datapoints_in_order(container)))
+    return list(map(np.ravel, np.hsplit(all_aggs_arr, n_aggs)))
+
+
+def create_list_from_dps_container(container: _DataContainer) -> list:
+    return list(chain.from_iterable(datapoints_in_order(container)))
+
+
+def create_state_lists_from_dps_container(container: _DataContainer) -> tuple[list[int], list[str | None]]:
+    # Doing 2 passes through the dps is actually the most performant(!). Benchmarking N = 1 mill:
+    # 1. zip(*...):                61.5 ms ± 824 μs
+    # 2. Single-pass .append():    44.1 ms ± 310 μs
+    # 3. Pre-allocated indexing:   36.3 ms ± 781 μs
+    # 4. Dual list comprehensions: 26.6 ms ± 229 μs
+    state_tuples = list(chain.from_iterable(datapoints_in_order(container)))
+    return [num for num, _ in state_tuples], [string for _, string in state_tuples]
+
+
+def create_aggregates_list_from_dps_container(container: _DataContainer) -> Iterator[list[list]]:
+    concatenated = chain.from_iterable(datapoints_in_order(container))
+    return map(list, zip(*concatenated))  # rows to columns

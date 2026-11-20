@@ -3,94 +3,56 @@ Geospatial
 .. note::
    Check https://github.com/cognitedata/geospatial-examples for some complete examples.
 
+.. currentmodule:: cognite.client
+
 Feature types
 -------------
-Create feature types
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.create_feature_types
+.. autosummary::
+   :toctree: generated/ 
+   :template: custom-accessor-template.rst
 
-Delete feature types
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.delete_feature_types
-
-List feature types
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.list_feature_types
-
-Retrieve feature types
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.retrieve_feature_types
-
-Update feature types
-^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.patch_feature_types
+   AsyncCogniteClient.geospatial.create_feature_types
+   AsyncCogniteClient.geospatial.delete_feature_types
+   AsyncCogniteClient.geospatial.list_feature_types
+   AsyncCogniteClient.geospatial.retrieve_feature_types
+   AsyncCogniteClient.geospatial.patch_feature_types
 
 Features
 --------
-Create features
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.create_features
+.. autosummary::
+   :toctree: generated/ 
+   :template: custom-accessor-template.rst
 
-Delete features
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.delete_features
-
-Retrieve features
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.retrieve_features
-
-Update features
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.update_features
-
-List features
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.list_features
-
-Search features
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.search_features
-
-Stream features
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.stream_features
-
-Aggregate features
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.aggregate_features
+   AsyncCogniteClient.geospatial.create_features
+   AsyncCogniteClient.geospatial.delete_features
+   AsyncCogniteClient.geospatial.retrieve_features
+   AsyncCogniteClient.geospatial.update_features
+   AsyncCogniteClient.geospatial.list_features
+   AsyncCogniteClient.geospatial.search_features
+   AsyncCogniteClient.geospatial.stream_features
+   AsyncCogniteClient.geospatial.aggregate_features
 
 Reference systems
 -----------------
-Get coordinate reference systems
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.get_coordinate_reference_systems
+.. autosummary::
+   :toctree: generated/ 
+   :template: custom-accessor-template.rst
 
-List coordinate reference systems
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.list_coordinate_reference_systems
-
-Create coordinate reference systems
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.create_coordinate_reference_systems
+   AsyncCogniteClient.geospatial.get_coordinate_reference_systems
+   AsyncCogniteClient.geospatial.list_coordinate_reference_systems
+   AsyncCogniteClient.geospatial.create_coordinate_reference_systems
 
 
 Raster data
 -----------
-Put raster data
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.put_raster
+.. autosummary::
+   :toctree: generated/ 
+   :template: custom-accessor-template.rst
 
-Delete raster data
-^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.delete_raster
-
-Get raster data
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.get_raster
-
-Compute
-^^^^^^^
-.. automethod:: cognite.client._api.geospatial.GeospatialAPI.compute
+   AsyncCogniteClient.geospatial.put_raster
+   AsyncCogniteClient.geospatial.delete_raster
+   AsyncCogniteClient.geospatial.get_raster
+   AsyncCogniteClient.geospatial.compute
 
 Geospatial Data classes
 -----------------------

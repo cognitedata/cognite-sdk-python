@@ -16,7 +16,6 @@ you should install the SDK along with its optional dependencies. The available e
 - pandas: pandas
 - geo: geopanda, shapely
 - sympy: sympy
-- functions: pip
 - all (will install dependencies for all the above)
 
 These can be installed with the following command:

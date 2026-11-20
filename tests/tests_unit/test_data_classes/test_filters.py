@@ -1,8 +1,19 @@
+from __future__ import annotations
+
 import re
 
 import pytest
 
-from cognite.client.data_classes.filters import And, Filter, In, Or
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
+from cognite.client.data_classes.data_modeling.records import RecordContainerId, RecordViewId
+from cognite.client.data_classes.filters import (
+    And,
+    Equals,
+    Filter,
+    In,
+    Or,
+    PropertyReference,
+)
 from tests.utils import FakeCogniteResourceGenerator
 
 
@@ -12,16 +23,16 @@ def test_filters_warn_in_boolean_contexts() -> None:
     # which is not recommended. The proper way to combine filters is using & and | operators.
     fcrg = FakeCogniteResourceGenerator()
     # Create two random filters:
-    flt1 = fcrg.create_instance(Filter)
-    flt2 = fcrg.create_instance(Filter)
+    flt1 = fcrg.create_instance(Filter)  # type: ignore[type-abstract]
+    flt2 = fcrg.create_instance(Filter)  # type: ignore[type-abstract]
 
     # Test that warnings are issued when using filters in boolean contexts
     match_str = "^" + re.escape("You may be trying to combine two (or more) filters using 'and' or 'or'")
     with pytest.warns(UserWarning, match=match_str):
-        flt1 and flt2  # type: ignore[operator]
+        flt1 and flt2
 
     with pytest.warns(UserWarning, match=match_str):
-        flt1 or flt2  # type: ignore[operator]
+        flt1 or flt2
 
     # Test that the proper filter combination operators still work correctly
     assert type(flt1 & flt2) is And
@@ -50,3 +61,40 @@ def test_filters_warn_in_boolean_contexts() -> None:
 )
 def test_filter_property_case_conversion(user_filter: Filter, expected: dict) -> None:
     assert user_filter.dump(camel_case_property=True) == expected
+
+
+def test_filter_is_hashable_and_uses_identity() -> None:
+    # Bug in 8.0.0 to 8.0.5: __eq__ was added to Filter thus implicitly setting __hash__ = None,
+    # making filters unhashable.
+    flt = Equals(property=["node", "type"], value="pump")
+    hash(flt)  # must not raise
+
+    # Hashing is identity-based: two filters with equal content hash differently.
+    flt2 = Equals(property=["node", "type"], value="pump")
+    assert hash(flt) != hash(flt2)
+    assert flt != flt2
+
+
+@pytest.mark.parametrize(
+    "property_, expected",
+    [
+        ((ViewId("sp", "view", "v1"), "temp"), ["sp", "view/v1", "temp"]),
+        ((RecordViewId("sp", "view", "v1"), "temp"), ["sp", "view/v1", "temp"]),
+        ((ContainerId("sp", "container"), "temp"), ["sp", "container", "temp"]),
+        ((RecordContainerId("sp", "container"), "temp"), ["sp", "container", "temp"]),
+        (PropertyId(ViewId("sp", "view", "v1"), "temp"), ["sp", "view/v1", "temp"]),
+        (PropertyId(ContainerId("sp", "container"), "temp"), ["sp", "container", "temp"]),
+        ([ViewId("sp", "view", "v1"), "temp"], ["sp", "view/v1", "temp"]),
+    ],
+    ids=[
+        "view",
+        "record-view",
+        "container",
+        "record-container",
+        "view-property-id",
+        "container-property-id",
+        "view-list",
+    ],
+)
+def test_filter_source_property_references(property_: PropertyReference, expected: list[str]) -> None:
+    assert Equals(property_, 25.0).dump() == {"equals": {"property": expected, "value": 25.0}}

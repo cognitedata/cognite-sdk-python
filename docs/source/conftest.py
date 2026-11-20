@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 import pytest
 import yaml
 
-from cognite.client.data_classes import TimeSeries
 from cognite.client.testing import monkeypatch_cognite_client
+from tests.tests_unit.conftest import DefaultResourceGenerator
 
 # Files to exclude test directories or modules
 collect_ignore = ["conf.py"]
@@ -38,13 +39,13 @@ def client_data() -> dict[str, Any]:
                     "token_url": "https://login.microsoftonline.com/${MY_TENANT_ID}/oauth2/v2.0/token",
                     "client_id": "${MY_CLIENT_ID}",
                     "client_secret": "${MY_CLIENT_SECRET}",
-                    "scopes": ["https://api.cognitedata.com/.default"],
+                    "scopes": ["https://${MY_CLUSTER}.cognitedata.com/.default"],
                 },
             },
         },
         "global": {
             "max_retries": 10,
-            "max_retry_backoff": 10,
+            "max_retry_backoff": 60,
         },
     }
 
@@ -58,9 +59,9 @@ def quickstart_client_config_file(monkeypatch, client_data):
 
 
 @pytest.fixture()
-def appendix_update_patch() -> None:
+def appendix_update_patch() -> Iterator[None]:
     with monkeypatch_cognite_client() as client:
-        client.time_series.update.return_value = TimeSeries(
+        client.time_series.update.return_value = DefaultResourceGenerator.time_series(
             external_id="new_ts",
             name="New TS",
             description="Updated description",
@@ -70,9 +71,9 @@ def appendix_update_patch() -> None:
 
 
 @pytest.fixture()
-def appendix_update_replace() -> None:
+def appendix_update_replace() -> Iterator[None]:
     with monkeypatch_cognite_client() as client:
-        client.time_series.update.return_value = TimeSeries(
+        client.time_series.update.return_value = DefaultResourceGenerator.time_series(
             external_id="new_ts",
             description="Updated description",
             metadata={"new": "entry"},
@@ -81,9 +82,9 @@ def appendix_update_replace() -> None:
 
 
 @pytest.fixture()
-def appendix_update_replace_ignore_null() -> None:
+def appendix_update_replace_ignore_null() -> Iterator[None]:
     with monkeypatch_cognite_client() as client:
-        client.time_series.update.return_value = TimeSeries(
+        client.time_series.update.return_value = DefaultResourceGenerator.time_series(
             external_id="new_ts",
             name="New TS",
             description="Updated description",
@@ -93,9 +94,9 @@ def appendix_update_replace_ignore_null() -> None:
 
 
 @pytest.fixture()
-def appendix_update_replace_ignore_null2() -> None:
+def appendix_update_replace_ignore_null2() -> Iterator[None]:
     with monkeypatch_cognite_client() as client:
-        client.time_series.update.return_value = TimeSeries(
+        client.time_series.update.return_value = DefaultResourceGenerator.time_series(
             external_id="new_ts",
             name="New TS",
             description="Updated description",

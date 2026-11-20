@@ -5,34 +5,47 @@
 Get the code!
 
 ```bash
-git clone https://github.com/cognitedata/cognite-sdk-python.git
+git clone https://github.com/cognitedata/cognite-sdk-python
 cd cognite-sdk-python
 ```
 
-We use [poetry](https://pypi.org/project/poetry/) for dependency- and virtual environment management. Make sure you use python 3.10.
+We use [uv](https://docs.astral.sh/uv/) for dependency and virtual environment management. Python 3.10 or newer is required. Install uv from the [installation guide](https://docs.astral.sh/uv/getting-started/installation/).
 
-Install dependencies and initialize a shell within the virtual environment, with these commands:
+Install dependencies, including the `all` extra and the default `dev` and `docs` groups:
 
 ```bash
-poetry install -E all
-poetry shell
+uv sync --extra all
 ```
 
-Install pre-commit hooks to run static code checks on every commit:
+`uv sync` creates a `.venv` in the repository. Run tools through `uv run`, or activate the environment:
 
 ```bash
-pre-commit install
+source .venv/bin/activate        # macOS and Linux
+source .venv/Scripts/activate    # Windows (Git Bash)
+.\.venv\Scripts\Activate.ps1     # Windows (PowerShell)
+```
+
+Install pre-commit hooks to run various checks and linters on every commit:
+
+```bash
+uv run pre-commit install
 ```
 
 You can also manually trigger the static checks with:
 
 ```bash
-pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
-### Getting access to python-sdk-test CDF project for running integration tests
+To include slower checks that run in CI, include `--hook-stage manual`
 
-- Request access to python-sdk AAD tenant.
+```bash
+uv run pre-commit run --all-files --hook-stage manual
+```
+
+### Getting access to `python-sdk-contributor` CDF project for running integration tests
+
+- Request access to python-sdk AAD tenant. Cognite internals can tag the Python SDK Maintainer shield on Slack.
 - Set environment variables as per the interactive login flow below
 
 ### Environment Variables
@@ -69,22 +82,62 @@ COGNITE_CLIENT_ID=6b0b4266-ffa4-4b9b-8e13-ddbbc8a19ea6
 #COGNITE_CERTIFICATE=aadappcert.pem
 ```
 
+### Automatic Code Generation
+
+The main code base in this repository is written for the `AsyncCogniteClient`. From this source code we also create a
+"sync" `CogniteClient` through automatic code generation. The async->sync conversion script can be found in `scripts/sync_client_codegen/main.py`. It exclusively writes to `cognite/client/_sync_api/` (and temporary files as part of normalized file compares).
+
+The script always regenerates the code and compares it with the current sync API file, ignoring comments (but not docstrings). Files that are functionally identical are left untouched, which means that e.g. added `# type: ignore` comments are preserved. A variety of updates does not result in actual code changes in the SyncAPIs, as it only wraps the async client directly.
+
+We have certain rules in place that must be followed:
+
+- **Adding nested APIs: Put one API class per file.**
+
+If the entire API addition is "flat", like classic resource types EventsAPI or FilesAPI, please use a single file directly below `cognite/client/_api/`. Else, add a directory instead. There are plenty of existing examples, e.g. IAMAPI, RawAPI.
+
+#### Run modes
+`usage: main.py [-h] [-v] {verify,run} ...`
+
+Use `verify` to ensure all sync source code files are up-to-date and no stale files (that should be removed exists). This is mostly useful as a CI check.
+
+Use `run` to pass a subset of _async_ source files (i.e. anything below `cognite/client/_api/`) to update:
+
+```sh
+uv run python scripts/sync_client_codegen/main.py run --files FILE1 FILE2 ...
+```
+Note: This is how we run it as part of `pre-commit`.
+
+To run through all files, pass `--all-files`. This will also run cleanup automatically:
+
+```sh
+uv run python scripts/sync_client_codegen/main.py run --all-files
+```
+
+If a sync API file has entered into a bad state (e.g. through manual changes), `verify` will flag it, and `run` will
+re-generate it from scratch.
+
+Verbose mode is supported (e.g. debugging). Pass `-v` before the subcommand `run`/`verify`:
+
+```sh
+uv run python scripts/sync_client_codegen/main.py -v [run, verify] ...
+```
+
 ### Testing
 
 Initiate unit tests by running the following command from the root directory:
 
-`pytest tests/tests_unit`
+`uv run pytest tests/tests_unit`
 
 If you have appropriate credentials (see [Environment Variables](#environment-variables)), you can run the integration tests like this:
 
-`pytest tests/tests_integration`
+`uv run pytest tests/tests_integration`
 
 If you want to generate code coverage reports run:
 
 ```
-pytest tests/tests_unit --cov-report html \
+uv run pytest tests/tests_unit --cov-report html \
                         --cov-report xml \
-                        --cov cognite
+                        --cov cognite tests
 ```
 
 Open `htmlcov/index.html` in the browser to navigate through the report.
@@ -92,7 +145,7 @@ Open `htmlcov/index.html` in the browser to navigate through the report.
 To speed up test runs pass the following arguments (this will parallelize across 4 processes):
 
 ```
-pytest -n4 --dist loadscope tests
+uv run pytest -n4 --dist loadscope tests
 ```
 
 #### Unit Tests for Examples in Documentation
@@ -102,7 +155,7 @@ For code examples defined in *docstrings* the doctest library is used and docstr
 For any code examples written directly in `docs/source` we are using the [sphinx doctest extension](https://www.sphinx-doc.org/en/master/usage/extensions/doctest.html) with pytest. See the `docs/source/quickstart.rst` for an example of a unit test that is setup to use some fixtures defined through pytest (`docs/source/conftest.py`). To run all the tests defined in docs run:
 
 ```
-pytest docs
+uv run pytest docs
 ```
 
 ### Updating Integration Runner Auth
@@ -110,8 +163,8 @@ pytest docs
 If you need to add a new capability to the integration runner, you need to create a new Pull Requests (PR) in which
 you do the following:
 
-1. Add a read-only version of the new capability to the `scripts/toolkit/acces/auth/readonly.Group.yaml`
-2. Add a read-write version of the new capability to the `scripts/toolkit/acces/auth/readwrite.Group.yaml`
+1. Add a read-only version of the new capability to the `scripts/toolkit/access/auth/readonly.Group.yaml`
+2. Add a read-write version of the new capability to the `scripts/toolkit/access/auth/readwrite.Group.yaml`
 
 Get the PR reviewed by an SDK maintainer. The integration runner will be updated once the PR is merged.
 
@@ -123,7 +176,7 @@ Build html files of documentation locally by running
 
 ```bash
 cd docs
-make html
+uv run make html
 ```
 
 Open `build/html/index.html` to look at the result.

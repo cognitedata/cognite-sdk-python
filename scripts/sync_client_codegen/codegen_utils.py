@@ -1,0 +1,318 @@
+import ast
+import copy
+import inspect
+import re
+import shlex
+import subprocess
+import tempfile
+from collections.abc import Iterator
+from functools import cache
+from pathlib import Path
+
+from cognite.client import AsyncCogniteClient
+from cognite.client._api_client import APIClient
+from cognite.client.config import ClientConfig
+from cognite.client.credentials import Token
+from scripts.sync_client_codegen.constants import ASYNC_METHODS_TO_KEEP, SYNC_METHODS_TO_KEEP
+
+
+def get_api_class_by_attribute(cls_: object, parent_name: tuple[str, ...] = ()) -> dict[str, type[APIClient]]:
+    available_apis: dict[str, type[APIClient]] = {}
+    for attr, obj in cls_.__dict__.items():
+        if attr.startswith("_") or not isinstance(obj, APIClient):
+            continue
+        obj_attr = (*parent_name, attr)
+        available_apis[".".join(obj_attr)] = obj.__class__
+        available_apis.update(get_api_class_by_attribute(obj, parent_name=obj_attr))
+    return available_apis
+
+
+def find_api_class_name(source_code: str, file: Path) -> str | None:
+    match re.findall(r"class (\w+API)\((?:Org)?APIClient\):", source_code):
+        case []:
+            return None
+        case [cls_name]:
+            return cls_name
+        case [*multiple]:
+            # Dev. note: so you've hit this error and wonder where to -> please split your APIs into separate files
+            # (sorry if this feels like Java all of a sudden). It makes the codebase much easier to auto-convert
+            # from async to sync.
+            raise RuntimeError(f"Found multiple API classes in file='{file}': {multiple}")
+
+
+def is_pyfile(file: Path) -> bool:
+    return file.suffix == ".py"
+
+
+def list_apis() -> Iterator[Path]:
+    return Path("cognite/client/_api").rglob("*")
+
+
+def list_sync_apis() -> Iterator[Path]:
+    return Path("cognite/client/_sync_api").rglob("*")
+
+
+def path_as_importable(path: Path) -> str:
+    return ".".join(path.with_suffix("").parts)
+
+
+def get_module_level_imports(tree: ast.Module):
+    import_nodes = [node for node in tree.body if isinstance(node, (ast.Import, ast.ImportFrom))]
+    return "\n".join(ast.unparse(node) for node in import_nodes)
+
+
+def get_module_level_names(tree: ast.Module) -> list[str]:
+    names = []
+    for node in tree.body:
+        match node:
+            case ast.Assign(targets=targets):
+                names.extend(t.id for t in targets if isinstance(t, ast.Name))
+            case ast.AnnAssign(target=ast.Name(id=name), value=value) if value is not None:
+                names.append(name)
+    return [name for name in names if name != "__all__"]
+
+
+def get_imported_names(node: ast.Import | ast.ImportFrom) -> set[tuple[str | None, str, str | None]]:
+    module = node.module if isinstance(node, ast.ImportFrom) else None
+    return {(module, alias.name, alias.asname) for alias in node.names}
+
+
+def get_module_level_type_checking_imports(
+    tree: ast.Module, skip: frozenset[tuple[str | None, str, str | None]]
+) -> str:
+    imports: list[str] = []
+    for node in tree.body:
+        if not isinstance(node, ast.If):
+            continue
+
+        match node.test:
+            case ast.Name(id="TYPE_CHECKING"):
+                pass  # we found: `if TYPE_CHECKING:`
+            case ast.Attribute(value=ast.Name(id="typing"), attr="TYPE_CHECKING"):
+                pass  # we found: `if typing.TYPE_CHECKING:`
+            case _:
+                continue
+
+        for sub in node.body:
+            if not isinstance(sub, (ast.Import, ast.ImportFrom)):
+                continue
+            # Skip names already imported (at runtime) elsewhere, e.g. by the template:
+            module = sub.module if isinstance(sub, ast.ImportFrom) else None
+            if names := [alias for alias in sub.names if (module, alias.name, alias.asname) not in skip]:
+                sub = copy.copy(sub)
+                sub.names = names
+                imports.append(ast.unparse(sub))
+    # Joined so that all imports end up indented under 'if TYPE_CHECKING:' in the template:
+    return "\n    ".join(imports)
+
+
+def get_all_imports(
+    tree: ast.Module, source_path: Path, skip_type_checking: frozenset[tuple[str | None, str, str | None]]
+) -> tuple[str, str]:
+    all_imports = get_module_level_imports(tree)
+    type_checking_imports = get_module_level_type_checking_imports(tree, skip_type_checking)
+    # Module-level names (type aliases, TypeVars, constants etc.) may be needed by the sync API, e.g. in
+    # signatures or as default values. We import them from the async API module rather than copying the
+    # definitions over. Unused names are removed by ruff afterwards:
+    if module_names := get_module_level_names(tree):
+        module = path_as_importable(source_path).removesuffix(".__init__")
+        all_imports += f"\nfrom {module} import {', '.join(module_names)}"
+    return all_imports, type_checking_imports
+
+
+def find_class_node(tree: ast.Module, class_name: str) -> ast.ClassDef:
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef) and node.name == class_name:
+            return node
+    raise ValueError(f"Could not find class '{class_name}' in AST")
+
+
+def find_self_assignments(class_node: ast.ClassDef) -> tuple[list[str], list[str]]:
+    init_node = None
+    for node in class_node.body:
+        if isinstance(node, ast.FunctionDef) and node.name == "__init__":
+            init_node = node
+            break
+
+    if not init_node:
+        return [], []
+
+    names, nested_apis = [], []
+    for stmt in init_node.body:
+        if not isinstance(stmt, ast.Assign):
+            continue
+
+        for t in stmt.targets:
+            if (
+                isinstance(t, ast.Attribute)
+                and isinstance(t.value, ast.Name)
+                and t.value.id == "self"
+                and isinstance(stmt.value, ast.Call)
+                and stmt.value.func.id.endswith("API")
+            ):
+                names.append(cls_name := foolish_cls_name_rewrite(stmt.value.func.id))
+                nested_apis.append(
+                    # As opposed to the regular APIs, we only need to pass the async client here:
+                    f"self.{t.attr} = Sync{cls_name}(async_client)"
+                )
+    return names, nested_apis
+
+
+def foolish_cls_name_rewrite(class_name: str) -> str:
+    # Yes, YESSSS
+    return class_name.replace("ThreeD", "3D")
+
+
+def inverse_foolish_cls_name_rewrite(class_name: str) -> str:
+    return class_name.replace("3D", "ThreeD")  # Needed when searching
+
+
+def _has_no_return(node: ast.AsyncFunctionDef | ast.FunctionDef) -> bool:
+    return node.returns is not None and ast.unparse(node.returns) == "NoReturn"
+
+
+def method_should_be_converted(node: ast.AST) -> bool:
+    match node:
+        case ast.AsyncFunctionDef(name=n) if not n.startswith("_") or n in ASYNC_METHODS_TO_KEEP:
+            return not _has_no_return(node)
+        case ast.FunctionDef(name=n) if n in SYNC_METHODS_TO_KEEP:
+            return not _has_no_return(node)
+        case _:
+            return False
+
+
+def fix_imports_for_sync_apis(all_imports: str, lst_of_api_names: list[str]) -> str:
+    """
+    This function performs two main changes for each API name provided:
+    1. It changes the import path from `cognite.client._api...` to `cognite.client._sync_api...`.
+    2. It prepends "Sync" to the imported class name (e.g., "DatapointsAPI" -> "SyncDatapointsAPI").
+    """
+    if not lst_of_api_names:
+        return all_imports
+
+    api_name_options = "|".join(map(inverse_foolish_cls_name_rewrite, lst_of_api_names))
+    pattern = re.compile(rf"^from cognite\.client\._api(\..*? import\s+)(.*?)({api_name_options})(.*)$", re.MULTILINE)
+
+    def replacer(match: re.Match) -> str:
+        """This function is called for each match found by re.sub."""
+        module_and_import, leading_imports, matched_api_name, trailing_imports = match.groups()
+        if leading_imports or trailing_imports:
+            # To the poor dev who needs to fix this in the future, here is a long and nice error message.
+            # Having one API class per source file seems like good practice anyhow, and if you don't import
+            # directly from the defining module, the fix is easy.
+            raise ValueError(
+                f"Cannot handle multiple imports in the same line for API '{matched_api_name}'. "
+                "Example: This functions changes:\n"
+                "from cognite.client._api.time_series import DatapointsAPI\n"
+                "to:\n"
+                "from cognite.client._sync_api.time_series import SyncDatapointsAPI\n"
+            )
+        return f"from cognite.client._sync_api{module_and_import}Sync{foolish_cls_name_rewrite(matched_api_name)}"
+
+    # Perform the substitution in a single pass:
+    return pattern.sub(replacer, all_imports)
+
+
+def run_ruff(file_paths: list[Path], verbose: bool = False) -> None:
+    if not file_paths:
+        return
+    # We exit nonzero if ruff fixes anything, so we run with check=False to not raise:
+    base = f"uv run pre-commit run ruff-{{}} --files {shlex.join(map(str, file_paths))}"
+    command = shlex.split(base.format("check"))
+    if verbose:
+        print("Now running command\n", shlex.join(command))
+    subprocess.run(command, check=False, capture_output=True)
+
+    command = shlex.split(base.format("format"))
+    if verbose:
+        print("Now running command\n", shlex.join(command))
+    subprocess.run(command, check=False, capture_output=True)
+
+    for fp in file_paths:
+        if fp.name == "__init__.py":
+            fix_unused_imports_in_init_file(fp)
+
+
+def fix_unused_imports_in_init_file(init_file: Path) -> None:
+    """Ruff won't auto-remove unused imports in __init__.py (treats them as potential
+    re-exports, and even --unsafe-fixes doesn't override this). Trick it by temporarily
+    renaming the file 🧠"""
+    # delete=False so we can close the handle before ruff opens it (just Windows things....):
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", encoding="utf-8", delete=False) as tmp:
+        tmp.write(init_file.read_text(encoding="utf-8"))
+        tmp_path = tmp.name
+    try:
+        run_ruff_direct(Path(tmp_path))
+        init_file.write_text(Path(tmp_path).read_text(encoding="utf-8"), encoding="utf-8")
+    finally:
+        Path(tmp_path).unlink(missing_ok=True)
+
+
+def run_ruff_direct(file_path: Path) -> None:
+    """Run ruff directly on a file, bypassing pre-commit.
+
+    This is needed for temp files outside the repo, where pre-commit hooks don't apply.
+    """
+    subprocess.run(["uv", "run", "ruff", "check", "--fix", str(file_path)], check=False, capture_output=True)
+    subprocess.run(["uv", "run", "ruff", "format", str(file_path)], check=False, capture_output=True)
+
+
+def get_dot_path_lookup(async_client: AsyncCogniteClient) -> tuple[dict[str, str], dict[str, str]]:
+    api_cls_lookup = get_api_class_by_attribute(async_client)
+    dot_path_lookup = {v.__name__: k for k, v in api_cls_lookup.items()}
+    if len(dot_path_lookup) != len(api_cls_lookup):
+        raise ValueError("API class names not unique, cannot continue")
+    file_path_lookup = {v.__name__: inspect.getfile(v) for v in api_cls_lookup.values()}
+    return dot_path_lookup, file_path_lookup
+
+
+def ensure_parent_dir(file: Path) -> None:
+    if not file.parent.is_dir():
+        file.parent.mkdir(parents=True, exist_ok=True)
+
+
+@cache
+def get_source_code(file: Path) -> str:
+    return file.read_text(encoding="utf-8")
+
+
+def filter_base_apis_and_sort_alphabetically(dct: dict[str, str]) -> list[tuple[str, str]]:
+    return sorted((k, v) for k, v in dct.items() if "." not in v)
+
+
+def clean_up_files(all_expected_files: list[Path], verbose: bool = False) -> None:
+    clean_up = set(filter(is_pyfile, list_sync_apis())).difference(all_expected_files)
+    if not clean_up:
+        if verbose:
+            print("- No stale files to clean up 🧹")
+        return
+    print(f"Cleaning up {len(clean_up)} files no longer needed:")
+    for f in clean_up:
+        print(f"- Deleting: '{f}'")
+        f.unlink()
+
+
+def setup_async_mock_client() -> AsyncCogniteClient:
+    return AsyncCogniteClient(
+        ClientConfig(client_name="name", project="proj", cluster="api", credentials=Token("not-a-token"))
+    )
+
+
+def get_canonical_source(source: Path | str) -> str:
+    """
+    Reads a Python file from disk or a string, parses it into an AST, and returns
+    the canonical source code representation with all comments removed. Docstrings
+    however, are not removed, which is exactly what we want.
+
+    This is used to compare a newly generated file against the current version
+    without being affected by comment differences (e.g. type-ignore comments),
+    allowing us to detect only meaningful code changes that require regeneration.
+    """
+    if isinstance(source, Path):
+        try:
+            source = get_source_code(source)
+        except FileNotFoundError:
+            return ""
+
+    tree = ast.parse(source)
+    return ast.unparse(tree)

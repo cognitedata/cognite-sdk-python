@@ -1,45 +1,24 @@
 Postgres Gateway
 =================
+.. currentmodule:: cognite.client
+
 Postgres Gateway Users API
 ---------------------------
-Create Postgres Gateway Users
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateway.UsersAPI.create
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Update Postgres Gateway Users
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateway.UsersAPI.update
-
-Delete Postgres Gateway Users
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateway.UsersAPI.delete
-
-Retrieve Postgres Gateway Users
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateway.UsersAPI.retrieve
-
-List Postgres Gateway Users
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateway.UsersAPI.list
+   AsyncCogniteClient.postgres_gateway.users
 
 Postgres Gateway Tables API
 -----------------------------
-Create Postgres Gateway Tables
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateway.TablesAPI.create
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Delete Postgres Gateway Tables
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateway.TablesAPI.delete
-
-Retrieve Postgres Gateway Tables
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateway.TablesAPI.retrieve
-
-List Postgres Gateway Tables
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.postgres_gateway.TablesAPI.list
-
+   AsyncCogniteClient.postgres_gateway.tables
 
 Postgres Gateway classes
 ^^^^^^^^^^^^^^^^^^^^^^^^^

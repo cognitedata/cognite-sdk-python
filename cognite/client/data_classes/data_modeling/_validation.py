@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, PropertyPath, ViewId
+
 RESERVED_EXTERNAL_IDS = frozenset(
     {
         "Query",
@@ -43,8 +45,52 @@ RESERVED_PROPERTIES = frozenset(
 )
 
 
+PROPERTY_PATH_HINT = (
+    "A property is addressed by its path: [space, container_external_id, property_id] or "
+    '[space, "view_external_id/version", property_id], e.g. ["my_space", "my_container", "temperature"] '
+    'or ["my_space", "my_view/v1", "temperature"], or by calling view_or_container.as_property_ref("temperature"). '
+    'Endpoints that allow top level properties take them as a single segment, e.g. ["lastUpdatedTime"].'
+)
+
+
 def validate_data_modeling_identifier(space: str | None, external_id: str | None = None) -> None:
     if space and space in RESERVED_SPACE_IDS:
         raise ValueError(f"The space ID: {space!r} is reserved. Please use another ID.")
     if external_id and external_id in RESERVED_EXTERNAL_IDS:
         raise ValueError(f"The external ID: {external_id!r} is reserved. Please use another ID.")
+
+
+def validate_property_path(prop: PropertyPath, argument: str = "property", hint: str = PROPERTY_PATH_HINT) -> list[str]:
+    """Validate a property path and return it as a list of segments.
+
+    Args:
+        prop (PropertyPath): The user-provided property path, (source, property) tuple, or PropertyId.
+        argument (str): Name of the argument, used in the error message.
+        hint (str): Guidance appended to validation errors.
+
+    Returns:
+        list[str]: The validated path as a list.
+    """
+    match prop:
+        case PropertyId():
+            return list(prop.as_property_ref())
+        case [ContainerId() | ViewId() as source, str(prop_name)]:
+            return list(source.as_property_ref(prop_name))
+        case [ContainerId() | ViewId(), invalid_prop]:
+            raise TypeError(
+                f"{argument!r} given as a (source, property) pair must have a string property, "
+                f"but {invalid_prop!r} is of type {type(invalid_prop).__name__}. {hint}"
+            )
+        case []:
+            raise ValueError(f"{argument!r} must not be empty. {hint}")
+        case [*path]:
+            for segment in path:
+                if not isinstance(segment, str):
+                    raise TypeError(
+                        f"{argument!r} must be a sequence of strings, but {segment!r} is of type "
+                        f"{type(segment).__name__}. {hint}"
+                    )
+            return path
+        case _:
+            got = f"the string {prop!r}" if isinstance(prop, str) else type(prop).__name__
+            raise TypeError(f"{argument!r} must be a sequence of strings, not {got}. {hint}")

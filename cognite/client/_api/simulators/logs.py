@@ -9,13 +9,13 @@ from cognite.client.utils._experimental import FeaturePreviewWarning
 from cognite.client.utils._identifier import IdentifierSequence
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class SimulatorLogsAPI(APIClient):
     _RESOURCE_PATH = "/simulators/logs"
 
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(
             api_maturity="General Availability", sdk_maturity="alpha", feature_name="Simulators"
@@ -23,16 +23,16 @@ class SimulatorLogsAPI(APIClient):
         self._RETRIEVE_LIMIT = 1
 
     @overload
-    def retrieve(self, ids: int) -> SimulatorLog | None: ...
+    async def retrieve(self, ids: int) -> SimulatorLog | None: ...
 
     @overload
-    def retrieve(
+    async def retrieve(
         self,
         ids: Sequence[int],
     ) -> SimulatorLogList | None: ...
 
-    def retrieve(self, ids: int | Sequence[int]) -> SimulatorLogList | SimulatorLog | None:
-        """`Retrieve simulator logs <https://api-docs.cognite.com/20230101/tag/Simulator-Logs/operation/simulator_logs_by_ids_simulators_logs_byids_post>`_
+    async def retrieve(self, ids: int | Sequence[int]) -> SimulatorLogList | SimulatorLog | None:
+        """`Retrieve simulator logs <https://api-docs.cognite.com/20230101/tag/Simulator-Logs/operation/retrieve_simulator_logs>`_
 
         Simulator logs track what happens during simulation runs, model parsing, and generic connector logic.
         They provide valuable information for monitoring, debugging, and auditing.
@@ -48,8 +48,9 @@ class SimulatorLogsAPI(APIClient):
 
         Examples:
             Get simulator logs by simulator model id:
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> model = client.simulators.models.retrieve(ids=1)
                 >>> logs = client.simulators.logs.retrieve(ids=model.log_id)
 
@@ -67,7 +68,7 @@ class SimulatorLogsAPI(APIClient):
         """
         self._warning.warn()
 
-        return self._retrieve_multiple(
+        return await self._retrieve_multiple(
             list_cls=SimulatorLogList,
             resource_cls=SimulatorLog,
             identifiers=IdentifierSequence.load(ids=ids),

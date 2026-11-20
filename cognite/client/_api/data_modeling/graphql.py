@@ -1,26 +1,38 @@
 from __future__ import annotations
 
+import asyncio
 import textwrap
-from typing import Any
+from typing import Any, Literal
 
 from cognite.client._api_client import APIClient
 from cognite.client.data_classes.data_modeling import DataModelIdentifier
 from cognite.client.data_classes.data_modeling.graphql import DMLApplyResult
 from cognite.client.data_classes.data_modeling.ids import DataModelId
 from cognite.client.exceptions import CogniteGraphQLError, GraphQLErrorSpec
-from cognite.client.utils._auxiliary import interpolate_and_url_encode
+from cognite.client.utils._url import interpolate_and_url_encode
 
 
 class DataModelingGraphQLAPI(APIClient):
-    def _post_graphql(self, url_path: str, query_name: str, json: dict) -> dict[str, Any]:
-        res = self._post(url_path=url_path, json=json).json()
+    def _get_semaphore(
+        self, operation: Literal["read", "write", "delete", "search", "read_schema", "write_schema"]
+    ) -> asyncio.BoundedSemaphore:
+        from cognite.client import global_config
+
+        return global_config.concurrency_settings.data_modeling._semaphore_factory(
+            operation, project=self._cognite_client.config.project
+        )
+
+    async def _post_graphql(
+        self, url_path: str, query_name: str, json: dict, semaphore: asyncio.BoundedSemaphore
+    ) -> dict[str, Any]:
+        res = (await self._post(url_path=url_path, json=json, semaphore=semaphore)).json()
         # Errors can be passed both at top level and nested in the response:
         errors = res.get("errors", []) + ((res.get("data", {}).get(query_name) or {}).get("errors") or [])
         if errors:
             raise CogniteGraphQLError([GraphQLErrorSpec.load(error) for error in errors])
         return res["data"]
 
-    def _unsafely_wipe_and_regenerate_dml(self, id: DataModelIdentifier) -> str:
+    async def _unsafely_wipe_and_regenerate_dml(self, id: DataModelIdentifier) -> str:
         """Wipe and regenerate the DML for a given data model.
 
         Note:
@@ -50,12 +62,16 @@ class DataModelingGraphQLAPI(APIClient):
                 "version": data_model_id.version,
             },
         }
-
         query_name = "unsafelyWipeAndRegenerateDmlBasedOnDataModel"
-        res = self._post_graphql(url_path="/dml/graphql", query_name=query_name, json=payload)
+        res = await self._post_graphql(
+            url_path="/dml/graphql",
+            query_name=query_name,
+            json=payload,
+            semaphore=self._get_semaphore("write_schema"),
+        )
         return res[query_name]["items"][0]["graphQlDml"]
 
-    def apply_dml(
+    async def apply_dml(
         self,
         id: DataModelIdentifier,
         dml: str,
@@ -79,13 +95,14 @@ class DataModelingGraphQLAPI(APIClient):
 
             Apply DML:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.graphql.apply_dml(
                 ...     id=("mySpaceExternalId", "myModelExternalId", "1"),
                 ...     dml="type MyType { id: String! }",
                 ...     name="My model name",
-                ...     description="My model description"
+                ...     description="My model description",
                 ... )
         """
         graphql_body = """
@@ -132,10 +149,17 @@ class DataModelingGraphQLAPI(APIClient):
         }
 
         query_name = "upsertGraphQlDmlVersion"
-        res = self._post_graphql(url_path="/dml/graphql", query_name=query_name, json=payload)
+        res = await self._post_graphql(
+            url_path="/dml/graphql",
+            query_name=query_name,
+            json=payload,
+            semaphore=self._get_semaphore("write_schema"),
+        )
         return DMLApplyResult.load(res[query_name]["result"])
 
-    def query(self, id: DataModelIdentifier, query: str, variables: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def query(
+        self, id: DataModelIdentifier, query: str, variables: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Execute a GraphQl query against a given data model.
 
         Args:
@@ -150,8 +174,9 @@ class DataModelingGraphQLAPI(APIClient):
 
             Execute a graphql query against a given data model:
 
-                >>> from cognite.client import CogniteClient
+                >>> from cognite.client import CogniteClient, AsyncCogniteClient
                 >>> client = CogniteClient()
+                >>> # async_client = AsyncCogniteClient()  # another option
                 >>> res = client.data_modeling.graphql.query(
                 ...     id=("mySpace", "myDataModel", "v1"),
                 ...     query="listThings { items { thingProperty } }",
@@ -161,5 +186,11 @@ class DataModelingGraphQLAPI(APIClient):
         endpoint = interpolate_and_url_encode(
             "/userapis/spaces/{}/datamodels/{}/versions/{}/graphql", dm_id.space, dm_id.external_id, dm_id.version
         )
-        res = self._post_graphql(url_path=endpoint, query_name="", json={"query": query, "variables": variables})
-        return res
+        return await self._post_graphql(
+            url_path=endpoint,
+            query_name="",
+            json={"query": query, "variables": variables},
+            # TODO: This could hit several parts of the API, so we just use the most restrictive semaphore here
+            #       that is used to protect queries that hit postgres directly.
+            semaphore=self._get_semaphore("read"),
+        )

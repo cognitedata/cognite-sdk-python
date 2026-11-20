@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import textwrap
 from collections.abc import Iterator
 from typing import Any
@@ -138,6 +140,30 @@ class TestResultSetExpressions:
     @pytest.mark.parametrize("raw_data, loaded", list(result_set_expression_load_and_dump_equals_data()))
     def test_dump(self, raw_data: dict, loaded: q.ResultSetExpression) -> None:
         assert loaded.dump(camel_case=True) == raw_data
+
+
+class TestResultSetExpressionsSync:
+    def test_dump_load_equals(self) -> None:
+        expr = q.NodeResultSetExpressionSync(
+            filter=f.Equals(property=["node", "externalId"], value="my-node"),
+            limit=10,
+            from_="bla",
+        )
+        assert expr == q.ResultSetExpressionSync.load(expr.dump(camel_case=True))
+
+    def test_load(self) -> None:
+        raw = {
+            "nodes": {
+                "filter": {"equals": {"property": ["edge", "type"], "value": {"space": "sp", "externalId": "tp"}}},
+                "chainTo": "destination",
+                "direction": "outwards",
+                "skipAlreadyDeleted": True,
+            }
+        }
+        loaded = q.NodeResultSetExpressionSync(
+            filter=f.Equals(property=["edge", "type"], value={"space": "sp", "externalId": "tp"})
+        )
+        assert q.ResultSetExpressionSync.load(raw) == loaded
 
 
 def select_load_and_dump_equals_data() -> Iterator[ParameterSet]:
@@ -297,7 +323,7 @@ def query_with_non_yaml_native_data_classes() -> q.Query:
 class TestQuery:
     @pytest.mark.parametrize("raw_data, expected", list(query_load_yaml_data()))
     def test_load_yaml(self, raw_data: str, expected: q.Query) -> None:
-        actual = q.Query.load_yaml(raw_data)
+        actual = q.Query.load(raw_data)
         assert actual.dump(camel_case=True) == expected.dump(camel_case=True)
 
     def test_dump_yaml_no_tags(self, query_with_non_yaml_native_data_classes: q.Query) -> None:
@@ -306,10 +332,10 @@ class TestQuery:
         assert "!!python/tuple" not in dumped
 
         # Load will now load tuple as list:
-        loaded = q.Query.load_yaml(dumped)
+        loaded = q.Query.load(dumped)
         assert loaded != query
 
         # ...re-dump-loading should be equal to the first loaded
         dumped_again = loaded.dump_yaml()
         assert "!!python/tuple" not in dumped_again
-        assert q.Query.load_yaml(dumped_again) == loaded
+        assert q.Query.load(dumped_again) == loaded

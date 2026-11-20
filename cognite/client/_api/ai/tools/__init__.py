@@ -6,10 +6,10 @@ from cognite.client._api.ai.tools.documents import AIDocumentsAPI
 from cognite.client._api_client import APIClient
 
 if TYPE_CHECKING:
-    from cognite.client import ClientConfig, CogniteClient
+    from cognite.client import AsyncCogniteClient, ClientConfig
 
 
 class AIToolsAPI(APIClient):
-    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: CogniteClient) -> None:
+    def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.documents = AIDocumentsAPI(config, api_version, cognite_client)

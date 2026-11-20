@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from cognite.client.exceptions import CogniteImportError
@@ -6,29 +8,29 @@ from cognite.client.utils._importing import local_import
 
 class TestLocalImport:
     @pytest.mark.dsl
-    def test_local_import_single_ok(self):
+    def test_local_import_single_ok(self) -> None:
         import pandas
 
         assert pandas == local_import("pandas")
 
     @pytest.mark.dsl
-    def test_local_import_multiple_ok(self):
+    def test_local_import_multiple_ok(self) -> None:
         import numpy
         import pandas
 
         assert (pandas, numpy) == local_import("pandas", "numpy")
 
-    def test_local_import_single_fail(self):
+    def test_local_import_single_fail(self) -> None:
         with pytest.raises(CogniteImportError, match="requires 'not-a-module' to be installed"):
             local_import("not-a-module")
 
     @pytest.mark.dsl
-    def test_local_import_multiple_fail(self):
+    def test_local_import_multiple_fail(self) -> None:
         with pytest.raises(CogniteImportError, match="requires 'not-a-module' to be installed"):
             local_import("pandas", "not-a-module")
 
     @pytest.mark.coredeps
-    def test_dsl_deps_not_installed(self):
+    def test_dsl_deps_not_installed(self) -> None:
         for dep in ["geopandas", "pandas", "shapely", "sympy", "numpy"]:
             with pytest.raises(CogniteImportError, match=dep):
                 local_import(dep)

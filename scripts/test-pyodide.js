@@ -32,24 +32,38 @@ const server = http.createServer((req, res) => {
 // Start the server and listen on the defined port. Then try to install the SDK in Python
 server.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}. Now trying to install sdk.`);
-  
+
   async function test_cognite_sdk() {
     let pyodide = await loadPyodide();
     await pyodide.loadPackage("micropip");
     const micropip = pyodide.pyimport("micropip");
-    // Read packages to install from environment variable as JSON
 
+    const [pyMajor] = pyodide.version.split(".").map(Number);
+
+    // Pyodide unvendors the stdlib "ssl" module on the 0.x line (Python 3.12/3.13),
+    // but cognite.client.config imports it unconditionally. Pyodide 314.x (Python 3.14)
+    // ships ssl in the stdlib again, and micropip can't even resolve "ssl" as an
+    // installable package there, so only load it for the 0.x line.
+    if (pyMajor === 0) {
+      await pyodide.loadPackage("ssl");
+    }
+
+    // Read packages to install from environment variable as JSON
     const packages = JSON.parse(process.env.PACKAGES);
     for (const pkg of packages) {
       await micropip.install(pkg);
     }
     await pyodide.runPythonAsync("from cognite.client import CogniteClient");
-    
+
     return pyodide.runPythonAsync('"Python SDK successfully installed and imported!"');
   }
 
   test_cognite_sdk().then((result) => {
     console.log("Response from Python =", result);
     server.close();
+  }).catch((err) => {
+    console.error("Pyodide test failed:", err && err.stack ? err.stack : err);
+    server.close();
+    process.exit(1);
   });
 });

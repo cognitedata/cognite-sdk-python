@@ -11,7 +11,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import InitVar, asdict, dataclass, field
 from itertools import product
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, NoReturn, cast
+from typing import Any, ClassVar, Literal, NamedTuple, NoReturn, cast
 
 from typing_extensions import Self
 
@@ -23,9 +23,6 @@ from cognite.client.utils._text import (
     to_camel_case,
     to_snake_case,
 )
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +63,9 @@ class Capability(ABC):
             raise ValueError(f"Could not instantiate {acl_name} due to: {err}. " + self.show_example_usage()) from err
 
     def _validate(self) -> None:
-        if (capability_cls := type(self)) is UnknownAcl:
+        if type(self) is UnknownAcl:
             raise ValueError(
-                f"{self.capability_name!r} is not a known ACL. If it should be, "  # type: ignore [attr-defined]
+                f"{self.capability_name!r} is not a known ACL. If it should be, "
                 "please create an issue on: https://github.com/cognitedata/cognite-sdk-python"
             )
         acl = (capability_cls := type(self)).__name__
@@ -173,7 +170,7 @@ class Capability(ABC):
         elif tpl.scope_extra is None:
             scope = scope_cls([tpl.scope_id])  # type: ignore [call-arg]
         elif scope_cls is TableScope:
-            scope = scope_cls({tpl.database: [tpl.table] if tpl.table else []})  # type: ignore [call-arg]
+            scope = scope_cls({tpl.database: [tpl.table] if tpl.table else []})
         else:
             raise ValueError(f"CapabilityTuple not understood: {tpl}")
 
@@ -298,7 +295,7 @@ class ProjectCapability(CogniteResource):
         Projects = ProjectsScope
 
     @classmethod
-    def _load(cls, resource: dict, cognite_client: CogniteClient | None = None, allow_unknown: bool = False) -> Self:
+    def _load(cls, resource: dict, allow_unknown: bool = False) -> Self:
         (keys := set(resource)).remove(ProjectScope.name)
         project_scope_dct = {ProjectScope.name: resource[ProjectScope.name]}
         return cls(
@@ -319,17 +316,35 @@ class ProjectCapabilityList(CogniteResourceList[ProjectCapability]):
     def _load(
         cls,
         resource_list: Iterable[dict[str, Any]],
-        cognite_client: CogniteClient | None = None,
         allow_unknown: bool = False,
     ) -> Self:
-        return cls(
-            [cls._RESOURCE._load(res, cognite_client, allow_unknown) for res in resource_list],
-            cognite_client=cognite_client,
-        )
+        return cls([cls._RESOURCE._load(res, allow_unknown) for res in resource_list])
+
+    @classmethod
+    def _load_with_project(
+        cls,
+        resource_list: Iterable[dict[str, Any]],
+        project: str,
+        allow_unknown: bool = False,
+    ) -> Self:
+        instance = cls._load(resource_list, allow_unknown)
+        instance.project = project
+        return instance
+
+    @property
+    def project(self) -> str:
+        try:
+            return self._project
+        except AttributeError:
+            raise AttributeError("'project' not set on this ProjectCapabilityList, did you instantiate it yourself?")
+
+    @project.setter
+    def project(self, value: str) -> None:
+        self._project = value
 
     def _infer_project(self, project: str | None = None) -> str:
         if project is None:
-            return self._cognite_client.config.project
+            return self._project
         return project
 
     def as_tuples(self, project: str | None = None) -> set[CapabilityTuple]:
@@ -435,7 +450,7 @@ class DataSetScope(Capability.Scope):
 @dataclass(frozen=True)
 class TableScope(Capability.Scope):
     _scope_name = "tableScope"
-    dbs_to_tables: dict[str, list[str]]
+    dbs_to_tables: dict[str, list[str] | dict[str, list[str]]]
 
     def __post_init__(self) -> None:
         if not self.dbs_to_tables:
@@ -528,6 +543,30 @@ class LegacyDataModelScope(Capability.Scope):
 
 
 @dataclass(frozen=True)
+class AppExternalIdScope(Capability.Scope):
+    _scope_name = "appExternalIdScope"
+    external_ids: list[str]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "external_ids", [str(i) for i in self.external_ids])
+
+    def as_tuples(self) -> set[tuple[str, str]]:
+        return {(self._scope_name, s) for s in self.external_ids}
+
+
+@dataclass(frozen=True)
+class DataProductScope(Capability.Scope):
+    _scope_name = "dataProductScope"
+    external_ids: list[str]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "external_ids", [str(i) for i in self.external_ids])
+
+    def as_tuples(self) -> set[tuple[str, str]]:
+        return {(self._scope_name, s) for s in self.external_ids}
+
+
+@dataclass(frozen=True)
 class UnknownScope(Capability.Scope):
     """
     This class is used for scopes that are not implemented in this version of the SDK.
@@ -570,7 +609,7 @@ class AgentsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         READ = "READ"
         WRITE = "WRITE"
         RUN = "RUN"
@@ -585,7 +624,7 @@ class AnalyticsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Execute = "EXECUTE"
         List = "LIST"
@@ -600,7 +639,7 @@ class AnnotationsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
         Suggest = "SUGGEST"
@@ -616,7 +655,7 @@ class AppConfigAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | AppConfigScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -631,7 +670,7 @@ class AssetsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -646,7 +685,7 @@ class DataSetsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | IDScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
         Owner = "OWNER"
@@ -662,7 +701,7 @@ class DiagramParsingAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -676,7 +715,7 @@ class DigitalTwinAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -690,7 +729,7 @@ class EntityMatchingAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -704,7 +743,7 @@ class EventsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -719,7 +758,7 @@ class ExtractionPipelinesAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | IDScope | DataSetScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -735,7 +774,7 @@ class ExtractionsRunAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope | ExtractionPipelineScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -751,7 +790,7 @@ class ExtractionConfigsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope | ExtractionPipelineScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -767,7 +806,7 @@ class FilesAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -782,9 +821,10 @@ class FunctionsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
+        Run = "RUN"
 
     class Scope:
         All = AllScope
@@ -796,7 +836,7 @@ class GeospatialAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -810,7 +850,7 @@ class GeospatialCrsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -824,7 +864,7 @@ class GroupsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | CurrentUserScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Create = "CREATE"
         Delete = "DELETE"
         Read = "READ"
@@ -842,7 +882,7 @@ class LabelsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -857,7 +897,7 @@ class LocationFiltersAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | IDScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -872,7 +912,7 @@ class ProjectsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Create = "CREATE"
         List = "LIST"
@@ -889,7 +929,7 @@ class RawAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | TableScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
         List = "LIST"
@@ -905,7 +945,7 @@ class RelationshipsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -920,7 +960,7 @@ class RoboticsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Create = "CREATE"
         Update = "UPDATE"
@@ -937,7 +977,7 @@ class SAPWritebackAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | InstancesScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -952,7 +992,7 @@ class SAPWritebackRequestsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | InstancesScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Write = "WRITE"
         List = "LIST"
 
@@ -967,7 +1007,7 @@ class SecurityCategoriesAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | IDScopeLowerCase
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         MemberOf = "MEMBEROF"
         List = "LIST"
         Create = "CREATE"
@@ -985,7 +1025,7 @@ class SeismicAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | PartitionScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1000,7 +1040,7 @@ class SequencesAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1015,7 +1055,7 @@ class SessionsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         List = "LIST"
         Create = "CREATE"
         Delete = "DELETE"
@@ -1030,7 +1070,7 @@ class ThreeDAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Create = "CREATE"
         Update = "UPDATE"
@@ -1047,7 +1087,7 @@ class TimeSeriesAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope | IDScopeLowerCase | AssetRootIDScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1064,7 +1104,7 @@ class TimeSeriesSubscriptionsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1079,9 +1119,25 @@ class TransformationsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | DataSetScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+        DataSet = DataSetScope
+
+
+@dataclass
+class TransformationsExternalDataSourcesAcl(Capability):
+    _capability_name = "transformationsExternalDataSourcesAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+        Use = "USE"
 
     class Scope:
         All = AllScope
@@ -1094,7 +1150,7 @@ class TypesAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1108,7 +1164,7 @@ class WellsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1122,7 +1178,7 @@ class ExperimentsAcl(Capability):
     actions: Sequence[Action]
     scope: ExperimentsScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Use = "USE"
 
     class Scope:
@@ -1137,12 +1193,12 @@ class ExperimentsAcl(Capability):
 
 
 @dataclass
-class TemplateGroupsAcl(Capability):
+class TemplateGroupsAcl(LegacyCapability):
     _capability_name = "templateGroupsAcl"
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1157,7 +1213,7 @@ class TemplateInstancesAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1172,7 +1228,7 @@ class StreamsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Create = "CREATE"
         Delete = "DELETE"
@@ -1187,7 +1243,7 @@ class StreamRecordsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | SpaceIDScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1197,12 +1253,27 @@ class StreamRecordsAcl(Capability):
 
 
 @dataclass
+class SubscribeSignalsAcl(Capability):
+    _capability_name = "subscribeSignalsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | CurrentUserScope
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+        CurrentUser = CurrentUserScope
+
+
+@dataclass
 class DataModelInstancesAcl(Capability):
     _capability_name = "dataModelInstancesAcl"
     actions: Sequence[Action]
     scope: AllScope | SpaceIDScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
         Write_Properties = "WRITE_PROPERTIES"
@@ -1219,7 +1290,7 @@ class DataModelsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | SpaceIDScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1230,12 +1301,30 @@ class DataModelsAcl(Capability):
 
 
 @dataclass
+class DataProductsAcl(Capability):
+    _capability_name = "dataProductsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataProductScope
+
+    class Action(Capability.Action):
+        Create = "CREATE"
+        Read = "READ"
+        Update = "UPDATE"
+        Delete = "DELETE"
+        Use = "USE"
+
+    class Scope:
+        All = AllScope
+        DataProduct = DataProductScope
+
+
+@dataclass
 class PipelinesAcl(Capability):
     _capability_name = "pipelinesAcl"
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1249,7 +1338,7 @@ class DocumentPipelinesAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1263,7 +1352,7 @@ class FilePipelinesAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1277,7 +1366,7 @@ class NotificationsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1291,7 +1380,7 @@ class ScheduledCalculationsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1305,7 +1394,7 @@ class MonitoringTasksAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1319,7 +1408,36 @@ class HostedExtractorsAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class IntegrationsAcl(Capability):
+    _capability_name = "integrationsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+        Use = "USE"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class IntegrationConfigsAcl(Capability):
+    _capability_name = "integrationConfigsAcl"
+    actions: Sequence[Action]
+    scope: AllScope
+
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1333,7 +1451,7 @@ class VisionModelAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1347,7 +1465,7 @@ class DocumentFeedbackAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Create = "CREATE"
         Read = "READ"
         Delete = "DELETE"
@@ -1362,7 +1480,7 @@ class WorkflowOrchestrationAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1377,7 +1495,7 @@ class PostgresGatewayAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope | PostgresGatewayUsersScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1392,7 +1510,7 @@ class UserProfilesAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
 
     class Scope:
@@ -1405,7 +1523,82 @@ class AuditlogAcl(Capability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
+        Read = "READ"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class AppHostingAcl(Capability):
+    _capability_name = "appHostingAcl"
+    actions: Sequence[Action]
+    scope: AllScope | AppExternalIdScope
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+        Run = "RUN"
+
+    class Scope:
+        All = AllScope
+        AppExternalId = AppExternalIdScope
+
+
+@dataclass
+class ChartsAdminAcl(Capability):
+    _capability_name = "chartsAdminAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Update = "UPDATE"
+        Delete = "DELETE"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class CogUnitsAcl(Capability):
+    _capability_name = "cogUnitsAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+    class Action(Capability.Action):
+        Read = "READ"
+
+    class Scope:
+        All = AllScope
+
+
+@dataclass
+class SimulatorsAcl(Capability):
+    _capability_name = "simulatorsAcl"
+    actions: Sequence[Action]
+    scope: AllScope | DataSetScope
+
+    class Action(Capability.Action):
+        Read = "READ"
+        Write = "WRITE"
+        Delete = "DELETE"
+        Run = "RUN"
+        Manage = "MANAGE"
+
+    class Scope:
+        All = AllScope
+        DataSet = DataSetScope
+
+
+@dataclass
+class SlaAcl(Capability):
+    _capability_name = "slaAcl"
+    actions: Sequence[Action]
+    scope: AllScope = field(default_factory=AllScope)
+
+    class Action(Capability.Action):
         Read = "READ"
 
     class Scope:
@@ -1418,7 +1611,7 @@ class LegacyModelHostingAcl(LegacyCapability):
     actions: Sequence[Action]
     scope: AllScope = field(default_factory=AllScope)
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1432,7 +1625,7 @@ class LegacyGenericsAcl(LegacyCapability):
     actions: Sequence[Action]
     scope: AllScope
 
-    class Action(Capability.Action):  # type: ignore [misc]
+    class Action(Capability.Action):
         Read = "READ"
         Write = "WRITE"
 
@@ -1460,7 +1653,7 @@ _VALID_SCOPES_BY_CAPABILITY: MappingProxyType[
     type[Capability], tuple[tuple[type[Capability.Scope], ...], tuple[str, ...]]
 ] = MappingProxyType(
     {
-        acl: tuple(zip(*[(v, k) for k, v in vars(acl.Scope).items() if inspect.isclass(v)]))
+        acl: tuple(zip(*[(v, k) for k, v in vars(acl.Scope).items() if inspect.isclass(v)]))  # type: ignore[misc]
         for acl in _CAPABILITY_CLASS_BY_NAME.values()
     }
 )

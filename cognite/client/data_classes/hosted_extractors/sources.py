@@ -3,13 +3,12 @@ from __future__ import annotations
 import itertools
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, NoReturn, cast
+from dataclasses import dataclass, field
+from typing import Any, ClassVar, Literal, NoReturn, cast
 
 from typing_extensions import Self
 
 from cognite.client.data_classes._base import (
-    CogniteObject,
     CognitePrimitiveUpdate,
     CogniteResource,
     CogniteResourceList,
@@ -17,13 +16,10 @@ from cognite.client.data_classes._base import (
     ExternalIDTransformerMixin,
     PropertySpec,
     T_WriteClass,
-    UnknownCogniteObject,
+    UnknownCogniteResource,
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 
 class SourceWrite(CogniteResource, ABC):
@@ -45,10 +41,10 @@ class SourceWrite(CogniteResource, ABC):
     @classmethod
     @abstractmethod
     def _load_source(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -85,10 +81,10 @@ class Source(WriteableCogniteResource[T_WriteClass], ABC):
     @classmethod
     @abstractmethod
     def _load_source(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -96,7 +92,7 @@ class Source(WriteableCogniteResource[T_WriteClass], ABC):
             raise KeyError("type")
         source_class = _SOURCE_CLASS_BY_TYPE.get(type_)
         if source_class is None:
-            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+            return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, source_class._load_source(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -130,9 +126,7 @@ class SourceWriteList(CogniteResourceList[SourceWrite], ExternalIDTransformerMix
 class SourceList(WriteableCogniteResourceList[SourceWrite, Source], ExternalIDTransformerMixin):
     _RESOURCE = Source
 
-    def as_write(
-        self,
-    ) -> NoReturn:
+    def as_write(self) -> NoReturn:
         raise TypeError(f"{type(self).__name__} cannot be converted to write")
 
 
@@ -153,6 +147,8 @@ class EventHubSourceWrite(SourceWrite):
     """
 
     _type = "eventhub"
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"key_value"})
 
     def __init__(
         self,
@@ -311,12 +307,10 @@ class _MQTTSource(Source, ABC):
             external_id=resource["externalId"],
             host=resource["host"],
             port=resource.get("port"),
-            authentication=Authentication._load(resource["authentication"]) if "authentication" in resource else None,
+            authentication=Authentication._load_if(resource.get("authentication")),
             use_tls=resource.get("useTls", False),
-            ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
-            auth_certificate=AuthCertificate._load(resource["authCertificate"])
-            if "authCertificate" in resource
-            else None,
+            ca_certificate=CACertificate._load_if(resource.get("caCertificate")),
+            auth_certificate=AuthCertificate._load_if(resource.get("authCertificate")),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
         )
@@ -425,14 +419,10 @@ class _MQTTSourceWrite(SourceWrite, ABC):
             external_id=resource["externalId"],
             host=resource["host"],
             port=resource.get("port"),
-            authentication=AuthenticationWrite._load(resource["authentication"])
-            if "authentication" in resource
-            else None,
+            authentication=AuthenticationWrite._load_if(resource.get("authentication")),
             use_tls=resource.get("useTls", False),
-            ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
-            auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
-            if "authCertificate" in resource
-            else None,
+            ca_certificate=CACertificateWrite._load_if(resource.get("caCertificate")),
+            auth_certificate=AuthCertificateWrite._load_if(resource.get("authCertificate")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -471,12 +461,12 @@ class MQTT5SourceUpdate(_MQTTUpdate):
 
 
 @dataclass
-class KafkaBroker(CogniteObject):
+class KafkaBroker(CogniteResource):
     host: str
     port: int
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(host=resource["host"], port=resource["port"])
 
 
@@ -519,14 +509,10 @@ class KafkaSourceWrite(SourceWrite):
         return cls(
             external_id=resource["externalId"],
             bootstrap_brokers=[KafkaBroker._load(broker) for broker in resource["bootstrapBrokers"]],
-            authentication=AuthenticationWrite._load(resource["authentication"])
-            if "authentication" in resource
-            else None,
+            authentication=AuthenticationWrite._load_if(resource.get("authentication")),
             use_tls=resource.get("useTls", False),
-            ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
-            auth_certificate=AuthCertificateWrite._load(resource["authCertificate"])
-            if "authCertificate" in resource
-            else None,
+            ca_certificate=CACertificateWrite._load_if(resource.get("caCertificate")),
+            auth_certificate=AuthCertificateWrite._load_if(resource.get("authCertificate")),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -588,12 +574,10 @@ class KafkaSource(Source):
         return cls(
             external_id=resource["externalId"],
             bootstrap_brokers=[KafkaBroker._load(broker) for broker in resource["bootstrapBrokers"]],
-            authentication=Authentication._load(resource["authentication"]) if "authentication" in resource else None,
+            authentication=Authentication._load_if(resource.get("authentication")),
             use_tls=resource.get("useTls", False),
-            ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
-            auth_certificate=AuthCertificate._load(resource["authCertificate"])
-            if "authCertificate" in resource
-            else None,
+            ca_certificate=CACertificate._load_if(resource.get("caCertificate")),
+            auth_certificate=AuthCertificate._load_if(resource.get("authCertificate")),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
         )
@@ -710,10 +694,8 @@ class RestSourceWrite(SourceWrite):
             external_id=resource["externalId"],
             host=resource["host"],
             port=resource.get("port"),
-            ca_certificate=CACertificateWrite._load(resource["caCertificate"]) if "caCertificate" in resource else None,
-            authentication=AuthenticationWrite._load(resource["authentication"])
-            if "authentication" in resource
-            else None,
+            ca_certificate=CACertificateWrite._load_if(resource.get("caCertificate")),
+            authentication=AuthenticationWrite._load_if(resource.get("authentication")),
         )
         if "scheme" in resource:
             args["scheme"] = resource["scheme"]
@@ -776,10 +758,10 @@ class RestSource(Source):
             host=resource["host"],
             scheme=resource["scheme"],
             port=resource.get("port"),
-            ca_certificate=CACertificate._load(resource["caCertificate"]) if "caCertificate" in resource else None,
+            ca_certificate=CACertificate._load_if(resource.get("caCertificate")),
             created_time=resource["createdTime"],
             last_updated_time=resource["lastUpdatedTime"],
-            authentication=Authentication._load(resource["authentication"]) if "authentication" in resource else None,
+            authentication=Authentication._load_if(resource.get("authentication")),
         )
 
     def as_write(self) -> RestSourceWrite:
@@ -849,21 +831,21 @@ class RestSourceUpdate(SourceUpdate):
 
 
 @dataclass
-class AuthenticationWrite(CogniteObject, ABC):
+class AuthenticationWrite(CogniteResource, ABC):
     _type: ClassVar[str]
 
     @classmethod
     @abstractmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
         elif type_ is None:
-            raise KeyError("type is required")
+            raise KeyError("type")  # is required
         try:
             authentication_cls = _AUTHENTICATION_WRITE_CLASS_BY_TYPE[type_]
         except KeyError:
@@ -879,8 +861,11 @@ class AuthenticationWrite(CogniteObject, ABC):
 @dataclass
 class BasicAuthenticationWrite(AuthenticationWrite):
     _type = "basic"
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"password"})
+
     username: str
-    password: str
+    password: str = field(repr=False)
 
     @classmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
@@ -890,8 +875,13 @@ class BasicAuthenticationWrite(AuthenticationWrite):
 @dataclass
 class RESTHeaderAuthenticationWrite(AuthenticationWrite):
     _type = "header"
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"value"})
+    # 'value' only means a credential in an object that reports this type:
+    _SENSITIVE_TYPES: ClassVar[frozenset[str]] = frozenset({"header"})
+
     key: str
-    value: str
+    value: str = field(repr=False)
 
     @classmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
@@ -904,8 +894,12 @@ class RESTHeaderAuthenticationWrite(AuthenticationWrite):
 @dataclass
 class RESTQueryAuthenticationWrite(AuthenticationWrite):
     _type = "query"
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"value"})
+    _SENSITIVE_TYPES: ClassVar[frozenset[str]] = frozenset({"query"})
+
     key: str
-    value: str
+    value: str = field(repr=False)
 
     @classmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
@@ -918,8 +912,11 @@ class RESTQueryAuthenticationWrite(AuthenticationWrite):
 @dataclass
 class RESTClientCredentialsAuthenticationWrite(AuthenticationWrite):
     _type = "clientCredentials"
+
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"client_secret"})
+
     client_id: str
-    client_secret: str
+    client_secret: str = field(repr=False)
     token_url: str
     scopes: str
     default_expires_in: str | None
@@ -936,24 +933,29 @@ class RESTClientCredentialsAuthenticationWrite(AuthenticationWrite):
 
 
 @dataclass
-class CACertificateWrite(CogniteObject):
+class CACertificateWrite(CogniteResource):
     type: Literal["der", "pem"]
     certificate: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(type=resource["type"], certificate=resource["certificate"])
 
 
 @dataclass
-class AuthCertificateWrite(CogniteObject):
+class AuthCertificateWrite(CogniteResource):
+    _SENSITIVE_FIELDS: ClassVar[frozenset[str]] = frozenset({"key", "key_password"})
+    # The field 'key' holds the private key, but that is a very generic name which we can't redact
+    # everywhere automatically without a lot of false positives. Thus, we only do so for...:
+    _SENSITIVE_TYPES: ClassVar[frozenset[str]] = frozenset({"der", "pem"})
+
     type: Literal["der", "pem"]
     certificate: str
-    key: str
-    key_password: str | None
+    key: str = field(repr=False)
+    key_password: str | None = field(repr=False)
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             type=resource["type"],
             certificate=resource["certificate"],
@@ -963,16 +965,16 @@ class AuthCertificateWrite(CogniteObject):
 
 
 @dataclass
-class Authentication(CogniteObject, ABC):
+class Authentication(CogniteResource, ABC):
     _type: ClassVar[str]
 
     @classmethod
     @abstractmethod
     def _load_authentication(cls, resource: dict[str, Any]) -> Self:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         type_ = resource.get("type")
         if type_ is None and hasattr(cls, "_type"):
             type_ = cls._type
@@ -981,7 +983,7 @@ class Authentication(CogniteObject, ABC):
 
         authentication_class = _AUTHENTICATION_CLASS_BY_TYPE.get(type_)
         if authentication_class is None:
-            return UnknownCogniteObject(resource)  # type: ignore[return-value]
+            return UnknownCogniteResource(resource)  # type: ignore[return-value]
         return cast(Self, authentication_class._load_authentication(resource))
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -1039,33 +1041,32 @@ class RESTClientCredentialsAuthentication(Authentication):
 
 
 @dataclass
-class CACertificate(CogniteObject):
+class CACertificate(CogniteResource):
     thumbprint: str
     expires_at: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(thumbprint=resource["thumbprint"], expires_at=resource["expiresAt"])
 
 
 @dataclass
-class AuthCertificate(CogniteObject):
+class AuthCertificate(CogniteResource):
     thumbprint: str
     expires_at: str
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(thumbprint=resource["thumbprint"], expires_at=resource["expiresAt"])
 
 
 _SOURCE_WRITE_CLASS_BY_TYPE: dict[str, type[SourceWrite]] = {
-    subclass._type: subclass  # type: ignore[misc, attr-defined]
+    subclass._type: subclass
     for subclass in itertools.chain(SourceWrite.__subclasses__(), _MQTTSourceWrite.__subclasses__())
 }
 
 _SOURCE_CLASS_BY_TYPE: dict[str, type[Source]] = {
-    subclass._type: subclass  # type: ignore[misc, attr-defined]
-    for subclass in itertools.chain(Source.__subclasses__(), _MQTTSource.__subclasses__())
+    subclass._type: subclass for subclass in itertools.chain(Source.__subclasses__(), _MQTTSource.__subclasses__())
 }
 
 _SOURCE_UPDATE_BY_TYPE: dict[str, type[SourceUpdate]] = {
@@ -1074,11 +1075,9 @@ _SOURCE_UPDATE_BY_TYPE: dict[str, type[SourceUpdate]] = {
 }
 
 _AUTHENTICATION_WRITE_CLASS_BY_TYPE: dict[str, type[AuthenticationWrite]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
-    for subclass in AuthenticationWrite.__subclasses__()
+    subclass._type: subclass for subclass in AuthenticationWrite.__subclasses__()
 }
 
 _AUTHENTICATION_CLASS_BY_TYPE: dict[str, type[Authentication]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
-    for subclass in Authentication.__subclasses__()
+    subclass._type: subclass for subclass in Authentication.__subclasses__()
 }

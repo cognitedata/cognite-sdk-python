@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -10,12 +12,11 @@ from cognite.client.data_classes.hosted_extractors import (
     MappingUpdate,
     MappingWrite,
 )
-from cognite.client.exceptions import CogniteAPIError
 from cognite.client.utils._text import random_string
 
 
 @pytest.fixture
-def one_mapping(cognite_client: CogniteClient) -> Mapping:
+def one_mapping(cognite_client: CogniteClient) -> Iterator[Mapping]:
     my_mapping = MappingWrite(
         external_id=f"myNewMapping-{random_string(10)}",
         mapping=CustomMapping("2 * 3"),
@@ -50,10 +51,10 @@ class TestMappings:
 
             cognite_client.hosted_extractors.mappings.delete(created.external_id)
 
-            with pytest.raises(CogniteAPIError):
-                cognite_client.hosted_extractors.mappings.retrieve(created.external_id)
-
-            cognite_client.hosted_extractors.mappings.retrieve(created.external_id, ignore_unknown_ids=True)
+            assert cognite_client.hosted_extractors.mappings.retrieve(created.external_id) is None
+            assert (
+                cognite_client.hosted_extractors.mappings.retrieve(created.external_id, ignore_unknown_ids=True) is None
+            )
 
         finally:
             if created:

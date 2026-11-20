@@ -1,37 +1,59 @@
 from __future__ import annotations
 
 from abc import ABC
-from functools import cached_property
 
 from cognite.client._api_client import APIClient
-from cognite.client.exceptions import CogniteAPIError
+from cognite.client.exceptions import CogniteOrganizationError
 from cognite.client.utils._auxiliary import append_url_path
 
 
 class OrgAPIClient(APIClient, ABC):
-    _auth_url = "https://auth.cognite.com"
+    # CogIdP base URL depends on the organization prefix; anything not listed uses the default:
+    _DEFAULT_AUTH_URL = "https://auth.cognite.com"
+    _AUTH_URLS_BY_ORG_PREFIX = (
+        ("cog-dev-", "https://auth-dev.cognitedata-development.cognite.ai"),
+        ("cog-staging-", "https://auth-staging.gc-bru-001.cogheim.net"),
+    )
+    _resolved_organization: str | None = None
 
-    def _get_base_url_with_base_path(self) -> str:
-        """Get base URL with base path including organization and api version if applicable"""
-        base_path = ""
-        if self._api_version:
-            base_path = f"/api/{self._api_version}/orgs/{self._organization}"
-        # The OrganizationAPi uses the auth_url as the base for these endpoints instead of the
-        # base_url like the rest of the SDK.
-        return append_url_path(self._auth_url, base_path)
+    async def _get_organization(self) -> str:
+        # DEV NOTE: This must be awaited (by every public method) before any URL is built. We used to look this
+        # up lazily with run_sync from a sync property, but that deadlocks when called from the SDK's own event
+        # loop thread, i.e. from any sync client call.
+        if self._resolved_organization is None:
+            # This is an internal endpoint, not part of the public API - and we call it manually to avoid
+            # the overridden _base_url_with_base_path property:
+            base_path = f"/api/{self._api_version}/projects/{self._config.project}"
+            full_url = append_url_path(self._config.base_url, base_path)
+            try:
+                response = await self._request("GET", full_url=full_url, include_cdf_headers=True, semaphore=None)
+                self._resolved_organization = response.json()["organization"]
+            except Exception as err:
+                raise CogniteOrganizationError from err
 
-    @cached_property
+        return self._resolved_organization
+
+    @property
     def _organization(self) -> str:
-        headers = self._configure_headers(
-            "application/json",
-            additional_headers=self._config.headers.copy(),
-            api_subversion=self._api_subversion,
-        )
-        # This is an internal endpoint, not part of the public API
-        full_url = append_url_path(self._config.base_url, f"/api/v1/projects/{self._config.project}")
-        response = self._http_client_with_retry.request(method="GET", url=full_url, headers=headers)
-        if response.status_code != 200:
-            raise CogniteAPIError(
-                "Could not look-up organization", response.status_code, response.headers.get("x-request-id")
+        if self._resolved_organization is None:
+            raise RuntimeError(
+                "SDK developer error: organization accessed before being resolved. Every public method on an "
+                "OrgAPIClient subclass must 'await self._get_organization()' before building URLs (it can't be "
+                "fetched lazily here, as this is sync code and run_sync would deadlock on the SDK's event loop)"
             )
-        return response.json()["organization"]
+        return self._resolved_organization
+
+    @property
+    def _auth_url(self) -> str:
+        for prefix, url in self._AUTH_URLS_BY_ORG_PREFIX:
+            if self._organization.startswith(prefix):
+                return url
+        return self._DEFAULT_AUTH_URL
+
+    @property
+    def _base_url_with_base_path(self) -> str:
+        # The OrganizationAPI uses the auth_url as the base for these endpoints instead of the
+        # base_url like the rest of the SDK.
+        assert self._api_version, "API version must be set for organization endpoints"
+        base_path = f"/api/{self._api_version}/orgs/{self._organization}"
+        return append_url_path(self._auth_url, base_path)

@@ -1,71 +1,33 @@
 Functions
 =========
+.. currentmodule:: cognite.client
+
 Functions API
 -------------
-Create function
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.create
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Delete function
-^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.delete
-
-List functions
-^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.list
-
-Retrieve function
-^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve
-
-Retrieve multiple functions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.retrieve_multiple
-
-Call function
-^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionsAPI.call
-
+   AsyncCogniteClient.functions
 
 Function calls
 --------------
-List function calls
-^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionCallsAPI.list
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-Retrieve function call
-^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionCallsAPI.retrieve
-
-Retrieve function call response
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_response
-
-Retrieve function call logs
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionCallsAPI.get_logs
+   AsyncCogniteClient.functions.calls
 
 Function schedules
 ------------------
-Retrieve function schedule
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.retrieve
+.. autosummary::
+   :methods:
+   :toctree: generated/
+   :template: custom-automethods-template.rst
 
-List function schedules
-^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.list
-
-Create function schedule
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.create
-
-Delete function schedule
-^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.delete
-
-Get function schedule input data
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-.. automethod:: cognite.client._api.functions.FunctionSchedulesAPI.get_input_data
+   AsyncCogniteClient.functions.schedules
 
 Data classes
 ^^^^^^^^^^^^

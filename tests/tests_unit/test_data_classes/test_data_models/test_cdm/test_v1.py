@@ -1,9 +1,16 @@
+from __future__ import annotations
+
 from datetime import datetime
 
 import pytest
 
-from cognite.client.data_classes.data_modeling.cdm.v1 import Cognite3DModelApply, CogniteSourceableNodeApply
-from cognite.client.data_classes.data_modeling.extractor_extensions.v1 import CogniteExtractorFileApply
+from cognite.client.data_classes.data_modeling.cdm.v1 import (
+    Cognite3DModelApply,
+    CogniteSourceableNodeApply,
+    CogniteStateSet,
+    CogniteStateSetApply,
+)
+from cognite.client.data_classes.data_modeling.data_types import StateSetEntry
 
 
 class TestSourceable:
@@ -78,7 +85,6 @@ class TestModel3D:
                         "type": "PointCloud",
                         "aliases": ["alias1", "alias2"],
                         "tags": ["tag1", "tag2"],
-                        "thumbnail": None,
                     },
                 }
             ],
@@ -87,34 +93,70 @@ class TestModel3D:
         assert dumped_and_loaded == my_model
 
 
-def test_extractor_file_apply_warns_on_system_managed_fields() -> None:
-    file_apply = CogniteExtractorFileApply(
-        space="sp_data_space",
-        external_id="my_file",
-        is_uploaded=True,
-        uploaded_time=datetime.now(),
-    )
-    with pytest.warns(UserWarning, match="system-managed and cannot be modified"):
-        dumped = file_apply.dump()
-
-    sources = dumped["sources"]
-    assert len(sources) == 1
-    properties = sources[0]["properties"]
-    assert properties["isUploaded"] is True
-    assert isinstance(properties["uploadedTime"], str)
+@pytest.fixture
+def state_set_entries() -> list[StateSetEntry | dict[str, str | int]]:
+    return [
+        StateSetEntry(-1, "ON", "Power on"),
+        StateSetEntry(numeric_value=0, string_value="ALSO ON"),
+        {"numeric_value": 2, "string_value": "OFF"},
+    ]
 
 
-def test_extractor_file_apply_skips_nulls() -> None:
-    file_apply = CogniteExtractorFileApply(
-        space="sp_data_space",
-        external_id="my_file",
-        is_uploaded=None,
-        uploaded_time=None,
-    )
-    dumped = file_apply.dump()
+class TestStateSet:
+    # StateSet has a customer property type (replacement for list[json]), so we have extra test coverage:
+    def test_apply_version_dump_load(self, state_set_entries: list[StateSetEntry | dict]) -> None:
+        state_set = CogniteStateSetApply(
+            "sp_data_space",
+            "my_state_set",
+            states=state_set_entries,
+            name="State set list of state list set entry member yes very",
+            type=("just a", "test"),
+        )
+        expected_dump = {
+            "space": "sp_data_space",
+            "externalId": "my_state_set",
+            "instanceType": "node",
+            "type": {"externalId": "test", "space": "just a"},
+            "sources": [
+                {
+                    "source": {
+                        "space": "cdf_cdm",
+                        "externalId": "CogniteStateSet",
+                        "version": "v1",
+                        "type": "view",
+                    },
+                    "properties": {
+                        "states": [
+                            {"numericValue": -1, "stringValue": "ON", "description": "Power on"},
+                            {"numericValue": 0, "stringValue": "ALSO ON"},
+                            {"numericValue": 2, "stringValue": "OFF"},
+                        ],
+                        "name": "State set list of state list set entry member yes very",
+                    },
+                }
+            ],
+        }
 
-    sources = dumped["sources"]
-    assert len(sources) == 1
-    properties = sources[0]["properties"]
-    assert "isUploaded" not in properties
-    assert "uploadedTime" not in properties
+        dumped = state_set.dump()
+        assert expected_dump == dumped
+
+        dumped_and_loaded = CogniteStateSetApply.load(dumped)
+        assert dumped_and_loaded == state_set
+
+    def test_read_as_write_preserves_state_entries(self, state_set_entries: list[StateSetEntry | dict]) -> None:
+        state_set = CogniteStateSet(
+            "sp_data_space",
+            "my_state_set",
+            version=7,
+            last_updated_time=1,
+            created_time=1,
+            states=state_set_entries,
+            name="Valve states",
+        )
+
+        write = state_set.as_write()
+        assert len(write.states) == 3
+        assert write.states[1] == StateSetEntry(numeric_value=0, string_value="ALSO ON")
+
+        dumped = write.dump()
+        assert dumped["sources"][0]["properties"]["states"][1] == {"numericValue": 0, "stringValue": "ALSO ON"}

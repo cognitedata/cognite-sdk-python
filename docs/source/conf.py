@@ -17,23 +17,43 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import inspect
+import os
 import re
+import sys
+
+from cognite.client._cognite_client import _make_accessors_for_building_docs
+from docs.source.headings import headings
 
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
 #
-needs_sphinx = "7.2"
+needs_sphinx = "8.1"
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.doctest", "sphinx.ext.napoleon", "sphinx.ext.autosectionlabel"]
+sys.path.append(os.path.abspath("./_ext"))
+
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autosectionlabel",
+    "sphinx.ext.autosummary",
+    "sphinx_copybutton",
+    "sphinx_autosummary_accessors",
+    "autosummary",
+]
 
 autosectionlabel_prefix_document = True
 
+copybutton_prompt_text = r"^>>> |^\.\.\. "
+copybutton_prompt_is_regexp = True
+
 # Add any paths that contain templates here, relative to this directory.
-templates_path = []
+templates_path = ["_templates"]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -46,7 +66,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "cognite-sdk"
-copyright = "2019, Cognite AS"
+copyright = "2017-%Y, Cognite AS"
 author = "Erlend Vollset"
 
 # The version info for the project you're documenting, acts as replacement for
@@ -69,6 +89,15 @@ language = "en"
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = []
+
+# These rst files are only meant as intermediate files for autosummary, and should not be included in the toctree or generated as HTML files
+lines = inspect.getsource(_make_accessors_for_building_docs)
+for line in lines.split():
+    if line.startswith("AsyncCogniteClient."):
+        exclude_patterns.append(f"generated/cognite.client.{line}.rst")
+
+# Apply custom page titles for API methods documentation
+autosummary_context = {"headings": headings}
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -106,7 +135,7 @@ html_sidebars = {
 }
 
 html_favicon = "img/cognite_logo_black.png"
-html_logo = "img/cognite_logo_white.png"
+html_logo = "img/cognite_logo_white.svg"
 
 # -- Options for HTMLHelp output ------------------------------------------
 
@@ -162,6 +191,20 @@ texinfo_documents = [
 ]
 
 python_maximum_signature_line_length = 80
+
+# Anchors for newly added sections don't exist on readthedocs until after the PR is merged.
+# List them here to unblock merging — this list can be emptied once the docs are published.
+linkcheck_anchors_ignore = [
+    "ssl-certificate-configuration",
+]
+
+# support.cognite.com redirects to the Zendesk help center. Cloudflare bot
+# protection in front of that host answers linkcheck with 403 often enough to
+# fail CI, while browsers still reach the page.
+linkcheck_ignore = [
+    r"https://support\.cognite\.com/?",
+    r"https://cognite\.zendesk\.com/hc/en-us/?",
+]
 
 # Patch Sphinx to hide @overload signatures in docs
 # Sphinx's autodoc uses ModuleAnalyzer.overloads via the parser

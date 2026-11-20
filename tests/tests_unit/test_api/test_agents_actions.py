@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from typing import TYPE_CHECKING
 
 import pytest
+from pytest_httpx2 import HTTPXMock
 
-from cognite.client import CogniteClient
 from cognite.client.data_classes.agents import Message
 from cognite.client.data_classes.agents.chat import (
     Action,
@@ -15,8 +15,13 @@ from cognite.client.data_classes.agents.chat import (
     ClientToolResult,
     TextContent,
     UnknownActionCall,
+    UserSessionCall,
+    UserSessionResult,
 )
-from tests.utils import jsgz_load
+from tests.utils import get_url, jsgz_load
+
+if TYPE_CHECKING:
+    from cognite.client import AsyncCogniteClient
 
 
 @pytest.fixture
@@ -69,20 +74,22 @@ def final_response_body() -> dict:
 
 @pytest.fixture
 def mock_action_call_response(
-    rsps: MagicMock, cognite_client: CogniteClient, action_call_response_body: dict
-) -> MagicMock:
+    httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient, action_call_response_body: dict
+) -> HTTPXMock:
     """Mock HTTP response for agent chat that returns an action call."""
-    url = cognite_client.agents._get_base_url_with_base_path() + cognite_client.agents._RESOURCE_PATH + "/chat"
-    rsps.add(rsps.POST, url, status=200, json=action_call_response_body)
-    yield rsps
+    url = get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat")
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json=action_call_response_body)
+    return httpx2_mock
 
 
 @pytest.fixture
-def mock_final_response(rsps: MagicMock, cognite_client: CogniteClient, final_response_body: dict) -> MagicMock:
+def mock_final_response(
+    httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient, final_response_body: dict
+) -> HTTPXMock:
     """Mock HTTP response for final agent response."""
-    url = cognite_client.agents._get_base_url_with_base_path() + cognite_client.agents._RESOURCE_PATH + "/chat"
-    rsps.add(rsps.POST, url, status=200, json=final_response_body)
-    yield rsps
+    url = get_url(async_client.agents, async_client.agents._RESOURCE_PATH + "/chat")
+    httpx2_mock.add_response(method="POST", url=url, status_code=200, json=final_response_body)
+    return httpx2_mock
 
 
 class TestClientToolAction:
@@ -118,6 +125,29 @@ class TestClientToolResult:
         assert result.content.text == "Result: 100"
 
 
+class TestUserSessionCall:
+    def test_load_dispatches_on_type(self) -> None:
+        data = {
+            "type": "userSession",
+            "actionId": "call_789",
+            "userSession": {
+                "content": {"type": "text", "text": "Please confirm the action."},
+                "toolName": "execute",
+                "toolArguments": {"command": "python -c 'print(42)'"},
+                "toolDescription": "Run a shell command in the sandbox",
+                "toolType": "execute",
+            },
+        }
+        assert isinstance(ActionCall._load(data), UserSessionCall)
+
+
+class TestUserSessionResult:
+    def test_nonce_not_in_repr_or_str(self) -> None:
+        result = UserSessionResult(action_id="call_789", nonce="my_nonce")
+        assert "my_nonce" not in repr(result)
+        assert "my_nonce" not in str(result)
+
+
 class TestUnknownActionCall:
     def test_load_and_dump(self) -> None:
         data = {"type": "unknownActionType", "actionId": "call_999", "someField": "someValue"}
@@ -126,10 +156,10 @@ class TestUnknownActionCall:
 
 
 class TestChatWithActions:
-    def test_chat_with_actions_parameter(
-        self, cognite_client: CogniteClient, mock_action_call_response: MagicMock
+    async def test_chat_with_actions_parameter(
+        self, async_client: AsyncCogniteClient, mock_action_call_response: HTTPXMock
     ) -> None:
-        response = cognite_client.agents.chat(
+        response = await async_client.agents.chat(
             agent_external_id="my_agent",
             messages=Message("What is 42 plus 58?"),
             actions=[
@@ -144,22 +174,38 @@ class TestChatWithActions:
                 )
             ],
         )
-        request_body = jsgz_load(mock_action_call_response.calls[-1].request.body)
+        request_body = jsgz_load(mock_action_call_response.get_requests()[0].content)
         assert request_body["actions"][0]["clientTool"]["name"] == "add"
         assert isinstance(response, AgentChatResponse)
+        assert response.action_calls is not None
         assert len(response.action_calls) == 1
         assert isinstance(response.action_calls[0], ClientToolCall)
 
-    def test_chat_with_action_result_message(
-        self, cognite_client: CogniteClient, mock_final_response: MagicMock
+    async def test_chat_with_action_result_message(
+        self, async_client: AsyncCogniteClient, mock_final_response: HTTPXMock
     ) -> None:
-        response = cognite_client.agents.chat(
+        response = await async_client.agents.chat(
             agent_external_id="my_agent",
             messages=ClientToolResult(action_id="call_abc123", content="The result is 100"),
             cursor="cursor_12345",
             actions=[ClientToolAction(name="add", description="Add two numbers", parameters={"type": "object"})],
         )
-        request_body = jsgz_load(mock_final_response.calls[-1].request.body)
+        request_body = jsgz_load(mock_final_response.get_requests()[0].content)
         assert request_body["cursor"] == "cursor_12345"
         assert request_body["messages"][0]["actionId"] == "call_abc123"
+        assert response.text == "The result is 100."
+
+    async def test_chat_with_user_session_result(
+        self, async_client: AsyncCogniteClient, mock_final_response: HTTPXMock
+    ) -> None:
+        response = await async_client.agents.chat(
+            agent_external_id="my_agent",
+            messages=UserSessionResult(action_id="call_789", nonce="my_nonce"),
+            cursor="cursor_12345",
+        )
+        request_body = jsgz_load(mock_final_response.get_requests()[0].content)
+        assert request_body["cursor"] == "cursor_12345"
+        assert request_body["messages"] == [
+            {"role": "action", "type": "userSession", "actionId": "call_789", "nonce": "my_nonce"}
+        ]
         assert response.text == "The result is 100."

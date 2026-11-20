@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import inspect
 import textwrap
 
@@ -7,6 +9,8 @@ from cognite.client.data_classes.hosted_extractors.sources import (
     _SOURCE_CLASS_BY_TYPE,
     _SOURCE_UPDATE_BY_TYPE,
     _SOURCE_WRITE_CLASS_BY_TYPE,
+    Authentication,
+    AuthenticationWrite,
     BasicAuthentication,
     BasicAuthenticationWrite,
     RESTClientCredentialsAuthentication,
@@ -105,35 +109,35 @@ class TestSource:
         ),
     ]
 )
-def sample_sources(request):
+def sample_sources(request: pytest.FixtureRequest) -> tuple[dict, type[Authentication], type[AuthenticationWrite]]:
     return request.param
 
 
-def test_auth_loaders_auth_cls(sample_sources):
+def test_auth_loaders_auth_cls(sample_sources: tuple[dict, type[Authentication], type[AuthenticationWrite]]) -> None:
     resource, expected_auth_cls, expected_auth_write_cls = sample_sources
 
-    source_cls = _SOURCE_CLASS_BY_TYPE.get(resource["source"])
+    source_cls = _SOURCE_CLASS_BY_TYPE[resource["source"]]
     resource["createdTime"] = "1970-01-01T00:00:00Z"
     resource["lastUpdatedTime"] = "1970-01-01T00:00:01Z"
     if resource.get("port", "") == 443:
         resource["scheme"] = "https"
 
     obj: Source = source_cls._load(resource=resource)
-    assert isinstance(obj.authentication, expected_auth_cls)
+    assert isinstance(obj.authentication, expected_auth_cls)  # type: ignore[attr-defined]
 
 
-def test_auth_loaders(sample_sources) -> None:
-    resource, _expected_auth_cls, expected_auth_write_cls = sample_sources
+def test_auth_loaders(sample_sources: tuple[dict, type[Authentication], type[AuthenticationWrite]]) -> None:
+    resource, expected_auth_cls, expected_auth_write_cls = sample_sources
 
-    source_write_cls = _SOURCE_WRITE_CLASS_BY_TYPE.get(resource["source"])
+    source_write_cls = _SOURCE_WRITE_CLASS_BY_TYPE[resource["source"]]
     obj: SourceWrite = source_write_cls._load(resource=resource)
-    assert isinstance(obj.authentication, expected_auth_write_cls)
+    assert isinstance(obj.authentication, expected_auth_write_cls)  # type: ignore[attr-defined]
 
 
 @pytest.mark.parametrize("source_type, source_write_class", _SOURCE_WRITE_CLASS_BY_TYPE.items())
-def test_source_update_properties_match(source_type, source_write_class) -> None:
+def test_source_update_properties_match(source_type: str, source_write_class: type[SourceWrite]) -> None:
     source_write_cls = source_write_class
-    source_update_cls = _SOURCE_UPDATE_BY_TYPE.get(source_type)
+    source_update_cls = _SOURCE_UPDATE_BY_TYPE[source_type]
 
     write_properties = [
         param.name

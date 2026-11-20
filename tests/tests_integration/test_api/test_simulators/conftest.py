@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from cognite.client._cognite_client import CogniteClient
+from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_sets import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.data_classes.simulators import (
@@ -20,6 +20,8 @@ from cognite.client.data_classes.simulators import (
     SimulatorRoutineRevisionWrite,
     SimulatorRoutineWrite,
 )
+from cognite.client.exceptions import CogniteAPIError
+from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._text import to_snake_case
 from tests.tests_integration.test_api.test_simulators.seed.data import (
     RESOURCES,
@@ -52,7 +54,7 @@ def upload_file(cognite_client: CogniteClient, filename: str, external_id: str, 
     file = cognite_client.files.retrieve(external_id=external_id)
     if not file:
         uploaded_file = cognite_client.files.upload(
-            path=str(SEED_DIR / filename),
+            path=SEED_DIR / filename,
             external_id=external_id,
             name=filename,
             data_set_id=data_set_id,
@@ -79,26 +81,33 @@ def seed_model_revision_file(
 
 
 @pytest.fixture(scope="session")
-def seed_simulator(cognite_client: CogniteClient, seed_resource_names: ResourceNames) -> None:
+def seed_simulator(
+    cognite_client: CogniteClient, async_client: AsyncCogniteClient, seed_resource_names: ResourceNames
+) -> None:
     simulator_external_id = seed_resource_names.simulator_external_id
     simulators = cognite_client.simulators.list(limit=None)
     seeded_simulator = simulators.get(external_id=simulator_external_id)
     fields_to_compare = ["fileExtensionTypes", "modelTypes", "modelDependencies", "stepFields", "unitQuantities"]
 
     if not seeded_simulator:
-        cognite_client.simulators._post("/simulators", json={"items": [SIMULATOR]})
+        run_sync(async_client.simulators._post("/simulators", json={"items": [SIMULATOR]}, semaphore=None))
     # if any field in simulator is different from the current seeded simulator, update it
     elif any(getattr(seeded_simulator, to_snake_case(field)) != SIMULATOR.get(field) for field in fields_to_compare):
         simulator_update = {
             "id": seeded_simulator.id,
             "update": {field: {"set": SIMULATOR.get(field)} for field in fields_to_compare},
         }
-        cognite_client.simulators._post("/simulators/update", json={"items": [simulator_update]})
+        run_sync(
+            async_client.simulators._post("/simulators/update", json={"items": [simulator_update]}, semaphore=None)
+        )
 
 
 @pytest.fixture(scope="session")
 def seed_simulator_integration(
-    cognite_client: CogniteClient, seed_simulator: None, seed_resource_names: ResourceNames
+    cognite_client: CogniteClient,
+    async_client: AsyncCogniteClient,
+    seed_simulator: None,
+    seed_resource_names: ResourceNames,
 ) -> None:
     log_id = None
     timestamp = int(time.time() * 1000)
@@ -110,23 +119,37 @@ def seed_simulator_integration(
             "heartbeat": timestamp,
             "dataSetId": seed_resource_names.simulator_test_data_set_id,
         }
-        res = cognite_client.simulators._post(
-            "/simulators/integrations",
-            json={"items": [new_integration]},
+        res = run_sync(
+            async_client.simulators._post(
+                "/simulators/integrations",
+                json={"items": [new_integration]},
+                semaphore=None,
+            )
         )
         log_id = res.json()["items"][0]["logId"]
     else:
         log_id = existing_integration.log_id
-        cognite_client.simulators.integrations._post(
-            "/simulators/integrations/update",
-            json={"items": [{"id": existing_integration.id, "update": {"heartbeat": {"set": timestamp}}}]},
+        run_sync(
+            async_client.simulators.integrations._post(
+                "/simulators/integrations/update",
+                json={"items": [{"id": existing_integration.id, "update": {"heartbeat": {"set": timestamp}}}]},
+                semaphore=None,
+            )
         )
 
     if log_id:
-        update_logs(
-            cognite_client,
-            log_id,
-            [{"timestamp": timestamp, "message": "Testing logs update for simulator integration", "severity": "Debug"}],
+        run_sync(
+            update_logs(
+                async_client,
+                log_id,
+                [
+                    {
+                        "timestamp": timestamp,
+                        "message": "Testing logs update for simulator integration",
+                        "severity": "Debug",
+                    }
+                ],
+            )
         )
 
 
@@ -137,6 +160,22 @@ def seed_simulator_models(
     model_unique_external_id = seed_resource_names.simulator_model_external_id
     models = cognite_client.simulators.models.list(limit=None)
     model = models.get(external_id=model_unique_external_id)
+
+    two_hours_ago_ms = int(time.time() * 1000) - 2 * 60 * 60 * 1000
+    stale_ids = [
+        m.external_id
+        for m in models
+        if m.external_id
+        and m.external_id.startswith("py_sdk_integration_tests_model_")
+        and m.external_id != model_unique_external_id
+        and m.created_time is not None
+        and m.created_time < two_hours_ago_ms
+    ]
+    if stale_ids:
+        try:
+            cognite_client.simulators.models.delete(external_ids=stale_ids)
+        except CogniteAPIError:
+            pass
 
     if not model:
         new_model = SimulatorModelWrite._load(
@@ -157,6 +196,7 @@ def seed_simulator_models(
 @pytest.fixture(scope="session")
 def seed_simulator_model_revisions(
     cognite_client: CogniteClient,
+    async_client: AsyncCogniteClient,
     seed_simulator_models: SimulatorModel,
     seed_model_revision_file: FileMetadata,
     seed_resource_names: ResourceNames,

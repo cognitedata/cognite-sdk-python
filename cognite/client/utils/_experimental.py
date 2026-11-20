@@ -23,13 +23,13 @@ class FeaturePreviewWarning(FutureWarning):
             return (
                 f"{self.feature_name} {verb} in alpha and {verb} subject to breaking changes without prior notice. "
                 f"API maturity={self.api_version}, SDK maturity={self.sdk_version}. "
-                "See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/appendix.html for more information."
+                "See https://cognite-sdk-python.readthedocs-hosted.com/en/stable/appendix.html for more information."
             )
         else:
             return (
                 f"{self.feature_name} {verb} in beta, breaking changes may occur but will be preceded by a DeprecationWarning. "
                 f"API version={self.api_version}, SDK version={self.sdk_version}. "
-                "See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/appendix.html for more information."
+                "See https://cognite-sdk-python.readthedocs-hosted.com/en/stable/appendix.html for more information."
             )
 
     def warn(self) -> None:
@@ -39,5 +39,5 @@ class FeaturePreviewWarning(FutureWarning):
             warnings.warn(self, stacklevel=2)
 
     def __reduce__(self) -> tuple:
-        # This is needed to make the cognite client picklable as warings are stored on APIClass objects.
+        # This is needed to make the cognite client picklable as warnings are stored on APIClass objects.
         return self.__class__, (self.api_version, self.sdk_version, self.feature_name)

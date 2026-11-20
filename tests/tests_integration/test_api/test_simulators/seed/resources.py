@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import time
 from pathlib import Path
 
-from cognite.client._cognite_client import CogniteClient
-from cognite.client.data_classes.data_sets import DataSet
+from cognite.client import CogniteClient
+from cognite.client.data_classes import DataSetWrite
 from cognite.client.data_classes.files import FileMetadata
 from cognite.client.exceptions import CogniteAPIError
 
@@ -171,7 +173,7 @@ def ensure_workflow_simint_routine(cognite_client: CogniteClient) -> str:
 
     if data_set is None:
         data_set = cognite_client.data_sets.create(
-            DataSet(
+            DataSetWrite(
                 external_id="integration_tests_workflow",
                 name="Integration Tests Workflow",
                 description="Data set for integration tests of the workflow API",
@@ -182,7 +184,7 @@ def ensure_workflow_simint_routine(cognite_client: CogniteClient) -> str:
 
     if file is None:
         uploaded_file = cognite_client.files.upload(
-            path=str(SEED_DIR / "empty_model.json"),
+            path=SEED_DIR / "empty_model.json",
             external_id="integration_tests_workflow_model_file",
             name="seed_mode.json",
             data_set_id=data_set.id,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from typing_extensions import Self
 
@@ -12,9 +12,6 @@ from cognite.client.data_classes._base import (
     WriteableCogniteResource,
     WriteableCogniteResourceList,
 )
-
-if TYPE_CHECKING:
-    from cognite.client import CogniteClient
 
 
 class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], ABC):
@@ -30,8 +27,8 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
     Args:
         external_id (str): External id of the simulator routine
         model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str | None): External id of the associated simulator integration
         name (str): The name of the simulator routine
+        simulator_integration_external_id (str | None): External id of the associated simulator integration. None when simulation run load balancing is enabled for the given routine.
         description (str | None): The description of the simulator routine
         kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
@@ -40,8 +37,8 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
         self,
         external_id: str,
         model_external_id: str,
-        simulator_integration_external_id: str | None,
         name: str,
+        simulator_integration_external_id: str | None = None,
         description: str | None = None,
         kind: Literal["long"] | None = None,
     ) -> None:
@@ -53,7 +50,7 @@ class SimulatorRoutineCore(WriteableCogniteResource["SimulatorRoutineWrite"], AB
         self.kind = kind
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
             model_external_id=resource["modelExternalId"],
@@ -72,13 +69,13 @@ class SimulatorRoutineWrite(SimulatorRoutineCore):
     Each model can have multiple routines, each performing different objectives such as calculating optimal
     operation setpoints, forecasting production, benchmarking asset performance, and more.
 
-    This is the read/response format of a simulator routine.
+    This is the writeable version of a simulator routine.
 
     Args:
         external_id (str): External id of the simulator routine
         model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str): External id of the associated simulator integration
         name (str): The name of the simulator routine
+        simulator_integration_external_id (str | None): External id of the associated simulator integration. Optional when simulation run load balancing is enabled.
         description (str | None): The description of the simulator routine
         kind (Literal['long'] | None): The kind of simulator routine. Routines with kind 'long' may have more inputs/outputs, steps, and longer runtime.
     """
@@ -102,7 +99,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
         id (int): A unique id of a simulator routine
         external_id (str): External id of the simulator routine
         model_external_id (str): External id of the associated simulator model
-        simulator_integration_external_id (str | None): External id of the associated simulator integration
+        simulator_integration_external_id (str | None): External id of the associated simulator integration. None when simulation run load balancing is enabled for the given routine.
         name (str): The name of the simulator routine
         data_set_id (int): The id of the dataset associated with the simulator routine
         simulator_external_id (str): External id of the associated simulator
@@ -142,7 +139,7 @@ class SimulatorRoutine(SimulatorRoutineCore):
         self.data_set_id = data_set_id
 
     @classmethod
-    def _load(cls, resource: dict[str, Any], cognite_client: CogniteClient | None = None) -> Self:
+    def _load(cls, resource: dict[str, Any]) -> Self:
         return cls(
             external_id=resource["externalId"],
             simulator_external_id=resource["simulatorExternalId"],
@@ -177,4 +174,4 @@ class SimulatorRoutineList(WriteableCogniteResourceList[SimulatorRoutineWrite, S
     _RESOURCE = SimulatorRoutine
 
     def as_write(self) -> SimulatorRoutineWriteList:
-        return SimulatorRoutineWriteList([a.as_write() for a in self.data], cognite_client=self._get_cognite_client())
+        return SimulatorRoutineWriteList([a.as_write() for a in self.data])

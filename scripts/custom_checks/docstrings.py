@@ -16,18 +16,18 @@ import inspect
 import itertools
 import re
 import types
-from dataclasses import is_dataclass
 from pathlib import Path
 
 import numpy as np
 
-from cognite.client.data_classes.data_modeling.query import Query
+from cognite.client.data_classes.data_modeling.query import Query, QuerySync
 from cognite.client.data_classes.functions import FunctionHandle
 from cognite.client.utils._text import shorten
 
 FUNC_EXCEPTIONS = {}
 CLS_METHOD_EXCEPTIONS = {
-    (Query, "__init__"),  # Reason: Uses a parameter 'with_'; and we need to escape the underscore
+    (Query, "__init__"),  # Reason (Generics[...]): Avoid showing (bounded) type var instead of actual class
+    (QuerySync, "__init__"),  # Reason (Generics[...]): Avoid showing (bounded) type var instead of actual class
     (FunctionHandle, "__init__"),  # Reason: Protocol class doesn't have __init__ with return type
 }
 
@@ -90,17 +90,17 @@ class ReturnParam(Param):
             self.annotation, self.description = line.split(": ", 1)
 
     def __repr__(self):
-        return f"Param({self.annotation!r}, {self.description!r})"
+        return f"ReturnParam({self.annotation!r}, {self.description!r})"
 
 
 def count_indent(s):
-    return re.search("[^ ]", s + "x").start()
+    return re.search(r"[^ ]", s + "x").start()
 
 
 class DocstrFormatter:
     def __init__(self, doc, method):
         self.original_doc = doc
-        self.is_generator = inspect.isgeneratorfunction(method)
+        self.is_generator = inspect.isgeneratorfunction(method) or inspect.isasyncgenfunction(method)
         self.RETURN_STRING = "Yields:" if self.is_generator else "Returns:"
 
         self.lines_grouped, self.indentation = self._separate_docstring(doc)
@@ -117,12 +117,28 @@ class DocstrFormatter:
         # TODO: With 3.9 this gets much easier: get_args(get_type_hints(method)["return"])[0]
 
         if string.startswith("Iterator["):
-            if string.count("Iterator[") > 1:
-                raise ValueError(
-                    "pydoclint doesn't allow unions between Iterators in 'Yields:' annotation. Example: instead of "
-                    "`Iterator[int] | Iterator[str]`, use `Iterator[int | str]`. Please fix manually."
-                )
-            return string[9:-1]
+            c = string.count("Iterator[")
+            if c == 1:
+                return string[9:-1]
+            elif c == 2:
+                match = re.match(r"Iterator\[(\w+)\] \| Iterator\[(\w+)\]", string)
+                if not match:
+                    raise ValueError("Failed to parse union of 2 'Iterator's")
+                return " | ".join(match.groups())
+            else:
+                raise ValueError("Failed to parse union of more than 2 'Iterator's")
+
+        if string.startswith("AsyncIterator["):
+            c = string.count("AsyncIterator[")
+            if c == 1:
+                return string[14:-1]
+            elif c == 2:
+                match = re.match(r"AsyncIterator\[(\w+)\] \| AsyncIterator\[(\w+)\]", string)
+                if not match:
+                    raise ValueError("Failed to parse union of 2 'AsyncIterator's")
+                return " | ".join(match.groups())
+            else:
+                raise ValueError("Failed to parse union of more than 2 'AsyncIterator's")
 
         if not string.startswith("Generator["):
             raise ValueError("All generators must be annotated using 'Generator' or 'Iterator'")
@@ -180,7 +196,7 @@ class DocstrFormatter:
         if len(non_zero := np.nonzero(indentations)[0]) == 0:
             raise FalsePositiveDocstring
 
-        section_indent = indentations[(non_zero,)].min()
+        section_indent = indentations[non_zero,].min()
         all_chunks, chunk = [], []
         for line, indent in zip(lines, indentations):
             # If a line is non-empty, remove any excess whitespace at end:
@@ -220,7 +236,7 @@ class DocstrFormatter:
             self.add_space_after_args = not self.line_args_group[-1].strip()
 
         if self.line_return_group is not None:
-            self.return_parameter = DocstrFormatter._parse_returns_section(self.line_return_group, indentation)
+            self.return_parameter = DocstrFormatter._parse_returns_section(self.line_return_group)
             self.add_space_after_returns = not self.line_return_group[-1].strip()
 
     @staticmethod
@@ -244,7 +260,7 @@ class DocstrFormatter:
         return parameters
 
     @staticmethod
-    def _parse_returns_section(lines, indent):
+    def _parse_returns_section(lines):
         line = lines[1].strip()
         for extra_line in lines[2:]:
             # Assume multilines regardless of (missing extra) indentation belongs:
@@ -252,12 +268,15 @@ class DocstrFormatter:
         return ReturnParam(line)
 
     def docstring_is_correct(self):
-        return_annot_is_correct = False
-        if self.actual_return_annotation == "None":
-            # If the function returns None, we don't want a returns-section:
+        if self.actual_return_annotation in (None, "None"):
+            # If the function returns None (or is an `__init__`), the docstring should not have a `Returns:` section:
             return_annot_is_correct = self.return_parameter is None
         elif self.return_parameter is not None:
+            # If the function has a return value, and the docstring has a `Returns:` section, the annotations must match:
             return_annot_is_correct = self.actual_return_annotation == self.return_parameter.annotation
+        else:
+            # If the function has a return value but no `Returns:` section, the docstring is incorrect:
+            return_annot_is_correct = False
 
         parsed_annotations = dict((p.var_name, p.annotation) for p in self.parameters)
         parameters_are_correct = (
@@ -286,7 +305,8 @@ class DocstrFormatter:
         return fixed_lines
 
     def _create_docstring_return_description(self):
-        if self.actual_return_annotation == "None":
+        # dataclasses auto-created __init__ doesn't use stringified annotations:
+        if self.actual_return_annotation in ("None", None):
             return []
 
         description = "No description."
@@ -345,9 +365,9 @@ class DocstrFormatter:
         if self.original_doc == new_docstr:
             # Shouldn't be possible, but surely it will happen :D
             raise RuntimeError(
-                "Existing docstring was considered wrong, but the newly generated one was identical... "
-                "If pre-commit does not report any other errors, consider committing using '--no-verify' "
-                "and create an issue on github!"
+                f"Existing docstring was considered wrong for class/function: {cls_or_fn} (method description: "
+                f"{method_description}), but the newly generated one was identical... If pre-commit does not "
+                "report any other errors, consider committing using '--no-verify' and create an issue on github!"
             )
 
         # Note: We can have multiple matches for generic docstrings, e.g. 'dump'. So to avoid next update failing
@@ -382,7 +402,7 @@ def format_docstring_class_methods(cls) -> list[str]:
         doc = cls.__doc__ if is_init else method.__doc__
         method_description = f"{cls.__name__}.{attr}"
 
-        if not doc or (is_init and is_dataclass(cls)):
+        if not doc:
             continue
 
         try:

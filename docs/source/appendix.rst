@@ -61,6 +61,8 @@ Example **patch**:
     >>> pprint(updated.as_write().dump())
     {'description': 'Updated description',
      'externalId': 'new_ts',
+     'isStep': False,
+     'isString': False,
      'metadata': {'another': 'one', 'brand': 'new', 'key': 'new value'},
      'name': 'New TS'}
 
@@ -98,6 +100,8 @@ Example **replace**:
     >>> pprint(updated.as_write().dump())
     {'description': 'Updated description',
      'externalId': 'new_ts',
+     'isStep': False,
+     'isString': False,
      'metadata': {'new': 'entry'}}
 
 **Note** that the `name` parameter was not specified in the update, and was therefore nulled out.
@@ -136,6 +140,8 @@ Example **replace_ignore_null**:
     >>> pprint(updated.as_write().dump())
     {'description': 'Updated description',
      'externalId': 'new_ts',
+     'isStep': False,
+     'isString': False,
      'metadata': {'new': 'entry'},
      'name': 'New TS'}
 
@@ -175,6 +181,8 @@ Example **replace_ignore_null** without `metadata`:
     >>> pprint(updated.as_write().dump())
     {'description': 'Updated description',
      'externalId': 'new_ts',
+     'isStep': False,
+     'isString': False,
      'metadata': {'key': 'value'},
      'name': 'New TS'}
 

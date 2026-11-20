@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from cognite.client import CogniteClient
@@ -26,8 +28,9 @@ def service_account(cognite_client_cog_idp: CogniteClient) -> ServicePrincipal:
     client = cognite_client_cog_idp
     service_account = client.iam.principals.list(types="service_account", limit=1)
     assert len(service_account) == 1, "Expected exactly one service account principal to be returned."
-    assert isinstance(service_account[0], ServicePrincipal), "Expected service account to be returned."
-    return service_account[0]
+    serv_acc = service_account[0]
+    assert isinstance(serv_acc, ServicePrincipal), "Expected service account to be returned."
+    return serv_acc
 
 
 class TestPrincipalsAPI:

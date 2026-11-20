@@ -1,5 +1,8 @@
-def create_handler():
-    def inner_function(data, client, secrets, invalid_arg, another_invalid):
+from collections.abc import Callable
+
+
+def create_handler() -> Callable[[dict, object, dict, object, object], dict]:
+    def inner_function(data: dict, client: object, secrets: dict, invalid_arg: object, another_invalid: object) -> dict:
         return {"assetId": 1234}
 
     return inner_function
