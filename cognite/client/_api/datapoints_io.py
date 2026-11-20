@@ -599,7 +599,7 @@ class _DatapointsInserter(ABC, Generic[_T]):
     for describing how a single such pair maps to the protobuf insertion item. Everything else is shared.
     """
 
-    _api_subversion: str | None = None
+    _is_beta: bool = False
 
     def __init__(self, dps_client: DatapointsAPI) -> None:
         self.dps_client = dps_client
@@ -640,29 +640,36 @@ class _DatapointsInserter(ABC, Generic[_T]):
         if chunk:
             yield chunk
 
-    def _build_request(self, chunk: list[tuple[Identifier, list[_T]]]) -> bytes:
+    def _build_request(self, chunk: list[tuple[Identifier, list[_T]]]) -> tuple[bytes, dict[str, str]]:
         items = []
-        for identifier, dps in chunk:
+        for identifier, dps in chunk:  # TODO: list comp when don't need the exc handling below
             try:
                 items.append(self._to_proto_item(identifier, dps))
             except TypeError as err:
+                id_str = f"{identifier.name()}={identifier.as_primitive()!r}"
                 raise TypeError(
-                    f"Unable to insert datapoints into time series {identifier.as_dict(camel_case=False)}: {err}"
+                    f"Unable to insert datapoints into time series {id_str}: {err}. "
+                    f"Make sure all values in a series are of the same type."
                 ) from err
+
         content = DataPointInsertionRequest(items=items).SerializeToString()
-        return content if global_config.disable_gzip else gzip.compress(content)
+        headers = {"content-type": "application/protobuf"}
+        if global_config.disable_gzip:
+            return content, headers
+
+        headers["content-encoding"] = "gzip"
+        return gzip.compress(content), headers
 
     async def _insert_datapoints(self, chunk: list[tuple[Identifier, list[_T]]]) -> None:
         # Acquire the semaphore before building the (potentially large) protobuf message:
         async with self.dps_client._get_semaphore("write"):
-            headers = {"content-type": "application/protobuf"}
-            if not global_config.disable_gzip:
-                headers["content-encoding"] = "gzip"
+            content, headers = self._build_request(chunk)
+            if self._is_beta:
+                headers.update(self.dps_client._beta_version_header())  # e.g. '20230101-beta'
             await self.dps_client._post(
                 url_path=self.dps_client._RESOURCE_PATH,
-                content=self._build_request(chunk),
+                content=content,
                 headers=headers,
-                api_subversion=self._api_subversion,
                 semaphore=None,  # Already holding the semaphore above
             )
 
@@ -672,6 +679,7 @@ class DatapointsPoster(_DatapointsInserter[_InsertDatapoint]):
         super().__init__(dps_client)
         # We don't know the type of the time series we insert into, so we decide it once per series (and not per
         # chunk, as a chunk may e.g. contain only missing values):
+        # TODO (v9): Change interface so the user explicitly says "numeric or string"
         self._is_string: dict[Identifier, bool] = {}
 
     async def insert(self, dps_object_lst: list[dict[str, Any]]) -> None:
@@ -740,23 +748,18 @@ class DatapointsPoster(_DatapointsInserter[_InsertDatapoint]):
 
     def _to_proto_item(self, identifier: Identifier, dps: Sequence[_InsertDatapoint]) -> DataPointInsertionItem:
         dumped = [dp.to_proto_dict() for dp in dps]
-        try:
-            if self._is_string[identifier]:
-                return DataPointInsertionItem(**identifier.as_dict(), stringDatapoints={"datapoints": dumped})
+        if self._is_string[identifier]:
+            return DataPointInsertionItem(**identifier.as_dict(), stringDatapoints={"datapoints": dumped})
 
-            for dct in dumped:
-                # For backwards compatibility, we accept 'NaN', 'Infinity' and '-Infinity' for numeric time series:
-                if dct.get("value").__class__ is str:
-                    try:
-                        dct["value"] = _json.FLOAT_API_MAPPING[dct["value"]]
-                    except KeyError:
-                        raise TypeError(f"expected a number, got the string {dct['value']!r}") from None
-            return DataPointInsertionItem(**identifier.as_dict(), numericDatapoints={"datapoints": dumped})
+        for dct in dumped:
+            # For backwards compatibility, we accept 'NaN', 'Infinity' and '-Infinity' for numeric time series:
+            if (value := dct.get("value")) is not None:
+                try:
+                    dct["value"] = _json.convert_to_float(value)
+                except KeyError:
+                    raise TypeError(f"expected a number, got the string {value!r}")
 
-        except TypeError as err:
-            raise TypeError(
-                f"{err}. Make sure all values in a series are of the same type (all numeric or all strings)."
-            ) from err
+        return DataPointInsertionItem(**identifier.as_dict(), numericDatapoints={"datapoints": dumped})
 
     def _parse_and_validate_dps(self, dps: Datapoints | DatapointsArray | list[tuple | dict]) -> list[_InsertDatapoint]:
         if isinstance(dps, Datapoints):
@@ -842,7 +845,7 @@ class DatapointsPoster(_DatapointsInserter[_InsertDatapoint]):
 
 class StateDatapointsPoster(_DatapointsInserter[StateDatapointWrite | dict[str, Any]]):
     # State datapoints are only supported for instance ID identifiers, and are still in beta
-    _api_subversion = "beta"
+    _is_beta = True
 
     async def insert(self, items: Sequence[StateDatapointsInsert]) -> None:
         if to_insert := self._merge_duplicates(items):
