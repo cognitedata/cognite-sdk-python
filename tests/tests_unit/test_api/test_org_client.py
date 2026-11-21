@@ -44,7 +44,6 @@ from cognite.client.credentials import Token
         ),
     ],
 )
-@pytest.mark.allow_no_semaphore("_organization looks up the project's org via an internal request without a semaphore")
 def test_principals_api_resolves_org_and_uses_matching_auth_url(
     httpx2_mock: HTTPXMock,
     project: str,

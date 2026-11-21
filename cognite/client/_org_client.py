@@ -26,7 +26,9 @@ class OrgAPIClient(APIClient, ABC):
             base_path = f"/api/{self._api_version}/projects/{self._config.project}"
             full_url = append_url_path(self._config.base_url, base_path)
             try:
-                response = await self._request("GET", full_url=full_url, include_cdf_headers=True, semaphore=None)
+                response = await self._request(
+                    "GET", full_url=full_url, include_cdf_headers=True, semaphore=self._get_semaphore("read")
+                )
                 self._resolved_organization = response.json()["organization"]
             except Exception as err:
                 raise CogniteOrganizationError from err
