@@ -63,6 +63,7 @@ from cognite.client._api.org_apis.principals import PrincipalsAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
 from cognite.client._api.postgres_gateway.tables import TablesAPI as PostgresTablesAPI
 from cognite.client._api.postgres_gateway.users import UsersAPI as PostgresUsersAPI
+from cognite.client._api.projects import ProjectsAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.raw.databases import RawDatabasesAPI
 from cognite.client._api.raw.rows import RawRowsAPI
@@ -157,6 +158,7 @@ from cognite.client._sync_api.org_apis.principals import SyncPrincipalsAPI
 from cognite.client._sync_api.postgres_gateway import SyncPostgresGatewaysAPI
 from cognite.client._sync_api.postgres_gateway.tables import SyncTablesAPI as SyncPostgresTablesAPI
 from cognite.client._sync_api.postgres_gateway.users import SyncUsersAPI as SyncPostgresUsersAPI
+from cognite.client._sync_api.projects import SyncProjectsAPI
 from cognite.client._sync_api.raw import SyncRawAPI
 from cognite.client._sync_api.raw.databases import SyncRawDatabasesAPI
 from cognite.client._sync_api.raw.rows import SyncRawRowsAPI
@@ -413,6 +415,8 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         )
         flip_spec_set_on(self.postgres_gateway)
 
+        self.projects = create_autospec(ProjectsAPI, instance=True, spec_set=True)
+
         three_d_asset_mappings = create_autospec(ThreeDAssetMappingAPI, instance=True, spec_set=True)
         three_d_files = create_autospec(ThreeDFilesAPI, instance=True, spec_set=True)
         three_d_models = create_autospec(ThreeDModelsAPI, instance=True, spec_set=True)
@@ -635,6 +639,8 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             SyncPostgresGatewaysAPI, instance=True, users=pg_gw_users, tables=pg_gw_tables
         )
         flip_spec_set_on(self.postgres_gateway)
+
+        self.projects = create_autospec(SyncProjectsAPI, instance=True, spec_set=True)
 
         three_d_asset_mappings = create_autospec(Sync3DAssetMappingAPI, instance=True, spec_set=True)
         three_d_files = create_autospec(Sync3DFilesAPI, instance=True, spec_set=True)
