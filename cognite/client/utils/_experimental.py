@@ -7,7 +7,7 @@ from typing import Literal
 class FeaturePreviewWarning(FutureWarning):
     def __init__(
         self,
-        api_maturity: Literal["alpha", "beta", "General Availability"],
+        api_maturity: Literal["internal", "alpha", "beta", "General Availability"],
         sdk_maturity: Literal["alpha", "beta"],
         feature_name: str,
         pluralize: bool = False,
@@ -19,7 +19,14 @@ class FeaturePreviewWarning(FutureWarning):
 
     def __str__(self) -> str:
         verb = "are" if self.pluralize else "is"
-        if self.api_version == "alpha" or self.sdk_version == "alpha":
+        if self.api_version == "internal":
+            return (
+                f"{self.feature_name} {verb} using an internal, undocumented API and {verb} subject to breaking "
+                "changes or removal without prior notice. "
+                f"API maturity={self.api_version}, SDK maturity={self.sdk_version}. "
+                "See https://cognite-sdk-python.readthedocs-hosted.com/en/stable/appendix.html for more information."
+            )
+        elif self.api_version == "alpha" or self.sdk_version == "alpha":
             return (
                 f"{self.feature_name} {verb} in alpha and {verb} subject to breaking changes without prior notice. "
                 f"API maturity={self.api_version}, SDK maturity={self.sdk_version}. "
