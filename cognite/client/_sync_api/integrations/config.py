@@ -83,7 +83,7 @@ class SyncIntegrationConfigAPI(SyncAPIClient):
 
         Args:
             external_id (str | None): Only return config revisions for the integration with this external id.
-            limit (int | None): Maximum number of config revisions to return. Defaults to 25.
+            limit (int | None): Maximum number of config revisions to return. Defaults to 25. Set to -1, float("inf") or None to return all items (at most 100, see note above).
 
         Returns:
             ConfigRevisionMetadataList: List of configuration revision metadata

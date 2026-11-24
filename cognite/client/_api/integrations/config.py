@@ -6,6 +6,7 @@ from cognite.client._api_client import APIClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client.data_classes.integrations.config import (
     ConfigRevision,
+    ConfigRevisionMetadata,
     ConfigRevisionMetadataList,
     ConfigRevisionWrite,
 )
@@ -23,6 +24,7 @@ class IntegrationConfigAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self._warning = FeaturePreviewWarning(api_maturity="beta", sdk_maturity="alpha", feature_name="Integrations")
+        self._LIST_LIMIT = 100
 
     async def create(self, config: ConfigRevision | ConfigRevisionWrite) -> ConfigRevision:
         """`Create a new configuration revision <https://api-docs.cognite.com/20230101-alpha/tag/Integration-Configuration/operation/new_integration_config>`_
@@ -97,7 +99,7 @@ class IntegrationConfigAPI(APIClient):
 
         Args:
             external_id (str | None): Only return config revisions for the integration with this external id.
-            limit (int | None): Maximum number of config revisions to return. Defaults to 25.
+            limit (int | None): Maximum number of config revisions to return. Defaults to 25. Set to -1, float("inf") or None to return all items (at most 100, see note above).
 
         Returns:
             ConfigRevisionMetadataList: List of configuration revision metadata
@@ -112,10 +114,12 @@ class IntegrationConfigAPI(APIClient):
                 >>> res = client.integrations.config.list(external_id="my-integration")
         """
         self._warning.warn()
-        response = await self._get(
-            f"{self._RESOURCE_PATH}/revisions",
-            params=drop_none_values({"externalId": external_id, "limit": limit}),
+        return await self._list(
+            method="GET",
+            url_path=f"{self._RESOURCE_PATH}/revisions",
+            list_cls=ConfigRevisionMetadataList,
+            resource_cls=ConfigRevisionMetadata,
+            limit=limit,
+            filter=drop_none_values({"externalId": external_id}),
             headers=self._beta_version_header(),
-            semaphore=self._get_semaphore("read"),
         )
-        return ConfigRevisionMetadataList._load(response.json()["items"])

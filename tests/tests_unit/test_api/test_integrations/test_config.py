@@ -78,3 +78,18 @@ class TestIntegrationConfig:
         request = httpx2_mock.get_requests()[0]
         assert "externalId=my-integration" in str(request.url)
         assert "limit=25" in str(request.url)
+
+    def test_list_all(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
+        url_pattern = re.compile(
+            re.escape(get_url(async_client.integrations.config, "/integrations/config/revisions")) + r"(?:\?.*)?$"
+        )
+        httpx2_mock.add_response(method="GET", url=url_pattern, json={"items": [CONFIG_REVISION_METADATA_RESPONSE]})
+
+        res = cognite_client.integrations.config.list(external_id="my-integration", limit=-1)
+
+        assert len(res) == 1
+        requests = httpx2_mock.get_requests()
+        assert len(requests) == 1
+        assert "limit=100" in str(requests[0].url)
