@@ -60,6 +60,8 @@ NON_IDEMPOTENT_POST_ENDPOINT_REGEX_PATTERN: re.Pattern[str] = re.compile(
             "annotations/suggest",
             "extpipes/config/revert",
             "integrations/actions/cancel",
+            "integrations/checkin",
+            "integrations/startup",
             "transformations/cancel",
             "transformations/notifications",
             "transformations/run",
