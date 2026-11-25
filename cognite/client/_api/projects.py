@@ -13,8 +13,9 @@ if TYPE_CHECKING:
 
 
 class ProjectsAPI(APIClient):
-    # DEV NOTE: These endpoints are served by the CDF cluster (not CogIdP) and are not part of the public API docs.
-    # They are kept in alpha in the SDK so we may change or remove them as we see fit.
+    # DEV NOTE: These endpoints are served by each CDF cluster (not the global CogIdP) and are, as of writing, not part
+    # of the public API docs. The SDK has depended on these endpoints internally (e.g. PrincipalsAPI) for quite some time
+    # already.
 
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
@@ -23,12 +24,10 @@ class ProjectsAPI(APIClient):
         )
 
     async def current(self) -> Project:
-        """Retrieve the project the client is configured for.
-
-        Requires the ``projectsAcl:READ`` capability.
+        """Retrieve the configuration of the project *this* client is using.
 
         Returns:
-            Project: The current project, including the organization it belongs to.
+            Project: The current project configuration.
 
         Examples:
 
@@ -37,8 +36,8 @@ class ProjectsAPI(APIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.projects.current()
-                >>> res.organization
+                >>> proj = client.projects.current()
+                >>> proj.organization
         """
         self._warning.warn()
         path = interpolate_and_url_encode("/api/v1/projects/{}", self._config.project)
@@ -48,8 +47,7 @@ class ProjectsAPI(APIClient):
     async def list(self) -> ProjectList:
         """List the projects you have access to.
 
-        Lists all projects the caller has the 'list projects' capability in. The caller may not have access to any
-        resources in the listed projects.
+        Only projects the caller has the capability "projectsAcl:READ" for will be included in the list.
 
         Returns:
             ProjectList: The projects, including the organization each belongs to.

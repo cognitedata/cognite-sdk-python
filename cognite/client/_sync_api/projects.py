@@ -20,12 +20,10 @@ class SyncProjectsAPI(SyncAPIClient):
 
     def current(self) -> Project:
         """
-        Retrieve the project the client is configured for.
-
-        Requires the ``projectsAcl:READ`` capability.
+        Retrieve the configuration of the project *this* client is using.
 
         Returns:
-            Project: The current project, including the organization it belongs to.
+            Project: The current project configuration.
 
         Examples:
 
@@ -34,8 +32,8 @@ class SyncProjectsAPI(SyncAPIClient):
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.projects.current()
-                >>> res.organization
+                >>> proj = client.projects.current()
+                >>> proj.organization
         """
         return run_sync(self.__async_client.projects.current())
 
@@ -43,8 +41,7 @@ class SyncProjectsAPI(SyncAPIClient):
         """
         List the projects you have access to.
 
-        Lists all projects the caller has the 'list projects' capability in. The caller may not have access to any
-        resources in the listed projects.
+        Only projects the caller has the capability "projectsAcl:READ" for will be included in the list.
 
         Returns:
             ProjectList: The projects, including the organization each belongs to.
