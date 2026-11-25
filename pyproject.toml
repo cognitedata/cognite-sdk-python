@@ -109,6 +109,8 @@ docstring-code-format = true
 docstring-code-line-length = 85
 
 [tool.uv]
+# To allow specific recent packages, see https://docs.astral.sh/uv/reference/settings/#exclude-newer-package
+exclude-newer = "7 days"
 package = true
 # Poetry installed every non-optional dependency group. Keep docs alongside dev.
 default-groups = ["dev", "docs"]
