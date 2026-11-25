@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any
 
 from typing_extensions import Self
@@ -38,9 +39,19 @@ class Project(CogniteResource):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
+        if (org := resource.get("organization")) is None:
+            warnings.warn(
+                f"The API did not return an organization for project {resource['urlName']!r}. "
+                "The SDK treats it as required as it can only be missing for internal Cognite projects. "
+                "NOTE: Using an empty string as the organization and continuing.",
+                UserWarning,
+                stacklevel=2,
+            )
+            org = ""
+
         return cls(
             url_name=resource["urlName"],
-            organization=resource["organization"],
+            organization=org,
             name=resource.get("name"),
             oidc_configuration=resource.get("oidcConfiguration"),
             user_profiles_configuration=resource.get("userProfilesConfiguration"),

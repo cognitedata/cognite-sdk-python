@@ -47,3 +47,32 @@ class TestProjectsAPI:
 
         assert isinstance(res, ProjectList)
         assert {p.url_name: p.organization for p in res} == {"p1": "org-1", "p2": "org-2"}
+
+
+@pytest.mark.parametrize(
+    "call, url, response",
+    [
+        pytest.param(
+            lambda c: c.projects.current(),
+            f"{PROJECTS_URL}/dummy",
+            {k: v for k, v in PROJECT_RESPONSE.items() if k != "organization"},
+            id="current",
+        ),
+        pytest.param(
+            lambda c: c.projects.list(),
+            f"{PROJECTS_URL}?withOrganization=true",
+            {"items": [{"urlName": "dummy"}]},
+            id="list",
+        ),
+    ],
+)
+def test_missing_organization_warns_and_uses_empty_string(
+    cognite_client: CogniteClient, httpx2_mock: HTTPXMock, call: Any, url: str, response: dict[str, Any]
+) -> None:
+    httpx2_mock.add_response(method="GET", url=url, json=response)
+
+    with pytest.warns(FeaturePreviewWarning), pytest.warns(UserWarning, match=r"'dummy'.*internal"):
+        res = call(cognite_client)
+
+    projects = res if isinstance(res, ProjectList) else [res]
+    assert [(p.url_name, p.organization) for p in projects] == [("dummy", "")]
