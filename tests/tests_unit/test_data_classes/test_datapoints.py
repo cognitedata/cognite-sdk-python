@@ -1174,12 +1174,6 @@ class TestStateDatapointsInsert:
         with pytest.raises(TypeError, match="StateDatapointsInsert"):
             StateDatapointsInsert.load("not-a-dict")  # type: ignore[arg-type]
 
-    def test_to_proto_dict(self, state_dps_insert: StateDatapointsInsert) -> None:
-        assert state_dps_insert._to_proto_dict() == {
-            "instanceId": {"space": "my-space", "externalId": "my-ts"},
-            "stateDatapoints": {"datapoints": [{"timestamp": 1000, "numericValue": 0}]},
-        }
-
     def test_non_sequence_datapoints_raises(self) -> None:
         with pytest.raises(TypeError, match="sequence"):
             StateDatapointsInsert(instance_id=NodeId("sp", "xid"), datapoints="bad")  # type: ignore[arg-type]

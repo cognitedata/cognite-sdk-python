@@ -2113,7 +2113,7 @@ class DatapointsAPI(APIClient):
         idx = df.index.to_numpy("datetime64[ms]").astype(np.int64)
         for column_id, col in df.items():
             mask = col.notna()
-            datapoints = list(map(_InsertDatapoint, idx[mask], col[mask]))
+            datapoints = list(map(_InsertDatapoint, idx[mask].tolist(), col[mask]))
             if not datapoints:
                 continue
 
