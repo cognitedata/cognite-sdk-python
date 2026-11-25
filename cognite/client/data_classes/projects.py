@@ -7,14 +7,11 @@ from typing_extensions import Self
 
 from cognite.client.data_classes._base import CogniteResource, CogniteResourceList
 from cognite.client.data_classes.user_profiles import UserProfilesConfiguration
+from cognite.client.utils._auxiliary import drop_none_values
 
 
 class Project(CogniteResource):
     """A CDF project. Projects are used to isolate data in CDF from each other.
-
-    Note:
-        Which fields are present depends on the endpoint used: ``current`` returns the project's configuration,
-        while ``list`` returns a summary of each project.
 
     Args:
         url_name (str): The URL name of the project. This is used as part of the request path in API calls.
@@ -69,7 +66,7 @@ class Project(CogniteResource):
                 self.user_profiles_configuration.dump(camel_case) if self.user_profiles_configuration else None
             ),
         }
-        return {k: v for k, v in output.items() if v is not None}
+        return drop_none_values(output)
 
 
 class ProjectList(CogniteResourceList[Project]):
