@@ -7,6 +7,7 @@ from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes.projects import Project, ProjectList
+from cognite.client.data_classes.user_profiles import UserProfilesConfiguration
 from cognite.client.utils._experimental import FeaturePreviewWarning
 
 PROJECTS_URL = "https://api.cognitedata.com/api/v1/projects"
@@ -31,9 +32,12 @@ class TestProjectsAPI:
         assert isinstance(res, Project)
         assert res.url_name == "dummy"
         assert res.organization == "my-org"
-        # Nested configuration objects are passed through as-is:
+        assert isinstance(res.user_profiles_configuration, UserProfilesConfiguration)
+        assert res.user_profiles_configuration.enabled is True
+        # The OIDC configuration is passed through as-is:
         assert res.dump(camel_case=True) == PROJECT_RESPONSE
         assert res.dump(camel_case=False)["oidc_configuration"] == {"jwksUrl": "https://jwks", "skewMs": 0}
+        assert res.dump(camel_case=False)["user_profiles_configuration"] == {"enabled": True}
 
     def test_list_requests_organization(self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock) -> None:
         httpx2_mock.add_response(
