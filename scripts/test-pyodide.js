@@ -38,17 +38,14 @@ server.listen(PORT, () => {
     await pyodide.loadPackage("micropip");
     const micropip = pyodide.pyimport("micropip");
 
-    // TEMPORARY WORKAROUND (added 2026-04-19, auto-disables 2026-05-03):
-    // authlib 1.7+ requires cryptography>=45.0.1, which has no pure-Python wheel;
-    // the streamlit-pinned Pyodide 0.26.2 only ships cryptography 43.x, so
-    // micropip resolution fails. Preload Pyodide's built cryptography and cap
-    // authlib below 1.7 to satisfy the transitive requirement. Revisit once
-    // stlite bumps to a Pyodide release that ships cryptography>=45.0.1
-    // (Pyodide 0.29.0 already does). After the expiry date, the workaround is
-    // skipped — if it's still needed the install will fail loudly.
-    if (new Date() < new Date("2026-07-04")) {
-      await pyodide.loadPackage(["cryptography", "ssl"]);
-      await micropip.install("authlib<1.7");
+    const [pyMajor] = pyodide.version.split(".").map(Number);
+
+    // Pyodide unvendors the stdlib "ssl" module on the 0.x line (Python 3.12/3.13),
+    // but cognite.client.config imports it unconditionally. Pyodide 314.x (Python 3.14)
+    // ships ssl in the stdlib again, and micropip can't even resolve "ssl" as an
+    // installable package there, so only load it for the 0.x line.
+    if (pyMajor === 0) {
+      await pyodide.loadPackage("ssl");
     }
 
     // Read packages to install from environment variable as JSON

@@ -1,4 +1,4 @@
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from tests.utils import get_url, jsgz_load
@@ -9,9 +9,9 @@ class TestIntegrations:
         self,
         cognite_client: CogniteClient,
         async_client: AsyncCogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=get_url(async_client.simulators, "/simulators/integrations/delete"),
             json={},
@@ -20,4 +20,4 @@ class TestIntegrations:
         cognite_client.simulators.integrations.delete(external_ids="test")
 
         exp_body = {"items": [{"externalId": "test"}]}
-        assert exp_body == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert exp_body == jsgz_load(httpx2_mock.get_requests()[0].content)

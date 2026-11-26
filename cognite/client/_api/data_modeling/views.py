@@ -3,20 +3,36 @@ from __future__ import annotations
 import asyncio
 from collections import defaultdict
 from collections.abc import AsyncIterator, Sequence
-from typing import TYPE_CHECKING, Literal, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from cognite.client._api_client import APIClient
 from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
+from cognite.client.data_classes._base import CogniteResource
 from cognite.client.data_classes.data_modeling.ids import (
     ViewId,
     ViewIdentifier,
     _load_identifier,
 )
-from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewFilter, ViewList
+from cognite.client.data_classes.data_modeling.views import (
+    RecordViewApply,
+    View,
+    ViewApply,
+    ViewFilter,
+    ViewList,
+    ViewUsedFor,
+)
 
 if TYPE_CHECKING:
     from cognite.client import AsyncCogniteClient
     from cognite.client.config import ClientConfig
+
+
+class _ViewOrRecordViewApplyAdapter(CogniteResource):
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> ViewApply | RecordViewApply:  # type: ignore[override]
+        if "streamId" in resource:
+            return RecordViewApply._load(resource)
+        return ViewApply._load(resource)
 
 
 class ViewsAPI(APIClient):
@@ -45,6 +61,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> AsyncIterator[View]: ...
 
     @overload
@@ -56,6 +73,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> AsyncIterator[ViewList]: ...
 
     async def __call__(
@@ -66,6 +84,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> AsyncIterator[View] | AsyncIterator[ViewList]:
         """Iterate over views
 
@@ -78,11 +97,12 @@ class ViewsAPI(APIClient):
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
+            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given type(s).
 
         Yields:
             View | ViewList: yields View one by one if chunk_size is not specified, else ViewList objects.
         """  # noqa: DOC404
-        filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
+        filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global, used_for)
         async for item in self._list_generator(
             list_cls=ViewList,
             resource_cls=View,
@@ -174,6 +194,7 @@ class ViewsAPI(APIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> ViewList:
         """`List views <https://api-docs.cognite.com/20230101/tag/Views/operation/listViews>`_.
 
@@ -183,6 +204,7 @@ class ViewsAPI(APIClient):
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
+            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given type(s).
 
         Returns:
             ViewList: List of requested views
@@ -206,7 +228,7 @@ class ViewsAPI(APIClient):
                 >>> for view_list in client.data_modeling.views(chunk_size=10):
                 ...     view_list  # do something with the views
         """
-        filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global)
+        filter_ = ViewFilter(space, include_inherited_properties, all_versions, include_global, used_for)
 
         return await self._list(
             list_cls=ViewList,
@@ -218,16 +240,16 @@ class ViewsAPI(APIClient):
         )
 
     @overload
-    async def apply(self, view: Sequence[ViewApply]) -> ViewList: ...
+    async def apply(self, view: Sequence[ViewApply | RecordViewApply]) -> ViewList: ...
 
     @overload
-    async def apply(self, view: ViewApply) -> View: ...
+    async def apply(self, view: ViewApply | RecordViewApply) -> View: ...
 
-    async def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
+    async def apply(self, view: ViewApply | RecordViewApply | Sequence[ViewApply | RecordViewApply]) -> View | ViewList:
         """`Create or update (upsert) one or more views <https://api-docs.cognite.com/20230101/tag/Views/operation/ApplyViews>`_.
 
         Args:
-            view (ViewApply | Sequence[ViewApply]): View(s) to create or update.
+            view (ViewApply | RecordViewApply | Sequence[ViewApply | RecordViewApply]): View(s) to create or update.
 
         Returns:
             View | ViewList: Created view(s)
@@ -311,11 +333,32 @@ class ViewsAPI(APIClient):
                 ...     },
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
+
+            Create a record-backed view (the stream must already exist).
+
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     ContainerId,
+                ...     MappedPropertyApply,
+                ...     RecordViewApply,
+                ... )
+                >>> record_view = RecordViewApply(
+                ...     space="mySpace",
+                ...     external_id="myRecordView",
+                ...     version="v1",
+                ...     stream_id="myStream",
+                ...     properties={
+                ...         "title": MappedPropertyApply(
+                ...             container=ContainerId("mySpace", "myRecordContainer"),
+                ...             container_property_identifier="title",
+                ...         ),
+                ...     },
+                ... )
+                >>> res = client.data_modeling.views.apply(record_view)
         """
         return await self._create_multiple(
             list_cls=ViewList,
             resource_cls=View,
             items=view,
-            input_resource_cls=ViewApply,
+            input_resource_cls=_ViewOrRecordViewApplyAdapter,
             override_semaphore=self._get_semaphore("write_schema"),
         )

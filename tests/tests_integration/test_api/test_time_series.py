@@ -324,18 +324,13 @@ class TestTimeSeriesAPI:
 
 class TestTimeSeriesHelperMethods:
     @pytest.mark.parametrize(
-        "ts_idx, exp_count",
-        [(0, 2609), (2, 1), (3, 1)],
+        "ts_idx, is_string, exp_count",
+        [(0, False, 2609), (1, True, 2609), (2, False, 1), (3, False, 1)],
     )
-    def test_get_count__numeric(self, test_tss: TimeSeriesList, ts_idx: int, exp_count: int) -> None:
-        assert test_tss[ts_idx].is_string is False
+    def test_get_count(self, test_tss: TimeSeriesList, ts_idx: int, is_string: bool, exp_count: int) -> None:
+        assert test_tss[ts_idx].is_string is is_string
         count = test_tss[ts_idx].count()
         assert count == exp_count
-
-    def test_get_count__string_fails(self, test_ts_string: TimeSeries) -> None:
-        assert test_ts_string.is_string is True
-        with pytest.raises(RuntimeError, match=r"String time series does not support count aggregate\."):
-            test_ts_string.count()
 
     def test_get_latest(self, test_ts_numeric: TimeSeries, test_ts_string: TimeSeries) -> None:
         res1 = get_or_raise(test_ts_numeric.latest())

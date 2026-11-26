@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from typing import Any, Literal, TypeAlias, TypeVar, cast
 
@@ -24,6 +25,8 @@ from cognite.client.data_classes.data_modeling.data_types import (
 from cognite.client.data_classes.data_modeling.ids import ContainerId, PropertyId, ViewId
 from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._text import convert_all_keys_to_camel_case_recursive, to_camel_case, to_snake_case
+
+ViewUsedFor: TypeAlias = Literal["node", "edge", "all", "record"]
 
 
 class ViewCore(DataModelingSchemaResource["ViewApply"], ABC):
@@ -102,6 +105,10 @@ class ViewApply(ViewCore):
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
+        if "streamId" in resource:
+            raise ValueError(
+                "Looks like this resource is a record view (has 'streamId'); use RecordViewApply.load(...) instead."
+            )
         properties = (
             {k: ViewPropertyApply.load(v) for k, v in resource["properties"].items()}
             if "properties" in resource
@@ -144,6 +151,103 @@ class ViewApply(ViewCore):
         return referenced_containers
 
 
+class RecordViewApply(CogniteResource):
+    """A view backed by a Streams & Records stream. Write only version.
+
+    .. admonition:: Alpha feature
+
+        Views for Records is an alpha feature, subject to breaking changes without prior notice.
+
+    Args:
+        space (str): The workspace for the view, a unique identifier for the space.
+        external_id (str): Combined with the space is the unique identifier of the view.
+        version (str): DMS version.
+        stream_id (str | Sequence[str]): External id of the records stream this view targets. Accepts a maximum of 1 stream.
+        description (str | None): Textual description of the view
+        name (str | None): Human readable name for the view.
+        filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
+            Views for Records only support a subset of the standard filter set.
+        implements (list[ViewId] | None): References to other record views from where this view will inherit properties.
+        properties (dict[str, MappedPropertyApply] | None): Mapped properties of the view. Only mapped properties
+            (no connections) referencing ``usedFor="record"`` containers are supported.
+    """
+
+    def __init__(
+        self,
+        space: str,
+        external_id: str,
+        version: str,
+        stream_id: str | Sequence[str],
+        description: str | None = None,
+        name: str | None = None,
+        filter: Filter | None = None,
+        implements: list[ViewId] | None = None,
+        properties: dict[str, MappedPropertyApply] | None = None,
+    ) -> None:
+        validate_data_modeling_identifier(space, external_id)
+        self.space = space
+        self.external_id = external_id
+        self.version = version
+        self.description = description
+        self.name = name
+        self.filter = filter
+        self.implements: list[ViewId] = implements or []
+        self.properties = properties
+        self.stream_id = [stream_id] if isinstance(stream_id, str) else list(stream_id)
+
+    def as_id(self) -> ViewId:
+        return ViewId(space=self.space, external_id=self.external_id, version=self.version)
+
+    def as_property_ref(self, property: str) -> tuple[str, str, str]:
+        return self.as_id().as_property_ref(property)
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Self:
+        properties: dict[str, MappedPropertyApply] | None = (
+            {k: MappedPropertyApply.load(v) for k, v in resource["properties"].items()}
+            if "properties" in resource
+            else None
+        )
+        implements = [ViewId.load(v) for v in resource["implements"]] if "implements" in resource else None
+        return cls(
+            space=resource["space"],
+            external_id=resource["externalId"],
+            version=resource["version"],
+            stream_id=resource["streamId"],
+            description=resource.get("description"),
+            name=resource.get("name"),
+            filter=Filter._load_if(resource.get("filter")),
+            implements=implements,
+            properties=properties,
+        )
+
+    def dump(self, camel_case: bool = True) -> dict[str, Any]:
+        output = super().dump(camel_case)
+        if self.implements:
+            output["implements"] = [v.dump(camel_case) for v in self.implements]
+        if self.filter is not None:
+            output["filter"] = self.filter.dump()
+        if self.properties:
+            output["properties"] = {k: v.dump(camel_case) for k, v in self.properties.items()}
+        output["streamId" if camel_case else "stream_id"] = self.stream_id
+        return output
+
+    def as_write(self) -> RecordViewApply:
+        return self
+
+    def referenced_containers(self) -> set[ContainerId]:
+        """Helper function to get the set of containers referenced by this view.
+
+        Returns:
+            set[ContainerId]: The set of containers referenced by this view.
+        """
+        referenced_containers = set()
+        for prop in (self.properties or {}).values():
+            if isinstance(prop, MappedPropertyApply):
+                referenced_containers.add(prop.container)
+        return referenced_containers
+
+
 class View(ViewCore):
     """A group of properties. Read only version.
 
@@ -159,8 +263,10 @@ class View(ViewCore):
         filter (Filter | None): A filter Domain Specific Language (DSL) used to create advanced filter queries.
         implements (list[ViewId] | None): References to the views from where this view will inherit properties and edges.
         writable (bool): Whether the view supports write operations.
-        used_for (Literal['node', 'edge', 'all']): Does this view apply to nodes, edges or both.
+        used_for (ViewUsedFor): Does this view apply to nodes, edges, both, or records.
         is_global (bool): Whether this is a global view.
+        stream_id (list[str] | None): External id(s) of the records stream(s) this view targets, if this is a
+            record-backed view. Views for Records is an alpha feature, subject to breaking changes without prior notice.
     """
 
     def __init__(
@@ -176,8 +282,9 @@ class View(ViewCore):
         filter: Filter | None,
         implements: list[ViewId] | None,
         writable: bool,
-        used_for: Literal["node", "edge", "all"],
+        used_for: ViewUsedFor,
         is_global: bool,
+        stream_id: list[str] | None = None,
     ) -> None:
         super().__init__(
             space,
@@ -194,6 +301,7 @@ class View(ViewCore):
         self.properties = properties
         self.last_updated_time = last_updated_time
         self.created_time = created_time
+        self.stream_id = stream_id
 
     @classmethod
     def _load(cls, resource: dict) -> View:
@@ -211,7 +319,13 @@ class View(ViewCore):
             used_for=resource["usedFor"],
             is_global=resource["isGlobal"],
             properties={k: ViewProperty.load(v) for k, v in resource.get("properties", {}).items()},
+            stream_id=resource.get("streamId"),
         )
+
+    @property
+    def is_record_view(self) -> bool:
+        """Whether this view is used for Records"""
+        return self.used_for == "record"
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
         output = super().dump(camel_case)
@@ -221,11 +335,14 @@ class View(ViewCore):
         return output
 
     def as_apply(self) -> ViewApply:
-        """Convert to a view applies.
+        """Convert to a view apply.
 
         Returns:
             ViewApply: The view apply.
         """
+        if self.is_record_view:
+            raise ValueError("This view is a record view, use as_record_view_apply() instead.")
+
         properties: dict[str, ViewPropertyApply] | None = None
         if self.properties:
             for k, v in self.properties.items():
@@ -249,6 +366,43 @@ class View(ViewCore):
             space=self.space,
             external_id=self.external_id,
             version=self.version,
+            description=self.description,
+            name=self.name,
+            filter=self.filter,
+            implements=self.implements,
+            properties=properties,
+        )
+
+    def as_record_view_apply(self) -> RecordViewApply:
+        """Convert to a record view apply.
+
+        Returns:
+            RecordViewApply: The record view apply.
+
+        Raises:
+            ValueError: If this view is not a record view.
+        """
+        if not self.is_record_view:
+            raise ValueError("This view is not a record view, use as_apply() instead.")
+
+        if not self.stream_id:
+            raise ValueError("This record view has no stream_id set; cannot convert to RecordViewApply.")
+
+        properties: dict[str, MappedPropertyApply] | None = None
+        if self.properties:
+            properties = {}
+            for k, v in self.properties.items():
+                if not isinstance(v, MappedProperty):
+                    raise NotImplementedError(
+                        f"Unsupported conversion to record view apply for property type {type(v)}"
+                    )
+                properties[k] = v.as_apply()
+
+        return RecordViewApply(
+            space=self.space,
+            external_id=self.external_id,
+            version=self.version,
+            stream_id=self.stream_id,
             description=self.description,
             name=self.name,
             filter=self.filter,
@@ -330,13 +484,16 @@ class ViewList(WriteableCogniteResourceList[ViewApply, View]):
 
 
 class ViewFilter(CogniteFilter):
-    """Represent the filer arguments for the list endpoint.
+    """Represent the filter arguments for the list endpoint.
 
     Args:
         space (str | None): The space to query
         include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
         all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
         include_global (bool): Whether to include global views.
+        used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given type(s).
+            Defaults to the node, edge and all (excluding record views). Pass "record"
+            to include record views.
     """
 
     def __init__(
@@ -345,11 +502,24 @@ class ViewFilter(CogniteFilter):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> None:
         self.space = space
         self.include_inherited_properties = include_inherited_properties
         self.all_versions = all_versions
         self.include_global = include_global
+        self.used_for = self._parse_used_for(used_for)
+
+    @staticmethod
+    def _parse_used_for(used_for: ViewUsedFor | Sequence[ViewUsedFor] | None) -> Sequence[ViewUsedFor] | None:
+        if used_for is None:
+            return None
+        elif isinstance(used_for, str):
+            return [used_for]
+        elif isinstance(used_for, Sequence):
+            return cast("Sequence[ViewUsedFor]", used_for)
+        else:
+            raise TypeError(f"Invalid value for 'used_for': {used_for!r}")
 
 
 class ViewProperty(CogniteResource, ABC):

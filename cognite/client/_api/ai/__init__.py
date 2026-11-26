@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from cognite.client._api.ai.time_series import AITimeSeriesAPI
 from cognite.client._api.ai.tools import AIToolsAPI
 from cognite.client._api_client import APIClient
 
@@ -13,3 +14,4 @@ class AIAPI(APIClient):
     def __init__(self, config: ClientConfig, api_version: str | None, cognite_client: AsyncCogniteClient) -> None:
         super().__init__(config, api_version, cognite_client)
         self.tools = AIToolsAPI(config, api_version, cognite_client)
+        self.time_series = AITimeSeriesAPI(config, api_version, cognite_client)

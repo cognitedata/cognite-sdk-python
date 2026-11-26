@@ -583,11 +583,9 @@ class JobMetricsList(CogniteResourceList[JobMetrics]):
 
 
 _JOBFORMAT_CLASS_BY_TYPE: dict[str, type[JobFormat]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
-    for subclass in JobFormat.__subclasses__()
+    subclass._type: subclass for subclass in JobFormat.__subclasses__()
 }
 
 _INCREMENTALLOAD_CLASS_BY_TYPE: dict[str, type[IncrementalLoad]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
-    for subclass in IncrementalLoad.__subclasses__()
+    subclass._type: subclass for subclass in IncrementalLoad.__subclasses__()
 }

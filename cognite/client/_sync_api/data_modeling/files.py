@@ -1,6 +1,5 @@
 """
 ===============================================================================
-9470d8a000250f440afb8977cc7a2e93
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -9,12 +8,12 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, BinaryIO, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from cognite.client import AsyncCogniteClient
+from cognite.client._api.data_modeling.files import COGNITE_FILE_VIEW_ID
 from cognite.client._constants import DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
-from cognite.client.data_classes.data_modeling.cdm.v1 import CogniteFile
 from cognite.client.data_classes.data_modeling.ids import NodeId, ViewId
 from cognite.client.data_classes.data_modeling.instances import InstanceSort, Node, NodeApply, NodeList
 from cognite.client.data_classes.data_modeling.views import View
@@ -22,7 +21,8 @@ from cognite.client.data_classes.filters import Filter
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
-COGNITE_FILE_VIEW_ID = CogniteFile.get_source()
+if TYPE_CHECKING:
+    from typing import BinaryIO
 
 
 class SyncDataModelingFilesAPI(SyncAPIClient):

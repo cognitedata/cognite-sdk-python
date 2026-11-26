@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes import MeteringData, MeteringDataList
@@ -28,8 +28,8 @@ def metering_url(async_client: AsyncCogniteClient) -> str:
 
 
 @pytest.fixture
-def mock_byids_with_data(httpx_mock: HTTPXMock, metering_url: str) -> None:
-    httpx_mock.add_response(
+def mock_byids_with_data(httpx2_mock: HTTPXMock, metering_url: str) -> None:
+    httpx2_mock.add_response(
         method="POST",
         url=f"{metering_url}/byids",
         status_code=200,
@@ -38,8 +38,8 @@ def mock_byids_with_data(httpx_mock: HTTPXMock, metering_url: str) -> None:
 
 
 @pytest.fixture
-def mock_list(httpx_mock: HTTPXMock, metering_url: str) -> None:
-    httpx_mock.add_response(
+def mock_list(httpx2_mock: HTTPXMock, metering_url: str) -> None:
+    httpx2_mock.add_response(
         method="POST",
         url=f"{metering_url}/list",
         status_code=200,
@@ -51,10 +51,10 @@ class TestMeteringAPI:
     def test_retrieve_single(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         metering_url: str,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=f"{metering_url}/byids",
             status_code=200,
@@ -68,7 +68,7 @@ class TestMeteringAPI:
         assert res.meter_id == meter_id
         assert res.datapoints == []
 
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 1
         assert requests[0].method == "POST"
         body = jsgz_load(requests[0].content)
@@ -77,7 +77,7 @@ class TestMeteringAPI:
     def test_retrieve_single_with_time_range(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_byids_with_data: None,
     ) -> None:
         res = cognite_client.metering.retrieve(
@@ -92,17 +92,17 @@ class TestMeteringAPI:
         assert res.datapoints[0].timestamp == 1764547200000
         assert res.datapoints[0].average == 42000.0
 
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["start"] == 1764547200000
         assert body["numberOfDatapoints"] == 2
 
     def test_retrieve_single_not_found(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         metering_url: str,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=f"{metering_url}/byids",
             status_code=404,
@@ -116,10 +116,10 @@ class TestMeteringAPI:
     def test_retrieve_list_of_ids(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         metering_url: str,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=f"{metering_url}/byids",
             status_code=200,
@@ -133,7 +133,7 @@ class TestMeteringAPI:
         assert res[0].meter_id == ATLAS_METER["meterId"]
         assert res[1].meter_id == FILES_METER["meterId"]
 
-        request = httpx_mock.get_requests()[0]
+        request = httpx2_mock.get_requests()[0]
         assert request.method == "POST"
         body = jsgz_load(request.content)
         assert body["items"] == [
@@ -144,7 +144,7 @@ class TestMeteringAPI:
     def test_retrieve_list_of_ids_with_time_range(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_byids_with_data: None,
     ) -> None:
         res = cognite_client.metering.retrieve(
@@ -157,14 +157,14 @@ class TestMeteringAPI:
         assert isinstance(res, MeteringDataList)
         assert len(res[0].datapoints) == 2
 
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["start"] == 1764547200000
         assert body["numberOfDatapoints"] == 2
 
     def test_list(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_list: None,
     ) -> None:
         res = cognite_client.metering.list()
@@ -175,10 +175,10 @@ class TestMeteringAPI:
     def test_list_with_filter(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         metering_url: str,
     ) -> None:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="POST",
             url=f"{metering_url}/list",
             status_code=200,
@@ -196,7 +196,7 @@ class TestMeteringAPI:
         assert isinstance(res, MeteringDataList)
         assert len(res) == 2
 
-        requests = httpx_mock.get_requests()
+        requests = httpx2_mock.get_requests()
         assert len(requests) == 1
         assert requests[0].method == "POST"
         assert f"{metering_url}/list" in str(requests[0].url)
@@ -209,13 +209,13 @@ class TestMeteringAPI:
     def test_list_with_time_range(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_list: None,
     ) -> None:
         res = cognite_client.metering.list(start=1764547200000, number_of_datapoints=2)
 
         assert isinstance(res, MeteringDataList)
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert body["start"] == 1764547200000
         assert body["numberOfDatapoints"] == 2
 
@@ -229,7 +229,7 @@ class TestMeteringAPI:
     def test_retrieve_start_type_conversion(
         self,
         cognite_client: CogniteClient,
-        httpx_mock: HTTPXMock,
+        httpx2_mock: HTTPXMock,
         mock_byids_with_data: None,
         start: datetime | str,
         end: datetime | None,
@@ -241,7 +241,7 @@ class TestMeteringAPI:
             number_of_datapoints=10,
         )
 
-        body = jsgz_load(httpx_mock.get_requests()[0].content)
+        body = jsgz_load(httpx2_mock.get_requests()[0].content)
         assert "start" in body
         assert body["start"] > 0
         if isinstance(start, datetime):

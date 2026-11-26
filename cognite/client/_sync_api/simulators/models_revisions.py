@@ -1,6 +1,5 @@
 """
 ===============================================================================
-47e322bfcfd2d8e68861dbb683a9a381
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -23,9 +22,6 @@ from cognite.client.data_classes.simulators.models import (
 )
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
@@ -206,19 +202,22 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
         )  # type: ignore [misc]
 
     @overload
-    def create(self, items: SimulatorModelRevisionWrite) -> SimulatorModelRevision: ...
+    def create(self, items: SimulatorModelRevisionWrite, delete_oldest: bool = False) -> SimulatorModelRevision: ...
 
     @overload
-    def create(self, items: Sequence[SimulatorModelRevisionWrite]) -> SimulatorModelRevisionList: ...
+    def create(
+        self, items: Sequence[SimulatorModelRevisionWrite], delete_oldest: bool = False
+    ) -> SimulatorModelRevisionList: ...
 
     def create(
-        self, items: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]
+        self, items: SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite], delete_oldest: bool = False
     ) -> SimulatorModelRevision | SimulatorModelRevisionList:
         """
         `Create simulator model revisions <https://api-docs.cognite.com/20230101-beta/tag/Simulator-Models/operation/create_simulator_model_revision_simulators_models_revisions_post>`_
 
         Args:
             items (SimulatorModelRevisionWrite | Sequence[SimulatorModelRevisionWrite]): The model revision(s) to create.
+            delete_oldest (bool): When true, deletes the oldest revisions for the model, keeping only the newest revisions up to the per model limit.
 
         Returns:
             SimulatorModelRevision | SimulatorModelRevisionList: Created simulator model revision(s)
@@ -255,8 +254,13 @@ class SyncSimulatorModelRevisionsAPI(SyncAPIClient):
                 ...     ),
                 ... ]
                 >>> res = client.simulators.models.revisions.create(revisions)
+
+            Create a new simulator model revision, deleting the oldest revision if the per-model limit is reached:
+                >>> res = client.simulators.models.revisions.create(revisions, delete_oldest=True)
         """
-        return run_sync(self.__async_client.simulators.models.revisions.create(items=items))
+        return run_sync(
+            self.__async_client.simulators.models.revisions.create(items=items, delete_oldest=delete_oldest)
+        )
 
     def retrieve_data(self, model_revision_external_id: str) -> SimulatorModelRevisionDataList:
         """

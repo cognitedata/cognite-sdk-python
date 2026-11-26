@@ -269,6 +269,7 @@ TIME_ATTRIBUTES = {
     "deleted_time",
     "end_time",
     "expiration_time",
+    "expiry_time",
     "last_called",
     "last_failure",
     "last_indexed_time",

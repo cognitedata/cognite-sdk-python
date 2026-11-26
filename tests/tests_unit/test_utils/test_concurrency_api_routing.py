@@ -14,9 +14,10 @@ from collections.abc import Awaitable, Callable, Iterator
 from typing import Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import AsyncCogniteClient
+from cognite.client.data_classes.ai import ForecastInputDatapoint, ForecastInputTimeSeries
 from cognite.client.data_classes.data_modeling.ids import NodeId
 from tests.utils import fresh_concurrency_state
 
@@ -45,12 +46,12 @@ def semaphore_spy(monkeypatch: pytest.MonkeyPatch) -> Iterator[list[SemCall]]:
 
 
 @pytest.fixture
-def mock_any_request(httpx_mock: HTTPXMock) -> HTTPXMock:
+def mock_any_request(httpx2_mock: HTTPXMock) -> HTTPXMock:
     """Catch-all 200 response for any HTTP method/URL — tests only care about the semaphore."""
     any_url = re.compile(r".*")
     for method in ("GET", "POST", "PUT", "DELETE", "PATCH"):
-        httpx_mock.add_response(method=method, url=any_url, status_code=200, json={"items": []}, is_optional=True)
-    return httpx_mock
+        httpx2_mock.add_response(method=method, url=any_url, status_code=200, json={"items": []}, is_optional=True)
+    return httpx2_mock
 
 
 def assert_routed(calls: list[SemCall], sub_config: str, operation: str) -> None:
@@ -139,10 +140,10 @@ class TestSemaphoreRoutingSpecialResponses:
     """Tests where the catch-all ``mock_any_request`` shape doesn't fit the response parser."""
 
     async def test_raw_read(
-        self, async_client: AsyncCogniteClient, semaphore_spy: list[SemCall], httpx_mock: HTTPXMock
+        self, async_client: AsyncCogniteClient, semaphore_spy: list[SemCall], httpx2_mock: HTTPXMock
     ) -> None:
         # raw.rows.retrieve parses a single Row directly (not {items: [...]}); supply a row shape:
-        httpx_mock.add_response(
+        httpx2_mock.add_response(
             method="GET",
             url=re.compile(r".*/raw/dbs/.*"),
             status_code=200,
@@ -150,6 +151,20 @@ class TestSemaphoreRoutingSpecialResponses:
         )
         await async_client.raw.rows.retrieve("db1", "t1", "k1")
         assert_routed(semaphore_spy, "raw", "read")
+
+    async def test_ai_time_series_write(
+        self, async_client: AsyncCogniteClient, semaphore_spy: list[SemCall], httpx2_mock: HTTPXMock
+    ) -> None:
+        # forecast parses the response metadata, so supply the full response shape:
+        httpx2_mock.add_response(
+            method="POST",
+            url=re.compile(r".*/ai/timeseries/forecast$"),
+            status_code=200,
+            json={"items": [{"label": "a", "forecast": []}], "metadata": {"quantileLevels": [0.5], "cohorts": []}},
+        )
+        series = ForecastInputTimeSeries("a", [ForecastInputDatapoint(0, 1.0), ForecastInputDatapoint(60_000, 1.0)])
+        await async_client.ai.time_series.forecast(series)
+        assert_routed(semaphore_spy, "ai_time_series", "write")
 
 
 class TestStrictFixtureCatchesMissingSemaphore:

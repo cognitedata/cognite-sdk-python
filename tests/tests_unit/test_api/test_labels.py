@@ -4,21 +4,21 @@ import re
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Label, LabelDefinition, LabelDefinitionList, LabelDefinitionWrite
 from tests.utils import get_url, jsgz_load
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
 
 @pytest.fixture
 def mock_labels_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> dict[str, Any]:
     response_body = {
         "items": [
@@ -27,17 +27,17 @@ def mock_labels_response(
     }
     url_pattern = re.compile(re.escape(get_url(async_client.labels)) + "/.+")
 
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
     return response_body
 
 
 class TestLabels:
     def test_list(
-        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.labels.list(external_id_prefix="P")
-        assert "P" == jsgz_load(httpx_mock.get_requests()[0].content)["filter"]["externalIdPrefix"]
+        assert "P" == jsgz_load(httpx2_mock.get_requests()[0].content)["filter"]["externalIdPrefix"]
         assert mock_labels_response["items"] == res.dump(camel_case=True)
 
     def test_access_properties(self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any]) -> None:
@@ -48,25 +48,25 @@ class TestLabels:
         assert res[0].created_time > 0
 
     def test_call(
-        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         list(cognite_client.labels(chunk_size=None, limit=10))
-        calls = httpx_mock.get_requests()
+        calls = httpx2_mock.get_requests()
         assert 1 == len(calls)
         assert {"limit": 10} == jsgz_load(calls[0].content)
 
     def test_create_single(
-        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.labels.create(LabelDefinitionWrite(external_id="1", name="my_label", description="text"))
         assert isinstance(res, LabelDefinition)
         assert mock_labels_response["items"][0] == res.dump(camel_case=True)
         assert {"items": [{"externalId": "1", "name": "my_label", "description": "text"}]} == jsgz_load(
-            httpx_mock.get_requests()[0].content
+            httpx2_mock.get_requests()[0].content
         )
 
     def test_create_multiple(
-        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.labels.create(
             [
@@ -78,21 +78,21 @@ class TestLabels:
         assert mock_labels_response["items"] == res.dump(camel_case=True)
         assert {
             "items": [{"externalId": "1", "name": "Rotating"}, {"externalId": "2", "name": "Positive Displacement"}]
-        } == jsgz_load(httpx_mock.get_requests()[0].content)
+        } == jsgz_load(httpx2_mock.get_requests()[0].content)
 
     def test_delete_single(
-        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.labels.delete(external_id="PUMP")
-        assert {"items": [{"externalId": "PUMP"}]} == jsgz_load(httpx_mock.get_requests()[0].content)
+        assert {"items": [{"externalId": "PUMP"}]} == jsgz_load(httpx2_mock.get_requests()[0].content)
         assert res is None
 
     def test_delete_multiple(
-        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.labels.delete(external_id=["PUMP", "VALVE"])
         assert {"items": [{"externalId": "PUMP"}, {"externalId": "VALVE"}]} == jsgz_load(
-            httpx_mock.get_requests()[0].content
+            httpx2_mock.get_requests()[0].content
         )
         assert res is None
 
@@ -107,9 +107,9 @@ class TestLabels:
         assert Label._load_list(labels) == [Label("a"), Label("b"), Label("c"), Label("d")]
 
     def test_list_with_dataset_ids(
-        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx_mock: HTTPXMock
+        self, cognite_client: CogniteClient, mock_labels_response: dict[str, Any], httpx2_mock: HTTPXMock
     ) -> None:
         res = cognite_client.labels.list(data_set_ids=[123], data_set_external_ids=["x"])
         assert res[0].data_set_id == 1
-        ds_ids = jsgz_load(httpx_mock.get_requests()[0].content)["filter"]["dataSetIds"]
+        ds_ids = jsgz_load(httpx2_mock.get_requests()[0].content)["filter"]["dataSetIds"]
         assert [{"id": 123}, {"externalId": "x"}] == ds_ids

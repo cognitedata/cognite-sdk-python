@@ -1,6 +1,5 @@
 """
 ===============================================================================
-e588d70452083ea18d701f837f1be049
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -48,8 +47,7 @@ from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
 if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-from cognite.client.data_classes.data_modeling.debug import DebugParameters
+    from cognite.client.data_classes.data_modeling.debug import DebugParameters
 
 
 class SyncInstancesAPI(SyncAPIClient):
@@ -526,7 +524,7 @@ class SyncInstancesAPI(SyncAPIClient):
     def subscribe(
         self,
         query: QuerySync,
-        callback: Callable[[QueryResult], None | Awaitable[None]],
+        callback: Callable[[QueryResult], Awaitable[None] | None],
         poll_delay_seconds: float = 30,
         throttle_seconds: float = 1,
     ) -> SubscriptionContext:
@@ -542,7 +540,7 @@ class SyncInstancesAPI(SyncAPIClient):
 
         Args:
             query (QuerySync): The query to subscribe to.
-            callback (Callable[[QueryResult], None | Awaitable[None]]): The callback function to call when the result set changes. Can be a regular or async function.
+            callback (Callable[[QueryResult], Awaitable[None] | None]): The callback function to call when the result set changes. Can be a regular or async function.
             poll_delay_seconds (float): The time to wait between polls when no data is present. Defaults to 30 seconds.
             throttle_seconds (float): The time to wait between polls despite data being present.
 
@@ -1276,7 +1274,7 @@ class SyncInstancesAPI(SyncAPIClient):
         backup_every: timedelta | None = timedelta(minutes=15),
         backup_on_exit: bool = False,
     ) -> SyncSessionWithCache:
-        r"""
+        """
         Create a managed sync session with persistent backup to a CDF file.
 
         Returns a :class:`SyncSessionWithCache` that you use as an async context manager. On entry
@@ -1350,7 +1348,7 @@ class SyncInstancesAPI(SyncAPIClient):
                 ...     backup_on_exit=True,
                 ... )
                 >>> def do_work(nodes: NodeList) -> None:
-                ...     print(len(nodes))  # ¯\_(ツ)_/¯
+                ...     print(len(nodes))
                 >>>
                 >>> async with session:  # doctest: +SKIP
                 ...     await session.sync_until_live()

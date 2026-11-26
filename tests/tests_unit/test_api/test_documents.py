@@ -5,14 +5,14 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any
 
 import pytest
-from pytest_httpx import HTTPXMock
+from pytest_httpx2 import HTTPXMock
 
 from cognite.client import CogniteClient
 from cognite.client.data_classes import Document
 from tests.utils import get_url
 
 if TYPE_CHECKING:
-    from pytest_httpx import HTTPXMock
+    from pytest_httpx2 import HTTPXMock
 
     from cognite.client import AsyncCogniteClient, CogniteClient
 
@@ -107,7 +107,7 @@ def example_documents() -> list[dict[str, Any]]:
 
 @pytest.fixture
 def mock_documents_list_response(
-    httpx_mock: HTTPXMock,
+    httpx2_mock: HTTPXMock,
     cognite_client: CogniteClient,
     example_documents: list[dict[str, Any]],
     async_client: AsyncCogniteClient,
@@ -115,15 +115,15 @@ def mock_documents_list_response(
     response_body = {"items": example_documents}
     url_pattern = re.compile(re.escape(get_url(async_client.documents)) + "/.+")
 
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
-    httpx_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="GET", url=url_pattern, status_code=200, json=response_body, is_optional=True)
 
-    return httpx_mock
+    return httpx2_mock
 
 
 @pytest.fixture
 def mock_documents_search_response(
-    httpx_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
+    httpx2_mock: HTTPXMock, cognite_client: CogniteClient, async_client: AsyncCogniteClient
 ) -> Iterator[HTTPXMock]:
     response_body = {
         "items": [
@@ -146,15 +146,15 @@ def mock_documents_search_response(
     url_pattern = re.compile(re.escape(get_url(async_client.documents)) + "/.+")
 
     # Add responses for the search endpoint
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST", url=url_pattern, status_code=200, json=response_body_with_cursor, is_optional=True
     )
-    httpx_mock.add_response(
+    httpx2_mock.add_response(
         method="POST", url=url_pattern, status_code=200, json=response_body_with_cursor, is_optional=True
     )
-    httpx_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
+    httpx2_mock.add_response(method="POST", url=url_pattern, status_code=200, json=response_body, is_optional=True)
 
-    yield httpx_mock
+    yield httpx2_mock
 
 
 class TestDocumentsAPI:

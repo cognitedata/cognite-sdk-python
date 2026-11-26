@@ -1,6 +1,5 @@
 """
 ===============================================================================
-2a396ea3e9b0baf4f113cef7ed72f19b
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
@@ -16,9 +15,6 @@ from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes import DataSet, DataSetFilter, DataSetList, DataSetUpdate, DataSetWrite, TimestampRange
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncDataSetsAPI(SyncAPIClient):
@@ -64,6 +60,9 @@ class SyncDataSetsAPI(SyncAPIClient):
         """
         Iterate over data sets
 
+        .. deprecated:: 8.23.0
+            The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Fetches data sets as they are iterated over, so you keep a limited number of data sets in memory.
 
         Args:
@@ -102,6 +101,9 @@ class SyncDataSetsAPI(SyncAPIClient):
         """
         `Create one or more data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/createDataSets>`_.
 
+        .. deprecated:: 8.23.0
+            The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             data_set (DataSet | DataSetWrite | Sequence[DataSet] | Sequence[DataSetWrite]): Union[DataSet, Sequence[DataSet]]: Data set or list of data sets to create.
 
@@ -124,6 +126,9 @@ class SyncDataSetsAPI(SyncAPIClient):
     def retrieve(self, id: int | None = None, external_id: str | None = None) -> DataSet | None:
         """
         `Retrieve a single data set by id <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/getDataSets>`_.
+
+        .. deprecated:: 8.23.0
+            The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | None): ID
@@ -155,6 +160,9 @@ class SyncDataSetsAPI(SyncAPIClient):
     ) -> DataSetList:
         """
         `Retrieve multiple data sets by id <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/getDataSets>`_.
+
+        .. deprecated:: 8.23.0
+            The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             ids (Sequence[int] | None): IDs
@@ -188,6 +196,9 @@ class SyncDataSetsAPI(SyncAPIClient):
     def aggregate_count(self, filter: DataSetFilter | dict[str, Any] | None = None) -> int:
         """
         `Aggregate data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/aggregateDataSets>`_.
+
+        .. deprecated:: 8.23.0
+            The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             filter (DataSetFilter | dict[str, Any] | None): Filter on data set filter with exact match
@@ -230,6 +241,9 @@ class SyncDataSetsAPI(SyncAPIClient):
         """
         `Update one or more data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/updateDataSets>`_.
 
+        .. deprecated:: 8.23.0
+            The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             item (DataSet | DataSetWrite | DataSetUpdate | Sequence[DataSet | DataSetWrite | DataSetUpdate]): Data set(s) to update
             mode (Literal['replace_ignore_null', 'patch', 'replace']): How to update data when a non-update object is given (DataSet or -Write). If you use 'replace_ignore_null', only the fields you have set will be used to replace existing (default). Using 'replace' will additionally clear all the fields that are not specified by you. Last option, 'patch', will update only the fields you have set and for container-like fields such as metadata or labels, add the values to the existing. For more details, see :ref:`appendix-update`.
@@ -269,6 +283,9 @@ class SyncDataSetsAPI(SyncAPIClient):
     ) -> DataSetList:
         """
         `List data sets <https://api-docs.cognite.com/20230101/tag/Data-sets/operation/listDataSets>`_.
+
+        .. deprecated:: 8.23.0
+            The Data Sets API is deprecated and is scheduled for removal on 2027-12-31. Scope data with spaces and govern consumption with data products. See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             metadata (dict[str, str] | None): Custom, application-specific metadata. String key -> String value.

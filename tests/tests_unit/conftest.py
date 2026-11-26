@@ -22,7 +22,7 @@ from cognite.client.data_classes import (
     TimeSeries,
 )
 from cognite.client.data_classes import Sequence as CogniteSequence
-from cognite.client.data_classes.agents import Agent, AgentTool
+from cognite.client.data_classes.agents import Agent, AgentTool, Subagent
 from cognite.client.data_classes.data_modeling import NodeId
 from tests.utils import get_wrapped_async_client
 
@@ -305,6 +305,7 @@ class DefaultResourceGenerator:
         runtime_version: str | None = None,
         labels: list[str] | None = None,
         tools: Sequence[AgentTool] | None = None,
+        subagents: Sequence[Subagent] | None = None,
         created_time: int = 123,
         last_updated_time: int = 123,
         owner_id: str | None = None,
@@ -318,6 +319,7 @@ class DefaultResourceGenerator:
             runtime_version=runtime_version,
             labels=labels,
             tools=tools,
+            subagents=subagents,
             created_time=created_time,
             last_updated_time=last_updated_time,
             owner_id=owner_id,

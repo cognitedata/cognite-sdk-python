@@ -3,14 +3,20 @@ from __future__ import annotations
 import getpass
 import pprint
 import re
+import ssl
 import warnings
 from typing import Any, ClassVar, NoReturn, overload
+
+from typing_extensions import deprecated
 
 from cognite.client._version import __api_subversion__
 from cognite.client.credentials import CredentialProvider
 from cognite.client.utils._auxiliary import is_non_negative_int, is_positive_int, load_resource_to_dict
 from cognite.client.utils._concurrency import ConcurrencySettings
 from cognite.client.utils._importing import local_import
+
+# For "pyodide reasons", we need to know if the user has changed this to a non-default value:
+_DEFAULT_MAX_CONNECTION_POOL_SIZE = 20
 
 
 class GlobalConfig:
@@ -30,13 +36,16 @@ class GlobalConfig:
         max_connection_pool_size (int): The maximum number of connections which will be kept in the SDKs connection pool.
             Defaults to 20.
         disable_ssl (bool): Whether or not to disable SSL. Defaults to False
+        ssl_context (ssl.SSLContext | None): Custom SSL context for certificate verification. Overrides the
+            default certifi bundle. Ignored when ``disable_ssl`` is True. Must be set before the first API
+            request. Defaults to None. See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#ssl-certificate-configuration
         proxy (str | None): Route all traffic (HTTP and HTTPS) via this proxy, e.g. ``http://localhost:8030``.
             For proxy authentication, embed credentials in the URL: ``http://user:pass@localhost:8030``.
             Defaults to None (no proxy).
         max_workers (int): DEPRECATED: Use 'concurrency_settings' instead. Maximum number of concurrent API calls. Defaults to 5.
         concurrency_settings (ConcurrencySettings): Settings controlling the maximum number of concurrent API requests
             for different API categories (general, raw, data_modeling etc.). These settings are frozen after the
-            first API request is made. See https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
+            first API request is made. See :ref:`Concurrency Settings <settings:Concurrency Settings>`.
         follow_redirects (bool): Whether or not to follow redirects. Defaults to False.
         file_download_chunk_size (int | None): Specify the file chunk size for streaming file downloads. When not specified
             (default is None), the actual chunk size is determined by the underlying transport, which in turn is based on the
@@ -46,6 +55,11 @@ class GlobalConfig:
             translates to 65536 (64KiB chunks).
         silence_feature_preview_warnings (bool): Whether or not to silence warnings triggered by using alpha or beta
             features. Defaults to False.
+
+    Note:
+        When running in a browser environment (e.g. Pyodide/JupyterLite/Streamlit) the settings ``disable_ssl``, ``ssl_context``,
+        ``proxy``, and ``max_connection_pool_size`` are all ignored. Networking is handled by the browser's JS runtime, which
+        controls certificate validation, proxying, and connection pooling itself.
     """
 
     _instance: ClassVar[GlobalConfig]
@@ -68,8 +82,9 @@ class GlobalConfig:
         self.max_retries: int = 10
         self.max_retries_connect: int = 3
         self.max_retry_backoff: int = 60
-        self.max_connection_pool_size: int = 20
+        self.max_connection_pool_size: int = _DEFAULT_MAX_CONNECTION_POOL_SIZE
         self.disable_ssl: bool = False
+        self.ssl_context: ssl.SSLContext | None = None
         self.proxy: str | None = None
         self._max_workers: int = 5
         self._concurrency_settings: ConcurrencySettings = ConcurrencySettings()
@@ -92,6 +107,9 @@ class GlobalConfig:
             case "file_download_chunk_size" | "file_upload_chunk_size" if val is not None and not is_positive_int(val):
                 raise ValueError(f"{name} must be a positive integer or None, got {val!r}")
 
+            case "ssl_context" if val is not None and not isinstance(val, ssl.SSLContext):
+                raise TypeError(f"ssl_context must be an ssl.SSLContext or None, got {type(val)!r}")
+
         super().__setattr__(name, val)
 
     @property
@@ -103,7 +121,7 @@ class GlobalConfig:
         warnings.warn(
             "'max_workers' is no longer in use in the SDK as of v8, and will be removed in the next major version. "
             "Use 'global_config.concurrency_settings' instead for fine-grained control. For more info: "
-            "https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings",
+            "https://cognite-sdk-python.readthedocs-hosted.com/en/stable/settings.html#concurrency-settings",
             FutureWarning,
             stacklevel=2,
         )
@@ -156,6 +174,10 @@ class GlobalConfig:
                 "Cannot apply 'concurrency_settings' via apply_settings. Modify the individual attributes on "
                 "'global_config.concurrency_settings' instead."
             )
+        if "ssl_context" in loaded:
+            raise ValueError(
+                "Cannot apply 'ssl_context' via apply_settings. Set 'global_config.ssl_context' directly instead."
+            )
         if "default_client_config" in loaded:
             if not isinstance(loaded["default_client_config"], ClientConfig):
                 loaded["default_client_config"] = ClientConfig.load(loaded["default_client_config"])
@@ -184,11 +206,14 @@ class ClientConfig:
         client_name (str): A user-defined name for the client. Used to identify number of unique applications/scripts running on top of CDF.
         project (str): CDF Project name.
         credentials (CredentialProvider): Credentials. e.g. Token, ClientCredentials.
-        api_subversion (str | None): API subversion
-        base_url (str | None): Base url to send requests to. Typically on the form ``https://<cluster>.cognitedata.com``.
+        api_subversion (str): API subversion. Set to e.g. "alpha" or "beta" to access restricted preview features.
+        base_url (str | None): Base url to send requests to. Typically on the form ``https://<cluster>.cognitedata.com``,
+            but any URL works, e.g. that of a reverse proxy. It is used verbatim for all requests, path prefix included.
             Either base_url or cluster must be provided.
         cluster (str | None): The cluster where the CDF project is located. When passed, it is assumed that the base
             URL can be constructed as: ``https://<cluster>.cognitedata.com``. Either base_url or cluster must be provided.
+            If both are given, base_url is used as-is and cluster is completely ignored (with a warning). In the next major
+            version (v9), this will raise.
         headers (dict[str, str] | None): Additional headers to add to all requests.
         timeout (int | None): Timeout on requests sent to the api. Defaults to 60 seconds.
         file_transfer_timeout (int | None): Timeout on file upload/download requests. Defaults to 600 seconds.
@@ -201,7 +226,7 @@ class ClientConfig:
         client_name: str,
         project: str,
         credentials: CredentialProvider,
-        api_subversion: str | None = None,
+        api_subversion: str = __api_subversion__,
         base_url: str | None = None,
         cluster: str | None = None,
         headers: dict[str, str] | None = None,
@@ -212,9 +237,8 @@ class ClientConfig:
         self.client_name = client_name
         self.project = project
         self.credentials = credentials
-        self.api_subversion = api_subversion or __api_subversion__
-        self.base_url = self._validate_base_url_or_cluster(base_url, cluster)
-        self._cluster = cluster
+        self.api_subversion = api_subversion or __api_subversion__  # to avoid breaking changes, can be remove in v9
+        self.base_url, self._cluster = self._validate_base_url_or_cluster(base_url, cluster)
         self.headers = headers or {}
         self.timeout = timeout or 60
         self.file_transfer_timeout = file_transfer_timeout or 600
@@ -247,23 +271,29 @@ class ClientConfig:
     def _validate_config(self) -> None:
         if not self.project:
             raise ValueError(f"Invalid value for ClientConfig.project: {self.project!r}")
-        elif self.cdf_cluster is None:
-            warnings.warn(f"Given base URL may be invalid, please double-check: {self.base_url!r}", UserWarning)
 
     @overload
     def _validate_base_url_or_cluster(self, base_url: None, cluster: None) -> NoReturn: ...
 
     @overload
-    def _validate_base_url_or_cluster(self, base_url: str | None, cluster: str | None) -> str: ...
+    def _validate_base_url_or_cluster(self, base_url: str | None, cluster: str | None) -> tuple[str, str | None]: ...
 
-    def _validate_base_url_or_cluster(self, base_url: str | None, cluster: str | None) -> str:
+    def _validate_base_url_or_cluster(self, base_url: str | None, cluster: str | None) -> tuple[str, str | None]:
+        if base_url is not None and cluster is not None:
+            warnings.warn(
+                "Both 'base_url' and 'cluster' are provided. 'base_url' will take precedence and 'cluster' will be ignored. "
+                "In the next major version (v9), this will raise an error instead.",
+                FutureWarning,
+                stacklevel=3,
+            )
         match base_url, cluster:
             case None, str():
-                return f"https://{cluster}.cognitedata.com"
+                return f"https://{cluster}.cognitedata.com", cluster
             case str(), _:
-                if cluster is not None:
-                    warnings.warn("'cluster' parameter is ignored when 'base_url' is provided.", UserWarning)
-                return base_url.rstrip("/")
+                # When 'base_url' is provided, we want to fully ignore 'cluster' if the user (accidentally or not) provided it
+                # (the warning above will trigger if both are provided). This is because we have a deprecated property 'cdf_cluster'
+                # that will return the 'cluster' if provided, else try to guess it from the 'base_url'. This causes confusion.
+                return base_url.rstrip("/"), None
             case _:
                 raise ValueError(
                     "Either 'base_url' or 'cluster' must be provided. Passing 'cluster' assumes the base URL "
@@ -271,11 +301,16 @@ class ClientConfig:
                 )
 
     def __str__(self) -> str:
-        return pprint.pformat(vars(self), indent=4)
+        return pprint.pformat(self._vars_redacted(), indent=4)
 
     def _repr_html_(self) -> str:
         pd = local_import("pandas")
-        return pd.Series(vars(self)).to_frame("ClientConfig").sort_index()._repr_html_()
+        return pd.Series(self._vars_redacted()).to_frame("ClientConfig").sort_index()._repr_html_()
+
+    def _vars_redacted(self) -> dict[str, Any]:
+        from cognite.client.utils._redaction import redact_headers
+
+        return {**vars(self), "headers": redact_headers(self.headers)}
 
     @classmethod
     def default(
@@ -342,7 +377,7 @@ class ClientConfig:
             client_name=loaded["client_name"],
             project=loaded["project"],
             credentials=credentials,
-            api_subversion=loaded.get("api_subversion"),
+            api_subversion=loaded.get("api_subversion") or __api_subversion__,
             base_url=loaded.get("base_url"),
             cluster=loaded.get("cluster"),
             headers=loaded.get("headers"),
@@ -352,11 +387,28 @@ class ClientConfig:
         )
 
     @property
+    @deprecated(
+        "This property is a best-effort helper used internally in the SDK to determine the CDF cluster to make e.g. "
+        "warnings/error messages better, it is never used in API request routing (that is decided by 'base_url'). "
+        "A return value of None from this property simply means the cluster could not be guessed from the base URL, "
+        "and is not an error. It was never meant to be a reliable source of truth, which is impossible due to the SDK "
+        "allowing arbitrary base URLs. Will be removed in the next major version (v9)."
+    )
     def cdf_cluster(self) -> str | None:
+        """The CDF cluster, if known: as passed to 'cluster', else guessed from 'base_url'.
+
+        .. deprecated:: 8.16.0
+            This property is a best-effort helper used internally in the SDK to determine the CDF cluster to make e.g.
+            warnings/error messages better. It was never meant to be a reliable source of truth, which is impossible
+            due to the SDK allowing arbitrary base URLs. Will be removed in the next major version (v9).
+        """
+        return self._attempt_to_get_cdf_cluster()
+
+    def _attempt_to_get_cdf_cluster(self) -> str | None:
+        """A best effort attempt to extract the cluster from the base url when cluster was not explicitly provided in init."""
         if self._cluster is not None:
             return self._cluster
 
-        # A best effort attempt to extract the cluster from the base url
         if match := re.match(
             r"https?://([^/\.\s]*\.plink\.)?([^/\.\s]+)\.cognitedata\.com(?::\d+)?(?:/|$)", self.base_url
         ):

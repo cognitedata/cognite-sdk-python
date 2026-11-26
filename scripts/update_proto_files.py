@@ -2,13 +2,15 @@
 Creates/updates the proto files in cognite/client/_proto/ using definitions from:
 https://github.com/cognitedata/protobuf-files
 
-Requires `protoc` to be installed. On MacOS, you can install it with Homebrew:
-$ brew install protobuf
-
 Note:
-As long as we support `protobuf >= 4`, we need to use the last `protoc` version with v4 support.
-That seems to be release 25.4, which can be downloaded here:
-https://github.com/protocolbuffers/protobuf/releases
+As long as we support `protobuf >= 5`, we need to use the earliest `protoc` version from
+the v5 release train, since gencode embeds a minimum-runtime-version guard tied to whatever
+protoc produced it. That's release 26.0, which can be downloaded here:
+https://github.com/protocolbuffers/protobuf/releases/tag/v26.0
+
+This script expects that exact version at the repo root as `./protoc`.
+
+Run this script from the repo root: `python scripts/update_proto_files.py`
 """
 
 import os
@@ -19,8 +21,11 @@ from pathlib import Path
 import requests
 
 URL_BASE = "https://raw.githubusercontent.com/cognitedata/protobuf-files/master/v1/timeseries/"
+# In case you need to target a branch/specific commit:
+# URL_BASE = "https://raw.githubusercontent.com/cognitedata/protobuf-files/a542c592c9646068b167abd13df16204216ce00f/v1/timeseries/"
 FILES = "data_point_list_response.proto", "data_points.proto", "data_point_insertion_request.proto"
 PROTO_DIR = str(Path("cognite/client/_proto").resolve())
+PROTOC = str(Path("protoc").resolve())
 
 
 def download_proto_files_and_compile():
@@ -29,7 +34,7 @@ def download_proto_files_and_compile():
         for file in map(Path, FILES):
             file.touch()
             file.write_bytes(requests.get(f"{URL_BASE}{file}").content)
-        subprocess.run(["protoc", *FILES, f"--python_out={PROTO_DIR}", f"--pyi_out={PROTO_DIR}"], check=True)
+        subprocess.run([PROTOC, *FILES, f"--python_out={PROTO_DIR}", f"--pyi_out={PROTO_DIR}"], check=True)
 
 
 def patch_bad_imports():

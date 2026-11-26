@@ -1,6 +1,5 @@
 """
 ===============================================================================
-6cfa53b9447f702dc542f27bb112a22f
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -210,6 +209,9 @@ class SyncFilesAPI(SyncAPIClient):
         """
         `Retrieve a single file metadata by id <https://api-docs.cognite.com/20230101/tag/Files/operation/getFileByInternalId>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             id (int | None): ID
             external_id (str | None): External ID
@@ -217,6 +219,9 @@ class SyncFilesAPI(SyncAPIClient):
 
         Returns:
             FileMetadata | None: Requested file metadata or None if it does not exist.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve>` instead.
 
         Examples:
 
@@ -244,6 +249,9 @@ class SyncFilesAPI(SyncAPIClient):
         """
         `Retrieve multiple file metadatas by id <https://api-docs.cognite.com/20230101/tag/Files/operation/byIdsFiles>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             ids (Sequence[int] | None): IDs
             external_ids (SequenceNotStr[str] | None): External IDs
@@ -252,6 +260,9 @@ class SyncFilesAPI(SyncAPIClient):
 
         Returns:
             FileMetadataList: The requested file metadatas.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve>` instead.
 
         Examples:
 
@@ -279,6 +290,9 @@ class SyncFilesAPI(SyncAPIClient):
         """
         `Aggregate files <https://api-docs.cognite.com/20230101/tag/Files/operation/aggregateFiles>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Args:
             filter (FileMetadataFilter | dict[str, Any] | None): Filter on file metadata filter with exact match
 
@@ -304,6 +318,9 @@ class SyncFilesAPI(SyncAPIClient):
     ) -> None:
         """
         `Delete files <https://api-docs.cognite.com/20230101/tag/Files/operation/deleteFiles>`_.
+
+        .. deprecated:: 8.23.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Args:
             id (int | Sequence[int] | None): Id or list of ids
@@ -347,6 +364,9 @@ class SyncFilesAPI(SyncAPIClient):
     ) -> FileMetadata | FileMetadataList:
         """
         `Update files <https://api-docs.cognite.com/20230101/tag/Files/operation/updateFiles>`_.
+
+        .. deprecated:: 8.23.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         Currently, a full replacement of labels on a file is not supported (only partial add/remove updates). See the example below on how to perform partial labels update.
 
@@ -399,6 +419,9 @@ class SyncFilesAPI(SyncAPIClient):
         """
         `Search for files <https://api-docs.cognite.com/20230101/tag/Files/operation/searchFiles>`_.
 
+        .. deprecated:: 8.23.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
+
         Primarily meant for human-centric use-cases and data exploration, not for programs, since matching and ordering may change over time. Use the `list` function if stable or exact matches are required.
 
         Args:
@@ -445,6 +468,9 @@ class SyncFilesAPI(SyncAPIClient):
 
         Returns:
             FileMetadata: No description.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.upload_content <cognite.client.AsyncCogniteClient.data_modeling.files.upload_content>` instead.
 
         Examples:
 
@@ -592,6 +618,9 @@ class SyncFilesAPI(SyncAPIClient):
         Returns:
             FileMetadata: No description.
 
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.upload_content_bytes <cognite.client.AsyncCogniteClient.data_modeling.files.upload_content_bytes>` instead.
+
         Examples:
 
             Finish a file creation by uploading the content using instance_id:
@@ -708,6 +737,9 @@ class SyncFilesAPI(SyncAPIClient):
     ) -> FileMultipartUploadSession:
         """
         Begin uploading a file in multiple parts.
+
+        .. deprecated:: 8.23.0
+            The (asset-centric) Files metadata API is deprecated and is scheduled for removal on 2027-12-31. Create and query files as CogniteFile instances in the core data model (file content upload/download remain available via instance_id). See https://docs.cognite.com/cdf/deprecated for details and migration guidance.
 
         This allows uploading files larger than 5GiB.
         Note that the size of each part may not exceed 4000MiB, and the size of each part except the last
@@ -872,6 +904,9 @@ class SyncFilesAPI(SyncAPIClient):
 
         Returns:
             dict[int, str] | dict[str, str] | dict[NodeId, str] | dict[int | str | NodeId, str]: Dictionary containing download urls.
+
+        Tip:
+            If you are working with Data Modeling, consider using :py:meth:`client.data_modeling.files.retrieve_download_urls <cognite.client.AsyncCogniteClient.data_modeling.files.retrieve_download_urls>` instead.
 
         Examples:
 

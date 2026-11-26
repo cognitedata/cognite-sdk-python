@@ -15,16 +15,16 @@ jobs:
       - uses: ./.github/actions/setup
 
       - name: Build package
-        run: poetry build
+        run: uv build
 
       - name: Release to PyPI
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
-        run: twine upload --skip-existing --disable-progress-bar --verbose dist/*
+        run: uv run twine upload --skip-existing --disable-progress-bar --verbose dist/*
 
       # TODO: Make this work again
-      # - name: Push code snippets to service-contracts
+      # - name: Push code snippets to infrastructure
       #   env:
       #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       #   run: sh ./scripts/deploy_code_snippets.sh || echo 'PR failed. There is probably

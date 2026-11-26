@@ -20,7 +20,7 @@ from cognite.client._api.functions.calls import FunctionCallsAPI
 from cognite.client._api.functions.schedules import FunctionSchedulesAPI
 from cognite.client._api.functions.utils import _get_function_internal_id
 from cognite.client._api_client import APIClient
-from cognite.client._constants import _RUNNING_IN_BROWSER, DEFAULT_LIMIT_READ
+from cognite.client._constants import _RUNNING_IN_PYODIDE, DEFAULT_LIMIT_READ
 from cognite.client.data_classes import (
     Function,
     FunctionCall,
@@ -199,7 +199,7 @@ class FunctionsAPI(APIClient):
             env_vars (dict[str, str] | None): Environment variables as key/value pairs. Keys can contain only letters, numbers or the underscore character. You can create at most 100 environment variables.
             cpu (float | None): Number of CPU cores per function. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
             memory (float | None): Memory per function measured in GB. Allowed range and default value are given by the `limits endpoint. <https://api-docs.cognite.com/20230101/tag/Functions/operation/functionsLimits>`_, and None translates to the API default. On Azure, only the default value is used.
-            runtime (RunTime | None): The function runtime. Valid values are ["py310", "py311", "py312", "py313", `None`], and `None` translates to the API default which will change over time. The runtime "py313" resolves to the latest version of the Python 3.13 series.
+            runtime (RunTime | None): The function runtime. Valid values are ["py311", "py312", "py313", "py314", `None`], and `None` translates to the API default which will change over time. The runtime "py314" resolves to the latest version of the Python 3.14 series.
             metadata (dict[str, str] | None): Metadata for the function as key/value pairs. Key & values can be at most 32, 512 characters long respectively. You can have at the most 16 key-value pairs, with a maximum size of 512 bytes.
             index_url (str | None): Index URL for Python Package Manager to use. Be aware of the intrinsic security implications of using the `index_url` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/use_functions#additional-arguments>`_
             extra_index_urls (list[str] | None): Extra Index URLs for Python Package Manager to use. Be aware of the intrinsic security implications of using the `extra_index_urls` option. `More information can be found on official docs, <https://docs.cognite.com/cdf/functions/use_functions#additional-arguments>`_
@@ -786,7 +786,7 @@ def validate_function_folder(root_path: str, function_path: str, skip_folder_val
 
     if not skip_folder_validation:
         module_path = ".".join(Path(function_path).with_suffix("").parts)
-        if not _RUNNING_IN_BROWSER:
+        if not _RUNNING_IN_PYODIDE:
             # We do an actual import to verify the files (this is done in a separate process)
             _check_imports(root_path, module_path)
         else:
@@ -879,7 +879,7 @@ def _validate_and_parse_requirements(requirements: list[str]) -> list[str]:
     Returns:
         list[str]: The parsed requirements
     """
-    if _RUNNING_IN_BROWSER:
+    if _RUNNING_IN_PYODIDE:
         warnings.warn(
             "Running in a browser environment, skipping client-side validation of requirements.",
             UserWarning,

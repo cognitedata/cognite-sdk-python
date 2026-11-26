@@ -162,6 +162,18 @@ class TestClientConfig:
             assert "Authorization", "Bearer abc" == client_config.credentials.authorization_header()
             assert client_config.client_name == "test-client"
 
+    @pytest.mark.dsl
+    def test_str_and_repr_html_redact_credential_headers(self, client_config: ClientConfig) -> None:
+        secret = "PLANTED-SECRET-VALUE"
+        client_config.headers = {"api-key": secret, "x-my-app": "harmless"}
+
+        for output in (str(client_config), client_config._repr_html_()):
+            assert secret not in output
+            assert "harmless" in output
+
+        # ...and the config itself is of course left alone, it still has to work:
+        assert client_config.headers == {"api-key": secret, "x-my-app": "harmless"}
+
     @pytest.mark.parametrize("protocol", ("http", "https"))
     @pytest.mark.parametrize("end", ("", "/", ":8080", "/api/v1/", ":8080/api/v1/"))
     @pytest.mark.parametrize("subdomain", ("", "p001.plink."))
@@ -172,7 +184,7 @@ class TestClientConfig:
         self, client_config: ClientConfig, protocol: str, end: str, subdomain: str, cluster: str
     ) -> None:
         client_config.base_url = f"{protocol}://{subdomain}{cluster}.cognitedata.com{end}"
-        assert client_config.cdf_cluster == cluster
+        assert client_config._attempt_to_get_cdf_cluster() == cluster
 
     @pytest.mark.parametrize("protocol", ("http", "https"))
     @pytest.mark.parametrize("end", ("", "/", ":8080", "/api/v1/", ":8080/api/v1/"))
@@ -182,8 +194,20 @@ class TestClientConfig:
         self, client_config: ClientConfig, protocol: str, end: str, subdomain: str, cluster: str
     ) -> None:
         client_config.base_url = f"{protocol}://{subdomain}{cluster}cognitedata.com{end}"
-        assert client_config.cdf_cluster is None
+        assert client_config._attempt_to_get_cdf_cluster() is None
 
     def test_extract_invalid_url(self, client_config: ClientConfig) -> None:
         client_config.base_url = "invalid"
-        assert client_config.cdf_cluster is None
+        assert client_config._attempt_to_get_cdf_cluster() is None
+
+    @pytest.mark.parametrize(
+        "base_url, exp_cluster",
+        (("https://greenfield.cognitedata.com", "greenfield"), ("https://proxy.example.com/cognite", None)),
+    )
+    def test_public_cdf_cluster_warns_but_agrees(
+        self, client_config: ClientConfig, base_url: str, exp_cluster: str | None
+    ) -> None:
+        client_config.base_url = base_url
+        with pytest.warns(DeprecationWarning, match="best-effort helper"):
+            assert client_config.cdf_cluster == exp_cluster
+            assert client_config._attempt_to_get_cdf_cluster() == exp_cluster

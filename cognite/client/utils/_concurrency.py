@@ -7,7 +7,6 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import UserList
 from collections.abc import Callable, Coroutine
-from enum import Enum
 from typing import (
     Any,
     Literal,
@@ -18,7 +17,7 @@ from typing import (
 
 from typing_extensions import assert_never
 
-from cognite.client._constants import _RUNNING_IN_BROWSER
+from cognite.client._constants import _RUNNING_IN_PYODIDE
 from cognite.client.exceptions import CogniteAPIError, CogniteDuplicatedError, CogniteNotFoundError
 from cognite.client.utils._auxiliary import no_op
 
@@ -222,10 +221,6 @@ class DataModelingConcurrencyConfig(ConcurrencyConfig):
         )
 
 
-class RecordsConcurrencyOperation(Enum):
-    WRITE = "write"
-
-
 class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
     """
     Global concurrency settings for the Records API. Named "global" to distinguish from
@@ -233,18 +228,22 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
     Args:
         concurrency_settings (ConcurrencySettings): Reference to the parent settings object.
-        write (int): Maximum concurrent write requests (ingest, delete).
+        read (int): Maximum concurrent read requests (list/filter, sync).
+        write (int): Maximum concurrent write requests (ingest, upsert, delete).
     """
 
     def __init__(
         self,
         concurrency_settings: ConcurrencySettings,
+        read: int,
         write: int,
     ) -> None:
-        super().__init__(concurrency_settings, "records", read=0, write=write, delete=0)
+        super().__init__(concurrency_settings, "records", read=read, write=write, delete=0)
 
-    def _semaphore_factory(self, operation: RecordsConcurrencyOperation, project: str) -> asyncio.BoundedSemaphore:
-        key = (operation.value, project, asyncio.get_running_loop())
+    def _semaphore_factory(
+        self, operation: Literal["read", "write", "delete"], project: str
+    ) -> asyncio.BoundedSemaphore:
+        key = (operation, project, asyncio.get_running_loop())
         if key in self._semaphore_cache:
             return self._semaphore_cache[key]
 
@@ -252,7 +251,9 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
 
         global_config.concurrency_settings._freeze()
         match operation:
-            case RecordsConcurrencyOperation.WRITE:
+            case "read":
+                sem = asyncio.BoundedSemaphore(self._read)
+            case "write" | "delete":
                 sem = asyncio.BoundedSemaphore(self._write)
             case _:
                 assert_never(operation)
@@ -260,7 +261,7 @@ class RecordsGlobalConcurrencyConfig(ConcurrencyConfig):
         return sem
 
     def __repr__(self) -> str:
-        return f"Concurrency[records](write={self._write})"
+        return f"Concurrency[records](read={self._read}, write={self._write})"
 
 
 class FileConcurrencyConfig(ConcurrencyConfig):
@@ -300,7 +301,7 @@ class FileConcurrencyConfig(ConcurrencyConfig):
         self._open_files = open_files
         # open_files key is only the event loop — project is intentionally excluded. It is a bit unfortunate
         # that we can't remove the loop from the key as well, but semaphores are bound to the loop they are
-        # first used on, one of the httpx.Clients would break if we did that. We intentionally use a limit << OS fd limit.
+        # first used on, one of the httpx2.Clients would break if we did that. We intentionally use a limit << OS fd limit.
         self._open_files_cache: dict[asyncio.AbstractEventLoop, asyncio.BoundedSemaphore] = {}
 
     @property
@@ -386,7 +387,7 @@ class ConcurrencySettings:
     The total concurrency budget, i.e. the maximum number of concurrent requests in flight,
     is the sum of all categories (e.g. general) and operation types (e.g. read or write).
 
-    See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings
+    See: https://cognite-sdk-python.readthedocs-hosted.com/en/stable/settings.html#concurrency-settings
 
     Note:
         Most settings apply on a per-project level, thus if you have multiple clients
@@ -425,7 +426,9 @@ class ConcurrencySettings:
             write_schema=1,
         )
         self._files = FileConcurrencyConfig(self, read=4, write=2, upload=5, download=5, delete=2, open_files=15)
-        self._records = RecordsGlobalConcurrencyConfig(self, write=20)
+        self._records = RecordsGlobalConcurrencyConfig(self, read=1, write=2)
+        # Time series forecasting and imputation run model inference, so they get a small budget of their own:
+        self._ai_time_series = CRUDConcurrency(self, "ai_time_series", read=1, write=1, delete=1)
 
     @functools.cached_property
     def _all_concurrency_configs(self) -> list[ConcurrencyConfig]:
@@ -439,7 +442,7 @@ class ConcurrencySettings:
             raise RuntimeError(
                 f"Cannot modify '{api_name}.{name}' after concurrency settings have been used to create semaphores. "
                 "Concurrency settings must be configured before sending any API requests. "
-                "See: https://cognite-sdk-python.readthedocs-hosted.com/en/latest/settings.html#concurrency-settings"
+                "See: https://cognite-sdk-python.readthedocs-hosted.com/en/stable/settings.html#concurrency-settings"
             )
 
     def _freeze(self) -> None:
@@ -475,6 +478,10 @@ class ConcurrencySettings:
     def records(self) -> RecordsGlobalConcurrencyConfig:
         return self._records
 
+    @property
+    def ai_time_series(self) -> CRUDConcurrency:
+        return self._ai_time_series
+
     def __repr__(self) -> str:
         frozen_str = " (frozen)" if self.__frozen else ""
         return (
@@ -485,6 +492,7 @@ class ConcurrencySettings:
             f"  data_modeling={self._data_modeling},\n"
             f"  files={self._files},\n"
             f"  records={self._records},\n"
+            f"  ai_time_series={self._ai_time_series},\n"
             f"){frozen_str}"
         )
 
@@ -592,6 +600,9 @@ class TasksSummary:
     def raise_compound_exception_if_failed_tasks(
         self, task_unwrap_fn: Callable = no_op, task_list_element_unwrap_fn: Callable | None = None
     ) -> None:
+        # TODO: replace task_unwrap_fn + task_list_element_unwrap_fn with an `ids` field on AsyncSDKTask itself,
+        # set at construction time (e.g. AsyncSDKTask(fn, arg, ids=[id_])). Call sites then always call
+        # raise_compound_exception_if_failed_tasks() with no args, and the two-lambda unwrap pattern goes away.
         if not (self.unknown_error or self.not_found_error or self.duplicated_error):
             return None
 
@@ -755,7 +766,7 @@ def _get_event_loop_executor() -> EventLoopThreadExecutor:
     with _EXECUTOR_INIT_LOCK:
         if _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON is None:
             ex_cls = EventLoopThreadExecutor
-            if _RUNNING_IN_BROWSER:
+            if _RUNNING_IN_PYODIDE:
                 ex_cls = cast(type[EventLoopThreadExecutor], _PyodideEventLoopExecutor)
             _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON = ex_cls()
             _INTERNAL_EVENT_LOOP_THREAD_EXECUTOR_SINGLETON.start()

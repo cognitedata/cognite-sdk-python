@@ -56,7 +56,8 @@ class AutoClassSummary(Autosummary):
                     methods = [
                         method_name
                         for method_name in attributes
-                        if callable(getattr(obj, method_name)) and not method_name.startswith("_")
+                        if callable(getattr(obj, method_name))
+                        and (not method_name.startswith("_") or method_name == "__call__")
                     ]
                     content.extend([f"{name}.{method}" for method in methods])
                 if "attributes" in self.options:

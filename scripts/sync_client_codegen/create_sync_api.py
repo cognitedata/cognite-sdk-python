@@ -9,7 +9,6 @@ from pathlib import Path
 from scripts.sync_client_codegen.codegen_utils import (
     clean_up_files,
     ensure_parent_dir,
-    file_has_changed,
     find_api_class_name,
     find_class_node,
     find_self_assignments,
@@ -18,14 +17,12 @@ from scripts.sync_client_codegen.codegen_utils import (
     get_all_imports,
     get_canonical_source,
     get_dot_path_lookup,
-    get_module_level_constants,
+    get_imported_names,
     get_source_code,
-    hash_file,
     is_pyfile,
     list_apis,
     list_sync_apis,
     method_should_be_converted,
-    read_hash_from_file,
     run_ruff,
     setup_async_mock_client,
 )
@@ -43,6 +40,13 @@ from scripts.sync_client_codegen.create_sync_client import (
 )
 
 SYNC_API_TEMPLATE = Path("scripts/sync_client_codegen/sync_api_template.txt").read_text(encoding="utf-8")
+# Imports done at runtime by the template, which we don't want to duplicate under 'if TYPE_CHECKING:':
+SYNC_API_TEMPLATE_IMPORTS = frozenset(
+    name
+    for line in SYNC_API_TEMPLATE.splitlines()
+    if line.startswith(("from ", "import "))
+    for name in get_imported_names(ast.parse(line).body[0])
+)
 
 
 def _generate_code_for_single_sync_api(
@@ -50,7 +54,6 @@ def _generate_code_for_single_sync_api(
     source_code: str,
     source_path: Path,
     dot_path_lookup: dict[str, str],
-    file_hash: str,
 ) -> str | None:
     if class_name is None:
         return None
@@ -145,22 +148,19 @@ def _generate_code_for_single_sync_api(
         )
         generated_methods.append(impl_def)
 
-    all_imports, type_checking_imports = get_all_imports(tree, source_code, source_path)
+    all_imports, type_checking_imports = get_all_imports(tree, source_path, SYNC_API_TEMPLATE_IMPORTS)
     # In init, we find nested APIs - we also may need to modify existing imports:
     api_names, nested_apis = find_self_assignments(class_def)
     all_imports = fix_imports_for_sync_apis(all_imports, api_names)
-    module_constants = get_module_level_constants(tree)
 
     # Combine everything 🤞
     return (
         textwrap.dedent(
             SYNC_API_TEMPLATE.format(
-                file_hash=file_hash,
                 class_name=foolish_cls_name_rewrite(class_name),
                 existing_imports=all_imports,
                 type_checking_imports=type_checking_imports,
                 nested_apis_init="\n        ".join(nested_apis),
-                module_constants=module_constants,
             )
         )
         + "\n\n".join(generated_methods)
@@ -174,7 +174,6 @@ class SingleAPIFile:
     read_filepath: Path
     class_name: str | None = None
     new_source: str | None = dataclasses.field(default=None, repr=False)
-    new_hash: str | None = None
 
     def __hash__(self) -> int:
         return hash(id(self))
@@ -183,11 +182,6 @@ class SingleAPIFile:
     def get_new_source(self) -> str:
         assert self.new_source is not None
         return self.new_source
-
-    @property
-    def get_new_hash(self) -> str:
-        assert self.new_hash is not None
-        return self.new_hash
 
     @property
     def temp_filepath(self) -> Path:
@@ -226,22 +220,16 @@ def _maybe_regenerate_file(
         if read_file.name != "__init__.py":
             raise RuntimeError(f"Could not find API class name in file='{read_file}'")
 
-        if not verify:
-            ensure_parent_dir(write_file)
-            write_file.touch(exist_ok=True)
-            if args.verbose:
+        if write_file.is_file() and not write_file.read_text(encoding="utf-8").strip():
+            if args.verbose and not verify:
                 print(f"- Skipping codegen for '{read_file}': empty __init__.py file ⏭️")
-        return SingleAPIFile(write_file, read_file)
+            return SingleAPIFile(write_file, read_file)
+        # Missing or (manually) modified, needs to be (re)written as an empty file:
+        return SingleAPIFile(write_file, read_file, new_source="")
 
-    read_file_hash = hash_file(read_file)
-    if not file_has_changed(write_file, read_file_hash):
-        if args.verbose and not verify:
-            print(f"- Skipping codegen for '{read_file}': no changes detected ⏭️")
-        return SingleAPIFile(write_file, read_file)
-
-    generated_code = _generate_code_for_single_sync_api(
-        class_name, source_code, read_file, dot_path_lookup, read_file_hash
-    )
+    # Note: We always regenerate, whether it is up to date (e.g. not manually edited) is determined later
+    # by comparing with the newly generated code:
+    generated_code = _generate_code_for_single_sync_api(class_name, source_code, read_file, dot_path_lookup)
     if generated_code is None:
         if args.verbose and not verify:
             print(f"- Skipping codegen for '{read_file}': on skip list ⏭️")
@@ -252,11 +240,15 @@ def _maybe_regenerate_file(
         read_filepath=read_file,
         class_name=class_name,
         new_source=generated_code,
-        new_hash=read_file_hash,
     )
 
 
-def _compare_normalized_files_and_maybe_update_hash_only(files_to_update: set[SingleAPIFile], args: Namespace):
+def _remove_up_to_date_files(files_to_update: set[SingleAPIFile], args: Namespace, verify: bool) -> None:
+    """
+    Compares newly generated code with the current sync API files, ignoring comments (but not docstrings),
+    and removes the files that are functionally identical. These are left untouched, which preserves e.g.
+    type-ignore comments that would otherwise be lost on regeneration.
+    """
     with tempfile.TemporaryDirectory() as tmp_dir:
         for f in files_to_update:
             f.temp_filepath = tmp_dir / f.filepath
@@ -267,38 +259,13 @@ def _compare_normalized_files_and_maybe_update_hash_only(files_to_update: set[Si
         run_ruff([f.temp_filepath for f in files_to_update], verbose=False)
 
         for f in files_to_update.copy():
-            write_file = f.filepath
-            normalized_src = get_canonical_source(write_file)
-            normalized_new_src = get_canonical_source(f.temp_filepath)
-
-            try:
-                is_valid, existing_hash = read_hash_from_file(write_file)
-                if not is_valid:
-                    continue
-            except FileNotFoundError:
+            if not f.new_source or not f.filepath.is_file():
+                # E.g. an __init__.py that should be empty, it can't be identical to the (non-empty) file on disk:
                 continue
-
-            # The hash is part of the module docstring, which gets preserved, so we must
-            # replace it before comparing:
-            normalized_src = normalized_src.replace(existing_hash, f.get_new_hash)
-            if normalized_src != normalized_new_src:
-                continue
-
-            # We just need to update the hash of this file:
-            files_to_update.remove(f)
-
-            if args.verbose:
-                print(
-                    f"- Updating hash only for '{f.read_filepath}'. The newly generated code is functionally "
-                    "identical to current (including docstrings) ✅"
-                )
-            else:
-                print(f"- Updating hash only for '{f.read_filepath}' ✅")
-            ensure_parent_dir(write_file)
-            # Note: DO NOT use normalized_src here, the reason we do all of this is precisely to preserve
-            # e.g. type-ignore comments that would otherwise be lost on regeneration.
-            current_source = get_source_code(write_file)
-            write_file.write_text(current_source.replace(existing_hash, f.get_new_hash), encoding="utf-8")
+            if get_canonical_source(f.filepath) == get_canonical_source(f.temp_filepath):
+                files_to_update.remove(f)
+                if args.verbose and not verify:
+                    print(f"- Skipping codegen for '{f.read_filepath}': no changes detected ⏭️")
 
 
 def _report_after_verification(
@@ -322,7 +289,7 @@ def _report_after_verification(
             "$ python scripts/sync_client_codegen/main.py run --files FILE1 FILE2"
         )
         for not_updated in files_to_update:
-            print(f"- File needs update: '{not_updated}' ❌")
+            print(f"- File needs update: '{not_updated.filepath}' ❌")
     if should_be_cleaned_up:
         print("One or more sync API files are stale and should be removed:")
         for stale_file in should_be_cleaned_up:
@@ -373,7 +340,7 @@ def _run_files(
             api_write_file = _maybe_regenerate_file(read_file, dot_path_lookup, args, verify)
             if api_write_file is not None:
                 all_expected_files.append(api_write_file.filepath)
-                if api_write_file.new_source:
+                if api_write_file.new_source is not None:
                     files_to_update.add(api_write_file)
         except Exception as e:
             print(f"- Failed to generate sync client code for: '{read_file}' ❌ {e}")
@@ -384,12 +351,12 @@ def _run_files(
     new_client_source_code = create_sync_cognite_client(dot_path_lookup, file_path_lookup)
     client_has_changed = not verify_cognite_client_is_up_to_date(new_client_source_code)
 
+    # Before we (maybe) overwrite existing files, we want to compare if the changes are functionally
+    # identical (including docstrings, excluding comments):
+    _remove_up_to_date_files(files_to_update, args, verify)
     if verify:
         return _report_after_verification(all_expected_files, files_to_update, something_failed, client_has_changed)
 
-    # Before we overwrite existing files, we want to compare if the changes are functionally
-    # identical (including docstrings, excluding comments and the stored file hash):
-    _compare_normalized_files_and_maybe_update_hash_only(files_to_update, args)
     to_be_linted = [f.filepath for f in files_to_update]
 
     if client_has_changed:

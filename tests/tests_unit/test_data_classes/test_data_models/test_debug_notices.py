@@ -11,10 +11,60 @@ class TestDebugParameters:
     @pytest.mark.parametrize(
         "emit_results, timeout, profile, camel_case, expected",
         [
-            (False, 1234, True, True, {"emitResults": False, "timeout": 1234, "profile": True}),
-            (False, 1234, True, False, {"emit_results": False, "timeout": 1234, "profile": True}),
-            (True, None, False, True, {"emitResults": True, "profile": False}),
-            (True, None, False, False, {"emit_results": True, "profile": False}),
+            (
+                False,
+                1234,
+                True,
+                True,
+                {
+                    "emitResults": False,
+                    "timeout": 1234,
+                    "profile": True,
+                    "includeLlmPrompt": False,
+                    "includePlan": False,
+                    "includeTranslatedQuery": False,
+                },
+            ),
+            (
+                False,
+                1234,
+                True,
+                False,
+                {
+                    "emit_results": False,
+                    "timeout": 1234,
+                    "profile": True,
+                    "include_llm_prompt": False,
+                    "include_plan": False,
+                    "include_translated_query": False,
+                },
+            ),
+            (
+                True,
+                None,
+                False,
+                True,
+                {
+                    "emitResults": True,
+                    "profile": False,
+                    "includeLlmPrompt": False,
+                    "includePlan": False,
+                    "includeTranslatedQuery": False,
+                },
+            ),
+            (
+                True,
+                None,
+                False,
+                False,
+                {
+                    "emit_results": True,
+                    "profile": False,
+                    "include_llm_prompt": False,
+                    "include_plan": False,
+                    "include_translated_query": False,
+                },
+            ),
         ],
     )
     def test_debug_parameters(

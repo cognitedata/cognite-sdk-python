@@ -26,6 +26,7 @@ from cognite.client._sync_api.functions import SyncFunctionsAPI
 from cognite.client._sync_api.geospatial import SyncGeospatialAPI
 from cognite.client._sync_api.hosted_extractors import SyncHostedExtractorsAPI
 from cognite.client._sync_api.iam import SyncIAMAPI
+from cognite.client._sync_api.integrations import SyncIntegrationsAPI
 from cognite.client._sync_api.labels import SyncLabelsAPI
 from cognite.client._sync_api.limits import SyncLimitsAPI
 from cognite.client._sync_api.metering import SyncMeteringAPI
@@ -40,7 +41,12 @@ from cognite.client._sync_api.transformations import SyncTransformationsAPI
 from cognite.client._sync_api.units import SyncUnitAPI
 from cognite.client._sync_api.vision import SyncVisionAPI
 from cognite.client._sync_api.workflows import SyncWorkflowAPI
-from cognite.client.credentials import CredentialProvider, OAuthClientCredentials, OAuthInteractive
+from cognite.client.credentials import (
+    CredentialProvider,
+    InteractivePrompt,
+    OAuthClientCredentials,
+    OAuthInteractive,
+)
 from cognite.client.utils._async_helpers import run_sync
 from cognite.client.utils._auxiliary import load_resource_to_dict
 
@@ -79,6 +85,7 @@ class CogniteClient:
         self.geospatial = SyncGeospatialAPI(async_client)
         self.hosted_extractors = SyncHostedExtractorsAPI(async_client)
         self.iam = SyncIAMAPI(async_client)
+        self.integrations = SyncIntegrationsAPI(async_client)
         self.labels = SyncLabelsAPI(async_client)
         self.limits = SyncLimitsAPI(async_client)
         self.metering = SyncMeteringAPI(async_client)
@@ -250,6 +257,8 @@ class CogniteClient:
         tenant_id: str,
         client_id: str,
         client_name: str | None = None,
+        prompt: InteractivePrompt | None = None,
+        login_hint: str | None = None,
     ) -> CogniteClient:
         """
         Create an CogniteClient with default configuration using the interactive flow.
@@ -266,11 +275,15 @@ class CogniteClient:
             tenant_id (str): The Azure tenant ID.
             client_id (str): The Azure client ID.
             client_name (str | None): A user-defined name for the client. Used to identify the number of unique applications/scripts running on top of CDF. If this is not set, the getpass.getuser() is used instead, meaning the username you are logged in with is used.
+            prompt (InteractivePrompt | None): What the browser asks you the first time you sign in, e.g. ``"select_account"`` to pick which account to use. See the note on account selection in :class:`~cognite.client.credentials.OAuthInteractive`. Default: None
+            login_hint (str | None): Username (e.g. email) of the account to sign in with. See the note on account selection in :class:`~cognite.client.credentials.OAuthInteractive`. Default: None
 
         Returns:
             CogniteClient: An CogniteClient instance with default configurations.
         """
-        credentials = OAuthInteractive.default_for_entra_id(tenant_id, client_id, cdf_cluster)
+        credentials = OAuthInteractive.default_for_entra_id(
+            tenant_id, client_id, cdf_cluster, prompt=prompt, login_hint=login_hint
+        )
         return cls.default(project, cdf_cluster, credentials, client_name)
 
     @classmethod

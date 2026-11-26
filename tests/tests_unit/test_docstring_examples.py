@@ -34,6 +34,7 @@ from cognite.client._api.data_modeling import (
     data_models,
     graphql,
     instances,
+    records,
     spaces,
     statistics,
     streams,
@@ -52,8 +53,11 @@ from cognite.client.testing import AsyncCogniteClientMock, CogniteClientMock
 
 # this fixes the issue with 'got MagicMock but expected Nothing in docstrings'
 doctest.OutputChecker.__check_output = doctest.OutputChecker.check_output  # type: ignore[attr-defined]
-doctest.OutputChecker.check_output = lambda self, want, got, optionflags: not want or self.__check_output(  # type: ignore[attr-defined, method-assign]
-    want, got, optionflags
+doctest.OutputChecker.check_output = lambda self, want, got, optionflags: (  # type: ignore[method-assign]
+    not want
+    or self.__check_output(  # type: ignore[attr-defined]
+        want, got, optionflags
+    )
 )
 
 
@@ -85,6 +89,7 @@ def test_credential_providers(mock_confidential_client: MagicMock, mock_public_c
 @patch("cognite.client.AsyncCogniteClient", AsyncCogniteClientMock)
 @patch("os.environ", defaultdict(lambda: "value"))
 class TestDocstringExamples:
+    # TODO: add all of Transformations (incl. transformations.external_data_sources) to this suite.
     def test_time_series(self) -> None:
         run_docstring_tests(time_series)
 
@@ -137,6 +142,7 @@ class TestDocstringExamples:
         run_docstring_tests(graphql)
         run_docstring_tests(statistics)
         run_docstring_tests(streams)
+        run_docstring_tests(records)
         run_docstring_tests(dm_time_series)
 
     def test_datapoint_subscriptions(self) -> None:
@@ -149,7 +155,16 @@ class TestDocstringExamples:
         run_docstring_tests(units)
 
     def test_config(self) -> None:
-        run_docstring_tests(config)
+        # Note: GlobalConfig's docstring examples mutate the real, singleton 'global_config'.
+        # Doctests have no monkeypatch/fixture teardown, so we need to very carefully do this
+        # ourselves to not get test pollution... (this was painful to debug)
+        original_settings = vars(config.global_config).copy()
+        original_settings["status_forcelist"] = original_settings["status_forcelist"].copy()
+        try:
+            run_docstring_tests(config)
+        finally:
+            for key, value in original_settings.items():
+                setattr(config.global_config, key, value)
 
     def test_hosted_extractors(self) -> None:
         run_docstring_tests(mappings)
@@ -165,6 +180,7 @@ class TestDocstringExamples:
         run_docstring_tests(ai)
         run_docstring_tests(ai.tools)
         run_docstring_tests(ai.tools.documents)
+        run_docstring_tests(ai.time_series)
 
     def test_simulators(self) -> None:
         run_docstring_tests(simulators)

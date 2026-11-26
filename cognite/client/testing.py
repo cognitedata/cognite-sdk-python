@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, create_autospec, patch
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client._api.agents import AgentsAPI
 from cognite.client._api.ai import AIAPI
+from cognite.client._api.ai.time_series import AITimeSeriesAPI
 from cognite.client._api.ai.tools import AIToolsAPI
 from cognite.client._api.ai.tools.documents import AIDocumentsAPI
 from cognite.client._api.annotations import AnnotationsAPI
@@ -22,6 +23,7 @@ from cognite.client._api.data_modeling.records import RecordsAPI
 from cognite.client._api.data_modeling.space_statistics import SpaceStatisticsAPI
 from cognite.client._api.data_modeling.spaces import SpacesAPI
 from cognite.client._api.data_modeling.statistics import StatisticsAPI
+from cognite.client._api.data_modeling.stream_templates import StreamTemplatesAPI
 from cognite.client._api.data_modeling.streams import StreamsAPI
 from cognite.client._api.data_modeling.time_series import DataModelingTimeSeriesAPI
 from cognite.client._api.data_modeling.views import ViewsAPI
@@ -51,6 +53,9 @@ from cognite.client._api.iam.groups import GroupsAPI
 from cognite.client._api.iam.security_categories import SecurityCategoriesAPI
 from cognite.client._api.iam.sessions import SessionsAPI
 from cognite.client._api.iam.token import TokenAPI
+from cognite.client._api.integrations import IntegrationsAPI
+from cognite.client._api.integrations.errors import IntegrationErrorsAPI
+from cognite.client._api.integrations.history import IntegrationHistoryAPI
 from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.limits import LimitsAPI
 from cognite.client._api.metering import MeteringAPI
@@ -81,6 +86,7 @@ from cognite.client._api.three_d.models import ThreeDModelsAPI
 from cognite.client._api.three_d.revisions import ThreeDRevisionsAPI
 from cognite.client._api.time_series import TimeSeriesAPI
 from cognite.client._api.transformations import TransformationsAPI
+from cognite.client._api.transformations.externaldata import TransformationExternalDataSourcesAPI
 from cognite.client._api.transformations.jobs import TransformationJobsAPI
 from cognite.client._api.transformations.notifications import TransformationNotificationsAPI
 from cognite.client._api.transformations.schedules import TransformationSchedulesAPI
@@ -96,6 +102,7 @@ from cognite.client._api.workflows.triggers import WorkflowTriggerAPI
 from cognite.client._api.workflows.versions import WorkflowVersionAPI
 from cognite.client._sync_api.agents.agents import SyncAgentsAPI
 from cognite.client._sync_api.ai import SyncAIAPI
+from cognite.client._sync_api.ai.time_series import SyncAITimeSeriesAPI
 from cognite.client._sync_api.ai.tools import SyncAIToolsAPI
 from cognite.client._sync_api.ai.tools.documents import SyncAIDocumentsAPI
 from cognite.client._sync_api.annotations import SyncAnnotationsAPI
@@ -110,6 +117,7 @@ from cognite.client._sync_api.data_modeling.records import SyncRecordsAPI
 from cognite.client._sync_api.data_modeling.space_statistics import SyncSpaceStatisticsAPI
 from cognite.client._sync_api.data_modeling.spaces import SyncSpacesAPI
 from cognite.client._sync_api.data_modeling.statistics import SyncStatisticsAPI
+from cognite.client._sync_api.data_modeling.stream_templates import SyncStreamTemplatesAPI
 from cognite.client._sync_api.data_modeling.streams import SyncStreamsAPI
 from cognite.client._sync_api.data_modeling.time_series import SyncDataModelingTimeSeriesAPI
 from cognite.client._sync_api.data_modeling.views import SyncViewsAPI
@@ -139,6 +147,9 @@ from cognite.client._sync_api.iam.groups import SyncGroupsAPI
 from cognite.client._sync_api.iam.security_categories import SyncSecurityCategoriesAPI
 from cognite.client._sync_api.iam.sessions import SyncSessionsAPI
 from cognite.client._sync_api.iam.token import SyncTokenAPI
+from cognite.client._sync_api.integrations import SyncIntegrationsAPI
+from cognite.client._sync_api.integrations.errors import SyncIntegrationErrorsAPI
+from cognite.client._sync_api.integrations.history import SyncIntegrationHistoryAPI
 from cognite.client._sync_api.labels import SyncLabelsAPI
 from cognite.client._sync_api.limits import SyncLimitsAPI
 from cognite.client._sync_api.metering import SyncMeteringAPI
@@ -169,6 +180,7 @@ from cognite.client._sync_api.three_d.models import Sync3DModelsAPI
 from cognite.client._sync_api.three_d.revisions import Sync3DRevisionsAPI
 from cognite.client._sync_api.time_series import SyncTimeSeriesAPI
 from cognite.client._sync_api.transformations import SyncTransformationsAPI
+from cognite.client._sync_api.transformations.externaldata import SyncTransformationExternalDataSourcesAPI
 from cognite.client._sync_api.transformations.jobs import SyncTransformationJobsAPI
 from cognite.client._sync_api.transformations.notifications import SyncTransformationNotificationsAPI
 from cognite.client._sync_api.transformations.schedules import SyncTransformationSchedulesAPI
@@ -182,6 +194,8 @@ from cognite.client._sync_api.workflows.executions import SyncWorkflowExecutionA
 from cognite.client._sync_api.workflows.tasks import SyncWorkflowTaskAPI
 from cognite.client._sync_api.workflows.triggers import SyncWorkflowTriggerAPI
 from cognite.client._sync_api.workflows.versions import SyncWorkflowVersionAPI
+from cognite.client.config import ClientConfig
+from cognite.client.credentials import Token
 
 
 def flip_spec_set_on(*mocked_apis: MagicMock) -> None:
@@ -200,6 +214,39 @@ class _SpecSetEnforcer(type):
         return instance
 
 
+def _create_client_config_mock() -> MagicMock:
+    """
+    Creates a strict mock of ClientConfig that safely bypasses __init__ side-effects.
+
+    Why this setup is non-trivial:
+    - We cannot instantiate a real `ClientConfig` because its __init__ triggers side-effects like PyPI
+    version checks and logger configurations.
+    - We cannot simply use `create_autospec` with `instance=True` because that loses all instance
+    attributes defined in __init__.
+
+    The Workaround: We initialize a loose mock and manually set all instance variables (annoying but safe).
+    After seeding, we flip `_spec_set = True`.
+    """
+    config = MagicMock(spec=ClientConfig)
+
+    config.client_name = "Who am I? None of your business!"
+    config.project = "mock-project"
+    config.credentials = create_autospec(Token("abc"))
+    config.api_subversion = "v42"
+    config.base_url = "https://mock_cluster.cognitedata.com"
+    config.headers = {}
+    config.timeout = 60
+    config.file_transfer_timeout = 600
+    config.debug = False
+    # Non-init attributes:
+    config._cluster = "mock_cluster"
+    config.cdf_cluster = "mock_cluster"
+    config._attempt_to_get_cdf_cluster.return_value = "mock_cluster"
+
+    flip_spec_set_on(config)
+    return config
+
+
 class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
     """Mock for AsyncCogniteClient object
 
@@ -208,6 +255,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=AsyncCogniteClient, *args, **kwargs)
+        self.config = _create_client_config_mock()
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.
@@ -219,7 +267,8 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
         ai_tools_documents = create_autospec(AIDocumentsAPI, instance=True, spec_set=True)
         ai_tools = create_autospec(AIToolsAPI, instance=True, documents=ai_tools_documents)
-        self.ai = create_autospec(AIAPI, instance=True, tools=ai_tools)
+        ai_time_series = create_autospec(AITimeSeriesAPI, instance=True, spec_set=True)
+        self.ai = create_autospec(AIAPI, instance=True, tools=ai_tools, time_series=ai_time_series)
         flip_spec_set_on(self.ai, ai_tools)
 
         self.agents = create_autospec(AgentsAPI, instance=True, spec_set=True)
@@ -235,7 +284,8 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         dm_instances = create_autospec(InstancesAPI, instance=True, spec_set=True)
         dm_graphql = create_autospec(DataModelingGraphQLAPI, instance=True, spec_set=True)
         dm_records = create_autospec(RecordsAPI, instance=True, spec_set=True)
-        dm_streams = create_autospec(StreamsAPI, instance=True, spec_set=True)
+        dm_stream_templates = create_autospec(StreamTemplatesAPI, instance=True, spec_set=True)
+        dm_streams = create_autospec(StreamsAPI, instance=True, templates=dm_stream_templates)
         dm_files = create_autospec(DataModelingFilesAPI, instance=True, spec_set=True)
         dm_time_series = create_autospec(DataModelingTimeSeriesAPI, instance=True, spec_set=True)
         self.data_modeling = create_autospec(
@@ -253,7 +303,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             files=dm_files,
             time_series=dm_time_series,
         )
-        flip_spec_set_on(self.data_modeling, dm_statistics)
+        flip_spec_set_on(self.data_modeling, dm_statistics, dm_streams)
 
         self.data_sets = create_autospec(DataSetsAPI, instance=True, spec_set=True)
 
@@ -297,6 +347,16 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             token=iam_token,
         )
         flip_spec_set_on(self.iam)
+
+        integrations_errors = create_autospec(IntegrationErrorsAPI, instance=True, spec_set=True)
+        integrations_history = create_autospec(IntegrationHistoryAPI, instance=True, spec_set=True)
+        self.integrations = create_autospec(
+            IntegrationsAPI,
+            instance=True,
+            errors=integrations_errors,
+            history=integrations_history,
+        )
+        flip_spec_set_on(self.integrations)
 
         self.labels = create_autospec(LabelsAPI, instance=True, spec_set=True)
         self.limits = create_autospec(LimitsAPI, instance=True, spec_set=True)
@@ -377,6 +437,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         tr_notifications = create_autospec(TransformationNotificationsAPI, instance=True, spec_set=True)
         tr_schedules = create_autospec(TransformationSchedulesAPI, instance=True, spec_set=True)
         tr_schema = create_autospec(TransformationSchemaAPI, instance=True, spec_set=True)
+        tr_external_data_sources = create_autospec(TransformationExternalDataSourcesAPI, instance=True, spec_set=True)
         self.transformations = create_autospec(
             TransformationsAPI,
             instance=True,
@@ -384,6 +445,7 @@ class AsyncCogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             notifications=tr_notifications,
             schedules=tr_schedules,
             schema=tr_schema,
+            external_data_sources=tr_external_data_sources,
         )
         flip_spec_set_on(self.transformations)
 
@@ -416,6 +478,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(spec=CogniteClient, *args, **kwargs)
+        self.config = _create_client_config_mock()
         # Developer note:
         # - Please add your mocked APIs in chronological order
         # - Use create_autospec with instance=True for better type safety and accurate mocking.
@@ -427,7 +490,8 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
 
         ai_tools_documents = create_autospec(SyncAIDocumentsAPI, instance=True, spec_set=True)
         ai_tools = create_autospec(SyncAIToolsAPI, instance=True, documents=ai_tools_documents)
-        self.ai = create_autospec(SyncAIAPI, instance=True, tools=ai_tools)
+        ai_time_series = create_autospec(SyncAITimeSeriesAPI, instance=True, spec_set=True)
+        self.ai = create_autospec(SyncAIAPI, instance=True, tools=ai_tools, time_series=ai_time_series)
         flip_spec_set_on(self.ai, ai_tools)
 
         self.agents = create_autospec(SyncAgentsAPI, instance=True, spec_set=True)
@@ -443,7 +507,8 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         dm_instances = create_autospec(SyncInstancesAPI, instance=True, spec_set=True)
         dm_graphql = create_autospec(SyncDataModelingGraphQLAPI, instance=True, spec_set=True)
         dm_records = create_autospec(SyncRecordsAPI, instance=True, spec_set=True)
-        dm_streams = create_autospec(SyncStreamsAPI, instance=True, spec_set=True)
+        dm_stream_templates = create_autospec(SyncStreamTemplatesAPI, instance=True, spec_set=True)
+        dm_streams = create_autospec(SyncStreamsAPI, instance=True, templates=dm_stream_templates)
         dm_files = create_autospec(SyncDataModelingFilesAPI, instance=True, spec_set=True)
         dm_time_series = create_autospec(SyncDataModelingTimeSeriesAPI, instance=True, spec_set=True)
         self.data_modeling = create_autospec(
@@ -461,7 +526,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             files=dm_files,
             time_series=dm_time_series,
         )
-        flip_spec_set_on(self.data_modeling, dm_statistics)
+        flip_spec_set_on(self.data_modeling, dm_statistics, dm_streams)
 
         self.data_sets = create_autospec(SyncDataSetsAPI, instance=True, spec_set=True)
 
@@ -505,6 +570,16 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             token=iam_token,
         )
         flip_spec_set_on(self.iam)
+
+        integrations_errors = create_autospec(SyncIntegrationErrorsAPI, instance=True, spec_set=True)
+        integrations_history = create_autospec(SyncIntegrationHistoryAPI, instance=True, spec_set=True)
+        self.integrations = create_autospec(
+            SyncIntegrationsAPI,
+            instance=True,
+            errors=integrations_errors,
+            history=integrations_history,
+        )
+        flip_spec_set_on(self.integrations)
 
         self.labels = create_autospec(SyncLabelsAPI, instance=True, spec_set=True)
         self.limits = create_autospec(SyncLimitsAPI, instance=True, spec_set=True)
@@ -587,6 +662,9 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
         tr_notifications = create_autospec(SyncTransformationNotificationsAPI, instance=True, spec_set=True)
         tr_schedules = create_autospec(SyncTransformationSchedulesAPI, instance=True, spec_set=True)
         tr_schema = create_autospec(SyncTransformationSchemaAPI, instance=True, spec_set=True)
+        tr_external_data_sources = create_autospec(
+            SyncTransformationExternalDataSourcesAPI, instance=True, spec_set=True
+        )
         self.transformations = create_autospec(
             SyncTransformationsAPI,
             instance=True,
@@ -594,6 +672,7 @@ class CogniteClientMock(MagicMock, metaclass=_SpecSetEnforcer):
             notifications=tr_notifications,
             schedules=tr_schedules,
             schema=tr_schema,
+            external_data_sources=tr_external_data_sources,
         )
         flip_spec_set_on(self.transformations)
 

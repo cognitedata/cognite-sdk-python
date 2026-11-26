@@ -1,6 +1,5 @@
 """
 ===============================================================================
-8bca411648596701cde79f2c9e6f2a88
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,10 +7,11 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import Any, Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DEFAULT_LIMIT_READ
+from cognite.client._sync_api.transformations.externaldata import SyncTransformationExternalDataSourcesAPI
 from cognite.client._sync_api.transformations.jobs import SyncTransformationJobsAPI
 from cognite.client._sync_api.transformations.notifications import SyncTransformationNotificationsAPI
 from cognite.client._sync_api.transformations.schedules import SyncTransformationSchedulesAPI
@@ -28,9 +28,6 @@ from cognite.client.data_classes.transformations import (
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
 from cognite.client.utils.useful_types import SequenceNotStr
 
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
-
 
 class SyncTransformationsAPI(SyncAPIClient):
     """Auto-generated, do not modify manually."""
@@ -41,6 +38,7 @@ class SyncTransformationsAPI(SyncAPIClient):
         self.schedules = SyncTransformationSchedulesAPI(async_client)
         self.schema = SyncTransformationSchemaAPI(async_client)
         self.notifications = SyncTransformationNotificationsAPI(async_client)
+        self.external_data_sources = SyncTransformationExternalDataSourcesAPI(async_client)
 
     @overload
     def __call__(

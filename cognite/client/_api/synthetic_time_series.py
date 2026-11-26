@@ -184,8 +184,10 @@ class SyntheticDatapointsAPI(APIClient):
                 query["timeZone"] = timezone
             tasks.append(AsyncSDKTask(self._fetch_datapoints, query, limit, short_expression))
 
-        datapoints_summary = await execute_async_tasks(tasks)
-        datapoints_summary.raise_compound_exception_if_failed_tasks()
+        datapoints_summary = await execute_async_tasks(tasks, fail_fast=True)
+        datapoints_summary.raise_compound_exception_if_failed_tasks(
+            task_unwrap_fn=lambda task: task[0],
+        )
         return SyntheticDatapointsList(datapoints_summary.results) if not single_expr else datapoints_summary.results[0]
 
     async def _fetch_datapoints(self, query: dict[str, Any], limit: int, short_expression: str) -> SyntheticDatapoints:
@@ -271,10 +273,13 @@ class SyntheticDatapointsAPI(APIClient):
                 )
 
             # We convert to str to ensure any sympy.Symbol is replaced with its name:
-            to_substitute[re.escape(str(k))] = "ts{" + sub_string + aggregate_str + target_unit_str + "}"
+            to_substitute[str(k)] = "ts{" + sub_string + aggregate_str + target_unit_str + "}"
 
         # Substitute all variables in one go to avoid substitution of prior substitutions:
-        pattern = re.compile(r"\b" + r"\b|\b".join(to_substitute) + r"\b")  # note: \b marks a word boundary
+        sorted_keys = sorted(to_substitute, key=len, reverse=True)
+        pattern = re.compile(
+            r"\b" + r"\b|\b".join(map(re.escape, sorted_keys)) + r"\b"
+        )  # note: \b marks a word boundary
         expression_with_ts = pattern.sub(lambda match: to_substitute[match[0]], expression_str)
         return expression_with_ts, expression_str
 

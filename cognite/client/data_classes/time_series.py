@@ -38,6 +38,8 @@ from cognite.client.utils.useful_types import SequenceNotStr
 if TYPE_CHECKING:
     from cognite.client.data_classes import Asset, Datapoint
 
+TimeSeriesType: TypeAlias = Literal["numeric", "string", "state"]
+
 
 class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
     """This represents a sequence of data points. The TimeSeries object is the metadata about
@@ -159,16 +161,7 @@ class TimeSeries(WriteableCogniteResourceWithClientRef["TimeSeriesWrite"]):
 
         Returns:
             int: The number of datapoints in this time series.
-
-        Raises:
-            RuntimeError: If the time series is string, as count aggregate is only supported for numeric data
-
-        Returns:
-            int: The total number of datapoints
         """
-        if self.is_string:
-            raise RuntimeError("String time series does not support count aggregate.")
-
         identifier = Identifier.load(self.id, self.external_id, self.instance_id).as_dict()
         dps = await self._cognite_client.time_series.data.retrieve(
             **identifier, start=MIN_TIMESTAMP_MS, end=MAX_TIMESTAMP_MS + 1, aggregates="count", granularity="100d"

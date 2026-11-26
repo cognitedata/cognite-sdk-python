@@ -3,7 +3,7 @@ from typing import Literal
 
 from cognite.client.utils._text import to_snake_case
 
-Aggregate = Literal[
+_NonStateAggregate = Literal[
     "average",
     "continuous_variance",
     "count",
@@ -23,10 +23,43 @@ Aggregate = Literal[
     "sum",
     "total_variation",
 ]
+_StateAggregate = Literal["state_count", "state_transitions", "state_duration"]
+Aggregate = _NonStateAggregate | _StateAggregate
+
 _OBJECT_AGGREGATES_CAMEL: frozenset[Literal["maxDatapoint", "minDatapoint"]] = frozenset(
     {"maxDatapoint", "minDatapoint"}
 )
 OBJECT_AGGREGATES: frozenset[Literal["max_datapoint", "min_datapoint"]] = frozenset({"max_datapoint", "min_datapoint"})
+
+# These currently break existing logic (because they reuse the old simple aggregate names), and we have no special
+# data class for state aggregate datapoints yet (breaking -> v9) so we simply don't support them for now:
+_UNSUPPORTED_STATE_AGGS_CAMEL: frozenset[Literal["interpolation", "stepInterpolation"]] = frozenset(
+    {"interpolation", "stepInterpolation"}
+)
+# For string time series, these aggregates return the (string) value of the time series, not a number:
+_STRING_VALUED_AGGS_CAMEL: frozenset[Literal["interpolation", "stepInterpolation"]] = frozenset(
+    {"interpolation", "stepInterpolation"}
+)
+STRING_VALUED_AGGS: frozenset[Literal["interpolation", "step_interpolation"]] = frozenset(
+    {"interpolation", "step_interpolation"}
+)
+# Aggregates that are not unpacked as numbers (stored per row as Python objects):
+_ObjectAggregateCamel: typing.TypeAlias = Literal[
+    "minDatapoint",
+    "maxDatapoint",
+    "stateCount",
+    "stateTransitions",
+    "stateDuration",
+    "interpolation",
+    "stepInterpolation",
+]
+# These are per-distinct-state breakdown aggregates (one entry per state, per interval):
+_STATE_AGGS_CAMEL: frozenset[Literal["stateCount", "stateTransitions", "stateDuration"]] = frozenset(
+    {"stateCount", "stateTransitions", "stateDuration"}
+)
+_STATE_AGGS_SNAKE: frozenset[Literal["state_count", "state_transitions", "state_duration"]] = frozenset(
+    {"state_count", "state_transitions", "state_duration"}
+)
 
 # Assumption: All INT aggregates should adhere to the following logic: Missing values can be replace with 0.
 #             Thus, if you add a new aggregate here, and this is no longer the case, a refactor is needed:
@@ -42,7 +75,7 @@ _INT_AGGREGATES_CAMEL = frozenset(
     }
 )
 INT_AGGREGATES = frozenset(map(to_snake_case, _INT_AGGREGATES_CAMEL))
-ALL_SORTED_DP_AGGS = sorted(typing.get_args(Aggregate))
+ALL_SORTED_DP_AGGS = sorted(typing.get_args(_NonStateAggregate))
 _ALL_AGGREGATES = frozenset(ALL_SORTED_DP_AGGS)
 ALL_SORTED_NUMERIC_DP_AGGS = [agg for agg in ALL_SORTED_DP_AGGS if agg not in ("min_datapoint", "max_datapoint")]
 

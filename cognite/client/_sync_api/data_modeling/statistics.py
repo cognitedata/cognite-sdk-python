@@ -1,22 +1,16 @@
 """
 ===============================================================================
-fdf9f229e8aa4dc4ef40a6ddbb86fdce
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api.data_modeling.space_statistics import SyncSpaceStatisticsAPI
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.data_modeling.statistics import ProjectStatistics
 from cognite.client.utils._async_helpers import run_sync
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncStatisticsAPI(SyncAPIClient):

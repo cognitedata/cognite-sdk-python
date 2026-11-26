@@ -1,6 +1,5 @@
 """
 ===============================================================================
-d8f86e74e224daebaf4d984d88cf1842
 This file is auto-generated from the Async API modules, - do not edit manually!
 ===============================================================================
 """
@@ -8,17 +7,20 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Iterator, Sequence
-from typing import TYPE_CHECKING, overload
+from typing import overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._constants import DATA_MODELING_DEFAULT_LIMIT_READ
 from cognite.client._sync_api_client import SyncAPIClient
 from cognite.client.data_classes.data_modeling.ids import ViewId, ViewIdentifier
-from cognite.client.data_classes.data_modeling.views import View, ViewApply, ViewList
+from cognite.client.data_classes.data_modeling.views import (
+    RecordViewApply,
+    View,
+    ViewApply,
+    ViewList,
+    ViewUsedFor,
+)
 from cognite.client.utils._async_helpers import SyncIterator, run_sync
-
-if TYPE_CHECKING:
-    from cognite.client import AsyncCogniteClient
 
 
 class SyncViewsAPI(SyncAPIClient):
@@ -36,6 +38,7 @@ class SyncViewsAPI(SyncAPIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> Iterator[View]: ...
 
     @overload
@@ -47,6 +50,7 @@ class SyncViewsAPI(SyncAPIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> Iterator[ViewList]: ...
 
     def __call__(
@@ -57,6 +61,7 @@ class SyncViewsAPI(SyncAPIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> Iterator[View] | Iterator[ViewList]:
         """
         Iterate over views
@@ -70,6 +75,7 @@ class SyncViewsAPI(SyncAPIClient):
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
+            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given type(s).
 
         Yields:
             View | ViewList: yields View one by one if chunk_size is not specified, else ViewList objects.
@@ -82,6 +88,7 @@ class SyncViewsAPI(SyncAPIClient):
                 include_inherited_properties=include_inherited_properties,
                 all_versions=all_versions,
                 include_global=include_global,
+                used_for=used_for,
             )
         )  # type: ignore [misc]
 
@@ -144,6 +151,7 @@ class SyncViewsAPI(SyncAPIClient):
         include_inherited_properties: bool = True,
         all_versions: bool = False,
         include_global: bool = False,
+        used_for: ViewUsedFor | Sequence[ViewUsedFor] | None = None,
     ) -> ViewList:
         """
         `List views <https://api-docs.cognite.com/20230101/tag/Views/operation/listViews>`_.
@@ -154,6 +162,7 @@ class SyncViewsAPI(SyncAPIClient):
             include_inherited_properties (bool): Whether to include properties inherited from views this view implements.
             all_versions (bool): Whether to return all versions. If false, only the newest version is returned, which is determined based on the 'createdTime' field.
             include_global (bool): Whether to include global views.
+            used_for (ViewUsedFor | Sequence[ViewUsedFor] | None): Only return views used for the given type(s).
 
         Returns:
             ViewList: List of requested views
@@ -184,21 +193,22 @@ class SyncViewsAPI(SyncAPIClient):
                 include_inherited_properties=include_inherited_properties,
                 all_versions=all_versions,
                 include_global=include_global,
+                used_for=used_for,
             )
         )
 
     @overload
-    def apply(self, view: Sequence[ViewApply]) -> ViewList: ...
+    def apply(self, view: Sequence[ViewApply | RecordViewApply]) -> ViewList: ...
 
     @overload
-    def apply(self, view: ViewApply) -> View: ...
+    def apply(self, view: ViewApply | RecordViewApply) -> View: ...
 
-    def apply(self, view: ViewApply | Sequence[ViewApply]) -> View | ViewList:
+    def apply(self, view: ViewApply | RecordViewApply | Sequence[ViewApply | RecordViewApply]) -> View | ViewList:
         """
         `Create or update (upsert) one or more views <https://api-docs.cognite.com/20230101/tag/Views/operation/ApplyViews>`_.
 
         Args:
-            view (ViewApply | Sequence[ViewApply]): View(s) to create or update.
+            view (ViewApply | RecordViewApply | Sequence[ViewApply | RecordViewApply]): View(s) to create or update.
 
         Returns:
             View | ViewList: Created view(s)
@@ -282,5 +292,26 @@ class SyncViewsAPI(SyncAPIClient):
                 ...     },
                 ... )
                 >>> res = client.data_modeling.views.apply([work_order_view, asset_view])
+
+            Create a record-backed view (the stream must already exist).
+
+                >>> from cognite.client.data_classes.data_modeling import (
+                ...     ContainerId,
+                ...     MappedPropertyApply,
+                ...     RecordViewApply,
+                ... )
+                >>> record_view = RecordViewApply(
+                ...     space="mySpace",
+                ...     external_id="myRecordView",
+                ...     version="v1",
+                ...     stream_id="myStream",
+                ...     properties={
+                ...         "title": MappedPropertyApply(
+                ...             container=ContainerId("mySpace", "myRecordContainer"),
+                ...             container_property_identifier="title",
+                ...         ),
+                ...     },
+                ... )
+                >>> res = client.data_modeling.views.apply(record_view)
         """
         return run_sync(self.__async_client.data_modeling.views.apply(view=view))

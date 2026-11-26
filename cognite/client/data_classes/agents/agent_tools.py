@@ -157,6 +157,28 @@ class InstanceSpaces(WriteableCogniteResource):
 
 
 @dataclass
+class Subagent(WriteableCogniteResource):
+    """A reference to another agent exposed as a subagent on a supervisor agent.
+
+    Args:
+        agent_external_id (str): External ID of the agent to use as a subagent.
+    """
+
+    agent_external_id: str
+
+    @classmethod
+    def _load(cls, resource: dict[str, Any]) -> Subagent:
+        return cls(agent_external_id=resource["agentExternalId"])
+
+    def as_write(self) -> Subagent:
+        return self
+
+
+class SubagentList(CogniteResourceList[Subagent]):
+    _RESOURCE = Subagent
+
+
+@dataclass
 class QueryKnowledgeGraphAgentToolConfiguration(WriteableCogniteResource):
     """Configuration for knowledge graph query agent tools.
 
@@ -561,7 +583,7 @@ class AgentToolList(WriteableCogniteResourceList[AgentToolUpsert, AgentTool]):
 
 # Build the mapping AFTER all classes are defined
 _AGENT_TOOL_CLS_BY_TYPE: dict[str, type[AgentTool]] = {
-    subclass._type: subclass  # type: ignore[type-abstract]
+    subclass._type: subclass
     for subclass in AgentTool.__subclasses__()
     if hasattr(subclass, "_type") and not getattr(subclass, "__abstractmethods__", None)
 }

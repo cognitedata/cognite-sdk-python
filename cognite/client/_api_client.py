@@ -714,7 +714,8 @@ class APIClient(BasicAsyncAPIClient):
         if aggregate in {"count", "cardinalityValues", "cardinalityProperties"}:
             return json_items[0]["count"]
         elif aggregate in {"uniqueValues", "uniqueProperties"}:
-            return UniqueResultList._load(json_items)
+            buckets = [item for item in json_items if item.get("values")]
+            return UniqueResultList._load(buckets) if buckets else UniqueResultList([])
         else:
             raise ValueError(f"Unknown aggregate: {aggregate}")
 
@@ -847,6 +848,7 @@ class APIClient(BasicAsyncAPIClient):
         returns_items: bool = False,
         delete_endpoint: str = "/delete",
         override_semaphore: asyncio.BoundedSemaphore | None = None,
+        api_subversion: str | None = None,
     ) -> list | None:
         resource_path = (resource_path or self._RESOURCE_PATH) + delete_endpoint
         extra_body_fields = extra_body_fields or {}
@@ -859,6 +861,7 @@ class APIClient(BasicAsyncAPIClient):
                 params=params,
                 headers=headers,
                 semaphore=semaphore,
+                api_subversion=api_subversion,
             )
             for chunk in identifiers.chunked(self._DELETE_LIMIT)
         ]
@@ -1047,7 +1050,7 @@ class APIClient(BasicAsyncAPIClient):
                     successful=successful,
                     failed=failed,
                     unknown=unknown,
-                    cluster=self._config.cdf_cluster,
+                    cluster=self._config._attempt_to_get_cdf_cluster(),
                     project=self._config.project,
                 )
             # Need to retrieve the successful updated items from the first call.

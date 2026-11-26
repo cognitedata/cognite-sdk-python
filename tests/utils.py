@@ -49,6 +49,8 @@ from cognite.client.data_classes.data_modeling.query import (
     Select,
     SelectSync,
 )
+from cognite.client.data_classes.data_modeling.records import TimeRange
+from cognite.client.data_classes.data_modeling.views import View
 from cognite.client.data_classes.datapoint_aggregates import (
     ALL_SORTED_DP_AGGS,
     INT_AGGREGATES,
@@ -75,9 +77,29 @@ from cognite.client.data_classes.workflows import (
 from cognite.client.testing import AsyncCogniteClientMock
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._concurrency import CRUDConcurrency
+from cognite.client.utils._pandas_helpers import pandas_string_array_dtype, timestamp_dtype_unit
 from cognite.client.utils._text import random_string
+from cognite.client.utils.useful_types import SequenceNotStr
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+
+try:
+    # The resolution the SDK uses for pandas timestamp columns/indices depends on the installed pandas
+    # major version, see `timestamp_dtype_unit` for the reasoning. Tests asserting exact dtypes should
+    # build their expectations relative to this instead of hardcoding "ms" (or "ns"):
+    PANDAS_TS_UNIT: Literal["ns", "ms"] = timestamp_dtype_unit()
+
+    # We respect the new pandas v3  default of inferring a native 'str' dtype for object columns of
+    # strings (we could force the old 'object' dtype via 'future.infer_string'). Thus the SDK's own
+    # df string columns (e.g. state datapoints' string representations) end up with a dtype that depends
+    # on the installed pandas major version.
+    PANDAS_STR_DTYPE: Literal["object", "str"] = pandas_string_array_dtype()
+except ModuleNotFoundError:
+    # When we test with '--test-deps-only-core', pandas is not installed. For simplicity of imports, we still
+    # define these constants here:
+    PANDAS_TS_UNIT = "ms"
+    PANDAS_STR_DTYPE = "str"
+
 
 T_Type = TypeVar("T_Type", bound=type)
 
@@ -241,8 +263,10 @@ def random_gamma_dist_integer(inclusive_max: int, max_tries: int = 100) -> int:
 
 @contextmanager
 def fresh_concurrency_state() -> typing.Iterator[Any]:
-    """Clears all per-loop/-project semaphore caches and unfreezes ``global_config.concurrency_settings``
-    for the duration of the block, then restores the original frozen state.
+    """Clears all per-loop/-project semaphore (and, for 'files', open-file-handle) caches and
+    unfreezes 'global_config.concurrency_settings' for the duration of the block, then restores
+    the original frozen state and the original read/write/delete/etc. values of every sub-config
+    (e.g. 'cs.general.read')
 
     Use this when a test needs to mutate concurrency settings or observe semaphore creation
     on a clean slate. Yields the (singleton) ``ConcurrencySettings`` for convenience.
@@ -250,16 +274,31 @@ def fresh_concurrency_state() -> typing.Iterator[Any]:
     from cognite.client import global_config
 
     cs = global_config.concurrency_settings
+    subs = cs._all_concurrency_configs
+
+    def clear_caches() -> None:
+        for sub in subs:
+            for k, v in vars(sub).items():
+                if k.endswith("_cache"):
+                    assert isinstance(v, dict), f"expected a cache dict for {sub.api_name}.{k}"
+                    v.clear()
+
+    # Snapshot every non-cache attribute (read/write/delete/etc.) so they can be restored regardless of how they got
+    # changed inside the with block. '*_cache' attrs are excluded here and cleared instead via clear_caches():
+    # restoring a shallow-copied dict would just alias the same mutated dict, so nothing would actually revert.
     orig_frozen = cs.is_frozen
+    orig_states = [{k: v for k, v in vars(sub).items() if not k.endswith("_cache")} for sub in subs]
+
     cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
-    for sub in cs._all_concurrency_configs:
-        sub._semaphore_cache.clear()
+    clear_caches()
     try:
         yield cs
     finally:
         cs._ConcurrencySettings__frozen = False  # type: ignore[attr-defined]
-        for sub in cs._all_concurrency_configs:
-            sub._semaphore_cache.clear()
+        for sub, state in zip(subs, orig_states):
+            for k, v in state.items():
+                setattr(sub, k, v)
+        clear_caches()
         cs._ConcurrencySettings__frozen = orig_frozen  # type: ignore[attr-defined]
 
 
@@ -316,16 +355,7 @@ V = TypeVar("V")
 
 
 def dict_without(input_dict: Mapping[K, V], without_keys: collections.abc.Set[str]) -> dict[K, V]:
-    """Copy `input_dict`, but exclude the keys in `without_keys`.
-
-    >>> a = {"foo": "bar", "bar": "baz", "zip": "zap"}
-    >>> b = dict_without(a, {"foo", "bar"})
-    >>> b
-    {'zip': 'zap'}
-    >>> b["foo"] = "not bar"
-    >>> a
-    {'foo': 'bar', 'bar': 'baz', 'zip': 'zap'}
-    """
+    """Copy `input_dict`, but exclude the keys in `without_keys`"""
     return {k: v for k, v in input_dict.items() if k not in without_keys}
 
 
@@ -400,6 +430,10 @@ class FakeCogniteResourceGenerator:
             key = self._random_string(15)
             keyword_arguments["with_"] = {key: self.create_instance(NodeResultSetExpressionSync)}
             keyword_arguments["select"] = {key: self.create_instance(SelectSync)}
+        elif resource_cls is TimeRange:
+            # A TimeRange takes at most one lower ('gte' or 'gt') and one upper ('lte' or 'lt') bound
+            keyword_arguments.pop("gt", None)
+            keyword_arguments.pop("lt", None)
         elif resource_cls is Relationship and not skip_defaulted_args:
             # Relationship must set the source and target type consistently with the source and target
             keyword_arguments["source_type"] = type(keyword_arguments["source"]).__name__
@@ -418,6 +452,12 @@ class FakeCogniteResourceGenerator:
                 # This DatapointsArray will be a [value, status_code, status_symbol]:
                 for aggregate in ALL_SORTED_DP_AGGS:
                     keyword_arguments.pop(aggregate, None)
+                if "value" in keyword_arguments:
+                    # The values of a string time series must be strings (numeric-looking is on purpose, as
+                    # these must not be converted to floats when loading):
+                    import numpy as np
+
+                    keyword_arguments["value"] = np.array(list(map(str, keyword_arguments["value"])), dtype=np.object_)
             else:
                 for raw in ["value", "status_code", "status_symbol", "min_datapoint", "max_datapoint"]:
                     keyword_arguments.pop(raw, None)
@@ -477,6 +517,11 @@ class FakeCogniteResourceGenerator:
         elif issubclass(resource_cls, ListablePropertyType):
             if not keyword_arguments.get("is_list"):
                 keyword_arguments.pop("max_list_size", None)
+        elif resource_cls is View:
+            # A View with used_for "record" can only be converted via
+            # as_record_view_apply(), not as_write()/as_apply() (reserved for regular views):
+            used_for = self._random.choice(["node", "edge", "all"])
+            keyword_arguments["used_for"] = used_for
         elif resource_cls is SimulatorRoutineStepArguments:
             keyword_arguments = {"data": {"reference_id": self._random_string(50), "arg2": self._random_string(50)}}
         elif resource_cls is SimulationRunWrite:
@@ -505,14 +550,17 @@ class FakeCogniteResourceGenerator:
 
         container_type = get_origin(type_)
         is_container = container_type is not None
-        if not is_container or container_type is np.ndarray:  # looks weird, but 3.8 and 3.12 type compat. issue
-            # Handle numpy types
-            from numpy.typing import NDArray
+        # Handle numpy types. NDArray's origin is np.ndarray on older numpy, but numpy>=2.3 defines
+        # NDArray as a PEP 695 type alias, whose origin is the NDArray alias itself.
+        from numpy.typing import NDArray
 
+        if not is_container or container_type is np.ndarray or container_type is NDArray:
             if type_ == NDArray[np.float64]:
                 return np.array([self._random.random() for _ in range(3)], dtype=np.float64)
             elif type_ == NDArray[np.uint32]:
                 return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.uint32)
+            elif type_ == NDArray[np.int32]:
+                return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int32)
             elif type_ == NDArray[np.int64]:
                 return np.array([self._random.randint(1, 100) for _ in range(3)], dtype=np.int64)
             elif type_ == NDArray[np.datetime64]:
@@ -527,7 +575,13 @@ class FakeCogniteResourceGenerator:
             return self.create_value(first_not_none)
         elif container_type is typing.Literal:
             return self._random.choice(args)
-        elif container_type in [list, typing.Sequence, collections.abc.Sequence, collections.abc.Collection]:
+        elif container_type in [
+            list,
+            typing.Sequence,
+            collections.abc.Sequence,
+            collections.abc.Collection,
+            SequenceNotStr,
+        ]:
             return [self.create_value(first_not_none) for _ in range(3)]
         elif container_type in [dict, collections.abc.MutableMapping, collections.abc.Mapping]:
             if first_not_none is None:
@@ -622,7 +676,7 @@ class FakeCogniteResourceGenerator:
         return "".join(self._random.choices(sample_from, k=k))
 
     @classmethod
-    def _type_checking(cls) -> dict[str, type]:
+    def _type_checking(cls) -> dict[str, Any]:
         """
         When calling the get_type_hints function, it imports the module with the function TYPE_CHECKING is set to False.
 
@@ -641,6 +695,7 @@ class FakeCogniteResourceGenerator:
             "AsyncCogniteClient": AsyncCogniteClient,
             "NumpyDatetime64NSArray": npt.NDArray[np.datetime64],
             "NumpyUInt32Array": npt.NDArray[np.uint32],
+            "NumpyInt32Array": npt.NDArray[np.int32],
             "NumpyInt64Array": npt.NDArray[np.int64],
             "NumpyFloat64Array": npt.NDArray[np.float64],
             "NumpyObjArray": npt.NDArray[np.object_],
