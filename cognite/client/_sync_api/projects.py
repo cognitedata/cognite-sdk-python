@@ -44,16 +44,15 @@ class SyncProjectsAPI(SyncAPIClient):
         Only projects the caller has the capability "projectsAcl:READ" for will be included in the list.
 
         Returns:
-            ProjectList: The projects, including the organization each belongs to.
+            ProjectList: The list of projects.
 
         Examples:
 
-            List projects and their organizations:
+            List projects:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.projects.list()
-                >>> {p.url_name: p.organization for p in res}
+                >>> projects = client.projects.list()
         """
         return run_sync(self.__async_client.projects.list())

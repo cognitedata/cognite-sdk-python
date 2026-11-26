@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any
+from typing import Any, Literal
 
 from typing_extensions import Self
 
@@ -19,6 +19,7 @@ class Project(CogniteResource):
         name (str | None): The user-friendly name of the project.
         oidc_configuration (dict[str, Any] | None): The OIDC configuration of the project.
         user_profiles_configuration (UserProfilesConfiguration | None): The user profiles configuration of the project.
+        data_modeling_status (Literal['DATA_MODELING_ONLY', 'DATA_MODELING_FIRST', 'HYBRID'] | None): The data modeling status of the project. Only returned by ``list``.
     """
 
     def __init__(
@@ -28,12 +29,14 @@ class Project(CogniteResource):
         name: str | None = None,
         oidc_configuration: dict[str, Any] | None = None,
         user_profiles_configuration: UserProfilesConfiguration | None = None,
+        data_modeling_status: Literal["DATA_MODELING_ONLY", "DATA_MODELING_FIRST", "HYBRID"] | None = None,
     ) -> None:
         self.url_name = url_name
         self.organization = organization
         self.name = name
         self.oidc_configuration = oidc_configuration
         self.user_profiles_configuration = user_profiles_configuration
+        self.data_modeling_status = data_modeling_status
 
     @classmethod
     def _load(cls, resource: dict[str, Any]) -> Self:
@@ -53,6 +56,7 @@ class Project(CogniteResource):
             name=resource.get("name"),
             oidc_configuration=resource.get("oidcConfiguration"),
             user_profiles_configuration=UserProfilesConfiguration._load_if(resource.get("userProfilesConfiguration")),
+            data_modeling_status=resource.get("dataModelingStatus"),
         )
 
     def dump(self, camel_case: bool = True) -> dict[str, Any]:
@@ -65,6 +69,7 @@ class Project(CogniteResource):
             "userProfilesConfiguration" if camel_case else "user_profiles_configuration": (
                 self.user_profiles_configuration.dump(camel_case) if self.user_profiles_configuration else None
             ),
+            "dataModelingStatus" if camel_case else "data_modeling_status": self.data_modeling_status,
         }
         return drop_none_values(output)
 

@@ -39,11 +39,18 @@ class TestProjectsAPI:
         assert res.dump(camel_case=False)["oidc_configuration"] == {"jwksUrl": "https://jwks", "skewMs": 0}
         assert res.dump(camel_case=False)["user_profiles_configuration"] == {"enabled": True}
 
-    def test_list_requests_organization(self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock) -> None:
+    def test_list_requests_organization_and_data_modeling_status(
+        self, cognite_client: CogniteClient, httpx2_mock: HTTPXMock
+    ) -> None:
         httpx2_mock.add_response(
             method="GET",
-            url=f"{PROJECTS_URL}?withOrganization=true",
-            json={"items": [{"urlName": "p1", "organization": "org-1"}, {"urlName": "p2", "organization": "org-2"}]},
+            url=f"{PROJECTS_URL}?withOrganization=true&withDataModelingStatus=true",
+            json={
+                "items": [
+                    {"urlName": "p1", "organization": "org-1", "dataModelingStatus": "HYBRID"},
+                    {"urlName": "p2", "organization": "org-2", "dataModelingStatus": "DATA_MODELING_ONLY"},
+                ]
+            },
         )
 
         with pytest.warns(FeaturePreviewWarning):
@@ -51,6 +58,7 @@ class TestProjectsAPI:
 
         assert isinstance(res, ProjectList)
         assert {p.url_name: p.organization for p in res} == {"p1": "org-1", "p2": "org-2"}
+        assert {p.url_name: p.data_modeling_status for p in res} == {"p1": "HYBRID", "p2": "DATA_MODELING_ONLY"}
 
 
 @pytest.mark.parametrize(
@@ -64,7 +72,7 @@ class TestProjectsAPI:
         ),
         pytest.param(
             lambda c: c.projects.list(),
-            f"{PROJECTS_URL}?withOrganization=true",
+            f"{PROJECTS_URL}?withOrganization=true&withDataModelingStatus=true",
             {"items": [{"urlName": "dummy"}]},
             id="list",
         ),

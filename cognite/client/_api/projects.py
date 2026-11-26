@@ -50,20 +50,22 @@ class ProjectsAPI(APIClient):
         Only projects the caller has the capability "projectsAcl:READ" for will be included in the list.
 
         Returns:
-            ProjectList: The projects, including the organization each belongs to.
+            ProjectList: The list of projects.
 
         Examples:
 
-            List projects and their organizations:
+            List projects:
 
                 >>> from cognite.client import CogniteClient
                 >>> client = CogniteClient()
                 >>> # async_client = AsyncCogniteClient()  # another option
-                >>> res = client.projects.list()
-                >>> {p.url_name: p.organization for p in res}
+                >>> projects = client.projects.list()
         """
         self._warning.warn()
         response = await self._get(
-            "/api/v1/projects", params={"withOrganization": True}, semaphore=self._get_semaphore("read")
+            "/api/v1/projects",
+            # We always include the organization & DM status:
+            params={"withOrganization": True, "withDataModelingStatus": True},
+            semaphore=self._get_semaphore("read"),
         )
         return ProjectList._load(response.json()["items"])
