@@ -138,7 +138,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
         model_revision_external_ids: SequenceNotStr[str] | None = None,
         created_time: TimestampRange | None = None,
         simulation_time: TimestampRange | None = None,
-        sort: SimulationRunsSort | None = None,
+        sort: SimulationRunsSort = SimulationRunsSort(),
     ) -> SimulationRunList:
         """
         `Filter simulation runs <https://api-docs.cognite.com/20230101/tag/Simulation-Runs/operation/filter_simulation_runs_simulators_runs_list_post>`_
@@ -157,7 +157,7 @@ class SyncSimulatorRunsAPI(SyncAPIClient):
             model_revision_external_ids (SequenceNotStr[str] | None): Filter by model revision external ids
             created_time (TimestampRange | None): Filter by created time
             simulation_time (TimestampRange | None): Filter by simulation time
-            sort (SimulationRunsSort | None): The criteria to sort by.
+            sort (SimulationRunsSort): The criteria to sort by. Defaults to sorting by created time ascending.
 
         Returns:
             SimulationRunList: List of simulation runs
