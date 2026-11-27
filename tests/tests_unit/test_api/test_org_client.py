@@ -8,6 +8,7 @@ from pytest_httpx2 import HTTPXMock
 
 from cognite.client import ClientConfig, CogniteClient
 from cognite.client.credentials import Token
+from cognite.client.exceptions import CogniteOrganizationError
 
 
 @pytest.mark.parametrize(
@@ -60,7 +61,7 @@ def test_principals_api_resolves_org_and_uses_matching_auth_url(
     httpx2_mock.add_response(
         method="GET",
         url=f"https://api.cognitedata.com/api/v1/projects/{project}",
-        json={"organization": organization},
+        json={"urlName": project, "organization": organization},
         is_optional=False,
         is_reusable=False,
     )
@@ -77,3 +78,14 @@ def test_principals_api_resolves_org_and_uses_matching_auth_url(
     assert async_client.iam.principals._resolved_organization is None
     call(client)
     assert async_client.iam.principals._resolved_organization == organization
+
+
+def test_org_lookup_fails_for_project_without_organization(httpx2_mock: HTTPXMock) -> None:
+    client = CogniteClient(ClientConfig(client_name="any", project="no-org", cluster="api", credentials=Token("bla")))
+    # Projects outside an organization (internal Cognite projects only) have no organization in the response:
+    httpx2_mock.add_response(
+        method="GET", url="https://api.cognitedata.com/api/v1/projects/no-org", json={"urlName": "no-org"}
+    )
+
+    with pytest.warns(UserWarning, match="did not return an organization"), pytest.raises(CogniteOrganizationError):
+        client.iam.principals.me()

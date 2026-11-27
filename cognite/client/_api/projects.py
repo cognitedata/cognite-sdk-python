@@ -40,6 +40,10 @@ class ProjectsAPI(APIClient):
                 >>> proj.organization
         """
         self._warning.warn()
+        return await self._current()
+
+    async def _current(self) -> Project:
+        # Essentially a current() without the warning meant for internal use by the SDK (look up organization in OrgAPIClient)
         path = interpolate_and_url_encode("/api/v1/projects/{}", self._config.project)
         response = await self._get(path, semaphore=self._get_semaphore("read"))
         return Project._load(response.json())
