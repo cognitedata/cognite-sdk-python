@@ -4,7 +4,7 @@ Projects
 
 .. warning::
     This API is in alpha in the SDK, and may change or be removed without prior notice.
-    It uses internal, undocumented endpoints.
+    It uses internal, currently undocumented endpoints.
 
 .. autosummary::
    :methods:

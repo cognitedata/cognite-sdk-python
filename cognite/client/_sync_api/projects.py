@@ -41,7 +41,8 @@ class SyncProjectsAPI(SyncAPIClient):
         """
         List the projects you have access to.
 
-        Only projects the caller has the capability "projectsAcl:READ" for will be included in the list.
+        Note:
+            "Have access to" means all projects where you at least have capability the "projectsAcl:READ".
 
         Returns:
             ProjectList: The list of projects.
