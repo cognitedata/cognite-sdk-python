@@ -52,7 +52,7 @@ class ProjectsAPI(APIClient):
         """List the projects you have access to.
 
         Note:
-            "Have access to" means all projects where you at least have capability the "projectsAcl:READ".
+            "Have access to" means all projects where you at least have the capability "projectsAcl:READ".
 
         Returns:
             ProjectList: The list of projects.
