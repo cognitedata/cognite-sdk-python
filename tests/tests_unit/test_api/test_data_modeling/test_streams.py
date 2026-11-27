@@ -9,6 +9,7 @@ from pytest_httpx2 import HTTPXMock
 from cognite.client import AsyncCogniteClient, CogniteClient
 from cognite.client.data_classes.data_modeling.streams import (
     Stream,
+    StreamLifecycleWriteSettings,
     StreamList,
     StreamTemplate,
     StreamTemplateInfoList,
@@ -174,6 +175,37 @@ class TestStreamsAPI:
         assert requests[0].headers["cdf-version"] == "20230101"
         assert jsgz_load(requests[0].content) == {
             "items": [{"externalId": "st1", "settings": {"template": {"name": "ImmutableTestStream"}}}]
+        }
+
+    def test_create_posts_lifecycle_settings(
+        self,
+        cognite_client: CogniteClient,
+        httpx2_mock: HTTPXMock,
+        streams_base_url: str,
+        stream_list_response: dict,
+    ) -> None:
+        httpx2_mock.add_response(
+            method="POST", url=re.compile(re.escape(streams_base_url) + r"$"), json=stream_list_response
+        )
+        w = StreamWrite(
+            "st1",
+            StreamWriteSettings(
+                StreamTemplate("ImmutableTestStream"),
+                lifecycle=StreamLifecycleWriteSettings(data_deleted_after="PT168H"),
+            ),
+        )
+        cognite_client.data_modeling.streams.create(w)
+        (request,) = httpx2_mock.get_requests()
+        assert jsgz_load(request.content) == {
+            "items": [
+                {
+                    "externalId": "st1",
+                    "settings": {
+                        "template": {"name": "ImmutableTestStream"},
+                        "lifecycle": {"dataDeletedAfter": "PT168H"},
+                    },
+                }
+            ]
         }
 
     def test_create_chunks_multiple_items(
