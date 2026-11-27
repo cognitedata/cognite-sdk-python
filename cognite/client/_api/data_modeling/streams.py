@@ -62,6 +62,18 @@ class StreamsAPI(APIClient):
                 ...         ),
                 ...     )
                 ... )
+
+            Create a stream that only accepts records in the given spaces:
+
+                >>> res = client.data_modeling.streams.create(
+                ...     StreamWrite(
+                ...         external_id="my-governed-stream",
+                ...         settings=StreamWriteSettings(
+                ...             template=StreamTemplate(name="ImmutableTestStream"),
+                ...             allowed_record_spaces=["my-space", "my-other-space"],
+                ...         ),
+                ...     )
+                ... )
         """
         return await self._create_multiple(
             items=items,
