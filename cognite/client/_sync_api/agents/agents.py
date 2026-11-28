@@ -7,7 +7,7 @@ This file is auto-generated from the Async API modules, - do not edit manually!
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import overload
+from typing import Literal, overload
 
 from cognite.client import AsyncCogniteClient
 from cognite.client._sync_api_client import SyncAPIClient
@@ -313,6 +313,8 @@ class SyncAgentsAPI(SyncAPIClient):
         messages: Message | ActionResult | Sequence[Message | ActionResult],
         cursor: str | None = None,
         actions: Sequence[Action] | None = None,
+        retention_policy: Literal["temporary", "persisted"] | None = None,
+        tool_confirmation_mode: Literal["default", "dangerouslyAllowAll"] | None = None,
     ) -> AgentChatResponse:
         """
         `Chat with an agent <https://api-docs.cognite.com/20230101-beta/tag/Agents/operation/agent_session_ai_agents_chat_post/>`_.
@@ -326,6 +328,14 @@ class SyncAgentsAPI(SyncAPIClient):
             cursor (str | None): The cursor to use for continuation of a conversation. Use this to
                 create multi-turn conversations, as the cursor will keep track of the conversation state.
             actions (Sequence[Action] | None): A list of client-side actions that can be called by the agent.
+            retention_policy (Literal['temporary', 'persisted'] | None): Retention class for the conversation.
+                "persisted" retains the conversation until explicitly deleted. "temporary" (the API default) can
+                result in the conversation being deleted at any time. Only honored when starting a conversation,
+                ignored when a cursor is given.
+            tool_confirmation_mode (Literal['default', 'dangerouslyAllowAll'] | None): Controls whether tools that
+                require user confirmation prompt for approval. "default" (the API default) enforces the standard
+                confirmation requirements, while "dangerouslyAllowAll" bypasses approval for tools executed during
+                this request, including in subagents. Not persisted across turns, so it must be passed with each request.
 
         Returns:
             AgentChatResponse: The response from the agent.
@@ -349,6 +359,14 @@ class SyncAgentsAPI(SyncAPIClient):
                 ...     agent_external_id="my_agent",
                 ...     messages=Message("Tell me more about that"),
                 ...     cursor=response.cursor,
+                ... )
+
+            Start a conversation that is retained until explicitly deleted:
+
+                >>> response = client.agents.chat(
+                ...     agent_external_id="my_agent",
+                ...     messages=Message("What can you help me with?"),
+                ...     retention_policy="persisted",
                 ... )
 
             Send multiple messages at once:
@@ -450,6 +468,11 @@ class SyncAgentsAPI(SyncAPIClient):
         """
         return run_sync(
             self.__async_client.agents.chat(
-                agent_external_id=agent_external_id, messages=messages, cursor=cursor, actions=actions
+                agent_external_id=agent_external_id,
+                messages=messages,
+                cursor=cursor,
+                actions=actions,
+                retention_policy=retention_policy,
+                tool_confirmation_mode=tool_confirmation_mode,
             )
         )

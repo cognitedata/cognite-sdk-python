@@ -164,3 +164,17 @@ class TestAgentsAPI:
         assert response.agent_external_id == permanent_agent.external_id
         assert isinstance(response.type, str) and len(response.type) > 0
         assert response.messages is not None
+
+    def test_chat_with_retention_policy_and_tool_confirmation_mode(
+        self, cognite_client: CogniteClient, permanent_agent: Agent
+    ) -> None:
+        response = cognite_client.agents.chat(
+            agent_external_id=permanent_agent.external_id,
+            messages=Message("Hello from SDK integration test"),
+            retention_policy="temporary",
+            tool_confirmation_mode="default",
+        )
+
+        assert isinstance(response, AgentChatResponse)
+        assert response.agent_external_id == permanent_agent.external_id
+        assert response.cursor

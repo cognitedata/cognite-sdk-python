@@ -166,6 +166,38 @@ class TestAgentChat:
         call_args = async_client.agents._post.call_args
         assert call_args[1]["json"]["cursor"] == "previous_cursor_123"
 
+    @pytest.mark.parametrize(
+        "kwargs, expected_body",
+        [
+            ({"retention_policy": "persisted"}, {"retentionPolicy": "persisted"}),
+            ({"tool_confirmation_mode": "dangerouslyAllowAll"}, {"toolConfirmationMode": "dangerouslyAllowAll"}),
+        ],
+    )
+    def test_chat_with_optional_params(
+        self,
+        cognite_client: CogniteClient,
+        async_client: AsyncCogniteClient,
+        chat_response_body: dict,
+        kwargs: dict,
+        expected_body: dict,
+    ) -> None:
+        async_client.agents._post = AsyncMock(return_value=MagicMock(json=lambda: chat_response_body))  # type: ignore[method-assign]
+
+        cognite_client.agents.chat(agent_external_id="my_agent", messages=Message("Hello"), **kwargs)
+
+        body = async_client.agents._post.call_args[1]["json"]
+        assert body.items() >= expected_body.items()
+
+    def test_chat_omits_optional_params_by_default(
+        self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, chat_response_body: dict
+    ) -> None:
+        async_client.agents._post = AsyncMock(return_value=MagicMock(json=lambda: chat_response_body))  # type: ignore[method-assign]
+
+        cognite_client.agents.chat(agent_external_id="my_agent", messages=Message("Hello"))
+
+        body = async_client.agents._post.call_args[1]["json"]
+        assert set(body) == {"agentExternalId", "messages"}
+
     def test_chat_multiple_messages(
         self, cognite_client: CogniteClient, async_client: AsyncCogniteClient, chat_response_body: dict
     ) -> None:
