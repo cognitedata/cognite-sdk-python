@@ -9,10 +9,10 @@ import unittest
 from collections.abc import Iterator
 from contextlib import contextmanager
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from random import choice, randint, random, shuffle
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import pytest
 from _pytest.monkeypatch import MonkeyPatch
@@ -33,6 +33,7 @@ from cognite.client.data_classes import (
     Datapoints,
     DatapointsArray,
     DatapointsList,
+    DatapointsQuery,
     GapFillOptions,
     LatestDatapointQuery,
     StateDatapointsInsert,
@@ -55,6 +56,7 @@ from tests.utils import (
 
 if TYPE_CHECKING:
     from cognite.client import CogniteClient
+    from cognite.client.data_classes.datapoints import NumpyFloat64Array
 
 
 @pytest.fixture
@@ -570,6 +572,122 @@ class TestRetrieveStringAggregates:
         assert len(dps) == 0
         if use_numpy:
             assert dps.interpolation.dtype == dps.step_interpolation.dtype == np.object_
+
+
+class TestRetrieveDuplicateQueries:
+    @pytest.fixture
+    def datapoints_mock(self, httpx2_mock: HTTPXMock, async_client: AsyncCogniteClient) -> HTTPXMock:
+        def request_callback(request: Any) -> Response:
+            payload = jsgz_load(request.content)
+            missing = [{"id": item["id"]} for item in payload["items"] if item["id"] == 99]
+            if missing and not payload.get("ignoreUnknownIds", False):
+                return Response(400, json={"error": {"message": "Time series not found", "missing": missing}})
+
+            response = DataPointListResponse(
+                items=[
+                    DataPointListItem(
+                        id=item["id"],
+                        externalId=f"ts-{item['id']}",
+                        numericDatapoints={
+                            "datapoints": [{"timestamp": item["start"], "value": item["id"] + item["start"]}]
+                        },
+                    )
+                    for item in payload["items"]
+                    if item["id"] != 99
+                ]
+            )
+            return Response(200, content=response.SerializeToString())
+
+        httpx2_mock.add_callback(
+            request_callback,
+            method="POST",
+            url=get_url(async_client.time_series.data, "/timeseries/data/list"),
+            is_reusable=True,
+        )
+        return httpx2_mock
+
+    @staticmethod
+    def requested_items(datapoints_mock: HTTPXMock) -> list[dict[str, Any]]:
+        return [item for request in datapoints_mock.get_requests() for item in jsgz_load(request.content)["items"]]
+
+    @pytest.mark.parametrize("concurrency_limit", [1, 5], ids=["chunking", "eager"])
+    @pytest.mark.parametrize("use_numpy", [False, True], ids=["lists", "arrays"])
+    def test_retrieve_preserves_order_and_independent_results(
+        self, concurrency_limit: int, use_numpy: bool, cognite_client: CogniteClient, datapoints_mock: HTTPXMock
+    ) -> None:
+        data = cognite_client.time_series.data
+        retrieve = data.retrieve_arrays if use_numpy else data.retrieve
+        with override_semaphore(concurrency_limit, target="datapoints"):
+            result = retrieve(
+                id=[2, 1, DatapointsQuery(id=1, start=100), DatapointsQuery(id=2), 1], start=0, end=200, limit=1
+            )
+
+        assert [dps.id for dps in result] == [2, 1, 1, 2, 1]
+        assert [dps.value[0] for dps in result if dps.value is not None] == [2, 1, 101, 2, 1]
+        assert result[0] is not result[3]
+        assert result[0].value is not None and result[3].value is not None
+        numeric_values = cast("list[float] | NumpyFloat64Array", result[0].value)
+        numeric_values[0] = -1.0
+        assert result[3].value[0] == 2
+        assert sorted((item["id"], item["start"]) for item in self.requested_items(datapoints_mock)) == [
+            (1, 0),
+            (1, 100),
+            (2, 0),
+        ]
+
+    def test_retrieve_dataframe_preserves_duplicate_columns(
+        self, cognite_client: CogniteClient, datapoints_mock: HTTPXMock
+    ) -> None:
+        df = cognite_client.time_series.data.retrieve_dataframe(id=[2, 1, 2], start=0, end=200, limit=1)
+
+        assert df.columns.tolist() == ["ts-2", "ts-1", "ts-2"]
+        assert df.iloc[0].tolist() == [2, 1, 2]
+        assert sorted(item["id"] for item in self.requested_items(datapoints_mock)) == [1, 2]
+
+    def test_retrieve_preserves_display_timezones(
+        self, cognite_client: CogniteClient, datapoints_mock: HTTPXMock
+    ) -> None:
+        plant_time = timezone(timedelta(hours=1), "Plant time")
+        operator_time = timezone(timedelta(hours=1), "Operator time")
+
+        result = cognite_client.time_series.data.retrieve(
+            id=[
+                DatapointsQuery(id=1, timezone=plant_time),
+                DatapointsQuery(id=1, timezone=operator_time),
+                DatapointsQuery(id=1, timezone=plant_time),
+            ],
+            start=0,
+            end=200,
+            limit=1,
+        )
+
+        assert [str(dps.timezone) for dps in result] == ["Plant time", "Operator time", "Plant time"]
+        assert len(self.requested_items(datapoints_mock)) == 2
+
+    @pytest.mark.parametrize("concurrency_limit", [1, 4], ids=["chunking", "eager"])
+    def test_retrieve_ignores_missing_duplicates(
+        self, concurrency_limit: int, cognite_client: CogniteClient, datapoints_mock: HTTPXMock
+    ) -> None:
+        with override_semaphore(concurrency_limit, target="datapoints"):
+            result = cognite_client.time_series.data.retrieve(
+                id=[99, 1, 99, 1], start=0, end=200, limit=1, ignore_unknown_ids=True
+            )
+
+        assert [dps.id for dps in result] == [1, 1]
+        assert sorted(item["id"] for item in self.requested_items(datapoints_mock)) == [1, 99]
+
+    @pytest.mark.parametrize("concurrency_limit", [1, 3], ids=["chunking", "eager"])
+    def test_retrieve_preserves_missing_error_entries(
+        self, concurrency_limit: int, cognite_client: CogniteClient, datapoints_mock: HTTPXMock
+    ) -> None:
+        with (
+            override_semaphore(concurrency_limit, target="datapoints"),
+            pytest.raises(CogniteNotFoundError) as error,
+        ):
+            cognite_client.time_series.data.retrieve(id=[99, 1, 99], start=0, end=200, limit=1)
+
+        assert error.value.missing == [{"id": 99}, {"id": 99}]
+        assert sorted(item["id"] for item in self.requested_items(datapoints_mock)) == [1, 99]
 
 
 class TestFetchAllDoesNotLeakTaskExceptions:

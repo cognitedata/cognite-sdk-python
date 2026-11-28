@@ -7,7 +7,8 @@ import itertools
 import math
 from abc import ABC, abstractmethod
 from collections import Counter, defaultdict
-from collections.abc import AsyncIterator, Iterable, Iterator, MutableSequence, Sequence
+from collections.abc import AsyncIterator, Callable, Iterable, Iterator, MutableSequence, Sequence
+from copy import deepcopy
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
@@ -43,6 +44,7 @@ from cognite.client.exceptions import CogniteAPIError, CogniteNotFoundError
 from cognite.client.utils import _json_extended as _json
 from cognite.client.utils._auxiliary import (
     exactly_one_is_not_none,
+    find_duplicates,
     split_into_chunks,
     split_into_n_parts,
     unpack_items,
@@ -63,6 +65,7 @@ if TYPE_CHECKING:
 PoolSubtaskType = tuple[float, int, BaseDpsFetchSubtask]
 
 _T = TypeVar("_T")
+_DpsResultT = TypeVar("_DpsResultT", Datapoints, DatapointsArray)
 
 
 class DpsFetchStrategy(ABC):
@@ -71,10 +74,43 @@ class DpsFetchStrategy(ABC):
 
         self.dps_client = dps_client
         self.all_queries = all_queries
-        self.agg_queries, self.raw_queries = self.split_queries(all_queries)
+        self._queries_to_fetch, self._duplicate_queries = self._coalesce_queries(all_queries)
+        self.agg_queries, self.raw_queries = self.split_queries(self._queries_to_fetch)
         self.concurrency_limit = global_config.concurrency_settings.datapoints.read
-        self.n_queries = len(all_queries)
+        self.n_queries = len(self._queries_to_fetch)
         self.semaphore = dps_client._get_semaphore("read")
+
+    @staticmethod
+    def _coalesce_queries(
+        queries: list[DatapointsQuery],
+    ) -> tuple[list[DatapointsQuery], dict[DatapointsQuery, DatapointsQuery]]:
+        if len(queries) < 2 or not (repeated_ids := find_duplicates(query.identifier for query in queries)):
+            return queries, {}
+
+        unique_queries = []
+        duplicates = {}
+        representatives: dict[tuple[object, ...], DatapointsQuery] = {}
+        for query in queries:
+            if query.identifier in repeated_ids:
+                # The payload options cover the backend query. Also account for how we fetch the
+                # range and how we handle missing series and display the result on the client.
+                key = (
+                    _json.dumps(BaseDpsFetchSubtask.static_kwargs_for(query)),
+                    query.start_ms,
+                    query.end_ms,
+                    query.limit,
+                    query.include_outside_points,
+                    query.ignore_unknown_ids,
+                    query.original_granularity,
+                    query.original_timezone,
+                    str(query.original_timezone),  # Fixed-offset timezone equality ignores custom names.
+                )
+                representative = representatives.setdefault(key, query)
+                if representative is not query:
+                    duplicates[query] = representative
+                    continue
+            unique_queries.append(query)
+        return unique_queries, duplicates
 
     @staticmethod
     def split_queries(all_queries: list[DatapointsQuery]) -> tuple[list[DatapointsQuery], list[DatapointsQuery]]:
@@ -84,14 +120,37 @@ class DpsFetchStrategy(ABC):
         return split_qs
 
     async def fetch_all_datapoints(self) -> DatapointsList:
-        return DatapointsList(
-            [ts_task.get_result(use_numpy=False) async for ts_task in self._fetch_all(use_numpy=False)],
-        ).set_client_ref(self.dps_client._cognite_client)
+        results = await self._fetch_results(lambda task: task.get_result(use_numpy=False), use_numpy=False)
+        return DatapointsList(results).set_client_ref(self.dps_client._cognite_client)
 
     async def fetch_all_datapoints_numpy(self) -> DatapointsArrayList:
-        return DatapointsArrayList(
-            [ts_task.get_result(use_numpy=True) async for ts_task in self._fetch_all(use_numpy=True)],
-        ).set_client_ref(self.dps_client._cognite_client)
+        results = await self._fetch_results(lambda task: task.get_result(use_numpy=True), use_numpy=True)
+        return DatapointsArrayList(results).set_client_ref(self.dps_client._cognite_client)
+
+    async def _fetch_results(
+        self, get_result: Callable[[BaseTaskOrchestrator], _DpsResultT], *, use_numpy: bool
+    ) -> list[_DpsResultT]:
+        if not self._duplicate_queries:
+            return [get_result(task) async for _, task in self._fetch_all(use_numpy)]
+
+        fetched = {query: get_result(task) async for query, task in self._fetch_all(use_numpy)}
+        results = []
+        for query in self.all_queries:
+            representative = self._duplicate_queries.get(query, query)
+            if (result := fetched.get(representative)) is not None:
+                if representative is not query:
+                    result = self._copy_result(result, query)
+                results.append(result)
+        return results
+
+    @staticmethod
+    def _copy_result(result: _DpsResultT, query: DatapointsQuery) -> _DpsResultT:
+        # Timezones are immutable and ZoneInfo objects loaded from files cannot be deep-copied.
+        memo: dict[int, Any] = {id(result.timezone): query.original_timezone}
+        if query.is_raw_query and isinstance(result, Datapoints):
+            # Raw datapoint lists contain only scalars. Copy the lists without walking every value.
+            memo.update((id(values), values.copy()) for values in vars(result).values() if isinstance(values, list))
+        return deepcopy(result, memo)
 
     async def _request_datapoints(self, payload: dict[str, Any]) -> Sequence[DataPointListItem]:
         (res := DataPointListResponse()).MergeFromString(
@@ -113,6 +172,9 @@ class DpsFetchStrategy(ABC):
             return
         if futures_dct:
             await self._cancel_remaining(futures_dct)
+        to_raise.update(
+            query for query, representative in self._duplicate_queries.items() if representative in to_raise
+        )
         raise CogniteNotFoundError(
             "Time series not found",
             code=400,
@@ -142,7 +204,7 @@ class DpsFetchStrategy(ABC):
         futures_dct.clear()
 
     @abstractmethod
-    def _fetch_all(self, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
+    def _fetch_all(self, use_numpy: bool) -> AsyncIterator[tuple[DatapointsQuery, BaseTaskOrchestrator]]:
         raise NotImplementedError
 
 
@@ -157,7 +219,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
     most 168 datapoints exist per week).
     """
 
-    async def _fetch_all(self, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
+    async def _fetch_all(self, use_numpy: bool) -> AsyncIterator[tuple[DatapointsQuery, BaseTaskOrchestrator]]:
         missing_to_raise: set[DatapointsQuery] = set()
         unknown_failed: list[BaseException] = []
         futures_dct, ts_task_lookup = self._create_initial_tasks(use_numpy)
@@ -197,9 +259,10 @@ class EagerDpsFetcher(DpsFetchStrategy):
         await self._raise_if_unknown_failed(unknown_failed, futures_dct)
         await self._raise_if_missing(missing_to_raise, futures_dct)
 
-        # Return only non-missing time series tasks in correct order given by `all_queries`:
-        for task in filter(None, map(ts_task_lookup.get, self.all_queries)):
-            yield task
+        # Return only non-missing time series tasks in request order:
+        for query in self._queries_to_fetch:
+            if (task := ts_task_lookup.get(query)) is not None:
+                yield query, task
 
     def _create_initial_tasks(
         self,
@@ -207,7 +270,7 @@ class EagerDpsFetcher(DpsFetchStrategy):
     ) -> tuple[dict[asyncio.Task, BaseDpsFetchSubtask], dict[DatapointsQuery, BaseTaskOrchestrator]]:
         futures_dct: dict[asyncio.Task, BaseDpsFetchSubtask] = {}
         ts_task_lookup = {}
-        for query in self.all_queries:
+        for query in self._queries_to_fetch:
             ts_task = ts_task_lookup[query] = query.task_orchestrator(query=query, eager_mode=True, use_numpy=use_numpy)
             for subtask in ts_task.split_into_subtasks(self.concurrency_limit, self.n_queries):
                 payload = {"items": [subtask.get_next_payload_item()], "ignoreUnknownIds": False}
@@ -274,7 +337,7 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
         self.agg_subtask_pool: list[PoolSubtaskType] = []
         self.subtask_pools = (self.agg_subtask_pool, self.raw_subtask_pool)
 
-    async def _fetch_all(self, use_numpy: bool) -> AsyncIterator[BaseTaskOrchestrator]:
+    async def _fetch_all(self, use_numpy: bool) -> AsyncIterator[tuple[DatapointsQuery, BaseTaskOrchestrator]]:
         # The initial tasks are important - as they tell us which time series are missing, which
         # are string, which are sparse... We use this info when we choose the best fetch-strategy.
         ts_task_lookup, missing_to_raise = {}, set()
@@ -313,9 +376,10 @@ class ChunkingDpsFetcher(DpsFetchStrategy):
             await self._fetch_until_complete(futures_dct, unknown_failed)
             await self._raise_if_unknown_failed(unknown_failed, futures_dct)
 
-        # Return only non-missing time series tasks in correct order given by `all_queries`:
-        for task in filter(None, map(ts_task_lookup.get, self.all_queries)):
-            yield task
+        # Return only non-missing time series tasks in request order:
+        for query in self._queries_to_fetch:
+            if (task := ts_task_lookup.get(query)) is not None:
+                yield query, task
 
     async def _fetch_until_complete(
         self, futures_dct: dict[asyncio.Task, list[BaseDpsFetchSubtask]], unknown_failed: list[BaseException]
