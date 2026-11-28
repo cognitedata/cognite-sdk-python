@@ -14,6 +14,19 @@ As of 2025-08-29, changes are grouped as follows
 - ⚡ Improvements: Transparent changes, e.g. better performance.
 - 📦 Dependencies: Dependency updates and changes.
 
+## [8.26.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.25.0...v8.26.0) (2026-11-28)
+
+
+### Features
+
+* **Projects API:** add Projects API with `list` and `current` methods ([#2945](https://github.com/cognitedata/cognite-sdk-python/issues/2945)) ([9d23ac0](https://github.com/cognitedata/cognite-sdk-python/commit/9d23ac09ee32b49f992e955069cf83d5564fc950))
+* **records:** mark Records, Streams and Views for Records as stable in the SDK ([#2902](https://github.com/cognitedata/cognite-sdk-python/issues/2902)) ([0678bf5](https://github.com/cognitedata/cognite-sdk-python/commit/0678bf5d984f486940b7b0b7cbc30f438ee120f5))
+
+
+### Bug Fixes
+
+* **string datapoints:** aggregate string dps now distinguish missing from empty string ([#2936](https://github.com/cognitedata/cognite-sdk-python/issues/2936)) ([8542b7f](https://github.com/cognitedata/cognite-sdk-python/commit/8542b7f22744e93660fde0a495e6963be01bfdd5))
+
 ## [8.25.0](https://github.com/cognitedata/cognite-sdk-python/compare/v8.24.0...v8.25.0) (2026-11-13)
 
 
