@@ -104,6 +104,7 @@ Contents
    cognite_client
    extensions_and_optional_dependencies
    identity_and_access_management
+   projects
 
 .. toctree::
    :maxdepth: 1

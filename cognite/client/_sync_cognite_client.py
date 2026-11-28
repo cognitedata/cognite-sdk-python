@@ -31,6 +31,7 @@ from cognite.client._sync_api.labels import SyncLabelsAPI
 from cognite.client._sync_api.limits import SyncLimitsAPI
 from cognite.client._sync_api.metering import SyncMeteringAPI
 from cognite.client._sync_api.postgres_gateway import SyncPostgresGatewaysAPI
+from cognite.client._sync_api.projects import SyncProjectsAPI
 from cognite.client._sync_api.raw import SyncRawAPI
 from cognite.client._sync_api.relationships import SyncRelationshipsAPI
 from cognite.client._sync_api.sequences import SyncSequencesAPI
@@ -90,6 +91,7 @@ class CogniteClient:
         self.limits = SyncLimitsAPI(async_client)
         self.metering = SyncMeteringAPI(async_client)
         self.postgres_gateway = SyncPostgresGatewaysAPI(async_client)
+        self.projects = SyncProjectsAPI(async_client)
         self.raw = SyncRawAPI(async_client)
         self.relationships = SyncRelationshipsAPI(async_client)
         self.sequences = SyncSequencesAPI(async_client)

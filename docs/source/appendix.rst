@@ -199,6 +199,8 @@ invoke a `FeaturePreviewWarning` when used.
 Furthermore, we distinguish between maturity of the API specification and the SDK implementation. Typically,
 the API specification may be in beta, while the SDK implementation is in alpha.
 
+* `internal` - (API maturity only) The feature uses an API that is not publicly documented. The API, and therefore
+  the SDK implementation, may change or be removed entirely without further notice.
 * `alpha` - The feature is not yet released for general availability. There may be breaking changes to the API
   specification and/or the SDK implementation without further notice.
 * `beta` - The feature is not yet released for general availability. The feature is considered stable and 'settled'.

@@ -17,20 +17,18 @@ class OrgAPIClient(APIClient, ABC):
     _resolved_organization: str | None = None
 
     async def _get_organization(self) -> str:
-        # DEV NOTE: This must be awaited (by every public method) before any URL is built. We used to look this
-        # up lazily with run_sync from a sync property, but that deadlocks when called from the SDK's own event
-        # loop thread, i.e. from any sync client call.
-        if self._resolved_organization is None:
-            # This is an internal endpoint, not part of the public API - and we call it manually to avoid
-            # the overridden _base_url_with_base_path property:
-            base_path = f"/api/{self._api_version}/projects/{self._config.project}"
-            full_url = append_url_path(self._config.base_url, base_path)
-            try:
-                response = await self._request("GET", full_url=full_url, include_cdf_headers=True, semaphore=None)
-                self._resolved_organization = response.json()["organization"]
-            except Exception as err:
-                raise CogniteOrganizationError from err
+        if self._resolved_organization is not None:
+            return self._resolved_organization
 
+        try:
+            project = await self._cognite_client.projects._current()
+        except Exception as err:
+            raise CogniteOrganizationError from err
+        if not project.organization:
+            # Projects outside an organization (internal Cognite projects only) are loaded with an empty string:
+            raise CogniteOrganizationError
+
+        self._resolved_organization = project.organization
         return self._resolved_organization
 
     @property

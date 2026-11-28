@@ -20,6 +20,7 @@ from cognite.client._api import (
     events,
     files,
     iam,
+    projects,
     raw,
     relationships,
     sequences,
@@ -121,6 +122,9 @@ class TestDocstringExamples:
 
     def test_iam(self) -> None:
         run_docstring_tests(iam)
+
+    def test_projects(self) -> None:
+        run_docstring_tests(projects)
 
     @pytest.mark.dsl
     def test_sequences(self) -> None:

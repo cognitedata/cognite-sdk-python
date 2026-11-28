@@ -24,6 +24,7 @@ from cognite.client._api.labels import LabelsAPI
 from cognite.client._api.limits import LimitsAPI
 from cognite.client._api.metering import MeteringAPI
 from cognite.client._api.postgres_gateway import PostgresGatewaysAPI
+from cognite.client._api.projects import ProjectsAPI
 from cognite.client._api.raw import RawAPI
 from cognite.client._api.relationships import RelationshipsAPI
 from cognite.client._api.sequences import SequencesAPI
@@ -179,6 +180,8 @@ class AsyncCogniteClient:
         self.units = UnitAPI(self._config, self._API_VERSION, self)
         self.simulators = SimulatorsAPI(self._config, self._API_VERSION, self)
         self.integrations = IntegrationsAPI(self._config, self._API_VERSION, self)
+        # ProjectsAPI uses the cluster base_url directly (not the project-scoped one), so we pass `api_version=None`:
+        self.projects = ProjectsAPI(self._config, api_version=None, cognite_client=self)
         # APIs just using base_url:
         self._api_client = APIClient(self._config, api_version=None, cognite_client=self)
 
@@ -444,6 +447,7 @@ def _make_accessors_for_building_docs() -> None:
     AsyncCogniteClient.postgres_gateway = PostgresGatewaysAPI  # type: ignore
     AsyncCogniteClient.postgres_gateway.users = UsersAPI  # type: ignore
     AsyncCogniteClient.postgres_gateway.tables = TablesAPI  # type: ignore
+    AsyncCogniteClient.projects = ProjectsAPI  # type: ignore
     AsyncCogniteClient.transformations = TransformationsAPI  # type: ignore
     AsyncCogniteClient.transformations.schedules = TransformationSchedulesAPI  # type: ignore
     AsyncCogniteClient.transformations.notifications = TransformationNotificationsAPI  # type: ignore
